@@ -1,0 +1,23 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact:
+    email: solarwind.palm@gmail.com
+    name: Alexander Cheryomukhin
+  description: Trava API documentation server
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Trava API
+  version: "1.0"
+paths:
+  /status:
+    get:
+      description: Get server status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Server status
+swagger: "2.0"
