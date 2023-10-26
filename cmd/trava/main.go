@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	apiV1 "trava/api/v1"
+
+	apiV1 "github.com/solargate/trava/api/v1"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	_ "trava/api/docs"
+	_ "github.com/solargate/trava/api/docs"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -36,7 +36,7 @@ func RunRouter() {
 	router := gin.Default()
 	router.GET("/api/v1/status", checkStatus)
 
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/api/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.Run()
 }
