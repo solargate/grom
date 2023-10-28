@@ -1,27 +1,16 @@
 package v1
 
 import (
-	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/solargate/trava/api/docs"
+	"github.com/solargate/trava/config"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
-
-// statusCheck godoc
-// @Summary      Server status
-// @Description  Get server status
-// @Produce      json
-// @Success      200
-// @Router       /status [get]
-func checkStatus(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "OK",
-	})
-}
 
 // @title          Trava API
 // @version        1.0
@@ -34,9 +23,14 @@ func checkStatus(ctx *gin.Context) {
 // @BasePath  /api/v1
 func RunRouter() {
 	router := gin.Default()
-	router.GET("/api/v1/status", checkStatus)
+
+	apiV1 := router.Group("/api/v1")
+	{
+		apiV1.GET("/status", checkStatus)
+		apiV1.GET("/server_info", getServerInfo)
+	}
 
 	router.GET("/api/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	router.Run()
+	router.Run(":" + strconv.Itoa(config.Cfg.Server.Port))
 }
