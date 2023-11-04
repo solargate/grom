@@ -5,16 +5,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	_ "github.com/solargate/trava/api/docs"
-	"github.com/solargate/trava/config"
+	_ "github.com/solargate/travka/api/docs"
+	"github.com/solargate/travka/config"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @title          Trava API
+// @title          Travka API
 // @version        1.0
-// @description    Trava API documentation server
+// @description    Travka API documentation server
 // @contact.name   Alexander Cheryomukhin
 // @contact.email  solarwind.palm@gmail.com
 // @license.name  Apache 2.0

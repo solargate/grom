@@ -1,4 +1,4 @@
-module github.com/solargate/trava
+module github.com/solargate/travka
 
 go 1.21.3
 

@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Trava API documentation server",
-        "title": "Trava API",
+        "description": "Travka API documentation server",
+        "title": "Travka API",
         "contact": {
             "name": "Alexander Cheryomukhin",
             "email": "solarwind.palm@gmail.com"

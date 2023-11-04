@@ -10,7 +10,7 @@ class ApiRequest {
       var json = jsonDecode(response.body) as Map<String, dynamic>;
       return json['server']['name'] as String;
     } else {
-      return "Trava TTT";
+      return "Travka TTT";
     }
   }
 

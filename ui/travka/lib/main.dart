@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 //import 'api_request.dart';
 
-void main() => runApp(const TravaApp());
+void main() => runApp(const TravkaApp());
 
-class TravaApp extends StatelessWidget {
-  const TravaApp({super.key});
+class TravkaApp extends StatelessWidget {
+  const TravkaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,25 +12,25 @@ class TravaApp extends StatelessWidget {
     //late ApiRequest apiRequest;
 
     return MaterialApp(
-      title: 'Trava',
+      title: 'Travka',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 148, 49)),
         useMaterial3: true,
       ),
-      home: const TravaHomePage(title: 'Trava Home'),
+      home: const TravkaHomePage(title: 'Travka Home'),
     );
   }
 }
 
-class TravaHomePage extends StatefulWidget {
-  const TravaHomePage({super.key, required this.title});
+class TravkaHomePage extends StatefulWidget {
+  const TravkaHomePage({super.key, required this.title});
   final String title;
 
   @override
-  State<TravaHomePage> createState() => _TravaHomePageState();
+  State<TravkaHomePage> createState() => _TravkaHomePageState();
 }
 
-class _TravaHomePageState extends State<TravaHomePage> {
+class _TravkaHomePageState extends State<TravkaHomePage> {
   int _counter = 0;
 
   void _incrementCounter() {
