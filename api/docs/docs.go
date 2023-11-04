@@ -22,6 +22,20 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/server_info": {
+            "get": {
+                "description": "Get server info",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Server info",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/status": {
             "get": {
                 "description": "Get server status",

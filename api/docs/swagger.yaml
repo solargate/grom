@@ -11,6 +11,15 @@ info:
   title: Trava API
   version: "1.0"
 paths:
+  /server_info:
+    get:
+      description: Get server info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Server info
   /status:
     get:
       description: Get server status
