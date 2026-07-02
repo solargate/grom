@@ -22,6 +22,7 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 func RunRouter() {
+	//gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	apiV1 := router.Group("/api/v1")

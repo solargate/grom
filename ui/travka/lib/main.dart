@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'registration.dart';
 //import 'api_request.dart';
 
 void main() => runApp(const TravkaApp());
@@ -37,6 +38,14 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
     setState(() {
       _counter++;
     });
+  }
+
+  void _onRegisterButtonPressed() {
+    print('Reg!!!');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const RegistrationPage()),
+    );
   }
 
   @override
@@ -83,6 +92,9 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            ElevatedButton(
+              onPressed: _onRegisterButtonPressed,
+              child: const Text('Регистрация')),
           ],
         ),
       ),

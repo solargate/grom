@@ -1,6 +1,6 @@
 module github.com/solargate/travka
 
-go 1.21.3
+go 1.24.1
 
 require (
 	github.com/gin-gonic/gin v1.9.1
