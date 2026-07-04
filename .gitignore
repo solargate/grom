@@ -1,2 +1,5 @@
 .vscode/
+.cursor/
 cmd/travka/travka
+internal/web/dist/*
+!internal/web/dist/index.html

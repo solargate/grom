@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/solargate/travka/api/docs"
 	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/web"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -32,6 +33,8 @@ func RunRouter() {
 	}
 
 	router.GET("/api/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	web.RegisterRoutes(router)
 
 	router.Run(":" + strconv.Itoa(config.Cfg.Server.Port))
 }

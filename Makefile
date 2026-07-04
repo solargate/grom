@@ -10,6 +10,8 @@ travka-doc:
 
 travka-web:
 	cd ui/travka && flutter build web
+	rm -rf internal/web/dist
+	cp -r ui/travka/build/web internal/web/dist
 
 clean:
 	rm -f cmd/travka/travka
