@@ -1,3 +1,8 @@
 server:
   name: "Travka test server"
   port: 8080
+auth:
+  jwt_secret: "change-me-in-production-min-32-chars!!"
+  jwt_ttl_hours: 24
+users:
+  file: "./users.yaml"

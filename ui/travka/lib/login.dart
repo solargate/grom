@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
 
 import 'api_request.dart';
-import 'login.dart';
+import 'auth_storage.dart';
 
-class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key, this.onLoggedIn});
+
+  final VoidCallback? onLoggedIn;
 
   @override
-  State<RegistrationPage> createState() => _RegistrationPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> {
+class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _api = ApiRequest();
 
-  final _nicknameController = TextEditingController();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   bool _isSubmitting = false;
   bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _nicknameController.dispose();
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -42,23 +37,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      await _api.register(
-        nickname: _nicknameController.text.trim(),
-        name: _nameController.text.trim(),
+      final result = await _api.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+      );
+
+      await AuthStorage.saveSession(
+        token: result.token,
+        nickname: result.user.nickname,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Регистрация успешна. Войдите в аккаунт.')),
+        SnackBar(content: Text('Добро пожаловать, ${result.user.nickname}!')),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      widget.onLoggedIn?.call();
+      Navigator.pop(context, result.user);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,7 +63,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось выполнить регистрацию')),
+        const SnackBar(content: Text('Не удалось выполнить вход')),
       );
     } finally {
       if (mounted) {
@@ -80,7 +76,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Регистрация'),
+        title: const Text('Вход'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -89,30 +85,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _nicknameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nickname *',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Введите nickname';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -150,44 +122,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   ),
                 ),
                 obscureText: _obscurePassword,
-                textInputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите пароль';
-                  }
-                  if (value.length < 8) {
-                    return 'Пароль должен быть не короче 8 символов';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Подтверждение пароля *',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(
-                          () => _obscureConfirmPassword = !_obscureConfirmPassword);
-                    },
-                  ),
-                ),
-                obscureText: _obscureConfirmPassword,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Подтвердите пароль';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Пароли не совпадают';
+                    return 'Введите пароль';
                   }
                   return null;
                 },
@@ -201,7 +140,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Зарегистрироваться'),
+                    : const Text('Войти'),
               ),
             ],
           ),

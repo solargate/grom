@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/solargate/travka/api/docs"
 	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/auth"
 	"github.com/solargate/travka/internal/web"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -22,14 +23,27 @@ import (
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 // @host      localhost:8080
 // @BasePath  /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func RunRouter() {
 	//gin.SetMode(gin.ReleaseMode)
+	if err := initUserStore(); err != nil {
+		panic(err)
+	}
+
 	router := gin.Default()
 
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.GET("/status", checkStatus)
 		apiV1.GET("/server_info", getServerInfo)
+
+		authGroup := apiV1.Group("/auth")
+		authGroup.POST("/register", register)
+		authGroup.POST("/login", login)
+		authGroup.GET("/me", auth.AuthRequired(), getMe)
 	}
 
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_request.dart';
+import 'auth_storage.dart';
+import 'login.dart';
 import 'registration.dart';
 
 void main() => runApp(const TravkaApp());
@@ -9,13 +11,11 @@ class TravkaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    //late ApiRequest apiRequest;
-
     return MaterialApp(
       title: 'Travka',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 148, 49)),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 45, 148, 49)),
         useMaterial3: true,
       ),
       home: const TravkaHomePage(),
@@ -33,18 +33,23 @@ class TravkaHomePage extends StatefulWidget {
 class _TravkaHomePageState extends State<TravkaHomePage> {
   final ApiRequest _api = ApiRequest();
   String _title = 'Travka Home';
+  String? _nickname;
   int _counter = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadServerName();
+    _loadInitialData();
   }
 
-  Future<void> _loadServerName() async {
+  Future<void> _loadInitialData() async {
     final name = await _api.getServerInfo();
+    final nickname = await AuthStorage.getNickname();
     if (!mounted) return;
-    setState(() => _title = name);
+    setState(() {
+      _title = name;
+      _nickname = nickname;
+    });
   }
 
   void _incrementCounter() {
@@ -60,41 +65,49 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
     );
   }
 
+  Future<void> _onLoginButtonPressed() async {
+    final user = await Navigator.push<UserInfo>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginPage(
+          onLoggedIn: () {
+            _loadInitialData();
+          },
+        ),
+      ),
+    );
+
+    if (user != null && mounted) {
+      setState(() => _nickname = user.nickname);
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthStorage.clear();
+    if (!mounted) return;
+    setState(() => _nickname = null);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Вы вышли из аккаунта')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(_title),
+        title: Text(_nickname != null ? '$_title · $_nickname' : _title),
+        actions: [
+          if (_nickname != null)
+            IconButton(
+              tooltip: 'Выйти',
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
+            ),
+        ],
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
@@ -104,9 +117,29 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _onRegisterButtonPressed,
-              child: const Text('Регистрация')),
+              child: const Text('Регистрация'),
+            ),
+            const SizedBox(height: 12),
+            if (_nickname == null)
+              ElevatedButton(
+                onPressed: _onLoginButtonPressed,
+                child: const Text('Вход'),
+              )
+            else ...[
+              Text(
+                'Вы вошли как $_nickname',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _logout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Выйти'),
+              ),
+            ],
           ],
         ),
       ),
@@ -114,7 +147,7 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }

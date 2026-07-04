@@ -1,4 +1,69 @@
 basePath: /api/v1
+definitions:
+  v1.ErrorResponse:
+    properties:
+      error:
+        example: email already registered
+        type: string
+    type: object
+  v1.LoginRequest:
+    properties:
+      email:
+        example: solarwind.palm@gmail.com
+        type: string
+      password:
+        example: secret123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  v1.LoginResponse:
+    properties:
+      expires_at:
+        example: "2026-07-05T14:30:00Z"
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      user:
+        $ref: '#/definitions/v1.UserResponse'
+    type: object
+  v1.RegisterRequest:
+    properties:
+      email:
+        example: solarwind.palm@gmail.com
+        type: string
+      name:
+        example: Alexander Cheryomukhin
+        type: string
+      nickname:
+        example: solarwind
+        type: string
+      password:
+        example: secret123
+        minLength: 8
+        type: string
+    required:
+    - email
+    - nickname
+    - password
+    type: object
+  v1.UserResponse:
+    properties:
+      email:
+        example: solarwind.palm@gmail.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: Alexander Cheryomukhin
+        type: string
+      nickname:
+        example: solarwind
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -11,6 +76,85 @@ info:
   title: Travka API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Return profile of authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
   /server_info:
     get:
       description: Get server info
@@ -29,4 +173,10 @@ paths:
         "200":
           description: OK
       summary: Server status
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
