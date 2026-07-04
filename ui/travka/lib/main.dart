@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'api_request.dart';
 import 'registration.dart';
-//import 'api_request.dart';
 
 void main() => runApp(const TravkaApp());
 
@@ -18,21 +18,34 @@ class TravkaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 148, 49)),
         useMaterial3: true,
       ),
-      home: const TravkaHomePage(title: 'Travka Home'),
+      home: const TravkaHomePage(),
     );
   }
 }
 
 class TravkaHomePage extends StatefulWidget {
-  const TravkaHomePage({super.key, required this.title});
-  final String title;
+  const TravkaHomePage({super.key});
 
   @override
   State<TravkaHomePage> createState() => _TravkaHomePageState();
 }
 
 class _TravkaHomePageState extends State<TravkaHomePage> {
+  final ApiRequest _api = ApiRequest();
+  String _title = 'Travka Home';
   int _counter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServerName();
+  }
+
+  Future<void> _loadServerName() async {
+    final name = await _api.getServerInfo();
+    if (!mounted) return;
+    setState(() => _title = name);
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -41,7 +54,6 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
   }
 
   void _onRegisterButtonPressed() {
-    print('Reg!!!');
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const RegistrationPage()),
@@ -64,7 +76,7 @@ class _TravkaHomePageState extends State<TravkaHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text(_title),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it

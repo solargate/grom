@@ -1,17 +1,17 @@
-.PHONY: all travka travka-doc travka-web travka-cli clean
+.PHONY: all travka doc web cli clean
 
 all: travka
 
-travka: travka-doc travka-web travka-cli
+travka: doc web cli
 	cd cmd/travka && go build -o travka
 
-travka-cli:
+cli:
 	cd cmd/travka && go build -o travka
 
-travka-doc:
+doc:
 	cd api && swag init -d v1
 
-travka-web:
+web:
 	cd ui/travka && flutter build web
 	rm -rf internal/web/dist
 	cp -r ui/travka/build/web internal/web/dist
