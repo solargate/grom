@@ -15,14 +15,18 @@ type Config struct {
 
 var Cfg Config
 
-func GetConfig() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+func GetConfig(configPath string) {
+	if configPath != "" {
+		viper.SetConfigFile(configPath)
+	} else {
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+	}
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalln("Error reading config")
+		log.Fatalf("Error reading config: %v", err)
 	}
 
 	err = viper.Unmarshal(&Cfg)

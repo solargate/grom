@@ -1,8 +1,11 @@
-.PHONY: all travka travka-doc travka-web clean
+.PHONY: all travka travka-doc travka-web travka-cli clean
 
 all: travka
 
-travka: travka-doc travka-web
+travka: travka-doc travka-web travka-cli
+	cd cmd/travka && go build -o travka
+
+travka-cli:
 	cd cmd/travka && go build -o travka
 
 travka-doc:

@@ -32,7 +32,21 @@ func RunRouter() {
 		apiV1.GET("/server_info", getServerInfo)
 	}
 
-	router.GET("/api/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)
+	serveSwaggerUI := func(c *gin.Context) {
+		c.Request.URL.Path = "/api/docs/index.html"
+		c.Request.RequestURI = "/api/docs/index.html"
+		swaggerHandler(c)
+	}
+	router.GET("/api/docs", serveSwaggerUI)
+	router.GET("/api/docs/*any", func(c *gin.Context) {
+		switch c.Param("any") {
+		case "", "/":
+			serveSwaggerUI(c)
+		default:
+			swaggerHandler(c)
+		}
+	})
 
 	web.RegisterRoutes(router)
 
