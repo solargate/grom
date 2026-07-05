@@ -6,6 +6,7 @@ import '../auth_storage.dart';
 import '../login.dart';
 import '../pages/home_page.dart';
 import '../registration.dart';
+import '../widgets/add_workout_sheet.dart';
 import 'travka_destination.dart';
 import 'travka_side_menu.dart';
 
@@ -31,6 +32,7 @@ class _TravkaShellState extends State<TravkaShell> {
   String _title = 'Travka Home';
   String? _nickname;
   TravkaDestination _selectedDestination = TravkaDestination.home;
+  int _workoutRefreshToken = 0;
 
   bool get _isLoggedIn => _nickname != null;
 
@@ -144,7 +146,10 @@ class _TravkaShellState extends State<TravkaShell> {
   Widget _buildContent() {
     switch (_selectedDestination) {
       case TravkaDestination.home:
-        return HomePage(nickname: _nickname);
+        return HomePage(
+          nickname: _nickname,
+          refreshToken: _workoutRefreshToken,
+        );
       case TravkaDestination.login:
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -159,12 +164,17 @@ class _TravkaShellState extends State<TravkaShell> {
   }
 
   Widget? _buildFab(AppLocalizations l10n) {
-    if (_selectedDestination != TravkaDestination.home) {
+    if (_selectedDestination != TravkaDestination.home || !_isLoggedIn) {
       return null;
     }
 
     return FloatingActionButton(
-      onPressed: () {},
+      onPressed: () async {
+        final saved = await showAddWorkoutSheet(context);
+        if (saved == true && mounted) {
+          setState(() => _workoutRefreshToken++);
+        }
+      },
       tooltip: l10n.add,
       child: const Icon(Icons.add),
     );

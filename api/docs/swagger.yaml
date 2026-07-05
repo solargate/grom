@@ -1,5 +1,30 @@
 basePath: /api/v1
 definitions:
+  v1.CreateWorkoutRequest:
+    properties:
+      description:
+        example: Easy session
+        type: string
+      distance:
+        example: 5200
+        type: number
+      duration_seconds:
+        example: 3600
+        type: integer
+      name:
+        example: Morning run
+        type: string
+      sport_type:
+        example: Run
+        type: string
+      start_date:
+        example: "2026-07-05T14:30:00+03:00"
+        type: string
+    required:
+    - name
+    - sport_type
+    - start_date
+    type: object
   v1.ErrorResponse:
     properties:
       error:
@@ -62,6 +87,30 @@ definitions:
         type: string
       nickname:
         example: solarwind
+        type: string
+    type: object
+  v1.WorkoutResponse:
+    properties:
+      description:
+        example: Easy session
+        type: string
+      distance:
+        example: 5200
+        type: number
+      duration_seconds:
+        example: 3600
+        type: integer
+      id:
+        example: a866c734-9a31-45ab-9dd4-e4d0fd12e4fd
+        type: string
+      name:
+        example: Morning run
+        type: string
+      sport_type:
+        example: Run
+        type: string
+      start_date:
+        example: "2026-07-05T14:30:00+03:00"
         type: string
     type: object
 host: localhost:8080
@@ -177,6 +226,67 @@ paths:
       summary: Server status
       tags:
       - server_info
+  /workouts:
+    get:
+      description: Return workouts for the authenticated user sorted by start date
+        descending
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.WorkoutResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List workouts
+      tags:
+      - workouts
+    post:
+      consumes:
+      - application/json
+      description: Create a manual workout for the authenticated user
+      parameters:
+      - description: Workout data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.CreateWorkoutRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.WorkoutResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create workout
+      tags:
+      - workouts
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

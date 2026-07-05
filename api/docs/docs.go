@@ -178,9 +178,138 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/workouts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return workouts for the authenticated user sorted by start date descending",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "List workouts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.WorkoutResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a manual workout for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Create workout",
+                "parameters": [
+                    {
+                        "description": "Workout data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.CreateWorkoutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.WorkoutResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "v1.CreateWorkoutRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "sport_type",
+                "start_date"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Easy session"
+                },
+                "distance": {
+                    "type": "number",
+                    "example": 5200
+                },
+                "duration_seconds": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Morning run"
+                },
+                "sport_type": {
+                    "type": "string",
+                    "example": "Run"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:00+03:00"
+                }
+            }
+        },
         "v1.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -268,6 +397,39 @@ const docTemplate = `{
                 "nickname": {
                     "type": "string",
                     "example": "solarwind"
+                }
+            }
+        },
+        "v1.WorkoutResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Easy session"
+                },
+                "distance": {
+                    "type": "number",
+                    "example": 5200
+                },
+                "duration_seconds": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a866c734-9a31-45ab-9dd4-e4d0fd12e4fd"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Morning run"
+                },
+                "sport_type": {
+                    "type": "string",
+                    "example": "Run"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:00+03:00"
                 }
             }
         }

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'models/workout.dart';
+
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
 
@@ -116,6 +118,43 @@ class ApiRequest {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return UserInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<Workout> createWorkout({
+    required String token,
+    required Map<String, dynamic> body,
+  }) async {
+    final response = await http.post(
+      Uri.parse('/api/v1/workouts'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<Workout>> listWorkouts(String token) async {
+    final response = await http.get(
+      Uri.parse('/api/v1/workouts'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => Workout.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
 
     throw _parseError(response);

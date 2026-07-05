@@ -97,4 +97,275 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get languageGerman => 'Deutsch';
+
+  @override
+  String get addWorkout => 'Training hinzufügen';
+
+  @override
+  String get workoutName => 'Trainingsname';
+
+  @override
+  String get workoutDescription => 'Beschreibung';
+
+  @override
+  String get workoutType => 'Trainingstyp';
+
+  @override
+  String get workoutDate => 'Datum';
+
+  @override
+  String get workoutStartTime => 'Startzeit';
+
+  @override
+  String get workoutDuration => 'Dauer';
+
+  @override
+  String get workoutDistance => 'Distanz';
+
+  @override
+  String get save => 'Speichern';
+
+  @override
+  String get cancel => 'Abbrechen';
+
+  @override
+  String get selectWorkoutType => 'Trainingstyp auswählen';
+
+  @override
+  String get enterWorkoutName => 'Trainingsname eingeben';
+
+  @override
+  String get workoutSaved => 'Training gespeichert';
+
+  @override
+  String get failedToSaveWorkout => 'Training konnte nicht gespeichert werden';
+
+  @override
+  String get failedToLoadWorkouts => 'Trainings konnten nicht geladen werden';
+
+  @override
+  String get retry => 'Erneut versuchen';
+
+  @override
+  String get noWorkoutsYet => 'Sie haben noch keine Trainings';
+
+  @override
+  String get durationZero => '0 s';
+
+  @override
+  String get distanceZero => '0 km';
+
+  @override
+  String durationHours(int hours) {
+    return '$hours Std';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '$minutes Min';
+  }
+
+  @override
+  String durationSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String distanceKilometers(String value) {
+    return '$value km';
+  }
+
+  @override
+  String distanceMeters(int value) {
+    return '$value m';
+  }
+
+  @override
+  String get selectDuration => 'Dauer auswählen';
+
+  @override
+  String get selectDistance => 'Distanz auswählen';
+
+  @override
+  String get hoursLabel => 'Stunden';
+
+  @override
+  String get minutesLabel => 'Minuten';
+
+  @override
+  String get secondsLabel => 'Sekunden';
+
+  @override
+  String get kilometersLabel => 'Kilometer';
+
+  @override
+  String get sportCategoryFoot => 'Laufsport';
+
+  @override
+  String get sportCategoryCycle => 'Radsport';
+
+  @override
+  String get sportCategoryWater => 'Wassersport';
+
+  @override
+  String get sportCategoryWinter => 'Wintersport';
+
+  @override
+  String get sportCategoryOther => 'Andere Sportarten';
+
+  @override
+  String get sportTypeRun => 'Laufen';
+
+  @override
+  String get sportTypeHike => 'Wandern';
+
+  @override
+  String get sportTypeTrailRun => 'Trailrun';
+
+  @override
+  String get sportTypeWheelchair => 'Rollstuhl';
+
+  @override
+  String get sportTypeWalk => 'Gehen';
+
+  @override
+  String get sportTypeRide => 'Radfahren';
+
+  @override
+  String get sportTypeEBikeRide => 'E-Bike';
+
+  @override
+  String get sportTypeMountainBikeRide => 'Mountainbike';
+
+  @override
+  String get sportTypeEMountainBikeRide => 'E-Mountainbike';
+
+  @override
+  String get sportTypeGravelRide => 'Gravel';
+
+  @override
+  String get sportTypeVelomobile => 'Velomobil';
+
+  @override
+  String get sportTypeHandcycle => 'Handbike';
+
+  @override
+  String get sportTypeCanoeing => 'Kanu';
+
+  @override
+  String get sportTypeStandUpPaddling => 'Stand-Up-Paddling';
+
+  @override
+  String get sportTypeKayaking => 'Kajak';
+
+  @override
+  String get sportTypeSurfing => 'Surfen';
+
+  @override
+  String get sportTypeKitesurf => 'Kitesurfen';
+
+  @override
+  String get sportTypeSwim => 'Schwimmen';
+
+  @override
+  String get sportTypeRowing => 'Rudern';
+
+  @override
+  String get sportTypeWindsurf => 'Windsurfen';
+
+  @override
+  String get sportTypeSail => 'Segeln';
+
+  @override
+  String get sportTypeIceSkate => 'Eislaufen';
+
+  @override
+  String get sportTypeNordicSki => 'Skilanglauf';
+
+  @override
+  String get sportTypeAlpineSki => 'Skifahren';
+
+  @override
+  String get sportTypeSnowboard => 'Snowboard';
+
+  @override
+  String get sportTypeBackcountrySki => 'Skitour';
+
+  @override
+  String get sportTypeSnowshoe => 'Schneeschuhwandern';
+
+  @override
+  String get sportTypeWorkout => 'Workout';
+
+  @override
+  String get sportTypeGolf => 'Golf';
+
+  @override
+  String get sportTypeBadminton => 'Badminton';
+
+  @override
+  String get sportTypeElliptical => 'Crosstrainer';
+
+  @override
+  String get sportTypeBasketball => 'Basketball';
+
+  @override
+  String get sportTypeInlineSkate => 'Inlineskaten';
+
+  @override
+  String get sportTypeSkateboard => 'Skateboard';
+
+  @override
+  String get sportTypeTennis => 'Tennis';
+
+  @override
+  String get sportTypeStairStepper => 'Stepper';
+
+  @override
+  String get sportTypePadel => 'Padel';
+
+  @override
+  String get sportTypeRockClimbing => 'Klettern';
+
+  @override
+  String get sportTypeSoccer => 'Fußball';
+
+  @override
+  String get sportTypePickleball => 'Pickleball';
+
+  @override
+  String get sportTypeWeightTraining => 'Krafttraining';
+
+  @override
+  String get sportTypeVolleyball => 'Volleyball';
+
+  @override
+  String get sportTypeRollerSki => 'Rollerski';
+
+  @override
+  String get sportTypeSquash => 'Squash';
+
+  @override
+  String get sportTypeCrossfit => 'Crossfit';
+
+  @override
+  String get sportTypeYoga => 'Yoga';
+
+  @override
+  String get sportTypeDance => 'Tanz';
+
+  @override
+  String get sportTypeTableTennis => 'Tischtennis';
+
+  @override
+  String get sportTypePilates => 'Pilates';
+
+  @override
+  String get sportTypeRacquetball => 'Racquetball';
+
+  @override
+  String get sportTypeHiit => 'HIIT';
+
+  @override
+  String get sportTypeCricket => 'Cricket';
 }

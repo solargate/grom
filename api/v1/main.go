@@ -44,6 +44,10 @@ func RunRouter() {
 		authGroup.POST("/register", register)
 		authGroup.POST("/login", login)
 		authGroup.GET("/me", auth.AuthRequired(), getMe)
+
+		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
+		workoutGroup.POST("", createWorkout)
+		workoutGroup.GET("", listWorkouts)
 	}
 
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)

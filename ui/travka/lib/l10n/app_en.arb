@@ -41,5 +41,127 @@
   "language": "Language",
   "languageEnglish": "English",
   "languageRussian": "Russian",
-  "languageGerman": "German"
+  "languageGerman": "German",
+  "addWorkout": "Add workout",
+  "workoutName": "Workout name",
+  "workoutDescription": "Description",
+  "workoutType": "Workout type",
+  "workoutDate": "Date",
+  "workoutStartTime": "Start time",
+  "workoutDuration": "Duration",
+  "workoutDistance": "Distance",
+  "save": "Save",
+  "cancel": "Cancel",
+  "selectWorkoutType": "Select workout type",
+  "enterWorkoutName": "Enter workout name",
+  "workoutSaved": "Workout saved",
+  "failedToSaveWorkout": "Failed to save workout",
+  "failedToLoadWorkouts": "Failed to load workouts",
+  "retry": "Retry",
+  "noWorkoutsYet": "You have no workouts yet",
+  "durationZero": "0s",
+  "distanceZero": "0 km",
+  "durationHours": "{hours}h",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationSeconds": "{seconds}s",
+  "@durationSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "distanceKilometers": "{value} km",
+  "@distanceKilometers": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMeters": "{value} m",
+  "@distanceMeters": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "selectDuration": "Select duration",
+  "selectDistance": "Select distance",
+  "hoursLabel": "Hours",
+  "minutesLabel": "Minutes",
+  "secondsLabel": "Seconds",
+  "kilometersLabel": "Kilometers",
+  "sportCategoryFoot": "Foot Sports",
+  "sportCategoryCycle": "Cycle Sports",
+  "sportCategoryWater": "Water Sports",
+  "sportCategoryWinter": "Winter Sports",
+  "sportCategoryOther": "Other Sports",
+  "sportTypeRun": "Run",
+  "sportTypeHike": "Hike",
+  "sportTypeTrailRun": "Trail Run",
+  "sportTypeWheelchair": "Wheelchair",
+  "sportTypeWalk": "Walk",
+  "sportTypeRide": "Ride",
+  "sportTypeEBikeRide": "E-Bike Ride",
+  "sportTypeMountainBikeRide": "Mountain Bike Ride",
+  "sportTypeEMountainBikeRide": "E-Mountain Bike Ride",
+  "sportTypeGravelRide": "Gravel Ride",
+  "sportTypeVelomobile": "Velomobile",
+  "sportTypeHandcycle": "Handcycle",
+  "sportTypeCanoeing": "Canoe",
+  "sportTypeStandUpPaddling": "Stand Up Paddling",
+  "sportTypeKayaking": "Kayak",
+  "sportTypeSurfing": "Surf",
+  "sportTypeKitesurf": "Kitesurf",
+  "sportTypeSwim": "Swim",
+  "sportTypeRowing": "Rowing",
+  "sportTypeWindsurf": "Windsurf",
+  "sportTypeSail": "Sailing",
+  "sportTypeIceSkate": "Ice Skate",
+  "sportTypeNordicSki": "Nordic Ski",
+  "sportTypeAlpineSki": "Alpine Ski",
+  "sportTypeSnowboard": "Snowboard",
+  "sportTypeBackcountrySki": "Backcountry Ski",
+  "sportTypeSnowshoe": "Snowshoe",
+  "sportTypeWorkout": "Workout",
+  "sportTypeGolf": "Golf",
+  "sportTypeBadminton": "Badminton",
+  "sportTypeElliptical": "Eliptical",
+  "sportTypeBasketball": "Basketball",
+  "sportTypeInlineSkate": "Inline Skate",
+  "sportTypeSkateboard": "Skateboarding",
+  "sportTypeTennis": "Tennis",
+  "sportTypeStairStepper": "Stair Stepper",
+  "sportTypePadel": "Padel",
+  "sportTypeRockClimbing": "Rock Climb",
+  "sportTypeSoccer": "Football (Soccer)",
+  "sportTypePickleball": "Pickleball",
+  "sportTypeWeightTraining": "Weight Training",
+  "sportTypeVolleyball": "Volleyball",
+  "sportTypeRollerSki": "Roller Ski",
+  "sportTypeSquash": "Squash",
+  "sportTypeCrossfit": "Crossfit",
+  "sportTypeYoga": "Yoga",
+  "sportTypeDance": "Dance",
+  "sportTypeTableTennis": "Table Tennis",
+  "sportTypePilates": "Pilates",
+  "sportTypeRacquetball": "Racquetball",
+  "sportTypeHiit": "HIIT",
+  "sportTypeCricket": "Cricket"
 }

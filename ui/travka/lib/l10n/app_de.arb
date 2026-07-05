@@ -7,9 +7,23 @@
   "signOut": "Abmelden",
   "add": "Hinzufügen",
   "welcomeUser": "Willkommen, {nickname}!",
+  "@welcomeUser": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
   "registrationSuccessful": "Registrierung erfolgreich. Bitte melden Sie sich an.",
   "signedOut": "Sie haben sich abgemeldet",
   "signedInAs": "Angemeldet als {nickname}",
+  "@signedInAs": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
   "failedToSignIn": "Anmeldung fehlgeschlagen",
   "failedToRegister": "Registrierung fehlgeschlagen",
   "enterEmail": "E-Mail eingeben",
@@ -27,5 +41,127 @@
   "language": "Sprache",
   "languageEnglish": "English",
   "languageRussian": "Русский",
-  "languageGerman": "Deutsch"
+  "languageGerman": "Deutsch",
+  "addWorkout": "Training hinzufügen",
+  "workoutName": "Trainingsname",
+  "workoutDescription": "Beschreibung",
+  "workoutType": "Trainingstyp",
+  "workoutDate": "Datum",
+  "workoutStartTime": "Startzeit",
+  "workoutDuration": "Dauer",
+  "workoutDistance": "Distanz",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "selectWorkoutType": "Trainingstyp auswählen",
+  "enterWorkoutName": "Trainingsname eingeben",
+  "workoutSaved": "Training gespeichert",
+  "failedToSaveWorkout": "Training konnte nicht gespeichert werden",
+  "failedToLoadWorkouts": "Trainings konnten nicht geladen werden",
+  "retry": "Erneut versuchen",
+  "noWorkoutsYet": "Sie haben noch keine Trainings",
+  "durationZero": "0 s",
+  "distanceZero": "0 km",
+  "durationHours": "{hours} Std",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} Min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationSeconds": "{seconds} s",
+  "@durationSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "distanceKilometers": "{value} km",
+  "@distanceKilometers": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMeters": "{value} m",
+  "@distanceMeters": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "selectDuration": "Dauer auswählen",
+  "selectDistance": "Distanz auswählen",
+  "hoursLabel": "Stunden",
+  "minutesLabel": "Minuten",
+  "secondsLabel": "Sekunden",
+  "kilometersLabel": "Kilometer",
+  "sportCategoryFoot": "Laufsport",
+  "sportCategoryCycle": "Radsport",
+  "sportCategoryWater": "Wassersport",
+  "sportCategoryWinter": "Wintersport",
+  "sportCategoryOther": "Andere Sportarten",
+  "sportTypeRun": "Laufen",
+  "sportTypeHike": "Wandern",
+  "sportTypeTrailRun": "Trailrun",
+  "sportTypeWheelchair": "Rollstuhl",
+  "sportTypeWalk": "Gehen",
+  "sportTypeRide": "Radfahren",
+  "sportTypeEBikeRide": "E-Bike",
+  "sportTypeMountainBikeRide": "Mountainbike",
+  "sportTypeEMountainBikeRide": "E-Mountainbike",
+  "sportTypeGravelRide": "Gravel",
+  "sportTypeVelomobile": "Velomobil",
+  "sportTypeHandcycle": "Handbike",
+  "sportTypeCanoeing": "Kanu",
+  "sportTypeStandUpPaddling": "Stand-Up-Paddling",
+  "sportTypeKayaking": "Kajak",
+  "sportTypeSurfing": "Surfen",
+  "sportTypeKitesurf": "Kitesurfen",
+  "sportTypeSwim": "Schwimmen",
+  "sportTypeRowing": "Rudern",
+  "sportTypeWindsurf": "Windsurfen",
+  "sportTypeSail": "Segeln",
+  "sportTypeIceSkate": "Eislaufen",
+  "sportTypeNordicSki": "Skilanglauf",
+  "sportTypeAlpineSki": "Skifahren",
+  "sportTypeSnowboard": "Snowboard",
+  "sportTypeBackcountrySki": "Skitour",
+  "sportTypeSnowshoe": "Schneeschuhwandern",
+  "sportTypeWorkout": "Workout",
+  "sportTypeGolf": "Golf",
+  "sportTypeBadminton": "Badminton",
+  "sportTypeElliptical": "Crosstrainer",
+  "sportTypeBasketball": "Basketball",
+  "sportTypeInlineSkate": "Inlineskaten",
+  "sportTypeSkateboard": "Skateboard",
+  "sportTypeTennis": "Tennis",
+  "sportTypeStairStepper": "Stepper",
+  "sportTypePadel": "Padel",
+  "sportTypeRockClimbing": "Klettern",
+  "sportTypeSoccer": "Fußball",
+  "sportTypePickleball": "Pickleball",
+  "sportTypeWeightTraining": "Krafttraining",
+  "sportTypeVolleyball": "Volleyball",
+  "sportTypeRollerSki": "Rollerski",
+  "sportTypeSquash": "Squash",
+  "sportTypeCrossfit": "Crossfit",
+  "sportTypeYoga": "Yoga",
+  "sportTypeDance": "Tanz",
+  "sportTypeTableTennis": "Tischtennis",
+  "sportTypePilates": "Pilates",
+  "sportTypeRacquetball": "Racquetball",
+  "sportTypeHiit": "HIIT",
+  "sportTypeCricket": "Cricket"
 }

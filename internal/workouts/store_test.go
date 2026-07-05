@@ -1,0 +1,119 @@
+package workouts
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestStoreCreateAndList(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	startDate := time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC)
+	created, err := store.Create("solarwind", &Workout{
+		Name:            "Morning run",
+		Description:     "Easy session",
+		SportType:       "Run",
+		StartDate:       startDate,
+		DurationSeconds: 3600,
+		Distance:        5200,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if created.ID == "" {
+		t.Fatal("expected generated id")
+	}
+
+	expectedBase := "2026-07-05T143000Z-" + created.ID
+	expectedDir := filepath.Join(dir, "solarwind", expectedBase)
+	if info, err := os.Stat(expectedDir); err != nil || !info.IsDir() {
+		t.Fatalf("expected workout dir %q: %v", expectedDir, err)
+	}
+
+	expectedFile := filepath.Join(expectedDir, expectedBase+".yaml")
+	if _, err := os.Stat(expectedFile); err != nil {
+		t.Fatalf("expected workout file %q: %v", expectedFile, err)
+	}
+
+	workouts, err := store.List("solarwind")
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(workouts) != 1 {
+		t.Fatalf("expected 1 workout, got %d", len(workouts))
+	}
+	if workouts[0].Name != "Morning run" {
+		t.Fatalf("expected name Morning run, got %q", workouts[0].Name)
+	}
+	if workouts[0].Distance != 5200 {
+		t.Fatalf("expected distance 5200, got %v", workouts[0].Distance)
+	}
+}
+
+func TestStoreRejectsInvalidSportType(t *testing.T) {
+	store := NewStore(t.TempDir())
+	_, err := store.Create("solarwind", &Workout{
+		Name:      "Test",
+		SportType: "InvalidType",
+		StartDate: time.Now().UTC(),
+	})
+	if err != ErrInvalidSportType {
+		t.Fatalf("expected ErrInvalidSportType, got %v", err)
+	}
+}
+
+func TestStoreListSortedDescending(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	older := time.Date(2026, 7, 4, 10, 0, 0, 0, time.UTC)
+	newer := time.Date(2026, 7, 5, 10, 0, 0, 0, time.UTC)
+
+	if _, err := store.Create("athlete", &Workout{
+		Name: "Older", SportType: "Run", StartDate: older,
+	}); err != nil {
+		t.Fatalf("Create older: %v", err)
+	}
+	if _, err := store.Create("athlete", &Workout{
+		Name: "Newer", SportType: "Ride", StartDate: newer,
+	}); err != nil {
+		t.Fatalf("Create newer: %v", err)
+	}
+
+	workouts, err := store.List("athlete")
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(workouts) != 2 {
+		t.Fatalf("expected 2 workouts, got %d", len(workouts))
+	}
+	if workouts[0].Name != "Newer" {
+		t.Fatalf("expected newer workout first, got %q", workouts[0].Name)
+	}
+}
+
+func TestStoreCreateFailsIfWorkoutDirExists(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	startDate := time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC)
+	created, err := store.Create("solarwind", &Workout{
+		Name: "First", SportType: "Run", StartDate: startDate,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	_, err = store.saveWorkout("solarwind", &Workout{
+		ID:        created.ID,
+		Name:      "Duplicate",
+		SportType: "Run",
+		StartDate: startDate,
+	})
+	if err != ErrWorkoutExists {
+		t.Fatalf("expected ErrWorkoutExists, got %v", err)
+	}
+}
