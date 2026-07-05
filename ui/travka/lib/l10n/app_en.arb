@@ -1,0 +1,45 @@
+{
+  "@@locale": "en",
+  "appTitle": "Travka",
+  "home": "Home",
+  "signIn": "Sign in",
+  "register": "Register",
+  "signOut": "Sign out",
+  "add": "Add",
+  "welcomeUser": "Welcome, {nickname}!",
+  "@welcomeUser": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "registrationSuccessful": "Registration successful. Please sign in.",
+  "signedOut": "You have signed out",
+  "signedInAs": "Signed in as {nickname}",
+  "@signedInAs": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSignIn": "Failed to sign in",
+  "failedToRegister": "Failed to register",
+  "enterEmail": "Enter email",
+  "enterValidEmail": "Enter a valid email",
+  "emailLabel": "Email *",
+  "enterPassword": "Enter password",
+  "passwordLabel": "Password *",
+  "enterNickname": "Enter nickname",
+  "nicknameLabel": "Nickname *",
+  "nameLabel": "Name",
+  "passwordMinLength": "Password must be at least 8 characters",
+  "confirmPasswordLabel": "Confirm password *",
+  "confirmPassword": "Confirm password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "language": "Language",
+  "languageEnglish": "English",
+  "languageRussian": "Russian",
+  "languageGerman": "German"
+}
