@@ -151,6 +151,9 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "server_info"
+                ],
                 "summary": "Server info",
                 "responses": {
                     "200": {
@@ -164,6 +167,9 @@ const docTemplate = `{
                 "description": "Get server status",
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server_info"
                 ],
                 "summary": "Server status",
                 "responses": {

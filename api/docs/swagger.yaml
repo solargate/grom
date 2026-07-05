@@ -164,6 +164,8 @@ paths:
         "200":
           description: OK
       summary: Server info
+      tags:
+      - server_info
   /status:
     get:
       description: Get server status
@@ -173,6 +175,8 @@ paths:
         "200":
           description: OK
       summary: Server status
+      tags:
+      - server_info
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.
