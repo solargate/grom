@@ -48,10 +48,7 @@ class _LoginFormState extends State<LoginForm> {
         password: _passwordController.text,
       );
 
-      await AuthStorage.saveSession(
-        token: result.token,
-        nickname: result.user.nickname,
-      );
+      await AuthStorage.saveToken(result.token);
 
       if (!mounted) return;
 

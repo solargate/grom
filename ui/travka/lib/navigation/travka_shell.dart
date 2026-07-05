@@ -42,7 +42,22 @@ class _TravkaShellState extends State<TravkaShell> {
 
   Future<void> _loadInitialData() async {
     final name = await _api.getServerInfo();
-    final nickname = await AuthStorage.getNickname();
+    final token = await AuthStorage.getToken();
+
+    String? nickname;
+    if (token != null) {
+      try {
+        final user = await _api.getMe(token);
+        nickname = user.nickname;
+      } on ApiException catch (e) {
+        if (e.statusCode == 401) {
+          await AuthStorage.clear();
+        }
+      } catch (_) {
+        // Network or server errors: keep token, show logged-out UI.
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _title = name;

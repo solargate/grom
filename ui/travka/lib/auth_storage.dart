@@ -1,16 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 const tokenStorageKey = 'auth_token';
-const nicknameStorageKey = 'auth_nickname';
+const _legacyNicknameStorageKey = 'auth_nickname';
 
 class AuthStorage {
-  static Future<void> saveSession({
-    required String token,
-    required String nickname,
-  }) async {
+  static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(tokenStorageKey, token);
-    await prefs.setString(nicknameStorageKey, nickname);
   }
 
   static Future<String?> getToken() async {
@@ -18,14 +14,9 @@ class AuthStorage {
     return prefs.getString(tokenStorageKey);
   }
 
-  static Future<String?> getNickname() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(nicknameStorageKey);
-  }
-
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(tokenStorageKey);
-    await prefs.remove(nicknameStorageKey);
+    await prefs.remove(_legacyNicknameStorageKey);
   }
 }
