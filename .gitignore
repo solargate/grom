@@ -3,4 +3,4 @@
 cmd/travka/travka
 cmd/travka/users.yaml
 internal/web/dist/*
-!internal/web/dist/index.html
+#!internal/web/dist/index.html
