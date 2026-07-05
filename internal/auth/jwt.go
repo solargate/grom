@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/config"
 )
 
 const ContextUserIDKey = "userID"

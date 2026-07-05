@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	apiV1 "github.com/solargate/travka/api/v1"
-	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/config"
 )
 
 func main() {

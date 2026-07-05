@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/auth"
 	"github.com/solargate/travka/internal/users"
 )

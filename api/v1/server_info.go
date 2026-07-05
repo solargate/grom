@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/config"
 )
 
 // statusCheck godoc

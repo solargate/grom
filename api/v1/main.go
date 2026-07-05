@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/solargate/travka/api/docs"
-	"github.com/solargate/travka/config"
+	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/auth"
 	"github.com/solargate/travka/internal/web"
 
