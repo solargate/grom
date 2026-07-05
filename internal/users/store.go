@@ -4,33 +4,81 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/solargate/travka/internal/auth"
 	"gopkg.in/yaml.v3"
 )
 
+const usersFileName = "users.yaml"
+const maxNicknameLen = 64
+
 var (
-	ErrEmailTaken    = errors.New("email already registered")
-	ErrNicknameTaken = errors.New("nickname already taken")
-	ErrUserNotFound  = errors.New("user not found")
+	ErrEmailTaken      = errors.New("email already registered")
+	ErrNicknameTaken   = errors.New("nickname already taken")
+	ErrInvalidNickname = errors.New("invalid nickname")
+	ErrUserNotFound    = errors.New("user not found")
 )
 
 type Store struct {
-	path  string
-	mu    sync.Mutex
-	users []User
+	dataDir string
+	path    string
+	mu      sync.Mutex
+	users   []User
 }
 
-func NewStore(path string) (*Store, error) {
-	s := &Store{path: path}
+func NewStore(dataDir string) (*Store, error) {
+	s := &Store{
+		dataDir: dataDir,
+		path:    filepath.Join(dataDir, usersFileName),
+	}
 	if err := s.load(); err != nil {
 		return nil, err
 	}
+	if err := s.ensureUserDirs(); err != nil {
+		return nil, err
+	}
 	return s, nil
+}
+
+func (s *Store) ensureUserDirs() error {
+	for _, user := range s.users {
+		if err := ensureUserDir(s.dataDir, user.Nickname); err != nil {
+			return fmt.Errorf("ensure user dir for %q: %w", user.Nickname, err)
+		}
+	}
+	return nil
+}
+
+func ensureUserDir(dataDir, nickname string) error {
+	userDir := filepath.Join(dataDir, nickname)
+	if err := os.Mkdir(userDir, 0700); err != nil && !os.IsExist(err) {
+		return err
+	}
+	return nil
+}
+
+func validateNickname(nickname string) error {
+	if nickname == "" {
+		return ErrInvalidNickname
+	}
+	if len(nickname) > maxNicknameLen {
+		return ErrInvalidNickname
+	}
+	if strings.Contains(nickname, "..") {
+		return ErrInvalidNickname
+	}
+	for _, r := range nickname {
+		if r == '/' || r == '\\' || r == 0 || unicode.IsControl(r) {
+			return ErrInvalidNickname
+		}
+	}
+	return nil
 }
 
 func (s *Store) load() error {
@@ -100,6 +148,10 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 	name = strings.TrimSpace(name)
 	email = strings.TrimSpace(email)
 
+	if err := validateNickname(nickname); err != nil {
+		return nil, err
+	}
+
 	normalizedEmail := strings.ToLower(email)
 	for i := range s.users {
 		if strings.ToLower(s.users[i].Email) == normalizedEmail {
@@ -108,6 +160,10 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 		if strings.EqualFold(s.users[i].Nickname, nickname) {
 			return nil, ErrNicknameTaken
 		}
+	}
+
+	if err := ensureUserDir(s.dataDir, nickname); err != nil {
+		return nil, err
 	}
 
 	hash, err := auth.HashPassword(password)

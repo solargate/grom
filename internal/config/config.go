@@ -2,7 +2,9 @@ package config
 
 import (
 	"log"
+	"os"
 
+	"github.com/solargate/travka/internal/data"
 	"github.com/spf13/viper"
 )
 
@@ -15,9 +17,10 @@ type Config struct {
 		JWTSecret   string `mapstructure:"jwt_secret" yaml:"jwt_secret"`
 		JWTTTLHours int    `mapstructure:"jwt_ttl_hours" yaml:"jwt_ttl_hours"`
 	} `mapstructure:"auth" yaml:"auth"`
-	Users struct {
-		File string `mapstructure:"file" yaml:"file"`
-	} `mapstructure:"users" yaml:"users"`
+	Data struct {
+		Location    string `mapstructure:"location" yaml:"location"`
+		ResolvedDir string `mapstructure:"-" yaml:"-"`
+	} `mapstructure:"data" yaml:"data"`
 }
 
 var Cfg Config
@@ -44,10 +47,19 @@ func GetConfig(configPath string) {
 	if Cfg.Auth.JWTTTLHours <= 0 {
 		Cfg.Auth.JWTTTLHours = 24
 	}
-	if Cfg.Users.File == "" {
-		Cfg.Users.File = "./users.yaml"
+	if Cfg.Data.Location == "" {
+		Cfg.Data.Location = "data"
 	}
 	if Cfg.Auth.JWTSecret == "" {
 		log.Fatalln("auth.jwt_secret must be set in config")
 	}
+
+	resolvedDir, err := data.ResolveDataDir(Cfg.Data.Location)
+	if err != nil {
+		log.Fatalf("Error resolving data location: %v", err)
+	}
+	if err := os.MkdirAll(resolvedDir, 0700); err != nil {
+		log.Fatalf("Error creating data directory: %v", err)
+	}
+	Cfg.Data.ResolvedDir = resolvedDir
 }

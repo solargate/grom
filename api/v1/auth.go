@@ -17,7 +17,7 @@ func initUserStore() error {
 	if userStore != nil {
 		return nil
 	}
-	store, err := users.NewStore(config.Cfg.Users.File)
+	store, err := users.NewStore(config.Cfg.Data.ResolvedDir)
 	if err != nil {
 		return err
 	}
@@ -83,6 +83,10 @@ func register(ctx *gin.Context) {
 
 	user, err := userStore.Create(req.Nickname, req.Name, req.Email, req.Password)
 	if err != nil {
+		if errors.Is(err, users.ErrInvalidNickname) {
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
 		if errors.Is(err, users.ErrEmailTaken) || errors.Is(err, users.ErrNicknameTaken) {
 			ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 			return

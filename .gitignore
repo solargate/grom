@@ -1,6 +1,6 @@
 .vscode/
 .cursor/
 cmd/travka/travka
-cmd/travka/users.yaml
+cmd/travka/data/
 internal/web/dist/*
 #!internal/web/dist/index.html
