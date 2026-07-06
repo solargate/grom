@@ -86,6 +86,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordsDoNotMatch => 'Passwords do not match';
 
   @override
+  String get serverUrlLabel => 'Server URL *';
+
+  @override
+  String get enterServerUrl => 'Enter server URL';
+
+  @override
+  String get enterValidServerUrl => 'Enter a valid URL (https://...)';
+
+  @override
   String get language => 'Language';
 
   @override

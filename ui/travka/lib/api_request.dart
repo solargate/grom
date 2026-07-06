@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'models/parsed_track_metadata.dart';
 import 'models/workout.dart';
+import 'server_storage.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
@@ -51,8 +52,16 @@ class LoginResult {
 }
 
 class ApiRequest {
+  Uri _uri(String path) {
+    final base = ServerStorage.cachedBaseUrl;
+    if (base == null || base.isEmpty) {
+      return Uri.parse(path);
+    }
+    return Uri.parse(base).resolve(path.startsWith('/') ? path.substring(1) : path);
+  }
+
   Future<String> getServerInfo() async {
-    final response = await http.get(Uri.parse('/api/v1/server_info'));
+    final response = await http.get(_uri('/api/v1/server_info'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return json['name'] as String;
@@ -67,7 +76,7 @@ class ApiRequest {
     required String password,
   }) async {
     final response = await http.post(
-      Uri.parse('/api/v1/auth/register'),
+      _uri('/api/v1/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'nickname': nickname,
@@ -90,7 +99,7 @@ class ApiRequest {
     required String password,
   }) async {
     final response = await http.post(
-      Uri.parse('/api/v1/auth/login'),
+      _uri('/api/v1/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -112,7 +121,7 @@ class ApiRequest {
 
   Future<UserInfo> getMe(String token) async {
     final response = await http.get(
-      Uri.parse('/api/v1/auth/me'),
+      _uri('/api/v1/auth/me'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -129,7 +138,7 @@ class ApiRequest {
     required Map<String, dynamic> body,
   }) async {
     final response = await http.post(
-      Uri.parse('/api/v1/workouts'),
+      _uri('/api/v1/workouts'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -153,7 +162,7 @@ class ApiRequest {
   }) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('/api/v1/workouts'),
+      _uri('/api/v1/workouts'),
     );
     request.headers['Authorization'] = 'Bearer $token';
     for (final entry in fields.entries) {
@@ -185,7 +194,7 @@ class ApiRequest {
   }) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('/api/v1/workouts/parse-track'),
+      _uri('/api/v1/workouts/parse-track'),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.files.add(
@@ -208,12 +217,12 @@ class ApiRequest {
   }
 
   String mapPreviewUrl(String workoutId) {
-    return '/api/v1/workouts/$workoutId/map-preview';
+    return _uri('/api/v1/workouts/$workoutId/map-preview').toString();
   }
 
   Future<List<Workout>> listWorkouts(String token) async {
     final response = await http.get(
-      Uri.parse('/api/v1/workouts'),
+      _uri('/api/v1/workouts'),
       headers: {'Authorization': 'Bearer $token'},
     );
 

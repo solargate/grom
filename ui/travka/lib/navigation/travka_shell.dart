@@ -5,7 +5,9 @@ import '../api_request.dart';
 import '../auth_storage.dart';
 import '../login.dart';
 import '../pages/home_page.dart';
+import '../platform/is_mobile_client.dart';
 import '../registration.dart';
+import '../server_storage.dart';
 import '../widgets/add_workout_sheet.dart';
 import 'travka_destination.dart';
 import 'travka_side_menu.dart';
@@ -43,7 +45,15 @@ class _TravkaShellState extends State<TravkaShell> {
   }
 
   Future<void> _loadInitialData() async {
-    final name = await _api.getServerInfo();
+    String name = 'Travka';
+    if (!isMobileClient || ServerStorage.cachedBaseUrl != null) {
+      try {
+        name = await _api.getServerInfo();
+      } catch (_) {
+        // Network or server errors: keep default title.
+      }
+    }
+
     final token = await AuthStorage.getToken();
 
     String? nickname;

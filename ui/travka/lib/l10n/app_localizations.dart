@@ -244,6 +244,24 @@ abstract class AppLocalizations {
   /// **'Passwords do not match'**
   String get passwordsDoNotMatch;
 
+  /// No description provided for @serverUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL *'**
+  String get serverUrlLabel;
+
+  /// No description provided for @enterServerUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter server URL'**
+  String get enterServerUrl;
+
+  /// No description provided for @enterValidServerUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid URL (https://...)'**
+  String get enterValidServerUrl;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:

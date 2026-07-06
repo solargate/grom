@@ -103,138 +103,29 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
   }
 
   Future<void> _pickDuration() async {
-    final l10n = AppLocalizations.of(context)!;
-    final hoursController = TextEditingController(
-      text: (_durationSeconds ~/ 3600).toString(),
-    );
-    final minutesController = TextEditingController(
-      text: ((_durationSeconds % 3600) ~/ 60).toString(),
-    );
-    final secondsController = TextEditingController(
-      text: (_durationSeconds % 60).toString(),
-    );
-
-    final result = await showDialog<bool>(
+    final result = await showDialog<int>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.selectDuration),
-          content: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: hoursController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.hoursLabel,
-                    border: const OutlineInputBorder(),
-                  ),
-                  autofocus: true,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: minutesController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.minutesLabel,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: secondsController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.secondsLabel,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.save),
-            ),
-          ],
-        );
-      },
+      builder: (context) => _DurationPickerDialog(
+        initialSeconds: _durationSeconds,
+      ),
     );
 
-    if (result == true) {
-      final hours = _clampDurationPart(hoursController.text, max: 99);
-      final minutes = _clampDurationPart(minutesController.text, max: 59);
-      final seconds = _clampDurationPart(secondsController.text, max: 59);
-      setState(() {
-        _durationSeconds = hours * 3600 + minutes * 60 + seconds;
-      });
+    if (result != null) {
+      setState(() => _durationSeconds = result);
     }
-
-    hoursController.dispose();
-    minutesController.dispose();
-    secondsController.dispose();
-  }
-
-  int _clampDurationPart(String value, {required int max}) {
-    final parsed = int.tryParse(value.trim()) ?? 0;
-    if (parsed < 0) {
-      return 0;
-    }
-    if (parsed > max) {
-      return max;
-    }
-    return parsed;
   }
 
   Future<void> _pickDistance() async {
-    final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(
-      text: _distanceKm == 0 ? '0' : _distanceKm.toString(),
-    );
-
-    final result = await showDialog<bool>(
+    final result = await showDialog<double>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.selectDistance),
-          content: TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: l10n.kilometersLabel,
-              border: const OutlineInputBorder(),
-              suffixText: 'km',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.save),
-            ),
-          ],
-        );
-      },
+      builder: (context) => _DistancePickerDialog(
+        initialDistanceKm: _distanceKm,
+      ),
     );
 
-    if (result == true) {
-      final parsed = double.tryParse(controller.text.replaceAll(',', '.')) ?? 0;
-      setState(() => _distanceKm = parsed < 0 ? 0 : parsed);
+    if (result != null) {
+      setState(() => _distanceKm = result);
     }
-    controller.dispose();
   }
 
   Future<void> _pickSportType() async {
@@ -523,11 +414,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
     final selectedSport = sportTypeById(_sportTypeId);
 
     return Padding(
-      padding: EdgeInsets.only(
+      padding: const EdgeInsets.only(
         left: 24,
         right: 24,
         top: 24,
-        bottom: 24 + MediaQuery.viewInsetsOf(context).bottom,
+        bottom: 24,
       ),
       child: Form(
         key: _formKey,
@@ -671,6 +562,175 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DurationPickerDialog extends StatefulWidget {
+  const _DurationPickerDialog({required this.initialSeconds});
+
+  final int initialSeconds;
+
+  @override
+  State<_DurationPickerDialog> createState() => _DurationPickerDialogState();
+}
+
+class _DurationPickerDialogState extends State<_DurationPickerDialog> {
+  late final TextEditingController _hoursController;
+  late final TextEditingController _minutesController;
+  late final TextEditingController _secondsController;
+
+  @override
+  void initState() {
+    super.initState();
+    final seconds = widget.initialSeconds;
+    _hoursController = TextEditingController(text: '${seconds ~/ 3600}');
+    _minutesController =
+        TextEditingController(text: '${(seconds % 3600) ~/ 60}');
+    _secondsController = TextEditingController(text: '${seconds % 60}');
+  }
+
+  @override
+  void dispose() {
+    _hoursController.dispose();
+    _minutesController.dispose();
+    _secondsController.dispose();
+    super.dispose();
+  }
+
+  int _clampDurationPart(String value, {required int max}) {
+    final parsed = int.tryParse(value.trim()) ?? 0;
+    if (parsed < 0) {
+      return 0;
+    }
+    if (parsed > max) {
+      return max;
+    }
+    return parsed;
+  }
+
+  void _save() {
+    final hours = _clampDurationPart(_hoursController.text, max: 99);
+    final minutes = _clampDurationPart(_minutesController.text, max: 59);
+    final seconds = _clampDurationPart(_secondsController.text, max: 59);
+    Navigator.pop(context, hours * 3600 + minutes * 60 + seconds);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.selectDuration),
+      content: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _hoursController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.hoursLabel,
+                border: const OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _minutesController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.minutesLabel,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _secondsController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.secondsLabel,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: Text(l10n.save),
+        ),
+      ],
+    );
+  }
+}
+
+class _DistancePickerDialog extends StatefulWidget {
+  const _DistancePickerDialog({required this.initialDistanceKm});
+
+  final double initialDistanceKm;
+
+  @override
+  State<_DistancePickerDialog> createState() => _DistancePickerDialogState();
+}
+
+class _DistancePickerDialogState extends State<_DistancePickerDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialDistanceKm == 0
+          ? '0'
+          : widget.initialDistanceKm.toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final parsed =
+        double.tryParse(_controller.text.replaceAll(',', '.')) ?? 0;
+    Navigator.pop(context, parsed < 0 ? 0.0 : parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.selectDistance),
+      content: TextField(
+        controller: _controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(
+          labelText: l10n.kilometersLabel,
+          border: const OutlineInputBorder(),
+          suffixText: 'km',
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: Text(l10n.save),
+        ),
+      ],
     );
   }
 }

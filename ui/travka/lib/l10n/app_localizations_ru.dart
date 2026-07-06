@@ -86,6 +86,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get passwordsDoNotMatch => 'Пароли не совпадают';
 
   @override
+  String get serverUrlLabel => 'URL сервера *';
+
+  @override
+  String get enterServerUrl => 'Введите URL сервера';
+
+  @override
+  String get enterValidServerUrl => 'Введите корректный URL (https://...)';
+
+  @override
   String get language => 'Язык';
 
   @override

@@ -87,6 +87,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get passwordsDoNotMatch => 'Passwörter stimmen nicht überein';
 
   @override
+  String get serverUrlLabel => 'Server-URL *';
+
+  @override
+  String get enterServerUrl => 'Server-URL eingeben';
+
+  @override
+  String get enterValidServerUrl => 'Gültige URL eingeben (https://...)';
+
+  @override
   String get language => 'Sprache';
 
   @override

@@ -3,6 +3,9 @@ import 'package:travka/l10n/app_localizations.dart';
 
 import 'api_request.dart';
 import 'auth_storage.dart';
+import 'platform/is_mobile_client.dart';
+import 'server_storage.dart';
+import 'widgets/server_url_field.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({
@@ -24,14 +27,31 @@ class _LoginFormState extends State<LoginForm> {
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _serverUrlController = TextEditingController();
 
   bool _isSubmitting = false;
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    if (isMobileClient) {
+      _loadSavedServerUrl();
+    }
+  }
+
+  Future<void> _loadSavedServerUrl() async {
+    final url = await ServerStorage.getBaseUrl();
+    if (url != null && mounted) {
+      _serverUrlController.text = url;
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
@@ -43,6 +63,10 @@ class _LoginFormState extends State<LoginForm> {
     setState(() => _isSubmitting = true);
 
     try {
+      if (isMobileClient) {
+        await ServerStorage.saveBaseUrl(_serverUrlController.text);
+      }
+
       final result = await _api.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -83,6 +107,10 @@ class _LoginFormState extends State<LoginForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isMobileClient) ...[
+            ServerUrlField(controller: _serverUrlController),
+            const SizedBox(height: 16),
+          ],
           TextFormField(
             controller: _emailController,
             decoration: InputDecoration(

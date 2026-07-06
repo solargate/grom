@@ -4,9 +4,15 @@ import 'package:travka/l10n/app_localizations.dart';
 
 import 'locale_storage.dart';
 import 'navigation/travka_shell.dart';
+import 'platform/is_mobile_client.dart';
+import 'server_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (isMobileClient) {
+    await ServerStorage.load();
+  }
 
   final savedLocale = await LocaleStorage.getLocale();
   final initialLocale = savedLocale ??

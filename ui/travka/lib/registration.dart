@@ -3,6 +3,9 @@ import 'package:travka/l10n/app_localizations.dart';
 
 import 'api_request.dart';
 import 'login.dart';
+import 'platform/is_mobile_client.dart';
+import 'server_storage.dart';
+import 'widgets/server_url_field.dart';
 
 class RegistrationForm extends StatefulWidget {
   const RegistrationForm({
@@ -27,10 +30,26 @@ class _RegistrationFormState extends State<RegistrationForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _serverUrlController = TextEditingController();
 
   bool _isSubmitting = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isMobileClient) {
+      _loadSavedServerUrl();
+    }
+  }
+
+  Future<void> _loadSavedServerUrl() async {
+    final url = await ServerStorage.getBaseUrl();
+    if (url != null && mounted) {
+      _serverUrlController.text = url;
+    }
+  }
 
   @override
   void dispose() {
@@ -39,6 +58,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
@@ -50,6 +70,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
     setState(() => _isSubmitting = true);
 
     try {
+      if (isMobileClient) {
+        await ServerStorage.saveBaseUrl(_serverUrlController.text);
+      }
+
       await _api.register(
         nickname: _nicknameController.text.trim(),
         name: _nameController.text.trim(),
@@ -93,6 +117,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isMobileClient) ...[
+            ServerUrlField(controller: _serverUrlController),
+            const SizedBox(height: 16),
+          ],
           TextFormField(
             controller: _nicknameController,
             decoration: InputDecoration(
