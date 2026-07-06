@@ -74,15 +74,25 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     _time = TimeOfDay.fromDateTime(now);
     if (_showRecordTab) {
       _tabController = TabController(length: 2, vsync: this);
+      _recorder.addListener(_onRecorderChanged);
     }
   }
 
   @override
   void dispose() {
+    if (_showRecordTab) {
+      _recorder.removeListener(_onRecorderChanged);
+    }
     _tabController?.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _onRecorderChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   DateTime get _startDateTime {
@@ -474,45 +484,28 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
                   ),
                   TabBar(
                     controller: _tabController,
-                    onTap: (index) async {
-                      if (index == 0 ||
-                          !_recorder.isActive ||
-                          _recorder.state == TrackRecordingState.paused) {
-                        return;
-                      }
-                      final l10n = AppLocalizations.of(context)!;
-                      final discard = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(l10n.discardRecordingTitle),
-                          content: Text(l10n.discardRecordingMessage),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(l10n.cancel),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text(l10n.discardRecordingConfirm),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (discard == true) {
-                        await _recorder.discardRecording();
-                      } else {
+                    onTap: (index) {
+                      if (_recorder.isActive && index == 1) {
                         _tabController?.index = 0;
                       }
                     },
                     tabs: [
                       Tab(text: l10n.tabRecord),
-                      Tab(text: l10n.tabManual),
+                      Tab(
+                        child: Opacity(
+                          opacity: _recorder.isActive ? 0.38 : 1.0,
+                          child: Text(l10n.tabManual),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
+                      physics: _recorder.isActive
+                          ? const NeverScrollableScrollPhysics()
+                          : null,
                       children: [
                         RecordWorkoutTab(onFinished: _applyRecordedTrack),
                         _buildManualTab(showTitle: false),

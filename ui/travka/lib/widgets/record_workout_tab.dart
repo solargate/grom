@@ -163,6 +163,18 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
     return l10n.speedKmh(_recorder.currentSpeedKmh.toStringAsFixed(1));
   }
 
+  String _formatDistance(AppLocalizations l10n) {
+    final distanceKm = _recorder.distanceMeters / 1000;
+    if (distanceKm == 0) {
+      return l10n.distanceZero;
+    }
+    return l10n.distanceKilometers(
+      distanceKm >= 10
+          ? distanceKm.toStringAsFixed(1)
+          : distanceKm.toStringAsFixed(2),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -226,6 +238,18 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
                 ),
                 Text(
                   _formatSpeed(l10n),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                Text(
+                  l10n.workoutDistance,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                Text(
+                  _formatDistance(l10n),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
