@@ -9,6 +9,7 @@ import '../platform/is_mobile_client.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../widgets/add_workout_sheet.dart';
+import '../widgets/settings_dialog.dart';
 import 'travka_destination.dart';
 import 'travka_side_menu.dart';
 
@@ -139,6 +140,15 @@ class _TravkaShellState extends State<TravkaShell> {
     return _title;
   }
 
+  void _onOpenSettings() {
+    _scaffoldKey.currentState?.closeDrawer();
+    showSettingsDialog(
+      context,
+      locale: widget.locale,
+      onLocaleChanged: widget.onLocaleChanged,
+    );
+  }
+
   Widget _buildSideMenu() {
     return TravkaSideMenu(
       selectedDestination: _selectedDestination,
@@ -147,8 +157,7 @@ class _TravkaShellState extends State<TravkaShell> {
       nickname: _nickname,
       isLoggedIn: _isLoggedIn,
       onLogout: _logout,
-      locale: widget.locale,
-      onLocaleChanged: widget.onLocaleChanged,
+      onOpenSettings: _onOpenSettings,
     );
   }
 

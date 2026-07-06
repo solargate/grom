@@ -5,6 +5,7 @@
   "signIn": "Sign in",
   "register": "Register",
   "signOut": "Sign out",
+  "settings": "Settings",
   "add": "Add",
   "welcomeUser": "Welcome, {nickname}!",
   "@welcomeUser": {

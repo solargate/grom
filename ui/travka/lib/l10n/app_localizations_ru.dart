@@ -24,6 +24,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get signOut => 'Выйти';
 
   @override
+  String get settings => 'Настройки';
+
+  @override
   String get add => 'Добавить';
 
   @override

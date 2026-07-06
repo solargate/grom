@@ -5,6 +5,7 @@
   "signIn": "Anmelden",
   "register": "Registrieren",
   "signOut": "Abmelden",
+  "settings": "Einstellungen",
   "add": "Hinzufügen",
   "welcomeUser": "Willkommen, {nickname}!",
   "@welcomeUser": {

@@ -5,6 +5,7 @@
   "signIn": "Вход",
   "register": "Регистрация",
   "signOut": "Выйти",
+  "settings": "Настройки",
   "add": "Добавить",
   "welcomeUser": "Добро пожаловать, {nickname}!",
   "@welcomeUser": {
