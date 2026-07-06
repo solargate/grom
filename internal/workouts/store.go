@@ -17,6 +17,7 @@ var (
 	ErrInvalidSportType = errors.New("invalid sport type")
 	ErrInvalidWorkout   = errors.New("invalid workout")
 	ErrWorkoutExists    = errors.New("workout already exists")
+	ErrWorkoutNotFound  = errors.New("workout not found")
 )
 
 type Store struct {
@@ -54,11 +55,23 @@ func (s *Store) Create(nickname string, workout *Workout) (*Workout, error) {
 		return nil, err
 	}
 
-	workout.ID = uuid.NewString()
-	workout.Name = strings.TrimSpace(workout.Name)
-	workout.Description = strings.TrimSpace(workout.Description)
+	workout.ID = newWorkoutID()
+	workout.Name = trimWorkoutName(workout.Name)
+	workout.Description = trimWorkoutDescription(workout.Description)
 
 	return s.saveWorkout(nickname, workout)
+}
+
+func newWorkoutID() string {
+	return uuid.NewString()
+}
+
+func trimWorkoutName(name string) string {
+	return strings.TrimSpace(name)
+}
+
+func trimWorkoutDescription(description string) string {
+	return strings.TrimSpace(description)
 }
 
 func (s *Store) validateWorkout(workout *Workout) error {
@@ -100,21 +113,28 @@ func (s *Store) saveWorkout(nickname string, workout *Workout) (*Workout, error)
 
 	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
 
-	data, err := yaml.Marshal(workout)
-	if err != nil {
-		return nil, fmt.Errorf("marshal workout: %w", err)
-	}
-
-	tmp := filePath + ".tmp"
-	if err := os.WriteFile(tmp, data, 0600); err != nil {
-		return nil, fmt.Errorf("write workout: %w", err)
-	}
-	if err := os.Rename(tmp, filePath); err != nil {
-		return nil, fmt.Errorf("rename workout: %w", err)
+	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		return nil, err
 	}
 
 	result := *workout
 	return &result, nil
+}
+
+func writeWorkoutYAML(filePath string, workout *Workout) error {
+	data, err := yaml.Marshal(workout)
+	if err != nil {
+		return fmt.Errorf("marshal workout: %w", err)
+	}
+
+	tmp := filePath + ".tmp"
+	if err := os.WriteFile(tmp, data, 0600); err != nil {
+		return fmt.Errorf("write workout: %w", err)
+	}
+	if err := os.Rename(tmp, filePath); err != nil {
+		return fmt.Errorf("rename workout: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) List(nickname string) ([]Workout, error) {
@@ -134,7 +154,8 @@ func (s *Store) List(nickname string) ([]Workout, error) {
 		}
 
 		dirName := entry.Name()
-		filePath := filepath.Join(userDir, dirName, dirName+".yaml")
+		dirPath := filepath.Join(userDir, dirName)
+		filePath := filepath.Join(dirPath, dirName+".yaml")
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("read workout %q: %w", dirName, err)
@@ -149,6 +170,7 @@ func (s *Store) List(nickname string) ([]Workout, error) {
 				workout.ID = dirName[idx+2:]
 			}
 		}
+		workout.HasMapPreview = workoutHasMapPreview(dirPath)
 		workouts = append(workouts, workout)
 	}
 

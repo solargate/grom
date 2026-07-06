@@ -163,5 +163,19 @@
   "sportTypePilates": "Pilates",
   "sportTypeRacquetball": "Racquetball",
   "sportTypeHiit": "HIIT",
-  "sportTypeCricket": "Cricket"
+  "sportTypeCricket": "Cricket",
+  "workoutTrack": "Track",
+  "selectTrackFile": "Select FIT or GPX file",
+  "trackFileSelected": "{filename}",
+  "@trackFileSelected": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "removeTrack": "Remove track",
+  "invalidTrackFormat": "Only FIT and GPX files are supported",
+  "failedToParseTrack": "Failed to read track file",
+  "trackMetadataApplied": "Values updated from track"
 }

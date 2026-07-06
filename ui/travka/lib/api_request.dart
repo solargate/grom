@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'models/parsed_track_metadata.dart';
 import 'models/workout.dart';
 
 class ApiException implements Exception {
@@ -142,6 +143,72 @@ class ApiRequest {
     }
 
     throw _parseError(response);
+  }
+
+  Future<Workout> createWorkoutMultipart({
+    required String token,
+    required Map<String, String> fields,
+    required List<int> trackBytes,
+    required String trackFilename,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('/api/v1/workouts'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    for (final entry in fields.entries) {
+      request.fields[entry.key] = entry.value;
+    }
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'track',
+        trackBytes,
+        filename: trackFilename,
+      ),
+    );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 201) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<ParsedTrackMetadata> parseTrack({
+    required String token,
+    required List<int> trackBytes,
+    required String trackFilename,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('/api/v1/workouts/parse-track'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'track',
+        trackBytes,
+        filename: trackFilename,
+      ),
+    );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return ParsedTrackMetadata.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  String mapPreviewUrl(String workoutId) {
+    return '/api/v1/workouts/$workoutId/map-preview';
   }
 
   Future<List<Workout>> listWorkouts(String token) async {

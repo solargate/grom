@@ -2,12 +2,16 @@ package v1
 
 import (
 	"errors"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/travka/internal/auth"
 	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/travka/internal/tracks"
 	"github.com/solargate/travka/internal/workouts"
 )
 
@@ -28,6 +32,23 @@ type CreateWorkoutRequest struct {
 	Distance        float64 `json:"distance" example:"5200"`
 }
 
+type CreateWorkoutForm struct {
+	Name            string                `form:"name" binding:"required"`
+	Description     string                `form:"description"`
+	SportType       string                `form:"sport_type" binding:"required"`
+	StartDate       string                `form:"start_date" binding:"required"`
+	DurationSeconds int                   `form:"duration_seconds"`
+	Distance        float64               `form:"distance"`
+	Track           *multipart.FileHeader `form:"track"`
+}
+
+type ParseTrackResponse struct {
+	StartDate       string  `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
+	DurationSeconds int     `json:"duration_seconds,omitempty" example:"3600"`
+	Distance        float64 `json:"distance,omitempty" example:"5200"`
+	HasGPS          bool    `json:"has_gps" example:"true"`
+}
+
 type WorkoutResponse struct {
 	ID              string  `json:"id" example:"a866c734-9a31-45ab-9dd4-e4d0fd12e4fd"`
 	Name            string  `json:"name" example:"Morning run"`
@@ -36,6 +57,8 @@ type WorkoutResponse struct {
 	StartDate       string  `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
 	DurationSeconds int     `json:"duration_seconds" example:"3600"`
 	Distance        float64 `json:"distance" example:"5200"`
+	Track           string  `json:"track,omitempty" example:"track.gpx"`
+	HasMapPreview   bool    `json:"has_map_preview" example:"true"`
 }
 
 func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
@@ -47,7 +70,25 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		StartDate:       workout.StartDate.Format(time.RFC3339),
 		DurationSeconds: workout.DurationSeconds,
 		Distance:        workout.Distance,
+		Track:           workout.Track,
+		HasMapPreview:   workout.HasMapPreview,
 	}
+}
+
+func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
+	resp := ParseTrackResponse{
+		HasGPS: data.HasGPS(),
+	}
+	if data.StartTime != nil {
+		resp.StartDate = data.StartTime.Format(time.RFC3339)
+	}
+	if data.DurationSeconds != nil {
+		resp.DurationSeconds = *data.DurationSeconds
+	}
+	if data.DistanceMeters != nil {
+		resp.Distance = *data.DistanceMeters
+	}
+	return resp
 }
 
 func currentUserNickname(ctx *gin.Context) (string, error) {
@@ -64,14 +105,55 @@ func currentUserNickname(ctx *gin.Context) (string, error) {
 	return user.Nickname, nil
 }
 
+func readTrackFile(file *multipart.FileHeader) ([]byte, error) {
+	opened, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer opened.Close()
+
+	data, err := io.ReadAll(io.LimitReader(opened, tracks.MaxTrackSizeBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > tracks.MaxTrackSizeBytes {
+		return nil, tracks.ErrTrackTooLarge
+	}
+	return data, nil
+}
+
+func handleCreateWorkoutError(ctx *gin.Context, err error) {
+	switch {
+	case errors.Is(err, workouts.ErrInvalidSportType),
+		errors.Is(err, workouts.ErrInvalidWorkout),
+		errors.Is(err, tracks.ErrInvalidFormat),
+		errors.Is(err, tracks.ErrTrackTooLarge),
+		errors.Is(err, tracks.ErrEmptyTrack),
+		errors.Is(err, tracks.ErrInvalidTrack):
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+	case errors.Is(err, workouts.ErrWorkoutExists):
+		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
+	default:
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create workout"})
+	}
+}
+
 // createWorkout godoc
 // @Summary      Create workout
 // @Description  Create a manual workout for the authenticated user
 // @Tags         workouts
 // @Accept       json
+// @Accept       mpfd
 // @Produce      json
 // @Security     BearerAuth
-// @Param        body  body  CreateWorkoutRequest  true  "Workout data"
+// @Param        body  body  CreateWorkoutRequest  false  "Workout data (JSON)"
+// @Param        name  formData  string  false  "Workout name (multipart)"
+// @Param        description  formData  string  false  "Description (multipart)"
+// @Param        sport_type  formData  string  false  "Sport type (multipart)"
+// @Param        start_date  formData  string  false  "Start date RFC3339 (multipart)"
+// @Param        duration_seconds  formData  int  false  "Duration seconds (multipart)"
+// @Param        distance  formData  number  false  "Distance meters (multipart)"
+// @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
 // @Failure      400   {object}  ErrorResponse
 // @Failure      401   {object}  ErrorResponse
@@ -83,6 +165,12 @@ func createWorkout(ctx *gin.Context) {
 	nickname, err := currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	contentType := ctx.GetHeader("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		createWorkoutMultipart(ctx, nickname)
 		return
 	}
 
@@ -107,19 +195,130 @@ func createWorkout(ctx *gin.Context) {
 		Distance:        req.Distance,
 	})
 	if err != nil {
-		if errors.Is(err, workouts.ErrInvalidSportType) {
-			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-			return
-		}
-		if errors.Is(err, workouts.ErrInvalidWorkout) {
-			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create workout"})
+		handleCreateWorkoutError(ctx, err)
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
+}
+
+func createWorkoutMultipart(ctx *gin.Context, nickname string) {
+	var form CreateWorkoutForm
+	if err := ctx.ShouldBind(&form); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	startDate, err := time.Parse(time.RFC3339, form.StartDate)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid start_date format, expected RFC3339"})
+		return
+	}
+
+	workout := &workouts.Workout{
+		Name:            form.Name,
+		Description:     form.Description,
+		SportType:       form.SportType,
+		StartDate:       startDate,
+		DurationSeconds: form.DurationSeconds,
+		Distance:        form.Distance,
+	}
+
+	var trackInput *workouts.TrackInput
+	if form.Track != nil {
+		data, err := readTrackFile(form.Track)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
+		parsed, err := tracks.Parse(data, form.Track.Filename)
+		if err != nil {
+			handleCreateWorkoutError(ctx, err)
+			return
+		}
+		trackInput = &workouts.TrackInput{
+			Filename: form.Track.Filename,
+			Data:     data,
+			Parsed:   parsed,
+		}
+	}
+
+	created, err := workoutStore.CreateWithTrack(nickname, workout, trackInput)
+	if err != nil {
+		handleCreateWorkoutError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, toWorkoutResponse(created))
+}
+
+// parseTrack godoc
+// @Summary      Parse track file
+// @Description  Extract metadata from a FIT or GPX track without saving it
+// @Tags         workouts
+// @Accept       mpfd
+// @Produce      json
+// @Security     BearerAuth
+// @Param        track  formData  file  true  "Track file FIT or GPX"
+// @Success      200  {object}  ParseTrackResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Router       /workouts/parse-track [post]
+func parseTrack(ctx *gin.Context) {
+	file, err := ctx.FormFile("track")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "track file is required"})
+		return
+	}
+
+	data, err := readTrackFile(file)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	parsed, err := tracks.Parse(data, file.Filename)
+	if err != nil {
+		handleCreateWorkoutError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toParseTrackResponse(parsed))
+}
+
+// getWorkoutMapPreview godoc
+// @Summary      Get workout map preview
+// @Description  Return cached map preview image for a workout with a track
+// @Tags         workouts
+// @Produce      png
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Workout ID"
+// @Success      200  {file}  binary
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Router       /workouts/{id}/map-preview [get]
+func getWorkoutMapPreview(ctx *gin.Context) {
+	initWorkoutStore()
+
+	nickname, err := currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	path, err := workoutStore.MapPreviewPath(nickname, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load map preview"})
+		return
+	}
+
+	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
+	ctx.File(path)
 }
 
 // listWorkouts godoc

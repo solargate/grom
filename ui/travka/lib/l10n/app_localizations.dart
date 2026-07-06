@@ -789,6 +789,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cricket'**
   String get sportTypeCricket;
+
+  /// No description provided for @workoutTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get workoutTrack;
+
+  /// No description provided for @selectTrackFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Select FIT or GPX file'**
+  String get selectTrackFile;
+
+  /// No description provided for @trackFileSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{filename}'**
+  String trackFileSelected(String filename);
+
+  /// No description provided for @removeTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove track'**
+  String get removeTrack;
+
+  /// No description provided for @invalidTrackFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Only FIT and GPX files are supported'**
+  String get invalidTrackFormat;
+
+  /// No description provided for @failedToParseTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read track file'**
+  String get failedToParseTrack;
+
+  /// No description provided for @trackMetadataApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Values updated from track'**
+  String get trackMetadataApplied;
 }
 
 class _AppLocalizationsDelegate

@@ -34,6 +34,7 @@ func RunRouter() {
 	}
 
 	router := gin.Default()
+	router.MaxMultipartMemory = 20 << 20
 
 	apiV1 := router.Group("/api/v1")
 	{
@@ -47,6 +48,8 @@ func RunRouter() {
 
 		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
 		workoutGroup.POST("", createWorkout)
+		workoutGroup.POST("/parse-track", parseTrack)
+		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
 		workoutGroup.GET("", listWorkouts)
 	}
 

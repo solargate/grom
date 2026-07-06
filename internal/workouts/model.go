@@ -10,4 +10,6 @@ type Workout struct {
 	StartDate       time.Time `yaml:"start_date" json:"start_date"`
 	DurationSeconds int       `yaml:"duration_seconds" json:"duration_seconds"`
 	Distance        float64   `yaml:"distance" json:"distance"`
+	Track           string    `yaml:"track,omitempty" json:"track,omitempty"`
+	HasMapPreview   bool      `yaml:"-" json:"has_map_preview"`
 }

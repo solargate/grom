@@ -7,6 +7,8 @@ class Workout {
     required this.startDate,
     required this.durationSeconds,
     required this.distance,
+    this.track = '',
+    this.hasMapPreview = false,
   });
 
   final String id;
@@ -16,6 +18,8 @@ class Workout {
   final DateTime startDate;
   final int durationSeconds;
   final double distance;
+  final String track;
+  final bool hasMapPreview;
 
   double get distanceKm => distance / 1000;
 
@@ -28,6 +32,8 @@ class Workout {
       startDate: DateTime.parse(json['start_date'] as String),
       durationSeconds: json['duration_seconds'] as int? ?? 0,
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
+      track: json['track'] as String? ?? '',
+      hasMapPreview: json['has_map_preview'] as bool? ?? false,
     );
   }
 

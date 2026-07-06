@@ -226,7 +226,8 @@ const docTemplate = `{
                 ],
                 "description": "Create a manual workout for the authenticated user",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -237,13 +238,54 @@ const docTemplate = `{
                 "summary": "Create workout",
                 "parameters": [
                     {
-                        "description": "Workout data",
+                        "description": "Workout data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/v1.CreateWorkoutRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout name (multipart)",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Description (multipart)",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sport type (multipart)",
+                        "name": "sport_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date RFC3339 (multipart)",
+                        "name": "start_date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Duration seconds (multipart)",
+                        "name": "duration_seconds",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Distance meters (multipart)",
+                        "name": "distance",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Track file FIT or GPX (multipart)",
+                        "name": "track",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -267,6 +309,101 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/workouts/parse-track": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Extract metadata from a FIT or GPX track without saving it",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Parse track file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Track file FIT or GPX",
+                        "name": "track",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ParseTrackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/workouts/{id}/map-preview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return cached map preview image for a workout with a track",
+                "produces": [
+                    "image/png"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Get workout map preview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workout ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/v1.ErrorResponse"
                         }
@@ -352,6 +489,27 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.ParseTrackResponse": {
+            "type": "object",
+            "properties": {
+                "distance": {
+                    "type": "number",
+                    "example": 5200
+                },
+                "duration_seconds": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "has_gps": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:00+03:00"
+                }
+            }
+        },
         "v1.RegisterRequest": {
             "type": "object",
             "required": [
@@ -415,6 +573,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3600
                 },
+                "has_map_preview": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "id": {
                     "type": "string",
                     "example": "a866c734-9a31-45ab-9dd4-e4d0fd12e4fd"
@@ -430,6 +592,10 @@ const docTemplate = `{
                 "start_date": {
                     "type": "string",
                     "example": "2026-07-05T14:30:00+03:00"
+                },
+                "track": {
+                    "type": "string",
+                    "example": "track.gpx"
                 }
             }
         }

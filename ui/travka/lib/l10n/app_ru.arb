@@ -163,5 +163,19 @@
   "sportTypePilates": "Пилатес",
   "sportTypeRacquetball": "Ракетбол",
   "sportTypeHiit": "ВИИТ",
-  "sportTypeCricket": "Крикет"
+  "sportTypeCricket": "Крикет",
+  "workoutTrack": "Трек",
+  "selectTrackFile": "Выберите файл FIT или GPX",
+  "trackFileSelected": "{filename}",
+  "@trackFileSelected": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "removeTrack": "Удалить трек",
+  "invalidTrackFormat": "Поддерживаются только файлы FIT и GPX",
+  "failedToParseTrack": "Не удалось прочитать файл трека",
+  "trackMetadataApplied": "Значения обновлены из трека"
 }

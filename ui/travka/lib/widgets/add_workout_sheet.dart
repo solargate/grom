@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:travka/l10n/app_localizations.dart';
 import 'package:travka/l10n/sport_type_localizations.dart';
 import 'package:travka/models/sport_types.dart';
+import 'package:travka/platform/track_file_picker.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
@@ -49,6 +50,10 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
   int _durationSeconds = 0;
   double _distanceKm = 0;
   bool _isSubmitting = false;
+  bool _isPickingFile = false;
+  String? _trackFilename;
+  List<int>? _trackBytes;
+  bool _isParsingTrack = false;
 
   @override
   void initState() {
@@ -309,6 +314,134 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
     ];
   }
 
+  Future<void> _pickTrack() async {
+    if (_isPickingFile || _isSubmitting) {
+      return;
+    }
+    _isPickingFile = true;
+
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      final picked = await pickTrackFile();
+      if (picked == null) {
+        return;
+      }
+
+      final filename = picked.filename;
+      final bytes = picked.bytes;
+
+      final lower = filename.toLowerCase();
+      if (!lower.endsWith('.gpx') && !lower.endsWith('.fit')) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.invalidTrackFormat)),
+        );
+        return;
+      }
+
+      setState(() {
+        _trackFilename = filename;
+        _trackBytes = bytes;
+        _isParsingTrack = true;
+      });
+
+      final token = await AuthStorage.getToken();
+      if (token == null) {
+        return;
+      }
+
+      final metadata = await _api.parseTrack(
+        token: token,
+        trackBytes: bytes,
+        trackFilename: filename,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        if (metadata.startDate != null) {
+          final local = metadata.startDate!.toLocal();
+          _date = DateTime(local.year, local.month, local.day);
+          _time = TimeOfDay(hour: local.hour, minute: local.minute);
+        }
+        if (metadata.durationSeconds != null) {
+          _durationSeconds = metadata.durationSeconds!;
+        }
+        if (metadata.distanceMeters != null) {
+          _distanceKm = metadata.distanceMeters! / 1000;
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trackMetadataApplied)),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Track pick failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.failedToParseTrack)),
+      );
+    } finally {
+      _isPickingFile = false;
+      if (mounted) {
+        setState(() => _isParsingTrack = false);
+      }
+    }
+  }
+
+  void _removeTrack() {
+    setState(() {
+      _trackFilename = null;
+      _trackBytes = null;
+    });
+  }
+
+  Widget _buildTrackPickerField(AppLocalizations l10n) {
+    if (_trackFilename != null) {
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: l10n.workoutTrack,
+          border: const OutlineInputBorder(),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.trackFileSelected(_trackFilename!),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (_isParsingTrack)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              IconButton(
+                tooltip: l10n.removeTrack,
+                onPressed: _isSubmitting ? null : _removeTrack,
+                icon: const Icon(Icons.close),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return FilledButton.tonalIcon(
+      onPressed: (_isSubmitting || _isPickingFile || _isParsingTrack)
+          ? null
+          : _pickTrack,
+      icon: const Icon(Icons.upload_file),
+      label: Text(l10n.selectTrackFile),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -331,7 +464,23 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
         distanceKm: _distanceKm,
       );
 
-      await _api.createWorkout(token: token, body: draft.toJson());
+      if (_trackBytes != null && _trackFilename != null) {
+        await _api.createWorkoutMultipart(
+          token: token,
+          fields: {
+            'name': draft.name,
+            if (draft.description.isNotEmpty) 'description': draft.description,
+            'sport_type': draft.sportType,
+            'start_date': draft.startDate.toUtc().toIso8601String(),
+            'duration_seconds': draft.durationSeconds.toString(),
+            'distance': (draft.distanceKm * 1000).toString(),
+          },
+          trackBytes: _trackBytes!,
+          trackFilename: _trackFilename!,
+        );
+      } else {
+        await _api.createWorkout(token: token, body: draft.toJson());
+      }
 
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -490,6 +639,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
                   child: Text(distanceText),
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildTrackPickerField(l10n),
               const SizedBox(height: 24),
               Row(
                 children: [

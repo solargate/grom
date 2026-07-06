@@ -368,4 +368,28 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sportTypeCricket => 'Cricket';
+
+  @override
+  String get workoutTrack => 'Track';
+
+  @override
+  String get selectTrackFile => 'FIT- oder GPX-Datei auswählen';
+
+  @override
+  String trackFileSelected(String filename) {
+    return '$filename';
+  }
+
+  @override
+  String get removeTrack => 'Track entfernen';
+
+  @override
+  String get invalidTrackFormat =>
+      'Nur FIT- und GPX-Dateien werden unterstützt';
+
+  @override
+  String get failedToParseTrack => 'Trackdatei konnte nicht gelesen werden';
+
+  @override
+  String get trackMetadataApplied => 'Werte aus dem Track übernommen';
 }

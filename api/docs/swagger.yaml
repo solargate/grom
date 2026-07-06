@@ -54,6 +54,21 @@ definitions:
       user:
         $ref: '#/definitions/v1.UserResponse'
     type: object
+  v1.ParseTrackResponse:
+    properties:
+      distance:
+        example: 5200
+        type: number
+      duration_seconds:
+        example: 3600
+        type: integer
+      has_gps:
+        example: true
+        type: boolean
+      start_date:
+        example: "2026-07-05T14:30:00+03:00"
+        type: string
+    type: object
   v1.RegisterRequest:
     properties:
       email:
@@ -100,6 +115,9 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      has_map_preview:
+        example: true
+        type: boolean
       id:
         example: a866c734-9a31-45ab-9dd4-e4d0fd12e4fd
         type: string
@@ -111,6 +129,9 @@ definitions:
         type: string
       start_date:
         example: "2026-07-05T14:30:00+03:00"
+        type: string
+      track:
+        example: track.gpx
         type: string
     type: object
 host: localhost:8080
@@ -255,14 +276,42 @@ paths:
     post:
       consumes:
       - application/json
+      - multipart/form-data
       description: Create a manual workout for the authenticated user
       parameters:
-      - description: Workout data
+      - description: Workout data (JSON)
         in: body
         name: body
-        required: true
         schema:
           $ref: '#/definitions/v1.CreateWorkoutRequest'
+      - description: Workout name (multipart)
+        in: formData
+        name: name
+        type: string
+      - description: Description (multipart)
+        in: formData
+        name: description
+        type: string
+      - description: Sport type (multipart)
+        in: formData
+        name: sport_type
+        type: string
+      - description: Start date RFC3339 (multipart)
+        in: formData
+        name: start_date
+        type: string
+      - description: Duration seconds (multipart)
+        in: formData
+        name: duration_seconds
+        type: integer
+      - description: Distance meters (multipart)
+        in: formData
+        name: distance
+        type: number
+      - description: Track file FIT or GPX (multipart)
+        in: formData
+        name: track
+        type: file
       produces:
       - application/json
       responses:
@@ -285,6 +334,66 @@ paths:
       security:
       - BearerAuth: []
       summary: Create workout
+      tags:
+      - workouts
+  /workouts/{id}/map-preview:
+    get:
+      description: Return cached map preview image for a workout with a track
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/png
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout map preview
+      tags:
+      - workouts
+  /workouts/parse-track:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Extract metadata from a FIT or GPX track without saving it
+      parameters:
+      - description: Track file FIT or GPX
+        in: formData
+        name: track
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.ParseTrackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Parse track file
       tags:
       - workouts
 securityDefinitions:

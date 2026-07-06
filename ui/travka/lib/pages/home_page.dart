@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   List<Workout> _workouts = [];
   bool _isLoading = false;
   String? _error;
+  String? _authToken;
 
   @override
   void initState() {
@@ -67,6 +68,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       setState(() {
         _workouts = workouts;
+        _authToken = token;
         _isLoading = false;
       });
     } on ApiException catch (e) {
@@ -135,7 +137,10 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: _workouts.length,
         itemBuilder: (context, index) {
-          return WorkoutCard(workout: _workouts[index]);
+          return WorkoutCard(
+            workout: _workouts[index],
+            authToken: _authToken ?? '',
+          );
         },
       ),
     );
