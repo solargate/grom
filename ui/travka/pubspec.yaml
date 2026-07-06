@@ -41,6 +41,11 @@ dependencies:
   shared_preferences: ^2.2.2
   file_picker: ^10.2.0
   web: ^1.1.0
+  geolocator: ^13.0.2
+  flutter_map: ^7.0.2
+  flutter_map_location_marker: ^9.1.0
+  latlong2: ^0.9.1
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

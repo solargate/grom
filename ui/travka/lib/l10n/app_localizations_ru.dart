@@ -402,4 +402,69 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trackMetadataApplied => 'Значения обновлены из трека';
+
+  @override
+  String get tabRecord => 'Запись';
+
+  @override
+  String get tabManual => 'Вручную';
+
+  @override
+  String get recordStart => 'Запись';
+
+  @override
+  String get recordPause => 'Пауза';
+
+  @override
+  String get recordFinish => 'Завершить';
+
+  @override
+  String get recordingDuration => 'Длительность';
+
+  @override
+  String get currentSpeed => 'Скорость';
+
+  @override
+  String speedKmh(String speed) {
+    return '$speed км/ч';
+  }
+
+  @override
+  String get speedUnavailable => '—';
+
+  @override
+  String get locationPermissionDenied =>
+      'Для записи трека нужен доступ к геолокации';
+
+  @override
+  String get locationServicesDisabled => 'Включите геолокацию для записи трека';
+
+  @override
+  String get openSettings => 'Открыть настройки';
+
+  @override
+  String get discardRecordingTitle => 'Прервать запись?';
+
+  @override
+  String get discardRecordingMessage => 'Текущая запись трека будет потеряна.';
+
+  @override
+  String get discardRecordingConfirm => 'Прервать';
+
+  @override
+  String get recordingNotificationTitle => 'Идёт запись тренировки';
+
+  @override
+  String get recordingNotificationText => 'Нажмите, чтобы вернуться в Travka';
+
+  @override
+  String get backgroundLocationRationale =>
+      'Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.';
+
+  @override
+  String get doNotDismissNotification =>
+      'Не убирайте уведомление во время записи';
+
+  @override
+  String get recordingInProgress => 'Идёт запись';
 }

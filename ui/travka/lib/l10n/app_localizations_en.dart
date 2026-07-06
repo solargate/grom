@@ -402,4 +402,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackMetadataApplied => 'Values updated from track';
+
+  @override
+  String get tabRecord => 'Record';
+
+  @override
+  String get tabManual => 'Manual';
+
+  @override
+  String get recordStart => 'Record';
+
+  @override
+  String get recordPause => 'Pause';
+
+  @override
+  String get recordFinish => 'Finish';
+
+  @override
+  String get recordingDuration => 'Duration';
+
+  @override
+  String get currentSpeed => 'Speed';
+
+  @override
+  String speedKmh(String speed) {
+    return '$speed km/h';
+  }
+
+  @override
+  String get speedUnavailable => '—';
+
+  @override
+  String get locationPermissionDenied =>
+      'Location permission is required to record a workout track';
+
+  @override
+  String get locationServicesDisabled =>
+      'Enable location services to record a workout track';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get discardRecordingTitle => 'Discard recording?';
+
+  @override
+  String get discardRecordingMessage =>
+      'The current track recording will be lost.';
+
+  @override
+  String get discardRecordingConfirm => 'Discard';
+
+  @override
+  String get recordingNotificationTitle => 'Recording workout';
+
+  @override
+  String get recordingNotificationText => 'Tap to return to Travka';
+
+  @override
+  String get backgroundLocationRationale =>
+      'Background location lets Travka keep recording your workout when you switch apps.';
+
+  @override
+  String get doNotDismissNotification =>
+      'Do not dismiss the notification while recording';
+
+  @override
+  String get recordingInProgress => 'Recording in progress';
 }

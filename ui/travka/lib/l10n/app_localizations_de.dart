@@ -404,4 +404,71 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trackMetadataApplied => 'Werte aus dem Track übernommen';
+
+  @override
+  String get tabRecord => 'Aufzeichnen';
+
+  @override
+  String get tabManual => 'Manuell';
+
+  @override
+  String get recordStart => 'Aufzeichnen';
+
+  @override
+  String get recordPause => 'Pause';
+
+  @override
+  String get recordFinish => 'Beenden';
+
+  @override
+  String get recordingDuration => 'Dauer';
+
+  @override
+  String get currentSpeed => 'Geschwindigkeit';
+
+  @override
+  String speedKmh(String speed) {
+    return '$speed km/h';
+  }
+
+  @override
+  String get speedUnavailable => '—';
+
+  @override
+  String get locationPermissionDenied =>
+      'Standortberechtigung ist für die Trackaufzeichnung erforderlich';
+
+  @override
+  String get locationServicesDisabled =>
+      'Aktivieren Sie die Ortungsdienste für die Trackaufzeichnung';
+
+  @override
+  String get openSettings => 'Einstellungen öffnen';
+
+  @override
+  String get discardRecordingTitle => 'Aufzeichnung verwerfen?';
+
+  @override
+  String get discardRecordingMessage =>
+      'Die aktuelle Trackaufzeichnung geht verloren.';
+
+  @override
+  String get discardRecordingConfirm => 'Verwerfen';
+
+  @override
+  String get recordingNotificationTitle => 'Training wird aufgezeichnet';
+
+  @override
+  String get recordingNotificationText => 'Tippen, um zu Travka zurückzukehren';
+
+  @override
+  String get backgroundLocationRationale =>
+      'Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.';
+
+  @override
+  String get doNotDismissNotification =>
+      'Benachrichtigung während der Aufzeichnung nicht entfernen';
+
+  @override
+  String get recordingInProgress => 'Aufzeichnung läuft';
 }

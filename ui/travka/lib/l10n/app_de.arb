@@ -181,5 +181,32 @@
   "removeTrack": "Track entfernen",
   "invalidTrackFormat": "Nur FIT- und GPX-Dateien werden unterstützt",
   "failedToParseTrack": "Trackdatei konnte nicht gelesen werden",
-  "trackMetadataApplied": "Werte aus dem Track übernommen"
+  "trackMetadataApplied": "Werte aus dem Track übernommen",
+  "tabRecord": "Aufzeichnen",
+  "tabManual": "Manuell",
+  "recordStart": "Aufzeichnen",
+  "recordPause": "Pause",
+  "recordFinish": "Beenden",
+  "recordingDuration": "Dauer",
+  "currentSpeed": "Geschwindigkeit",
+  "speedKmh": "{speed} km/h",
+  "@speedKmh": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "speedUnavailable": "—",
+  "locationPermissionDenied": "Standortberechtigung ist für die Trackaufzeichnung erforderlich",
+  "locationServicesDisabled": "Aktivieren Sie die Ortungsdienste für die Trackaufzeichnung",
+  "openSettings": "Einstellungen öffnen",
+  "discardRecordingTitle": "Aufzeichnung verwerfen?",
+  "discardRecordingMessage": "Die aktuelle Trackaufzeichnung geht verloren.",
+  "discardRecordingConfirm": "Verwerfen",
+  "recordingNotificationTitle": "Training wird aufgezeichnet",
+  "recordingNotificationText": "Tippen, um zu Travka zurückzukehren",
+  "backgroundLocationRationale": "Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.",
+  "doNotDismissNotification": "Benachrichtigung während der Aufzeichnung nicht entfernen",
+  "recordingInProgress": "Aufzeichnung läuft"
 }

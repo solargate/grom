@@ -181,5 +181,32 @@
   "removeTrack": "Remove track",
   "invalidTrackFormat": "Only FIT and GPX files are supported",
   "failedToParseTrack": "Failed to read track file",
-  "trackMetadataApplied": "Values updated from track"
+  "trackMetadataApplied": "Values updated from track",
+  "tabRecord": "Record",
+  "tabManual": "Manual",
+  "recordStart": "Record",
+  "recordPause": "Pause",
+  "recordFinish": "Finish",
+  "recordingDuration": "Duration",
+  "currentSpeed": "Speed",
+  "speedKmh": "{speed} km/h",
+  "@speedKmh": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "speedUnavailable": "—",
+  "locationPermissionDenied": "Location permission is required to record a workout track",
+  "locationServicesDisabled": "Enable location services to record a workout track",
+  "openSettings": "Open settings",
+  "discardRecordingTitle": "Discard recording?",
+  "discardRecordingMessage": "The current track recording will be lost.",
+  "discardRecordingConfirm": "Discard",
+  "recordingNotificationTitle": "Recording workout",
+  "recordingNotificationText": "Tap to return to Travka",
+  "backgroundLocationRationale": "Background location lets Travka keep recording your workout when you switch apps.",
+  "doNotDismissNotification": "Do not dismiss the notification while recording",
+  "recordingInProgress": "Recording in progress"
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Travka" xmlns="http://www.topografix.com/2009/GPX">
+  <trk>
+    <name>Recorded workout</name>
+    <trkseg>
+      <trkpt lat="55.755800" lon="37.617300">
+        <time>2024-06-01T10:00:00.000Z</time>
+        <ele>150.500000</ele>
+      </trkpt>
+      <trkpt lat="55.756000" lon="37.618000">
+        <time>2024-06-01T10:00:10.000Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

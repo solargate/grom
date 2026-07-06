@@ -855,6 +855,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Values updated from track'**
   String get trackMetadataApplied;
+
+  /// No description provided for @tabRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get tabRecord;
+
+  /// No description provided for @tabManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get tabManual;
+
+  /// No description provided for @recordStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get recordStart;
+
+  /// No description provided for @recordPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get recordPause;
+
+  /// No description provided for @recordFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get recordFinish;
+
+  /// No description provided for @recordingDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get recordingDuration;
+
+  /// No description provided for @currentSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get currentSpeed;
+
+  /// No description provided for @speedKmh.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} km/h'**
+  String speedKmh(String speed);
+
+  /// No description provided for @speedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get speedUnavailable;
+
+  /// No description provided for @locationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is required to record a workout track'**
+  String get locationPermissionDenied;
+
+  /// No description provided for @locationServicesDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable location services to record a workout track'**
+  String get locationServicesDisabled;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @discardRecordingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard recording?'**
+  String get discardRecordingTitle;
+
+  /// No description provided for @discardRecordingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The current track recording will be lost.'**
+  String get discardRecordingMessage;
+
+  /// No description provided for @discardRecordingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discardRecordingConfirm;
+
+  /// No description provided for @recordingNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording workout'**
+  String get recordingNotificationTitle;
+
+  /// No description provided for @recordingNotificationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to return to Travka'**
+  String get recordingNotificationText;
+
+  /// No description provided for @backgroundLocationRationale.
+  ///
+  /// In en, this message translates to:
+  /// **'Background location lets Travka keep recording your workout when you switch apps.'**
+  String get backgroundLocationRationale;
+
+  /// No description provided for @doNotDismissNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not dismiss the notification while recording'**
+  String get doNotDismissNotification;
+
+  /// No description provided for @recordingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording in progress'**
+  String get recordingInProgress;
 }
 
 class _AppLocalizationsDelegate

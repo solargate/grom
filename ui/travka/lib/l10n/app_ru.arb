@@ -181,5 +181,32 @@
   "removeTrack": "Удалить трек",
   "invalidTrackFormat": "Поддерживаются только файлы FIT и GPX",
   "failedToParseTrack": "Не удалось прочитать файл трека",
-  "trackMetadataApplied": "Значения обновлены из трека"
+  "trackMetadataApplied": "Значения обновлены из трека",
+  "tabRecord": "Запись",
+  "tabManual": "Вручную",
+  "recordStart": "Запись",
+  "recordPause": "Пауза",
+  "recordFinish": "Завершить",
+  "recordingDuration": "Длительность",
+  "currentSpeed": "Скорость",
+  "speedKmh": "{speed} км/ч",
+  "@speedKmh": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "speedUnavailable": "—",
+  "locationPermissionDenied": "Для записи трека нужен доступ к геолокации",
+  "locationServicesDisabled": "Включите геолокацию для записи трека",
+  "openSettings": "Открыть настройки",
+  "discardRecordingTitle": "Прервать запись?",
+  "discardRecordingMessage": "Текущая запись трека будет потеряна.",
+  "discardRecordingConfirm": "Прервать",
+  "recordingNotificationTitle": "Идёт запись тренировки",
+  "recordingNotificationText": "Нажмите, чтобы вернуться в Travka",
+  "backgroundLocationRationale": "Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.",
+  "doNotDismissNotification": "Не убирайте уведомление во время записи",
+  "recordingInProgress": "Идёт запись"
 }

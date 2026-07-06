@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:travka/l10n/app_localizations.dart';
-import 'package:travka/l10n/sport_type_localizations.dart';
 import 'package:travka/models/sport_types.dart';
+import 'package:travka/platform/is_mobile_client.dart';
 import 'package:travka/platform/track_file_picker.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
+import '../models/recorded_track.dart';
 import '../models/workout.dart';
+import '../services/track_recording_service.dart';
+import 'manual_workout_form.dart';
+import 'record_workout_tab.dart';
 
 Future<bool?> showAddWorkoutSheet(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
@@ -27,6 +30,8 @@ Future<bool?> showAddWorkoutSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    isDismissible: false,
+    enableDrag: false,
     builder: (context) => const AddWorkoutSheet(),
   );
 }
@@ -38,11 +43,15 @@ class AddWorkoutSheet extends StatefulWidget {
   State<AddWorkoutSheet> createState() => _AddWorkoutSheetState();
 }
 
-class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
+class _AddWorkoutSheetState extends State<AddWorkoutSheet>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _api = ApiRequest();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _recorder = TrackRecordingService.instance;
+
+  TabController? _tabController;
 
   String _sportTypeId = defaultSportTypeId;
   late DateTime _date;
@@ -55,16 +64,22 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
   List<int>? _trackBytes;
   bool _isParsingTrack = false;
 
+  bool get _showRecordTab => isMobileClient;
+
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _date = DateTime(now.year, now.month, now.day);
     _time = TimeOfDay.fromDateTime(now);
+    if (_showRecordTab) {
+      _tabController = TabController(length: 2, vsync: this);
+    }
   }
 
   @override
   void dispose() {
+    _tabController?.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -78,6 +93,42 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
       _time.hour,
       _time.minute,
     );
+  }
+
+  Future<bool> _confirmDiscardRecording() async {
+    if (!_recorder.isActive) {
+      return true;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.discardRecordingTitle),
+        content: Text(l10n.discardRecordingMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.discardRecordingConfirm),
+          ),
+        ],
+      ),
+    );
+    if (discard == true) {
+      await _recorder.discardRecording();
+    }
+    return discard == true;
+  }
+
+  Future<void> _handleCancel() async {
+    if (!await _confirmDiscardRecording()) {
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context, false);
   }
 
   Future<void> _pickDate() async {
@@ -103,26 +154,20 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
   }
 
   Future<void> _pickDuration() async {
-    final result = await showDialog<int>(
-      context: context,
-      builder: (context) => _DurationPickerDialog(
-        initialSeconds: _durationSeconds,
-      ),
+    final result = await showDurationPickerDialog(
+      context,
+      initialSeconds: _durationSeconds,
     );
-
     if (result != null) {
       setState(() => _durationSeconds = result);
     }
   }
 
   Future<void> _pickDistance() async {
-    final result = await showDialog<double>(
-      context: context,
-      builder: (context) => _DistancePickerDialog(
-        initialDistanceKm: _distanceKm,
-      ),
+    final result = await showDistancePickerDialog(
+      context,
+      initialDistanceKm: _distanceKm,
     );
-
     if (result != null) {
       setState(() => _distanceKm = result);
     }
@@ -292,44 +337,20 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
     });
   }
 
-  Widget _buildTrackPickerField(AppLocalizations l10n) {
-    if (_trackFilename != null) {
-      return InputDecorator(
-        decoration: InputDecoration(
-          labelText: l10n.workoutTrack,
-          border: const OutlineInputBorder(),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.trackFileSelected(_trackFilename!),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (_isParsingTrack)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              IconButton(
-                tooltip: l10n.removeTrack,
-                onPressed: _isSubmitting ? null : _removeTrack,
-                icon: const Icon(Icons.close),
-              ),
-          ],
-        ),
-      );
-    }
-
-    return FilledButton.tonalIcon(
-      onPressed: (_isSubmitting || _isPickingFile || _isParsingTrack)
-          ? null
-          : _pickTrack,
-      icon: const Icon(Icons.upload_file),
-      label: Text(l10n.selectTrackFile),
+  void _applyRecordedTrack(RecordedTrack track) {
+    final localStart = track.startTime.toLocal();
+    setState(() {
+      _trackFilename = 'track.gpx';
+      _trackBytes = track.gpxBytes;
+      _date = DateTime(localStart.year, localStart.month, localStart.day);
+      _time = TimeOfDay(hour: localStart.hour, minute: localStart.minute);
+      _durationSeconds = track.durationSeconds;
+      _distanceKm = track.distanceMeters / 1000;
+    });
+    _tabController?.animateTo(1);
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.trackMetadataApplied)),
     );
   }
 
@@ -397,340 +418,111 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet> {
     }
   }
 
+  Widget _buildManualTab({required bool showTitle}) {
+    return ManualWorkoutForm(
+      formKey: _formKey,
+      nameController: _nameController,
+      descriptionController: _descriptionController,
+      sportTypeId: _sportTypeId,
+      date: _date,
+      time: _time,
+      durationSeconds: _durationSeconds,
+      distanceKm: _distanceKm,
+      trackFilename: _trackFilename,
+      isSubmitting: _isSubmitting,
+      isPickingFile: _isPickingFile,
+      isParsingTrack: _isParsingTrack,
+      showTitle: showTitle,
+      onPickSportType: _pickSportType,
+      onPickDate: _pickDate,
+      onPickTime: _pickTime,
+      onPickDuration: _pickDuration,
+      onPickDistance: _pickDistance,
+      onPickTrack: _pickTrack,
+      onRemoveTrack: _removeTrack,
+      onCancel: _handleCancel,
+      onSubmit: _submit,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final locale = l10n.localeName;
-    final dateText = DateFormat.yMMMd(locale).format(_date);
-    final timeText = _time.format(context);
-    final durationText = formatDuration(l10n, _durationSeconds);
-    final distanceText = _distanceKm == 0
-        ? l10n.distanceZero
-        : l10n.distanceKilometers(
-            _distanceKm >= 10
-                ? _distanceKm.toStringAsFixed(1)
-                : _distanceKm.toStringAsFixed(2),
-          );
-    final selectedSport = sportTypeById(_sportTypeId);
 
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24,
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.addWorkout,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.workoutName,
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.enterWorkoutName;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: l10n.workoutDescription,
-                  border: const OutlineInputBorder(),
-                ),
-                minLines: 3,
-                maxLines: 5,
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickSportType,
-                borderRadius: BorderRadius.circular(4),
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: l10n.workoutType,
-                    border: const OutlineInputBorder(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        await _handleCancel();
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: 24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: _showRecordTab
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.addWorkout,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  child: Row(
-                    children: [
-                      if (selectedSport != null)
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundColor:
-                              sportTypeColor(selectedSport.id).withValues(alpha: 0.15),
-                          child: Icon(
-                            selectedSport.icon,
-                            size: 16,
-                            color: sportTypeColor(selectedSport.id),
-                          ),
+                  TabBar(
+                    controller: _tabController,
+                    onTap: (index) async {
+                      if (index == 0 ||
+                          !_recorder.isActive ||
+                          _recorder.state == TrackRecordingState.paused) {
+                        return;
+                      }
+                      final l10n = AppLocalizations.of(context)!;
+                      final discard = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(l10n.discardRecordingTitle),
+                          content: Text(l10n.discardRecordingMessage),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.cancel),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.discardRecordingConfirm),
+                            ),
+                          ],
                         ),
-                      if (selectedSport != null) const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(sportTypeLabel(l10n, _sportTypeId)),
-                      ),
-                      const Icon(Icons.arrow_drop_down),
+                      );
+                      if (discard == true) {
+                        await _recorder.discardRecording();
+                      } else {
+                        _tabController?.index = 0;
+                      }
+                    },
+                    tabs: [
+                      Tab(text: l10n.tabRecord),
+                      Tab(text: l10n.tabManual),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickDate,
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: l10n.workoutDate,
-                    border: const OutlineInputBorder(),
-                  ),
-                  child: Text(dateText),
-                ),
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickTime,
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: l10n.workoutStartTime,
-                    border: const OutlineInputBorder(),
-                  ),
-                  child: Text(timeText),
-                ),
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickDuration,
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: l10n.workoutDuration,
-                    border: const OutlineInputBorder(),
-                  ),
-                  child: Text(durationText),
-                ),
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickDistance,
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: l10n.workoutDistance,
-                    border: const OutlineInputBorder(),
-                  ),
-                  child: Text(distanceText),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildTrackPickerField(l10n),
-              const SizedBox(height: 24),
-              Row(
-                children: [
+                  const SizedBox(height: 12),
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => Navigator.pop(context, false),
-                      child: Text(l10n.cancel),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(l10n.save),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        RecordWorkoutTab(onFinished: _applyRecordedTrack),
+                        _buildManualTab(showTitle: false),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-        ),
+              )
+            : _buildManualTab(showTitle: true),
       ),
-    );
-  }
-}
-
-class _DurationPickerDialog extends StatefulWidget {
-  const _DurationPickerDialog({required this.initialSeconds});
-
-  final int initialSeconds;
-
-  @override
-  State<_DurationPickerDialog> createState() => _DurationPickerDialogState();
-}
-
-class _DurationPickerDialogState extends State<_DurationPickerDialog> {
-  late final TextEditingController _hoursController;
-  late final TextEditingController _minutesController;
-  late final TextEditingController _secondsController;
-
-  @override
-  void initState() {
-    super.initState();
-    final seconds = widget.initialSeconds;
-    _hoursController = TextEditingController(text: '${seconds ~/ 3600}');
-    _minutesController =
-        TextEditingController(text: '${(seconds % 3600) ~/ 60}');
-    _secondsController = TextEditingController(text: '${seconds % 60}');
-  }
-
-  @override
-  void dispose() {
-    _hoursController.dispose();
-    _minutesController.dispose();
-    _secondsController.dispose();
-    super.dispose();
-  }
-
-  int _clampDurationPart(String value, {required int max}) {
-    final parsed = int.tryParse(value.trim()) ?? 0;
-    if (parsed < 0) {
-      return 0;
-    }
-    if (parsed > max) {
-      return max;
-    }
-    return parsed;
-  }
-
-  void _save() {
-    final hours = _clampDurationPart(_hoursController.text, max: 99);
-    final minutes = _clampDurationPart(_minutesController.text, max: 59);
-    final seconds = _clampDurationPart(_secondsController.text, max: 59);
-    Navigator.pop(context, hours * 3600 + minutes * 60 + seconds);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.selectDuration),
-      content: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _hoursController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.hoursLabel,
-                border: const OutlineInputBorder(),
-              ),
-              autofocus: true,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _minutesController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.minutesLabel,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _secondsController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.secondsLabel,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(l10n.save),
-        ),
-      ],
-    );
-  }
-}
-
-class _DistancePickerDialog extends StatefulWidget {
-  const _DistancePickerDialog({required this.initialDistanceKm});
-
-  final double initialDistanceKm;
-
-  @override
-  State<_DistancePickerDialog> createState() => _DistancePickerDialogState();
-}
-
-class _DistancePickerDialogState extends State<_DistancePickerDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: widget.initialDistanceKm == 0
-          ? '0'
-          : widget.initialDistanceKm.toString(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final parsed =
-        double.tryParse(_controller.text.replaceAll(',', '.')) ?? 0;
-    Navigator.pop(context, parsed < 0 ? 0.0 : parsed);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.selectDistance),
-      content: TextField(
-        controller: _controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
-          labelText: l10n.kilometersLabel,
-          border: const OutlineInputBorder(),
-          suffixText: 'km',
-        ),
-        autofocus: true,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(l10n.save),
-        ),
-      ],
     );
   }
 }
