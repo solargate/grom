@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,15 +54,20 @@ func (s *Store) Create(nickname string, workout *Workout) (*Workout, error) {
 		return nil, err
 	}
 
-	workout.ID = newWorkoutID()
+	userDir := s.userDir(nickname)
+	if err := os.MkdirAll(userDir, 0700); err != nil {
+		return nil, fmt.Errorf("create user dir: %w", err)
+	}
+
+	id, err := s.allocateWorkoutID(userDir)
+	if err != nil {
+		return nil, err
+	}
+	workout.ID = id
 	workout.Name = trimWorkoutName(workout.Name)
 	workout.Description = trimWorkoutDescription(workout.Description)
 
 	return s.saveWorkout(nickname, workout)
-}
-
-func newWorkoutID() string {
-	return uuid.NewString()
 }
 
 func trimWorkoutName(name string) string {
@@ -100,6 +104,10 @@ func (s *Store) saveWorkout(nickname string, workout *Workout) (*Workout, error)
 	userDir := s.userDir(nickname)
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
+	}
+
+	if s.workoutIDExists(userDir, workout.ID) {
+		return nil, ErrWorkoutExists
 	}
 
 	workoutDirPath := workoutDir(userDir, workout.StartDate, workout.ID)

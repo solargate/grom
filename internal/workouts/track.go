@@ -54,14 +54,18 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 		return nil, err
 	}
 
-	workout.ID = newWorkoutID()
-	workout.Name = trimWorkoutName(workout.Name)
-	workout.Description = trimWorkoutDescription(workout.Description)
-
 	userDir := s.userDir(nickname)
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
 	}
+
+	id, err := s.allocateWorkoutID(userDir)
+	if err != nil {
+		return nil, err
+	}
+	workout.ID = id
+	workout.Name = trimWorkoutName(workout.Name)
+	workout.Description = trimWorkoutDescription(workout.Description)
 
 	workoutDirPath := workoutDir(userDir, workout.StartDate, workout.ID)
 	if _, err := os.Stat(workoutDirPath); err == nil {

@@ -26,6 +26,9 @@ func TestStoreCreateAndList(t *testing.T) {
 	if created.ID == "" {
 		t.Fatal("expected generated id")
 	}
+	if len(created.ID) != workoutIDLength {
+		t.Fatalf("expected id length %d, got %d (%q)", workoutIDLength, len(created.ID), created.ID)
+	}
 
 	expectedBase := "2026-07-05T143000Z-" + created.ID
 	expectedDir := filepath.Join(dir, "solarwind", expectedBase)
