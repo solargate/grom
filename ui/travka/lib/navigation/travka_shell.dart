@@ -29,6 +29,7 @@ class TravkaShell extends StatefulWidget {
 }
 
 class _TravkaShellState extends State<TravkaShell> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final ApiRequest _api = ApiRequest();
 
   String _title = 'Travka Home';
@@ -83,9 +84,7 @@ class _TravkaShellState extends State<TravkaShell> {
 
   void _onMenuDestinationSelected(TravkaDestination destination) {
     _onDestinationSelected(destination);
-    if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-      Navigator.pop(context);
-    }
+    _scaffoldKey.currentState?.closeDrawer();
   }
 
   Future<void> _onLoggedIn(UserInfo user) async {
@@ -192,6 +191,7 @@ class _TravkaShellState extends State<TravkaShell> {
 
   Widget _buildNarrowLayout(AppLocalizations l10n) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(_appBarTitle()),
