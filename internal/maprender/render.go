@@ -37,7 +37,7 @@ func RenderPreview(points []tracks.LatLng) ([]byte, error) {
 	ctx := sm.NewContext()
 	ctx.SetSize(PreviewWidth, PreviewHeight)
 	ctx.SetUserAgent(userAgent)
-	ctx.SetTileProvider(sm.NewTileProviderCartoLight())
+	ctx.SetTileProvider(sm.NewTileProviderOpenStreetMaps())
 	ctx.SetCache(nil)
 
 	if bbox := tightBounds(simplified); bbox != nil {
