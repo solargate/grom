@@ -3,24 +3,31 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/recorded_track.dart';
 import '../models/recorded_track_point.dart';
-import 'package:permission_handler/permission_handler.dart';
-
 import '../utils/geo_utils.dart';
 import 'gpx_track_encoder.dart';
+import 'track_recording_foreground.dart';
+import 'track_recording_session.dart';
+import 'track_recording_state.dart';
+import 'track_recording_store.dart';
 
-enum TrackRecordingState { idle, recording, paused }
+export 'track_recording_state.dart';
 
 class TrackRecordingNotificationStrings {
   const TrackRecordingNotificationStrings({
     required this.title,
     required this.text,
+    required this.channelName,
+    this.pausedText,
   });
 
   final String title;
   final String text;
+  final String channelName;
+  final String? pausedText;
 }
 
 class TrackRecordingService extends ChangeNotifier {
@@ -29,6 +36,7 @@ class TrackRecordingService extends ChangeNotifier {
   static final TrackRecordingService instance = TrackRecordingService._();
 
   final GpxTrackEncoder _gpxEncoder = GpxTrackEncoder();
+  final TrackRecordingStore _store = TrackRecordingStore.instance;
 
   TrackRecordingState _state = TrackRecordingState.idle;
   final List<RecordedTrackPoint> _points = [];
@@ -39,12 +47,17 @@ class TrackRecordingService extends ChangeNotifier {
   StreamSubscription<Position>? _positionSub;
   Timer? _tickTimer;
   TrackRecordingNotificationStrings? _notificationStrings;
+  String? _streamError;
+  bool _initialized = false;
+
+  bool get _useForegroundTask => TrackRecordingForeground.isSupported;
 
   TrackRecordingState get state => _state;
   List<RecordedTrackPoint> get points => List.unmodifiable(_points);
   List<LatLng> get polylinePoints =>
       _points.map((p) => LatLng(p.latitude, p.longitude)).toList(growable: false);
   DateTime? get startTime => _startTime;
+  String? get streamError => _streamError;
   int get durationSeconds {
     var total = _accumulatedDuration;
     if (_state == TrackRecordingState.recording && _segmentStartedAt != null) {
@@ -58,6 +71,44 @@ class TrackRecordingService extends ChangeNotifier {
       _state == TrackRecordingState.recording ||
       _state == TrackRecordingState.paused;
 
+  Future<void> initialize() async {
+    if (_initialized) {
+      return;
+    }
+    _initialized = true;
+
+    await _store.init();
+    await TrackRecordingForeground.initialize();
+    TrackRecordingForeground.registerTaskDataCallback(_onTaskData);
+
+    final session = await _store.load();
+    if (session == null || !session.isActive) {
+      return;
+    }
+
+    if (await TrackRecordingForeground.isRunning()) {
+      _applySession(session);
+      if (_state == TrackRecordingState.recording) {
+        _startTickTimer();
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<bool> needsRecovery() async {
+    await initialize();
+    final session = await _store.load();
+    if (session == null || !session.isActive) {
+      return false;
+    }
+    if (await TrackRecordingForeground.isRunning()) {
+      return false;
+    }
+    _applySession(session);
+    notifyListeners();
+    return true;
+  }
+
   Future<bool> ensureLocationReady() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -68,7 +119,7 @@ class TrackRecordingService extends ChangeNotifier {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-  if (permission == LocationPermission.denied ||
+    if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       return false;
     }
@@ -83,11 +134,33 @@ class TrackRecordingService extends ChangeNotifier {
       return true;
     }
 
+    if (await Geolocator.checkPermission() == LocationPermission.always) {
+      return true;
+    }
+
     final status = await Permission.locationAlways.status;
     if (status.isGranted) {
       return true;
     }
     final result = await Permission.locationAlways.request();
+    return result.isGranted &&
+        await Geolocator.checkPermission() == LocationPermission.always;
+  }
+
+  Future<bool> ensureNotificationPermission() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return true;
+    }
+
+    if (await TrackRecordingForeground.ensureNotificationPermission()) {
+      return true;
+    }
+
+    final status = await Permission.notification.status;
+    if (status.isGranted) {
+      return true;
+    }
+    final result = await Permission.notification.request();
     return result.isGranted;
   }
 
@@ -114,8 +187,15 @@ class TrackRecordingService extends ChangeNotifier {
     if (!await ensureLocationReady()) {
       throw StateError('location_unavailable');
     }
+    if (!await ensureBackgroundPermission()) {
+      throw StateError('background_permission_denied');
+    }
+    if (!await ensureNotificationPermission()) {
+      throw StateError('notification_permission_denied');
+    }
 
     _notificationStrings = notificationStrings;
+    _streamError = null;
     final now = DateTime.now();
 
     if (_state == TrackRecordingState.idle) {
@@ -126,8 +206,15 @@ class TrackRecordingService extends ChangeNotifier {
 
     _state = TrackRecordingState.recording;
     _segmentStartedAt = now;
+    await _persistSession();
     _startTickTimer();
-    await _startPositionStream();
+
+    if (_useForegroundTask) {
+      await _startForegroundRecording(notificationStrings);
+    } else {
+      await _startPositionStream();
+    }
+
     notifyListeners();
   }
 
@@ -137,8 +224,23 @@ class TrackRecordingService extends ChangeNotifier {
     }
     _finalizeOpenSegment();
     _state = TrackRecordingState.paused;
+    _currentSpeedKmh = 0;
+    await _persistSession();
     _stopTickTimer();
-    await _stopPositionStream();
+
+    if (_useForegroundTask) {
+      await TrackRecordingForeground.sendCommand('pause');
+      final pausedText = _notificationStrings?.pausedText;
+      if (pausedText != null && _notificationStrings != null) {
+        await TrackRecordingForeground.updateNotification(
+          title: _notificationStrings!.title,
+          text: pausedText,
+        );
+      }
+    } else {
+      await _stopPositionStream();
+    }
+
     notifyListeners();
   }
 
@@ -148,11 +250,58 @@ class TrackRecordingService extends ChangeNotifier {
     if (_state != TrackRecordingState.paused) {
       return;
     }
+    if (!await ensureBackgroundPermission()) {
+      throw StateError('background_permission_denied');
+    }
+    if (!await ensureNotificationPermission()) {
+      throw StateError('notification_permission_denied');
+    }
+
     _notificationStrings = notificationStrings;
+    _streamError = null;
     _state = TrackRecordingState.recording;
     _segmentStartedAt = DateTime.now();
+    await _persistSession();
     _startTickTimer();
-    await _startPositionStream();
+
+    if (_useForegroundTask) {
+      if (!await TrackRecordingForeground.isRunning()) {
+        await _startForegroundRecording(notificationStrings);
+      } else {
+        await TrackRecordingForeground.updateNotification(
+          title: notificationStrings.title,
+          text: notificationStrings.text,
+        );
+        await TrackRecordingForeground.sendCommand('resume');
+      }
+    } else {
+      await _startPositionStream();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> restoreInterruptedRecording({
+    required TrackRecordingNotificationStrings notificationStrings,
+  }) async {
+    if (!isActive) {
+      return;
+    }
+    _notificationStrings = notificationStrings;
+    _streamError = null;
+
+    if (_state == TrackRecordingState.recording) {
+      _startTickTimer();
+      await _startForegroundRecording(notificationStrings);
+    } else {
+      await TrackRecordingForeground.start(
+        title: notificationStrings.title,
+        text: notificationStrings.pausedText ?? notificationStrings.text,
+        channelName: notificationStrings.channelName,
+        pausedText: notificationStrings.pausedText,
+      );
+    }
+
     notifyListeners();
   }
 
@@ -165,12 +314,12 @@ class TrackRecordingService extends ChangeNotifier {
       _finalizeOpenSegment();
     }
 
-    await _stopPositionStream();
+    await _stopRecordingInfrastructure();
     _stopTickTimer();
     _state = TrackRecordingState.idle;
 
     if (_points.isEmpty || _startTime == null) {
-      _resetSession();
+      await _resetSession();
       notifyListeners();
       return null;
     }
@@ -183,26 +332,55 @@ class TrackRecordingService extends ChangeNotifier {
       gpxBytes: _gpxEncoder.encode(points: _points),
     );
 
-    _resetSession();
+    await _resetSession();
     notifyListeners();
     return track;
   }
 
   Future<void> discardRecording() async {
-    await _stopPositionStream();
+    await _stopRecordingInfrastructure();
     _stopTickTimer();
-    _resetSession();
+    await _resetSession();
     _state = TrackRecordingState.idle;
     notifyListeners();
   }
 
-  void _resetSession() {
+  Future<void> _startForegroundRecording(
+    TrackRecordingNotificationStrings notificationStrings,
+  ) async {
+    final result = await TrackRecordingForeground.start(
+      title: notificationStrings.title,
+      text: notificationStrings.text,
+      channelName: notificationStrings.channelName,
+      pausedText: notificationStrings.pausedText,
+    );
+    if (result is ForegroundServiceFailure) {
+      _streamError = result.error.toString();
+      throw StateError('foreground_service_start_failed');
+    }
+    if (_state == TrackRecordingState.recording) {
+      await TrackRecordingForeground.sendCommand('resume');
+    }
+  }
+
+  Future<void> _stopRecordingInfrastructure() async {
+    if (_useForegroundTask) {
+      await TrackRecordingForeground.sendCommand('stop');
+      await TrackRecordingForeground.stop();
+    } else {
+      await _stopPositionStream();
+    }
+  }
+
+  Future<void> _resetSession() async {
     _points.clear();
     _startTime = null;
     _segmentStartedAt = null;
     _accumulatedDuration = Duration.zero;
     _currentSpeedKmh = 0;
     _notificationStrings = null;
+    _streamError = null;
+    await _store.clear();
   }
 
   void _finalizeOpenSegment() {
@@ -214,11 +392,83 @@ class TrackRecordingService extends ChangeNotifier {
     _segmentStartedAt = null;
   }
 
+  Future<void> _persistSession() async {
+    final startTime = _startTime;
+    if (startTime == null || !isActive) {
+      return;
+    }
+    await _store.save(
+      TrackRecordingSession(
+        state: _state,
+        startTime: startTime,
+        accumulatedDurationMs: _accumulatedDuration.inMilliseconds,
+        segmentStartedAt: _segmentStartedAt,
+        points: List<RecordedTrackPoint>.from(_points),
+      ),
+    );
+  }
+
+  void _applySession(TrackRecordingSession session) {
+    _state = session.state;
+    _startTime = session.startTime;
+    _accumulatedDuration = Duration(milliseconds: session.accumulatedDurationMs);
+    _segmentStartedAt = session.segmentStartedAt;
+    _points
+      ..clear()
+      ..addAll(session.points);
+    if (_points.isNotEmpty) {
+      final lastPoint = _points.last;
+      if (lastPoint.speedMps != null && lastPoint.speedMps! >= 0) {
+        _currentSpeedKmh = lastPoint.speedMps! * 3.6;
+      }
+    }
+  }
+
+  void _onTaskData(Object data) {
+    if (data is! Map) {
+      return;
+    }
+
+    final type = data['type'];
+    if (type == 'error') {
+      _streamError = data['message']?.toString();
+      notifyListeners();
+      return;
+    }
+
+    if (type == 'point') {
+      final pointJson = data['point'];
+      if (pointJson is! Map) {
+        return;
+      }
+      final point = RecordedTrackPoint.fromJson(
+        Map<String, dynamic>.from(pointJson),
+      );
+      if (_points.isEmpty ||
+          _points.last.timestamp != point.timestamp ||
+          _points.last.latitude != point.latitude ||
+          _points.last.longitude != point.longitude) {
+        _points.add(point);
+      }
+      final speedKmh = data['speedKmh'];
+      if (speedKmh is num) {
+        _currentSpeedKmh = speedKmh.toDouble();
+      }
+      notifyListeners();
+    }
+  }
+
   Future<void> _startPositionStream() async {
     await _stopPositionStream();
     _positionSub = Geolocator.getPositionStream(
       locationSettings: _buildLocationSettings(forStream: true),
-    ).listen(_onPosition, onError: (_) {});
+    ).listen(
+      _onPosition,
+      onError: (Object error) {
+        _streamError = error.toString();
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> _stopPositionStream() async {
@@ -240,7 +490,7 @@ class TrackRecordingService extends ChangeNotifier {
     _tickTimer = null;
   }
 
-  void _onPosition(Position position) {
+  Future<void> _onPosition(Position position) async {
     if (_state != TrackRecordingState.recording) {
       return;
     }
@@ -267,6 +517,7 @@ class TrackRecordingService extends ChangeNotifier {
     if (position.speed >= 0) {
       _currentSpeedKmh = position.speed * 3.6;
     }
+    await _persistSession();
     notifyListeners();
   }
 
@@ -276,12 +527,15 @@ class TrackRecordingService extends ChangeNotifier {
       return AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 5,
+        intervalDuration: const Duration(seconds: 5),
         foregroundNotificationConfig: notification == null
             ? null
             : ForegroundNotificationConfig(
                 notificationTitle: notification.title,
                 notificationText: notification.text,
+                notificationChannelName: notification.channelName,
                 enableWakeLock: true,
+                setOngoing: true,
               ),
       );
     }

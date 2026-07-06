@@ -437,6 +437,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location permission is required to record a workout track';
 
   @override
+  String get notificationPermissionDenied =>
+      'Notification permission is required to show the recording status';
+
+  @override
   String get locationServicesDisabled =>
       'Enable location services to record a workout track';
 
@@ -460,6 +464,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordingNotificationText => 'Tap to return to Travka';
 
   @override
+  String get recordingNotificationChannelName => 'Workout recording';
+
+  @override
+  String get recordingPausedNotificationText => 'Workout recording paused';
+
+  @override
   String get backgroundLocationRationale =>
       'Background location lets Travka keep recording your workout when you switch apps.';
 
@@ -469,4 +479,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordingInProgress => 'Recording in progress';
+
+  @override
+  String get restoreRecordingTitle => 'Resume recording?';
+
+  @override
+  String get restoreRecordingMessage =>
+      'An unfinished workout recording was found. Resume it or discard the saved track.';
+
+  @override
+  String get restoreRecordingConfirm => 'Resume';
+
+  @override
+  String get restoreRecordingDiscard => 'Discard';
 }

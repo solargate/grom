@@ -437,6 +437,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Для записи трека нужен доступ к геолокации';
 
   @override
+  String get notificationPermissionDenied =>
+      'Для записи трека нужно разрешение на показ уведомлений';
+
+  @override
   String get locationServicesDisabled => 'Включите геолокацию для записи трека';
 
   @override
@@ -458,6 +462,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get recordingNotificationText => 'Нажмите, чтобы вернуться в Travka';
 
   @override
+  String get recordingNotificationChannelName => 'Запись тренировки';
+
+  @override
+  String get recordingPausedNotificationText => 'Запись тренировки на паузе';
+
+  @override
   String get backgroundLocationRationale =>
       'Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.';
 
@@ -467,4 +477,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get recordingInProgress => 'Идёт запись';
+
+  @override
+  String get restoreRecordingTitle => 'Восстановить запись?';
+
+  @override
+  String get restoreRecordingMessage =>
+      'Найдена незавершённая запись тренировки. Восстановить её или удалить сохранённый трек?';
+
+  @override
+  String get restoreRecordingConfirm => 'Восстановить';
+
+  @override
+  String get restoreRecordingDiscard => 'Удалить';
 }

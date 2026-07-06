@@ -439,6 +439,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Standortberechtigung ist für die Trackaufzeichnung erforderlich';
 
   @override
+  String get notificationPermissionDenied =>
+      'Benachrichtigungsberechtigung ist für die Aufzeichnung erforderlich';
+
+  @override
   String get locationServicesDisabled =>
       'Aktivieren Sie die Ortungsdienste für die Trackaufzeichnung';
 
@@ -462,6 +466,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recordingNotificationText => 'Tippen, um zu Travka zurückzukehren';
 
   @override
+  String get recordingNotificationChannelName => 'Trainingsaufzeichnung';
+
+  @override
+  String get recordingPausedNotificationText =>
+      'Trainingsaufzeichnung pausiert';
+
+  @override
   String get backgroundLocationRationale =>
       'Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.';
 
@@ -471,4 +482,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get recordingInProgress => 'Aufzeichnung läuft';
+
+  @override
+  String get restoreRecordingTitle => 'Aufzeichnung fortsetzen?';
+
+  @override
+  String get restoreRecordingMessage =>
+      'Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?';
+
+  @override
+  String get restoreRecordingConfirm => 'Fortsetzen';
+
+  @override
+  String get restoreRecordingDiscard => 'Verwerfen';
 }

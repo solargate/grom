@@ -916,6 +916,12 @@ abstract class AppLocalizations {
   /// **'Location permission is required to record a workout track'**
   String get locationPermissionDenied;
 
+  /// No description provided for @notificationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission is required to show the recording status'**
+  String get notificationPermissionDenied;
+
   /// No description provided for @locationServicesDisabled.
   ///
   /// In en, this message translates to:
@@ -958,6 +964,18 @@ abstract class AppLocalizations {
   /// **'Tap to return to Travka'**
   String get recordingNotificationText;
 
+  /// No description provided for @recordingNotificationChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout recording'**
+  String get recordingNotificationChannelName;
+
+  /// No description provided for @recordingPausedNotificationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout recording paused'**
+  String get recordingPausedNotificationText;
+
   /// No description provided for @backgroundLocationRationale.
   ///
   /// In en, this message translates to:
@@ -975,6 +993,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recording in progress'**
   String get recordingInProgress;
+
+  /// No description provided for @restoreRecordingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume recording?'**
+  String get restoreRecordingTitle;
+
+  /// No description provided for @restoreRecordingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'An unfinished workout recording was found. Resume it or discard the saved track.'**
+  String get restoreRecordingMessage;
+
+  /// No description provided for @restoreRecordingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get restoreRecordingConfirm;
+
+  /// No description provided for @restoreRecordingDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get restoreRecordingDiscard;
 }
 
 class _AppLocalizationsDelegate

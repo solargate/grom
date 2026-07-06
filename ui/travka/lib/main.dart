@@ -6,9 +6,11 @@ import 'locale_storage.dart';
 import 'navigation/travka_shell.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
+import 'services/track_recording_bootstrap.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await bootstrapTrackRecording();
 
   if (isMobileClient) {
     await ServerStorage.load();

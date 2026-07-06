@@ -74,6 +74,8 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
     return TrackRecordingNotificationStrings(
       title: l10n.recordingNotificationTitle,
       text: l10n.recordingNotificationText,
+      channelName: l10n.recordingNotificationChannelName,
+      pausedText: l10n.recordingPausedNotificationText,
     );
   }
 
@@ -84,6 +86,12 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
     if (state == TrackRecordingState.idle) {
       final proceed = await _confirmBackgroundAccess(l10n);
       if (!proceed || !mounted) {
+        return;
+      }
+      final notificationsGranted = await _recorder.ensureNotificationPermission();
+      if (!notificationsGranted) {
+        if (!mounted) return;
+        _showNotificationError();
         return;
       }
     }
@@ -152,6 +160,13 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.locationPermissionDenied)),
+    );
+  }
+
+  void _showNotificationError() {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.notificationPermissionDenied)),
     );
   }
 

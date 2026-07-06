@@ -199,6 +199,7 @@
   },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Standortberechtigung ist für die Trackaufzeichnung erforderlich",
+  "notificationPermissionDenied": "Benachrichtigungsberechtigung ist für die Aufzeichnung erforderlich",
   "locationServicesDisabled": "Aktivieren Sie die Ortungsdienste für die Trackaufzeichnung",
   "openSettings": "Einstellungen öffnen",
   "discardRecordingTitle": "Aufzeichnung verwerfen?",
@@ -206,7 +207,13 @@
   "discardRecordingConfirm": "Verwerfen",
   "recordingNotificationTitle": "Training wird aufgezeichnet",
   "recordingNotificationText": "Tippen, um zu Travka zurückzukehren",
+  "recordingNotificationChannelName": "Trainingsaufzeichnung",
+  "recordingPausedNotificationText": "Trainingsaufzeichnung pausiert",
   "backgroundLocationRationale": "Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.",
   "doNotDismissNotification": "Benachrichtigung während der Aufzeichnung nicht entfernen",
-  "recordingInProgress": "Aufzeichnung läuft"
+  "recordingInProgress": "Aufzeichnung läuft",
+  "restoreRecordingTitle": "Aufzeichnung fortsetzen?",
+  "restoreRecordingMessage": "Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?",
+  "restoreRecordingConfirm": "Fortsetzen",
+  "restoreRecordingDiscard": "Verwerfen"
 }

@@ -8,8 +8,10 @@ import '../pages/home_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../registration.dart';
 import '../server_storage.dart';
+import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
 import '../widgets/settings_dialog.dart';
+import '../widgets/track_recording_recovery_dialog.dart';
 import 'travka_destination.dart';
 import 'travka_side_menu.dart';
 
@@ -77,6 +79,21 @@ class _TravkaShellState extends State<TravkaShell> {
       _title = name;
       _nickname = nickname;
     });
+
+    if (isMobileClient) {
+      await _maybeRecoverRecording();
+    }
+  }
+
+  Future<void> _maybeRecoverRecording() async {
+    final needsRecovery = await TrackRecordingService.instance.needsRecovery();
+    if (!needsRecovery || !mounted) {
+      return;
+    }
+    await showTrackRecordingRecoveryDialog(
+      context,
+      TrackRecordingService.instance,
+    );
   }
 
   void _onDestinationSelected(TravkaDestination destination) {

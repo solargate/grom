@@ -199,6 +199,7 @@
   },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Для записи трека нужен доступ к геолокации",
+  "notificationPermissionDenied": "Для записи трека нужно разрешение на показ уведомлений",
   "locationServicesDisabled": "Включите геолокацию для записи трека",
   "openSettings": "Открыть настройки",
   "discardRecordingTitle": "Прервать запись?",
@@ -206,7 +207,13 @@
   "discardRecordingConfirm": "Прервать",
   "recordingNotificationTitle": "Идёт запись тренировки",
   "recordingNotificationText": "Нажмите, чтобы вернуться в Travka",
+  "recordingNotificationChannelName": "Запись тренировки",
+  "recordingPausedNotificationText": "Запись тренировки на паузе",
   "backgroundLocationRationale": "Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.",
   "doNotDismissNotification": "Не убирайте уведомление во время записи",
-  "recordingInProgress": "Идёт запись"
+  "recordingInProgress": "Идёт запись",
+  "restoreRecordingTitle": "Восстановить запись?",
+  "restoreRecordingMessage": "Найдена незавершённая запись тренировки. Восстановить её или удалить сохранённый трек?",
+  "restoreRecordingConfirm": "Восстановить",
+  "restoreRecordingDiscard": "Удалить"
 }

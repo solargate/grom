@@ -199,6 +199,7 @@
   },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Location permission is required to record a workout track",
+  "notificationPermissionDenied": "Notification permission is required to show the recording status",
   "locationServicesDisabled": "Enable location services to record a workout track",
   "openSettings": "Open settings",
   "discardRecordingTitle": "Discard recording?",
@@ -206,7 +207,13 @@
   "discardRecordingConfirm": "Discard",
   "recordingNotificationTitle": "Recording workout",
   "recordingNotificationText": "Tap to return to Travka",
+  "recordingNotificationChannelName": "Workout recording",
+  "recordingPausedNotificationText": "Workout recording paused",
   "backgroundLocationRationale": "Background location lets Travka keep recording your workout when you switch apps.",
   "doNotDismissNotification": "Do not dismiss the notification while recording",
-  "recordingInProgress": "Recording in progress"
+  "recordingInProgress": "Recording in progress",
+  "restoreRecordingTitle": "Resume recording?",
+  "restoreRecordingMessage": "An unfinished workout recording was found. Resume it or discard the saved track.",
+  "restoreRecordingConfirm": "Resume",
+  "restoreRecordingDiscard": "Discard"
 }
