@@ -8,6 +8,7 @@ class WorkoutRecordMap extends StatefulWidget {
     super.key,
     required this.trackPoints,
     required this.followUser,
+    this.controller,
     this.initialCenter,
     this.showCurrentLocation = true,
     this.fitToTrack = false,
@@ -15,6 +16,7 @@ class WorkoutRecordMap extends StatefulWidget {
 
   final List<LatLng> trackPoints;
   final bool followUser;
+  final MapController? controller;
   final LatLng? initialCenter;
   final bool showCurrentLocation;
   final bool fitToTrack;
@@ -24,8 +26,19 @@ class WorkoutRecordMap extends StatefulWidget {
 }
 
 class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
-  final MapController _mapController = MapController();
+  MapController? _internalController;
   LatLng? _lastCentered;
+
+  MapController get _mapController =>
+      widget.controller ?? _internalController!;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.controller == null) {
+      _internalController = MapController();
+    }
+  }
 
   CameraFit? get _initialCameraFit {
     if (!widget.fitToTrack || widget.trackPoints.length < 2) {

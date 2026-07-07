@@ -158,6 +158,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get retry => 'Повторить';
 
   @override
+  String get expandMap => 'Расширить карту';
+
+  @override
+  String get collapseMap => 'Уменьшить карту';
+
+  @override
   String get noWorkoutsYet => 'У вас пока нет тренировок';
 
   @override

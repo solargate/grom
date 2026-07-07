@@ -62,6 +62,8 @@
   "failedToSaveWorkout": "Failed to save workout",
   "failedToLoadWorkouts": "Failed to load workouts",
   "retry": "Retry",
+  "expandMap": "Expand map",
+  "collapseMap": "Collapse map",
   "noWorkoutsYet": "You have no workouts yet",
   "durationZero": "0s",
   "distanceZero": "0 km",

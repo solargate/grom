@@ -159,6 +159,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get retry => 'Erneut versuchen';
 
   @override
+  String get expandMap => 'Karte vergrößern';
+
+  @override
+  String get collapseMap => 'Karte verkleinern';
+
+  @override
   String get noWorkoutsYet => 'Sie haben noch keine Trainings';
 
   @override

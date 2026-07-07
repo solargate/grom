@@ -388,6 +388,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @expandMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand map'**
+  String get expandMap;
+
+  /// No description provided for @collapseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse map'**
+  String get collapseMap;
+
   /// No description provided for @noWorkoutsYet.
   ///
   /// In en, this message translates to:

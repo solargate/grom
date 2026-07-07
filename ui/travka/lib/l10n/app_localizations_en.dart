@@ -158,6 +158,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get expandMap => 'Expand map';
+
+  @override
+  String get collapseMap => 'Collapse map';
+
+  @override
   String get noWorkoutsYet => 'You have no workouts yet';
 
   @override

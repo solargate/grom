@@ -62,6 +62,8 @@
   "failedToSaveWorkout": "Training konnte nicht gespeichert werden",
   "failedToLoadWorkouts": "Trainings konnten nicht geladen werden",
   "retry": "Erneut versuchen",
+  "expandMap": "Karte vergrößern",
+  "collapseMap": "Karte verkleinern",
   "noWorkoutsYet": "Sie haben noch keine Trainings",
   "durationZero": "0 s",
   "distanceZero": "0 km",

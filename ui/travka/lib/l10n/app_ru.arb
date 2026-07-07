@@ -62,6 +62,8 @@
   "failedToSaveWorkout": "Не удалось сохранить тренировку",
   "failedToLoadWorkouts": "Не удалось загрузить тренировки",
   "retry": "Повторить",
+  "expandMap": "Расширить карту",
+  "collapseMap": "Уменьшить карту",
   "noWorkoutsYet": "У вас пока нет тренировок",
   "durationZero": "0 с",
   "distanceZero": "0 км",
