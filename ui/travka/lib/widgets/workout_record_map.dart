@@ -92,8 +92,9 @@ class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
         initialZoom: 16,
         initialCameraFit: _initialCameraFit,
         onMapReady: _refreshTilesAfterCameraChange,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all,
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+          cursorKeyboardRotationOptions: CursorKeyboardRotationOptions.disabled(),
         ),
       ),
       children: [
