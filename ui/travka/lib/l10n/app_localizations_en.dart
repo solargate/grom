@@ -492,4 +492,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreRecordingDiscard => 'Discard';
+
+  @override
+  String get editWorkout => 'Edit';
+
+  @override
+  String get deleteWorkout => 'Delete';
+
+  @override
+  String get workoutActions => 'Workout actions';
+
+  @override
+  String get failedToLoadWorkoutTrack => 'Failed to load workout track';
 }

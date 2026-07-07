@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -284,6 +285,50 @@ func parseTrack(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toParseTrackResponse(parsed))
+}
+
+// getWorkoutTrack godoc
+// @Summary      Get workout track file
+// @Description  Return the original GPX or FIT track file for a workout
+// @Tags         workouts
+// @Produce      application/gpx+xml
+// @Produce      application/vnd.ant.fit
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Workout ID"
+// @Success      200  {file}  binary
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Router       /workouts/{id}/track [get]
+func getWorkoutTrack(ctx *gin.Context) {
+	initWorkoutStore()
+
+	nickname, err := currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	data, filename, err := workoutStore.TrackFile(nickname, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load track"})
+		return
+	}
+
+	contentType := "application/octet-stream"
+	switch filename {
+	case tracks.TrackFileGPX:
+		contentType = "application/gpx+xml"
+	case tracks.TrackFileFIT:
+		contentType = "application/vnd.ant.fit"
+	}
+
+	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	ctx.Data(http.StatusOK, contentType, data)
 }
 
 // getWorkoutMapPreview godoc

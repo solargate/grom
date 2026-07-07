@@ -49,6 +49,7 @@ func RunRouter() {
 		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
 		workoutGroup.POST("", createWorkout)
 		workoutGroup.POST("/parse-track", parseTrack)
+		workoutGroup.GET("/:id/track", getWorkoutTrack)
 		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
 		workoutGroup.GET("", listWorkouts)
 	}

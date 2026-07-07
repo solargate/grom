@@ -215,5 +215,9 @@
   "restoreRecordingTitle": "Aufzeichnung fortsetzen?",
   "restoreRecordingMessage": "Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?",
   "restoreRecordingConfirm": "Fortsetzen",
-  "restoreRecordingDiscard": "Verwerfen"
+  "restoreRecordingDiscard": "Verwerfen",
+  "editWorkout": "Bearbeiten",
+  "deleteWorkout": "Löschen",
+  "workoutActions": "Trainingsaktionen",
+  "failedToLoadWorkoutTrack": "Trainingsstrecke konnte nicht geladen werden"
 }

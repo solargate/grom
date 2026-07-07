@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'models/downloaded_track.dart';
 import 'models/parsed_track_metadata.dart';
 import 'models/workout.dart';
 import 'server_storage.dart';
@@ -218,6 +219,42 @@ class ApiRequest {
 
   String mapPreviewUrl(String workoutId) {
     return _uri('/api/v1/workouts/$workoutId/map-preview').toString();
+  }
+
+  String workoutTrackUrl(String workoutId) {
+    return _uri('/api/v1/workouts/$workoutId/track').toString();
+  }
+
+  Future<DownloadedTrack> downloadWorkoutTrack({
+    required String token,
+    required String workoutId,
+    required String fallbackFilename,
+  }) async {
+    final response = await http.get(
+      _uri('/api/v1/workouts/$workoutId/track'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final filename = _filenameFromContentDisposition(
+            response.headers['content-disposition'],
+          ) ??
+          fallbackFilename;
+      return DownloadedTrack(
+        bytes: response.bodyBytes,
+        filename: filename,
+      );
+    }
+
+    throw _parseError(response);
+  }
+
+  String? _filenameFromContentDisposition(String? header) {
+    if (header == null || header.isEmpty) {
+      return null;
+    }
+    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(header);
+    return match?.group(1);
   }
 
   Future<List<Workout>> listWorkouts(String token) async {

@@ -404,6 +404,53 @@
                     }
                 }
             }
+        },
+        "/workouts/{id}/track": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return the original GPX or FIT track file for a workout",
+                "produces": [
+                    "application/gpx+xml",
+                    "application/vnd.ant.fit"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Get workout track file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workout ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

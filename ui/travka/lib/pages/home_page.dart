@@ -4,6 +4,7 @@ import 'package:travka/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/workout.dart';
+import '../pages/workout_detail_page.dart';
 import '../widgets/workout_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,10 +12,14 @@ class HomePage extends StatefulWidget {
     super.key,
     this.nickname,
     this.refreshToken = 0,
+    this.viewingWorkout,
+    this.onViewingWorkoutChanged,
   });
 
   final String? nickname;
   final int refreshToken;
+  final Workout? viewingWorkout;
+  final ValueChanged<Workout?>? onViewingWorkoutChanged;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -87,10 +92,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _openWorkout(Workout workout) {
+    widget.onViewingWorkoutChanged?.call(workout);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.nickname == null) {
       return const SizedBox.shrink();
+    }
+
+    final viewingWorkout = widget.viewingWorkout;
+    if (viewingWorkout != null && _authToken != null) {
+      return WorkoutDetailView(
+        workout: viewingWorkout,
+        authToken: _authToken!,
+      );
     }
 
     final l10n = AppLocalizations.of(context)!;
@@ -140,6 +157,7 @@ class _HomePageState extends State<HomePage> {
           return WorkoutCard(
             workout: _workouts[index],
             authToken: _authToken ?? '',
+            onTap: () => _openWorkout(_workouts[index]),
           );
         },
       ),

@@ -1017,6 +1017,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get restoreRecordingDiscard;
+
+  /// No description provided for @editWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editWorkout;
+
+  /// No description provided for @deleteWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteWorkout;
+
+  /// No description provided for @workoutActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout actions'**
+  String get workoutActions;
+
+  /// No description provided for @failedToLoadWorkoutTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load workout track'**
+  String get failedToLoadWorkoutTrack;
 }
 
 class _AppLocalizationsDelegate

@@ -365,6 +365,36 @@ paths:
       summary: Get workout map preview
       tags:
       - workouts
+  /workouts/{id}/track:
+    get:
+      description: Return the original GPX or FIT track file for a workout
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/gpx+xml
+      - application/vnd.ant.fit
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout track file
+      tags:
+      - workouts
   /workouts/parse-track:
     post:
       consumes:

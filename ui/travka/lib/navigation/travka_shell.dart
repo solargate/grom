@@ -4,6 +4,7 @@ import 'package:travka/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../login.dart';
+import '../models/workout.dart';
 import '../pages/home_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../registration.dart';
@@ -12,6 +13,7 @@ import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
 import '../widgets/settings_dialog.dart';
 import '../widgets/track_recording_recovery_dialog.dart';
+import '../widgets/workout_detail_menu.dart';
 import 'travka_destination.dart';
 import 'travka_side_menu.dart';
 
@@ -39,8 +41,11 @@ class _TravkaShellState extends State<TravkaShell> {
   String? _nickname;
   TravkaDestination _selectedDestination = TravkaDestination.home;
   int _workoutRefreshToken = 0;
+  Workout? _viewingWorkout;
 
   bool get _isLoggedIn => _nickname != null;
+  bool get _isViewingWorkout =>
+      _selectedDestination == TravkaDestination.home && _viewingWorkout != null;
 
   @override
   void initState() {
@@ -97,7 +102,29 @@ class _TravkaShellState extends State<TravkaShell> {
   }
 
   void _onDestinationSelected(TravkaDestination destination) {
-    setState(() => _selectedDestination = destination);
+    setState(() {
+      if (destination == TravkaDestination.home &&
+          _selectedDestination == TravkaDestination.home &&
+          _viewingWorkout != null) {
+        _viewingWorkout = null;
+        return;
+      }
+      _selectedDestination = destination;
+      if (destination != TravkaDestination.home) {
+        _viewingWorkout = null;
+      }
+    });
+  }
+
+  void _closeWorkoutDetail() {
+    setState(() => _viewingWorkout = null);
+  }
+
+  String _contentHeaderTitle(AppLocalizations l10n) {
+    if (_isViewingWorkout) {
+      return _viewingWorkout!.name;
+    }
+    return _sectionTitle(l10n);
   }
 
   void _onMenuDestinationSelected(TravkaDestination destination) {
@@ -133,6 +160,7 @@ class _TravkaShellState extends State<TravkaShell> {
     setState(() {
       _nickname = null;
       _selectedDestination = TravkaDestination.home;
+      _viewingWorkout = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.signedOut)),
@@ -184,6 +212,10 @@ class _TravkaShellState extends State<TravkaShell> {
         return HomePage(
           nickname: _nickname,
           refreshToken: _workoutRefreshToken,
+          viewingWorkout: _viewingWorkout,
+          onViewingWorkoutChanged: (workout) {
+            setState(() => _viewingWorkout = workout);
+          },
         );
       case TravkaDestination.login:
         return SingleChildScrollView(
@@ -199,7 +231,9 @@ class _TravkaShellState extends State<TravkaShell> {
   }
 
   Widget? _buildFab(AppLocalizations l10n) {
-    if (_selectedDestination != TravkaDestination.home || !_isLoggedIn) {
+    if (_selectedDestination != TravkaDestination.home ||
+        !_isLoggedIn ||
+        _isViewingWorkout) {
       return null;
     }
 
@@ -220,9 +254,17 @@ class _TravkaShellState extends State<TravkaShell> {
       key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(_appBarTitle()),
+        leading: _isViewingWorkout
+            ? BackButton(onPressed: _closeWorkoutDetail)
+            : null,
+        title: Text(
+          _isViewingWorkout ? _viewingWorkout!.name : _appBarTitle(),
+        ),
+        actions: [
+          if (_isViewingWorkout) const WorkoutDetailMenu(),
+        ],
       ),
-      drawer: _buildSideMenu(),
+      drawer: _isViewingWorkout ? null : _buildSideMenu(),
       body: _buildContent(),
       floatingActionButton: _buildFab(l10n),
     );
@@ -247,15 +289,26 @@ class _TravkaShellState extends State<TravkaShell> {
                     bottom: false,
                     child: SizedBox(
                       height: kToolbarHeight,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            _sectionTitle(l10n),
-                            style: Theme.of(context).textTheme.titleLarge,
+                      child: Row(
+                        children: [
+                          if (_isViewingWorkout)
+                            BackButton(onPressed: _closeWorkoutDetail),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  _contentHeaderTitle(l10n),
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (_isViewingWorkout) const WorkoutDetailMenu(),
+                        ],
                       ),
                     ),
                   ),

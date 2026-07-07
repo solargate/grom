@@ -9,11 +9,15 @@ class WorkoutRecordMap extends StatefulWidget {
     required this.trackPoints,
     required this.followUser,
     this.initialCenter,
+    this.showCurrentLocation = true,
+    this.fitToTrack = false,
   });
 
   final List<LatLng> trackPoints;
   final bool followUser;
   final LatLng? initialCenter;
+  final bool showCurrentLocation;
+  final bool fitToTrack;
 
   @override
   State<WorkoutRecordMap> createState() => _WorkoutRecordMapState();
@@ -22,6 +26,24 @@ class WorkoutRecordMap extends StatefulWidget {
 class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
   final MapController _mapController = MapController();
   LatLng? _lastCentered;
+
+  CameraFit? get _initialCameraFit {
+    if (!widget.fitToTrack || widget.trackPoints.length < 2) {
+      return null;
+    }
+    return CameraFit.bounds(
+      bounds: LatLngBounds.fromPoints(widget.trackPoints),
+      padding: const EdgeInsets.all(32),
+    );
+  }
+
+  void _refreshTilesAfterCameraChange() {
+    if (!widget.fitToTrack) {
+      return;
+    }
+    final camera = _mapController.camera;
+    _mapController.move(camera.center, camera.zoom + 0.0001);
+  }
 
   @override
   void didUpdateWidget(covariant WorkoutRecordMap oldWidget) {
@@ -55,6 +77,8 @@ class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
       options: MapOptions(
         initialCenter: center,
         initialZoom: 16,
+        initialCameraFit: _initialCameraFit,
+        onMapReady: _refreshTilesAfterCameraChange,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all,
         ),
@@ -77,12 +101,13 @@ class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
               ),
             ],
           ),
-        CurrentLocationLayer(
-          alignPositionOnUpdate: widget.followUser
-              ? AlignOnUpdate.always
-              : AlignOnUpdate.never,
-          alignDirectionOnUpdate: AlignOnUpdate.never,
-        ),
+        if (widget.showCurrentLocation)
+          CurrentLocationLayer(
+            alignPositionOnUpdate: widget.followUser
+                ? AlignOnUpdate.always
+                : AlignOnUpdate.never,
+            alignDirectionOnUpdate: AlignOnUpdate.never,
+          ),
         RichAttributionWidget(
           attributions: [
             TextSourceAttribution(

@@ -48,6 +48,8 @@ dependencies:
   flutter_map_location_marker: ^9.1.0
   latlong2: ^0.9.1
   permission_handler: ^11.3.1
+  gpx: ^2.3.0
+  fit_sdk: ^0.3.0
 
 dev_dependencies:
   flutter_test:

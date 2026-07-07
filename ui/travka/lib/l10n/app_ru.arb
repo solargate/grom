@@ -215,5 +215,9 @@
   "restoreRecordingTitle": "Восстановить запись?",
   "restoreRecordingMessage": "Найдена незавершённая запись тренировки. Восстановить её или удалить сохранённый трек?",
   "restoreRecordingConfirm": "Восстановить",
-  "restoreRecordingDiscard": "Удалить"
+  "restoreRecordingDiscard": "Удалить",
+  "editWorkout": "Изменить",
+  "deleteWorkout": "Удалить",
+  "workoutActions": "Действия с тренировкой",
+  "failedToLoadWorkoutTrack": "Не удалось загрузить трек тренировки"
 }

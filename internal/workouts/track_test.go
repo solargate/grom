@@ -61,6 +61,17 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	if !containsAll(string(yamlData), "track: track.gpx", "duration_seconds: 4200") {
 		t.Fatalf("unexpected yaml: %s", yamlData)
 	}
+
+	trackData, trackName, err := store.TrackFile("athlete", created.ID)
+	if err != nil {
+		t.Fatalf("TrackFile() error = %v", err)
+	}
+	if trackName != tracks.TrackFileGPX {
+		t.Fatalf("track name = %q", trackName)
+	}
+	if len(trackData) != len(gpxData) {
+		t.Fatalf("track size = %d, want %d", len(trackData), len(gpxData))
+	}
 }
 
 func containsAll(s string, parts ...string) bool {

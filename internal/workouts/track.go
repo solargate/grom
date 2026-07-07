@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/solargate/travka/internal/maprender"
 	"github.com/solargate/travka/internal/tracks"
 )
@@ -106,6 +108,49 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 	result := *workout
 	return &result, nil
+}
+
+func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, error) {
+	dir, err := s.findWorkoutDir(nickname, workoutID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	workout, err := readWorkoutFromDir(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	if workout.Track == "" {
+		return nil, "", ErrWorkoutNotFound
+	}
+
+	path := filepath.Join(dir, workout.Track)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, "", ErrWorkoutNotFound
+		}
+		return nil, "", fmt.Errorf("read track: %w", err)
+	}
+	return data, workout.Track, nil
+}
+
+func readWorkoutFromDir(dir string) (*Workout, error) {
+	dirName := filepath.Base(dir)
+	filePath := filepath.Join(dir, dirName+".yaml")
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrWorkoutNotFound
+		}
+		return nil, fmt.Errorf("read workout: %w", err)
+	}
+
+	var workout Workout
+	if err := yaml.Unmarshal(data, &workout); err != nil {
+		return nil, fmt.Errorf("parse workout: %w", err)
+	}
+	return &workout, nil
 }
 
 func (s *Store) MapPreviewPath(nickname, workoutID string) (string, error) {

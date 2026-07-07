@@ -490,4 +490,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get restoreRecordingDiscard => 'Удалить';
+
+  @override
+  String get editWorkout => 'Изменить';
+
+  @override
+  String get deleteWorkout => 'Удалить';
+
+  @override
+  String get workoutActions => 'Действия с тренировкой';
+
+  @override
+  String get failedToLoadWorkoutTrack => 'Не удалось загрузить трек тренировки';
 }

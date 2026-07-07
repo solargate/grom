@@ -215,5 +215,9 @@
   "restoreRecordingTitle": "Resume recording?",
   "restoreRecordingMessage": "An unfinished workout recording was found. Resume it or discard the saved track.",
   "restoreRecordingConfirm": "Resume",
-  "restoreRecordingDiscard": "Discard"
+  "restoreRecordingDiscard": "Discard",
+  "editWorkout": "Edit",
+  "deleteWorkout": "Delete",
+  "workoutActions": "Workout actions",
+  "failedToLoadWorkoutTrack": "Failed to load workout track"
 }
