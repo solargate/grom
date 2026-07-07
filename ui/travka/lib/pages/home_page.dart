@@ -13,13 +13,17 @@ class HomePage extends StatefulWidget {
     this.nickname,
     this.refreshToken = 0,
     this.viewingWorkout,
+    this.isMapExpanded = false,
     this.onViewingWorkoutChanged,
+    this.onMapExpandedChanged,
   });
 
   final String? nickname;
   final int refreshToken;
   final Workout? viewingWorkout;
+  final bool isMapExpanded;
   final ValueChanged<Workout?>? onViewingWorkoutChanged;
+  final ValueChanged<bool>? onMapExpandedChanged;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -107,6 +111,8 @@ class _HomePageState extends State<HomePage> {
       return WorkoutDetailView(
         workout: viewingWorkout,
         authToken: _authToken!,
+        isMapExpanded: widget.isMapExpanded,
+        onMapExpandedChanged: widget.onMapExpandedChanged,
       );
     }
 

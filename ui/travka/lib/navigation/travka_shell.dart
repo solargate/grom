@@ -42,6 +42,7 @@ class _TravkaShellState extends State<TravkaShell> {
   TravkaDestination _selectedDestination = TravkaDestination.home;
   int _workoutRefreshToken = 0;
   Workout? _viewingWorkout;
+  bool _isWorkoutMapExpanded = false;
 
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
@@ -107,17 +108,30 @@ class _TravkaShellState extends State<TravkaShell> {
           _selectedDestination == TravkaDestination.home &&
           _viewingWorkout != null) {
         _viewingWorkout = null;
+        _isWorkoutMapExpanded = false;
         return;
       }
       _selectedDestination = destination;
       if (destination != TravkaDestination.home) {
         _viewingWorkout = null;
+        _isWorkoutMapExpanded = false;
       }
     });
   }
 
   void _closeWorkoutDetail() {
-    setState(() => _viewingWorkout = null);
+    setState(() {
+      _viewingWorkout = null;
+      _isWorkoutMapExpanded = false;
+    });
+  }
+
+  void _handleWorkoutDetailBack() {
+    if (_isWorkoutMapExpanded) {
+      setState(() => _isWorkoutMapExpanded = false);
+    } else {
+      _closeWorkoutDetail();
+    }
   }
 
   String _contentHeaderTitle(AppLocalizations l10n) {
@@ -161,6 +175,7 @@ class _TravkaShellState extends State<TravkaShell> {
       _nickname = null;
       _selectedDestination = TravkaDestination.home;
       _viewingWorkout = null;
+      _isWorkoutMapExpanded = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.signedOut)),
@@ -213,8 +228,15 @@ class _TravkaShellState extends State<TravkaShell> {
           nickname: _nickname,
           refreshToken: _workoutRefreshToken,
           viewingWorkout: _viewingWorkout,
+          isMapExpanded: _isWorkoutMapExpanded,
           onViewingWorkoutChanged: (workout) {
-            setState(() => _viewingWorkout = workout);
+            setState(() {
+              _viewingWorkout = workout;
+              _isWorkoutMapExpanded = false;
+            });
+          },
+          onMapExpandedChanged: (expanded) {
+            setState(() => _isWorkoutMapExpanded = expanded);
           },
         );
       case TravkaDestination.login:
@@ -255,7 +277,7 @@ class _TravkaShellState extends State<TravkaShell> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         leading: _isViewingWorkout
-            ? BackButton(onPressed: _closeWorkoutDetail)
+            ? BackButton(onPressed: _handleWorkoutDetailBack)
             : null,
         title: Text(
           _isViewingWorkout ? _viewingWorkout!.name : _appBarTitle(),
@@ -292,7 +314,7 @@ class _TravkaShellState extends State<TravkaShell> {
                       child: Row(
                         children: [
                           if (_isViewingWorkout)
-                            BackButton(onPressed: _closeWorkoutDetail),
+                            BackButton(onPressed: _handleWorkoutDetailBack),
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
@@ -327,14 +349,22 @@ class _TravkaShellState extends State<TravkaShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= kWideLayoutBreakpoint;
-        if (isWide) {
-          return _buildWideLayout(l10n);
+    return PopScope(
+      canPop: !_isViewingWorkout,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isViewingWorkout) {
+          _handleWorkoutDetailBack();
         }
-        return _buildNarrowLayout(l10n);
       },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= kWideLayoutBreakpoint;
+          if (isWide) {
+            return _buildWideLayout(l10n);
+          }
+          return _buildNarrowLayout(l10n);
+        },
+      ),
     );
   }
 }

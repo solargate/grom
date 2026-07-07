@@ -16,10 +16,14 @@ class WorkoutDetailView extends StatefulWidget {
     super.key,
     required this.workout,
     required this.authToken,
+    this.isMapExpanded = false,
+    this.onMapExpandedChanged,
   });
 
   final Workout workout;
   final String authToken;
+  final bool isMapExpanded;
+  final ValueChanged<bool>? onMapExpandedChanged;
 
   @override
   State<WorkoutDetailView> createState() => _WorkoutDetailViewState();
@@ -32,7 +36,6 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   List<LatLng>? _trackPoints;
   bool _isLoadingTrack = false;
   String? _trackError;
-  bool _isMapExpanded = false;
 
   bool get _hasTrack => widget.workout.track.isNotEmpty;
 
@@ -101,14 +104,14 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   }
 
   void _collapseMap() {
-    if (_isMapExpanded) {
-      setState(() => _isMapExpanded = false);
+    if (widget.isMapExpanded) {
+      widget.onMapExpandedChanged?.call(false);
     }
   }
 
   void _expandMap() {
-    if (!_isMapExpanded) {
-      setState(() => _isMapExpanded = true);
+    if (!widget.isMapExpanded) {
+      widget.onMapExpandedChanged?.call(true);
     }
   }
 
@@ -163,7 +166,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       return const SizedBox.shrink();
     }
 
-    if (_isMapExpanded) {
+    if (widget.isMapExpanded) {
       return const SizedBox.shrink();
     }
 
@@ -193,63 +196,55 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
     final theme = Theme.of(context);
     final points = _trackPoints;
 
-    return PopScope(
-      canPop: !_isMapExpanded,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _isMapExpanded) {
-          _collapseMap();
-        }
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              IgnorePointer(
-                ignoring: _isMapExpanded,
-                child: Opacity(
-                  opacity: _isMapExpanded ? 0 : 1,
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.workout.name,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            IgnorePointer(
+              ignoring: widget.isMapExpanded,
+              child: Opacity(
+                opacity: widget.isMapExpanded ? 0 : 1,
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.workout.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                const SizedBox(height: 12),
-                                WorkoutInfoSection(workout: widget.workout),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 12),
+                              WorkoutInfoSection(workout: widget.workout),
+                            ],
                           ),
-                          if (_hasTrack)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                              child: _buildTrackSection(l10n),
-                            ),
-                        ],
-                      ),
+                        ),
+                        if (_hasTrack)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                            child: _buildTrackSection(l10n),
+                          ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              if (_isMapExpanded && _hasInteractiveMap && points != null)
-                Positioned.fill(
-                  child: _buildExpandedMapOverlay(points),
-                ),
-            ],
-          );
-        },
-      ),
+            ),
+            if (widget.isMapExpanded && _hasInteractiveMap && points != null)
+              Positioned.fill(
+                child: _buildExpandedMapOverlay(points),
+              ),
+          ],
+        );
+      },
     );
   }
 }
