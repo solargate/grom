@@ -119,7 +119,7 @@ definitions:
         example: true
         type: boolean
       id:
-        example: a7Kx9mP2
+        example: "38472901"
         type: string
       name:
         example: Morning run

@@ -60,8 +60,12 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
 	}
+	wd := workoutsDir(userDir)
+	if err := os.MkdirAll(wd, 0700); err != nil {
+		return nil, fmt.Errorf("create workouts dir: %w", err)
+	}
 
-	id, err := s.allocateWorkoutID(userDir)
+	id, err := s.allocateWorkoutID(wd)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +173,8 @@ func (s *Store) MapPreviewPath(nickname, workoutID string) (string, error) {
 }
 
 func (s *Store) findWorkoutDir(nickname, workoutID string) (string, error) {
-	userDir := s.userDir(nickname)
-	entries, err := os.ReadDir(userDir)
+	wd := workoutsDir(s.userDir(nickname))
+	entries, err := os.ReadDir(wd)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", ErrWorkoutNotFound
@@ -184,7 +188,7 @@ func (s *Store) findWorkoutDir(nickname, workoutID string) (string, error) {
 			continue
 		}
 		if len(entry.Name()) > len(suffix) && entry.Name()[len(entry.Name())-len(suffix):] == suffix {
-			return filepath.Join(userDir, entry.Name()), nil
+			return filepath.Join(wd, entry.Name()), nil
 		}
 	}
 	return "", ErrWorkoutNotFound

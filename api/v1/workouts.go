@@ -51,7 +51,7 @@ type ParseTrackResponse struct {
 }
 
 type WorkoutResponse struct {
-	ID              string  `json:"id" example:"a7Kx9mP2"`
+	ID              string  `json:"id" example:"38472901"`
 	Name            string  `json:"name" example:"Morning run"`
 	Description     string  `json:"description,omitempty" example:"Easy session"`
 	SportType       string  `json:"sport_type" example:"Run"`

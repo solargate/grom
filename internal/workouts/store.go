@@ -27,8 +27,14 @@ func NewStore(dataDir string) *Store {
 	return &Store{dataDir: dataDir}
 }
 
+const workoutsSubdir = "workouts"
+
 func (s *Store) userDir(nickname string) string {
 	return filepath.Join(s.dataDir, nickname)
+}
+
+func workoutsDir(userDir string) string {
+	return filepath.Join(userDir, workoutsSubdir)
 }
 
 func workoutBaseName(startDate time.Time, id string) string {
@@ -42,7 +48,7 @@ func workoutFileName(startDate time.Time, id string) string {
 }
 
 func workoutDir(userDir string, startDate time.Time, id string) string {
-	return filepath.Join(userDir, workoutBaseName(startDate, id))
+	return filepath.Join(workoutsDir(userDir), workoutBaseName(startDate, id))
 }
 
 func workoutFilePath(userDir string, startDate time.Time, id string) string {
@@ -58,8 +64,12 @@ func (s *Store) Create(nickname string, workout *Workout) (*Workout, error) {
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
 	}
+	wd := workoutsDir(userDir)
+	if err := os.MkdirAll(wd, 0700); err != nil {
+		return nil, fmt.Errorf("create workouts dir: %w", err)
+	}
 
-	id, err := s.allocateWorkoutID(userDir)
+	id, err := s.allocateWorkoutID(wd)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +115,12 @@ func (s *Store) saveWorkout(nickname string, workout *Workout) (*Workout, error)
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
 	}
+	wd := workoutsDir(userDir)
+	if err := os.MkdirAll(wd, 0700); err != nil {
+		return nil, fmt.Errorf("create workouts dir: %w", err)
+	}
 
-	if s.workoutIDExists(userDir, workout.ID) {
+	if s.workoutIDExists(wd, workout.ID) {
 		return nil, ErrWorkoutExists
 	}
 
@@ -146,13 +160,13 @@ func writeWorkoutYAML(filePath string, workout *Workout) error {
 }
 
 func (s *Store) List(nickname string) ([]Workout, error) {
-	userDir := s.userDir(nickname)
-	entries, err := os.ReadDir(userDir)
+	wd := workoutsDir(s.userDir(nickname))
+	entries, err := os.ReadDir(wd)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("read user dir: %w", err)
+		return nil, fmt.Errorf("read workouts dir: %w", err)
 	}
 
 	workouts := make([]Workout, 0)
@@ -162,7 +176,7 @@ func (s *Store) List(nickname string) ([]Workout, error) {
 		}
 
 		dirName := entry.Name()
-		dirPath := filepath.Join(userDir, dirName)
+		dirPath := filepath.Join(wd, dirName)
 		filePath := filepath.Join(dirPath, dirName+".yaml")
 		data, err := os.ReadFile(filePath)
 		if err != nil {

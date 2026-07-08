@@ -3,6 +3,7 @@ package workouts
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -29,9 +30,12 @@ func TestStoreCreateAndList(t *testing.T) {
 	if len(created.ID) != workoutIDLength {
 		t.Fatalf("expected id length %d, got %d (%q)", workoutIDLength, len(created.ID), created.ID)
 	}
+	if strings.Trim(created.ID, "0123456789") != "" {
+		t.Fatalf("expected numeric id, got %q", created.ID)
+	}
 
 	expectedBase := "2026-07-05T143000Z-" + created.ID
-	expectedDir := filepath.Join(dir, "solarwind", expectedBase)
+	expectedDir := filepath.Join(dir, "solarwind", "workouts", expectedBase)
 	if info, err := os.Stat(expectedDir); err != nil || !info.IsDir() {
 		t.Fatalf("expected workout dir %q: %v", expectedDir, err)
 	}

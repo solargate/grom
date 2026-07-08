@@ -10,7 +10,7 @@ import (
 
 const (
 	workoutIDLength   = 8
-	workoutIDAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	workoutIDAlphabet = "0123456789"
 )
 
 func newWorkoutID() (string, error) {
@@ -26,9 +26,9 @@ func newWorkoutID() (string, error) {
 	return string(b), nil
 }
 
-func (s *Store) workoutIDExists(userDir, id string) bool {
+func (s *Store) workoutIDExists(workoutsRoot, id string) bool {
 	suffix := "-" + id
-	entries, err := os.ReadDir(userDir)
+	entries, err := os.ReadDir(workoutsRoot)
 	if err != nil {
 		return false
 	}
@@ -40,14 +40,14 @@ func (s *Store) workoutIDExists(userDir, id string) bool {
 	return false
 }
 
-func (s *Store) allocateWorkoutID(userDir string) (string, error) {
+func (s *Store) allocateWorkoutID(workoutsRoot string) (string, error) {
 	const maxAttempts = 10
 	for range maxAttempts {
 		id, err := newWorkoutID()
 		if err != nil {
 			return "", err
 		}
-		if !s.workoutIDExists(userDir, id) {
+		if !s.workoutIDExists(workoutsRoot, id) {
 			return id, nil
 		}
 	}

@@ -626,7 +626,7 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string",
-                    "example": "a7Kx9mP2"
+                    "example": "38472901"
                 },
                 "name": {
                     "type": "string",
