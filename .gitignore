@@ -2,5 +2,9 @@
 .cursor/
 cmd/travka/travka
 cmd/travka/data/
+
+cmd/travka
+!cmd/travka/main.go
+
 internal/web/dist/*
 #!internal/web/dist/index.html

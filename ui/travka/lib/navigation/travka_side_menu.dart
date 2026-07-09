@@ -25,11 +25,26 @@ class TravkaSideMenu extends StatelessWidget {
   final VoidCallback onLogout;
   final VoidCallback onOpenSettings;
 
-  int get _settingsIndex => isLoggedIn ? 2 : 3;
+  int get _settingsIndex {
+    if (isLoggedIn) {
+      return 5;
+    }
+    return 3;
+  }
 
   int get _selectedIndex {
     if (isLoggedIn) {
-      return selectedDestination == TravkaDestination.home ? 0 : 0;
+      switch (selectedDestination) {
+        case TravkaDestination.home:
+          return 0;
+        case TravkaDestination.userSearch:
+          return 1;
+        case TravkaDestination.profile:
+          return 2;
+        case TravkaDestination.login:
+        case TravkaDestination.register:
+          return 0;
+      }
     }
 
     switch (selectedDestination) {
@@ -39,6 +54,9 @@ class TravkaSideMenu extends StatelessWidget {
         return 1;
       case TravkaDestination.register:
         return 2;
+      case TravkaDestination.userSearch:
+      case TravkaDestination.profile:
+        return 0;
     }
   }
 
@@ -49,10 +67,15 @@ class TravkaSideMenu extends StatelessWidget {
     }
 
     if (isLoggedIn) {
-      if (index == 1) {
-        onLogout();
-      } else {
-        onDestinationSelected(TravkaDestination.home);
+      switch (index) {
+        case 0:
+          onDestinationSelected(TravkaDestination.home);
+        case 1:
+          onDestinationSelected(TravkaDestination.userSearch);
+        case 2:
+          onDestinationSelected(TravkaDestination.profile);
+        case 3:
+          onLogout();
       }
       return;
     }
@@ -102,7 +125,23 @@ class TravkaSideMenu extends StatelessWidget {
           selectedIcon: const Icon(Icons.home),
           label: Text(l10n.home),
         ),
-        if (!isLoggedIn) ...[
+        if (isLoggedIn) ...[
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.person_search_outlined),
+            selectedIcon: const Icon(Icons.person_search),
+            label: Text(l10n.userSearch),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: Text(l10n.profile),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.logout_outlined),
+            selectedIcon: const Icon(Icons.logout),
+            label: Text(l10n.signOut),
+          ),
+        ] else ...[
           NavigationDrawerDestination(
             icon: const Icon(Icons.login_outlined),
             selectedIcon: const Icon(Icons.login),
@@ -113,12 +152,7 @@ class TravkaSideMenu extends StatelessWidget {
             selectedIcon: const Icon(Icons.person_add),
             label: Text(l10n.register),
           ),
-        ] else
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.logout_outlined),
-            selectedIcon: const Icon(Icons.logout),
-            label: Text(l10n.signOut),
-          ),
+        ],
         NavigationDrawerDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),

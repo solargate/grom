@@ -510,4 +510,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToLoadWorkoutTrack => 'Failed to load workout track';
+
+  @override
+  String get userSearch => 'User search';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get searchUsersHint => 'Nickname or @user@server';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get follow => 'Follow';
+
+  @override
+  String get unfollow => 'Unfollow';
+
+  @override
+  String get following => 'Following';
+
+  @override
+  String get followPending => 'Pending';
+
+  @override
+  String get noUsersFound => 'No users found';
+
+  @override
+  String get noFollowingYet => 'You are not following anyone yet';
+
+  @override
+  String get searchByNicknameOrHandle =>
+      'Search by nickname or federated handle (@user@server)';
+
+  @override
+  String workoutByAuthor(String author) {
+    return 'By $author';
+  }
+
+  @override
+  String get failedToSearchUsers => 'Failed to search users';
+
+  @override
+  String get failedToLoadProfile => 'Failed to load profile';
 }

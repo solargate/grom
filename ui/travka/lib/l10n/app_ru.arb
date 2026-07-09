@@ -221,5 +221,26 @@
   "editWorkout": "Изменить",
   "deleteWorkout": "Удалить",
   "workoutActions": "Действия с тренировкой",
-  "failedToLoadWorkoutTrack": "Не удалось загрузить трек тренировки"
+  "failedToLoadWorkoutTrack": "Не удалось загрузить трек тренировки",
+  "userSearch": "Поиск пользователей",
+  "profile": "Профиль",
+  "searchUsersHint": "Никнейм или @user@server",
+  "search": "Поиск",
+  "follow": "Подписаться",
+  "unfollow": "Отписаться",
+  "following": "Подписки",
+  "followPending": "Ожидание",
+  "noUsersFound": "Пользователи не найдены",
+  "noFollowingYet": "Вы ни на кого не подписаны",
+  "searchByNicknameOrHandle": "Поиск по никнейму или федеративному адресу (@user@server)",
+  "workoutByAuthor": "Автор: {author}",
+  "@workoutByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSearchUsers": "Не удалось выполнить поиск пользователей",
+  "failedToLoadProfile": "Не удалось загрузить профиль"
 }

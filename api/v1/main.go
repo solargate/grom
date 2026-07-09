@@ -1,13 +1,12 @@
 package v1
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/solargate/travka/api/docs"
-	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/auth"
+	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/travka/internal/server"
 	"github.com/solargate/travka/internal/web"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -28,13 +27,16 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func RunRouter() {
-	//gin.SetMode(gin.ReleaseMode)
 	if err := initUserStore(); err != nil {
 		panic(err)
 	}
 
 	router := gin.Default()
 	router.MaxMultipartMemory = 20 << 20
+
+	if config.Cfg.Federation.Enabled {
+		RegisterFederationRoutes(router, userStore)
+	}
 
 	apiV1 := router.Group("/api/v1")
 	{
@@ -45,6 +47,13 @@ func RunRouter() {
 		authGroup.POST("/register", register)
 		authGroup.POST("/login", login)
 		authGroup.GET("/me", auth.AuthRequired(), getMe)
+
+		apiV1.GET("/users/search", auth.AuthRequired(), searchUsers)
+
+		socialGroup := apiV1.Group("/social", auth.AuthRequired())
+		socialGroup.POST("/follow", followUser)
+		socialGroup.DELETE("/follow/:id", unfollowUser)
+		socialGroup.GET("/following", listFollowing)
 
 		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
 		workoutGroup.POST("", createWorkout)
@@ -72,5 +81,7 @@ func RunRouter() {
 
 	web.RegisterRoutes(router)
 
-	router.Run(":" + strconv.Itoa(config.Cfg.Server.Port))
+	if err := server.Run(router); err != nil {
+		panic(err)
+	}
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travka/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
@@ -10,17 +11,23 @@ class WorkoutCard extends StatelessWidget {
     super.key,
     required this.workout,
     required this.authToken,
+    this.currentUserNickname,
     this.onTap,
   });
 
   final Workout workout;
   final String authToken;
+  final String? currentUserNickname;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final api = ApiRequest();
+    final owner = workout.ownerNickname;
+    final showAuthor = workout.author != null &&
+        currentUserNickname != null &&
+        workout.author!.nickname != currentUserNickname;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -35,6 +42,19 @@ class WorkoutCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (showAuthor) ...[
+                    Text(
+                      AppLocalizations.of(context)!.workoutByAuthor(
+                        workout.author!.name.isNotEmpty
+                            ? workout.author!.name
+                            : workout.author!.nickname,
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     workout.name,
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -54,7 +74,7 @@ class WorkoutCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: WorkoutMapPreview(
                   child: Image.network(
-                    api.mapPreviewUrl(workout.id),
+                    api.mapPreviewUrl(workout.id, owner: owner),
                     headers: {'Authorization': 'Bearer $authToken'},
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {

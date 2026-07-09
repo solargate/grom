@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/travka/internal/auth"
 	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/travka/internal/social"
 	"github.com/solargate/travka/internal/tracks"
 	"github.com/solargate/travka/internal/workouts"
 )
@@ -50,16 +51,25 @@ type ParseTrackResponse struct {
 	HasGPS          bool    `json:"has_gps" example:"true"`
 }
 
+type WorkoutAuthorResponse struct {
+	Nickname string `json:"nickname" example:"bob"`
+	Name     string `json:"name" example:"Bob"`
+	Handle   string `json:"handle" example:"bob@travka.example"`
+	IsLocal  bool   `json:"is_local" example:"true"`
+}
+
 type WorkoutResponse struct {
-	ID              string  `json:"id" example:"38472901"`
-	Name            string  `json:"name" example:"Morning run"`
-	Description     string  `json:"description,omitempty" example:"Easy session"`
-	SportType       string  `json:"sport_type" example:"Run"`
-	StartDate       string  `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
-	DurationSeconds int     `json:"duration_seconds" example:"3600"`
-	Distance        float64 `json:"distance" example:"5200"`
-	Track           string  `json:"track,omitempty" example:"track.gpx"`
-	HasMapPreview   bool    `json:"has_map_preview" example:"true"`
+	ID              string                 `json:"id" example:"38472901"`
+	Owner           string                 `json:"owner,omitempty" example:"solarwind"`
+	Name            string                 `json:"name" example:"Morning run"`
+	Description     string                 `json:"description,omitempty" example:"Easy session"`
+	SportType       string                 `json:"sport_type" example:"Run"`
+	StartDate       string                 `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
+	DurationSeconds int                    `json:"duration_seconds" example:"3600"`
+	Distance        float64                `json:"distance" example:"5200"`
+	Track           string                 `json:"track,omitempty" example:"track.gpx"`
+	HasMapPreview   bool                   `json:"has_map_preview" example:"true"`
+	Author          *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
 func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
@@ -74,6 +84,18 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		Track:           workout.Track,
 		HasMapPreview:   workout.HasMapPreview,
 	}
+}
+
+func toFeedWorkoutResponse(item *workouts.FeedWorkout) WorkoutResponse {
+	resp := toWorkoutResponse(&item.Workout)
+	resp.Owner = item.Owner
+	resp.Author = &WorkoutAuthorResponse{
+		Nickname: item.Author.Nickname,
+		Name:     item.Author.Name,
+		Handle:   item.Author.Handle,
+		IsLocal:  item.Author.IsLocal,
+	}
+	return resp
 }
 
 func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
@@ -93,6 +115,11 @@ func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
 }
 
 func currentUserNickname(ctx *gin.Context) (string, error) {
+	if userStore == nil {
+		if err := initUserStore(); err != nil {
+			return "", err
+		}
+	}
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
 	if !ok || id == "" {
@@ -104,6 +131,39 @@ func currentUserNickname(ctx *gin.Context) (string, error) {
 		return "", err
 	}
 	return user.Nickname, nil
+}
+
+func workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]string, error) {
+	if err := initSocialService(); err != nil {
+		return nil, err
+	}
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nicknames, err := socialService.ActiveFollowingNicknames(userID)
+	if err != nil {
+		return nil, err
+	}
+	_ = viewerNickname
+	return nicknames, nil
+}
+
+func resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (ownerNickname, workoutID string, err error) {
+	workoutID = ctx.Param("id")
+	ownerNickname = strings.TrimSpace(ctx.Query("owner"))
+	if ownerNickname == "" {
+		ownerNickname = viewerNickname
+	}
+	followed, err := workoutAccessOwners(ctx, viewerNickname)
+	if err != nil {
+		return "", "", err
+	}
+	feedSvc := workouts.NewFeedService(workoutStore, config.Cfg.Federation.Domain)
+	if !feedSvc.CanAccessWorkout(viewerNickname, followed, ownerNickname) {
+		return "", "", workouts.ErrWorkoutNotFound
+	}
+	return ownerNickname, workoutID, nil
 }
 
 func readTrackFile(file *multipart.FileHeader) ([]byte, error) {
@@ -200,7 +260,20 @@ func createWorkout(ctx *gin.Context) {
 		return
 	}
 
+	publishCreatedWorkout(nickname, workout)
+
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
+}
+
+func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
+	if err := initFederation(); err != nil || federationDelivery == nil || followersStore == nil {
+		return
+	}
+	inboxes, err := followersStore.ListInboxes(nickname)
+	if err != nil || len(inboxes) == 0 {
+		return
+	}
+	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes)
 }
 
 func createWorkoutMultipart(ctx *gin.Context, nickname string) {
@@ -250,6 +323,7 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
+	publishCreatedWorkout(nickname, created)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(created))
 }
 
@@ -295,6 +369,7 @@ func parseTrack(ctx *gin.Context) {
 // @Produce      application/vnd.ant.fit
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {file}  binary
 // @Failure      401  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
@@ -308,8 +383,17 @@ func getWorkoutTrack(ctx *gin.Context) {
 		return
 	}
 
-	workoutID := ctx.Param("id")
-	data, filename, err := workoutStore.TrackFile(nickname, workoutID)
+	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		return
+	}
+
+	data, filename, err := workoutStore.TrackFile(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
@@ -338,6 +422,7 @@ func getWorkoutTrack(ctx *gin.Context) {
 // @Produce      png
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {file}  binary
 // @Failure      401  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
@@ -351,8 +436,17 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 		return
 	}
 
-	workoutID := ctx.Param("id")
-	path, err := workoutStore.MapPreviewPath(nickname, workoutID)
+	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		return
+	}
+
+	path, err := workoutStore.MapPreviewPath(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
@@ -385,7 +479,42 @@ func listWorkouts(ctx *gin.Context) {
 		return
 	}
 
-	items, err := workoutStore.List(nickname)
+	if err := initSocialService(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
+		return
+	}
+	_ = initFederation()
+
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	follows, err := socialService.ListFollowing(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
+		return
+	}
+
+	followedAuthors := make([]workouts.FeedAuthor, 0)
+	for i := range follows {
+		if follows[i].Status != social.StatusActive {
+			continue
+		}
+		if !follows[i].TargetIsLocal {
+			continue
+		}
+		followedAuthors = append(followedAuthors, workouts.FeedAuthor{
+			Nickname: follows[i].TargetNickname,
+			Name:     follows[i].TargetName,
+			Handle:   follows[i].TargetHandle,
+			IsLocal:  true,
+		})
+	}
+
+	feedSvc := newFeedService()
+	items, err := feedSvc.ListFeed(nickname, followedAuthors)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list workouts"})
 		return
@@ -393,7 +522,7 @@ func listWorkouts(ctx *gin.Context) {
 
 	response := make([]WorkoutResponse, 0, len(items))
 	for i := range items {
-		response = append(response, toWorkoutResponse(&items[i]))
+		response = append(response, toFeedWorkoutResponse(&items[i]))
 	}
 
 	ctx.JSON(http.StatusOK, response)

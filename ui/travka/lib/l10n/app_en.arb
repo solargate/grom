@@ -221,5 +221,26 @@
   "editWorkout": "Edit",
   "deleteWorkout": "Delete",
   "workoutActions": "Workout actions",
-  "failedToLoadWorkoutTrack": "Failed to load workout track"
+  "failedToLoadWorkoutTrack": "Failed to load workout track",
+  "userSearch": "User search",
+  "profile": "Profile",
+  "searchUsersHint": "Nickname or @user@server",
+  "search": "Search",
+  "follow": "Follow",
+  "unfollow": "Unfollow",
+  "following": "Following",
+  "followPending": "Pending",
+  "noUsersFound": "No users found",
+  "noFollowingYet": "You are not following anyone yet",
+  "searchByNicknameOrHandle": "Search by nickname or federated handle (@user@server)",
+  "workoutByAuthor": "By {author}",
+  "@workoutByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSearchUsers": "Failed to search users",
+  "failedToLoadProfile": "Failed to load profile"
 }

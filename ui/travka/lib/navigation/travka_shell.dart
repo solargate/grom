@@ -6,6 +6,8 @@ import '../auth_storage.dart';
 import '../login.dart';
 import '../models/workout.dart';
 import '../pages/home_page.dart';
+import '../pages/profile_page.dart';
+import '../pages/user_search_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../registration.dart';
 import '../server_storage.dart';
@@ -186,6 +188,10 @@ class _TravkaShellState extends State<TravkaShell> {
     switch (_selectedDestination) {
       case TravkaDestination.home:
         return l10n.home;
+      case TravkaDestination.userSearch:
+        return l10n.userSearch;
+      case TravkaDestination.profile:
+        return l10n.profile;
       case TravkaDestination.login:
         return l10n.signIn;
       case TravkaDestination.register:
@@ -239,6 +245,10 @@ class _TravkaShellState extends State<TravkaShell> {
             setState(() => _isWorkoutMapExpanded = expanded);
           },
         );
+      case TravkaDestination.userSearch:
+        return const UserSearchPage();
+      case TravkaDestination.profile:
+        return ProfilePage(nickname: _nickname!);
       case TravkaDestination.login:
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),

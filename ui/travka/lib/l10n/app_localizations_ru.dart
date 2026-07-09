@@ -508,4 +508,49 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToLoadWorkoutTrack => 'Не удалось загрузить трек тренировки';
+
+  @override
+  String get userSearch => 'Поиск пользователей';
+
+  @override
+  String get profile => 'Профиль';
+
+  @override
+  String get searchUsersHint => 'Никнейм или @user@server';
+
+  @override
+  String get search => 'Поиск';
+
+  @override
+  String get follow => 'Подписаться';
+
+  @override
+  String get unfollow => 'Отписаться';
+
+  @override
+  String get following => 'Подписки';
+
+  @override
+  String get followPending => 'Ожидание';
+
+  @override
+  String get noUsersFound => 'Пользователи не найдены';
+
+  @override
+  String get noFollowingYet => 'Вы ни на кого не подписаны';
+
+  @override
+  String get searchByNicknameOrHandle =>
+      'Поиск по никнейму или федеративному адресу (@user@server)';
+
+  @override
+  String workoutByAuthor(String author) {
+    return 'Автор: $author';
+  }
+
+  @override
+  String get failedToSearchUsers => 'Не удалось выполнить поиск пользователей';
+
+  @override
+  String get failedToLoadProfile => 'Не удалось загрузить профиль';
 }

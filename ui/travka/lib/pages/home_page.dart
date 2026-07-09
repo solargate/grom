@@ -163,6 +163,7 @@ class _HomePageState extends State<HomePage> {
           return WorkoutCard(
             workout: _workouts[index],
             authToken: _authToken ?? '',
+            currentUserNickname: widget.nickname,
             onTap: () => _openWorkout(_workouts[index]),
           );
         },

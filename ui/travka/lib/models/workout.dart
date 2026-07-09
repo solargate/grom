@@ -1,3 +1,5 @@
+import 'social.dart';
+
 class Workout {
   Workout({
     required this.id,
@@ -7,11 +9,14 @@ class Workout {
     required this.startDate,
     required this.durationSeconds,
     required this.distance,
+    this.owner = '',
     this.track = '',
     this.hasMapPreview = false,
+    this.author,
   });
 
   final String id;
+  final String owner;
   final String name;
   final String description;
   final String sportType;
@@ -20,12 +25,21 @@ class Workout {
   final double distance;
   final String track;
   final bool hasMapPreview;
+  final WorkoutAuthor? author;
 
   double get distanceKm => distance / 1000;
 
+  String get ownerNickname => owner.isNotEmpty ? owner : (author?.nickname ?? '');
+
   factory Workout.fromJson(Map<String, dynamic> json) {
+    WorkoutAuthor? author;
+    final authorJson = json['author'];
+    if (authorJson is Map<String, dynamic>) {
+      author = WorkoutAuthor.fromJson(authorJson);
+    }
     return Workout(
       id: json['id'] as String,
+      owner: json['owner'] as String? ?? author?.nickname ?? '',
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
       sportType: json['sport_type'] as String,
@@ -34,6 +48,7 @@ class Workout {
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
       track: json['track'] as String? ?? '',
       hasMapPreview: json['has_map_preview'] as bool? ?? false,
+      author: author,
     );
   }
 
