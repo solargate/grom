@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/travka/internal/auth"
+	"github.com/solargate/travka/internal/data"
 	"gopkg.in/yaml.v3"
 )
 
@@ -56,8 +57,8 @@ func (s *Store) ensureUserDirs() error {
 }
 
 func ensureUserDir(dataDir, nickname string) error {
-	userDir := filepath.Join(dataDir, nickname)
-	if err := os.Mkdir(userDir, 0700); err != nil && !os.IsExist(err) {
+	userDir := data.UserDir(dataDir, nickname)
+	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return err
 	}
 	return nil

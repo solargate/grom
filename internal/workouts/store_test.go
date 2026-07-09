@@ -35,7 +35,7 @@ func TestStoreCreateAndList(t *testing.T) {
 	}
 
 	expectedBase := "2026-07-05T143000Z-" + created.ID
-	expectedDir := filepath.Join(dir, "solarwind", "workouts", expectedBase)
+	expectedDir := filepath.Join(dir, "users", "solarwind", "workouts", expectedBase)
 	if info, err := os.Stat(expectedDir); err != nil || !info.IsDir() {
 		t.Fatalf("expected workout dir %q: %v", expectedDir, err)
 	}

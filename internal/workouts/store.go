@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/solargate/travka/internal/data"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,7 +31,7 @@ func NewStore(dataDir string) *Store {
 const workoutsSubdir = "workouts"
 
 func (s *Store) userDir(nickname string) string {
-	return filepath.Join(s.dataDir, nickname)
+	return data.UserDir(s.dataDir, nickname)
 }
 
 func workoutsDir(userDir string) string {

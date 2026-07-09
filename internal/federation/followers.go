@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/solargate/travka/internal/data"
 	"gopkg.in/yaml.v3"
 )
 
@@ -29,7 +30,7 @@ func NewFollowersStore(dataDir string) *FollowersStore {
 }
 
 func (s *FollowersStore) path(nickname string) string {
-	return filepath.Join(s.dataDir, nickname, "federation", "followers.yaml")
+	return filepath.Join(data.UserDir(s.dataDir, nickname), "federation", "followers.yaml")
 }
 
 func (s *FollowersStore) Add(nickname string, follower InboundFollower) error {

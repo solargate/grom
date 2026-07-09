@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/travka/internal/data"
 )
 
 func publicDomain() string {
@@ -27,7 +28,7 @@ func actorURL(nickname string) string {
 var keyMu sync.Mutex
 
 func actorKeyPath(nickname string) string {
-	return filepath.Join(config.Cfg.Data.ResolvedDir, nickname, "federation", "actor_key.pem")
+	return filepath.Join(data.UserDir(config.Cfg.Data.ResolvedDir, nickname), "federation", "actor_key.pem")
 }
 
 func LoadOrCreateActorKey(nickname string) (publicKeyPEM string, keyID string, err error) {

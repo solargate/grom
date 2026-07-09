@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/travka/internal/data"
 	"github.com/solargate/travka/internal/workouts"
 	"gopkg.in/yaml.v3"
 )
@@ -21,7 +22,7 @@ func NewWorkoutInboxStore(dataDir string) *WorkoutInboxStore {
 }
 
 func (s *WorkoutInboxStore) inboxDir(viewerNickname string) string {
-	return filepath.Join(s.dataDir, viewerNickname, "federation", "inbox", "workouts")
+	return filepath.Join(data.UserDir(s.dataDir, viewerNickname), "federation", "inbox", "workouts")
 }
 
 func ownerDirName(handle string) string {

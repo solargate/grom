@@ -6,6 +6,12 @@ import (
 	"path/filepath"
 )
 
+const UsersSubdir = "users"
+
+func UserDir(dataDir, nickname string) string {
+	return filepath.Join(dataDir, UsersSubdir, nickname)
+}
+
 func ResolveDataDir(location string) (string, error) {
 	if filepath.IsAbs(location) {
 		return location, nil

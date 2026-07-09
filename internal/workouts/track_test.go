@@ -49,7 +49,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	}
 
 	expectedBase := "2026-07-06T084000Z-" + created.ID
-	workoutDir := filepath.Join(dir, "athlete", "workouts", expectedBase)
+	workoutDir := filepath.Join(dir, "users", "athlete", "workouts", expectedBase)
 	if _, err := os.Stat(filepath.Join(workoutDir, tracks.TrackFileGPX)); err != nil {
 		t.Fatalf("expected track file: %v", err)
 	}
