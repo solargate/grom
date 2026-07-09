@@ -66,6 +66,9 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
         token: widget.authToken,
         workoutId: widget.workout.id,
         fallbackFilename: widget.workout.track,
+        owner: widget.workout.ownerNickname.isNotEmpty
+            ? widget.workout.ownerNickname
+            : null,
       );
       final points = parseTrackPoints(downloaded.bytes, downloaded.filename);
       if (!mounted) {

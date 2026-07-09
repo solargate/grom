@@ -514,4 +514,49 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get failedToLoadWorkoutTrack =>
       'Trainingsstrecke konnte nicht geladen werden';
+
+  @override
+  String get userSearch => 'Benutzersuche';
+
+  @override
+  String get profile => 'Profil';
+
+  @override
+  String get searchUsersHint => 'Nickname oder @user@server';
+
+  @override
+  String get search => 'Suchen';
+
+  @override
+  String get follow => 'Folgen';
+
+  @override
+  String get unfollow => 'Entfolgen';
+
+  @override
+  String get following => 'Abonniert';
+
+  @override
+  String get followPending => 'Ausstehend';
+
+  @override
+  String get noUsersFound => 'Keine Benutzer gefunden';
+
+  @override
+  String get noFollowingYet => 'Sie folgen noch niemandem';
+
+  @override
+  String get searchByNicknameOrHandle =>
+      'Suche nach Nickname oder Federations-Adresse (@user@server)';
+
+  @override
+  String workoutByAuthor(String author) {
+    return 'Von $author';
+  }
+
+  @override
+  String get failedToSearchUsers => 'Benutzersuche fehlgeschlagen';
+
+  @override
+  String get failedToLoadProfile => 'Profil konnte nicht geladen werden';
 }

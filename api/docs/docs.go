@@ -162,6 +162,146 @@ const docTemplate = `{
                 }
             }
         },
+        "/social/follow": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Follow a local or remote user by nickname or handle",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "social"
+                ],
+                "summary": "Follow user",
+                "parameters": [
+                    {
+                        "description": "Follow target",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.FollowRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.FollowResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/social/follow/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove a follow relationship",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "social"
+                ],
+                "summary": "Unfollow user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Follow ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/social/following": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return users the authenticated user follows",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "social"
+                ],
+                "summary": "List following",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.FollowResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/status": {
             "get": {
                 "description": "Get server status",
@@ -175,6 +315,61 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/users/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Search local users by nickname or resolve a federated handle",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Search users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.UserSearchResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -387,6 +582,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout owner nickname (required for followed users' workouts)",
+                        "name": "owner",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -434,6 +635,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout owner nickname (required for followed users' workouts)",
+                        "name": "owner",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -500,6 +707,41 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "email already registered"
+                }
+            }
+        },
+        "v1.FollowRequest": {
+            "type": "object",
+            "required": [
+                "handle"
+            ],
+            "properties": {
+                "handle": {
+                    "type": "string",
+                    "example": "bob"
+                }
+            }
+        },
+        "v1.FollowResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_handle": {
+                    "type": "string"
+                },
+                "target_is_local": {
+                    "type": "boolean"
+                },
+                "target_name": {
+                    "type": "string"
+                },
+                "target_nickname": {
+                    "type": "string"
                 }
             }
         },
@@ -605,9 +847,54 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.UserSearchResult": {
+            "type": "object",
+            "properties": {
+                "handle": {
+                    "type": "string",
+                    "example": "bob@travka.example"
+                },
+                "is_local": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Bob"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "bob"
+                }
+            }
+        },
+        "v1.WorkoutAuthorResponse": {
+            "type": "object",
+            "properties": {
+                "handle": {
+                    "type": "string",
+                    "example": "bob@travka.example"
+                },
+                "is_local": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Bob"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "bob"
+                }
+            }
+        },
         "v1.WorkoutResponse": {
             "type": "object",
             "properties": {
+                "author": {
+                    "$ref": "#/definitions/v1.WorkoutAuthorResponse"
+                },
                 "description": {
                     "type": "string",
                     "example": "Easy session"
@@ -631,6 +918,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Morning run"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "solarwind"
                 },
                 "sport_type": {
                     "type": "string",

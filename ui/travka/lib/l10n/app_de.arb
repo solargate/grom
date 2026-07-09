@@ -221,5 +221,26 @@
   "editWorkout": "Bearbeiten",
   "deleteWorkout": "Löschen",
   "workoutActions": "Trainingsaktionen",
-  "failedToLoadWorkoutTrack": "Trainingsstrecke konnte nicht geladen werden"
+  "failedToLoadWorkoutTrack": "Trainingsstrecke konnte nicht geladen werden",
+  "userSearch": "Benutzersuche",
+  "profile": "Profil",
+  "searchUsersHint": "Nickname oder @user@server",
+  "search": "Suchen",
+  "follow": "Folgen",
+  "unfollow": "Entfolgen",
+  "following": "Abonniert",
+  "followPending": "Ausstehend",
+  "noUsersFound": "Keine Benutzer gefunden",
+  "noFollowingYet": "Sie folgen noch niemandem",
+  "searchByNicknameOrHandle": "Suche nach Nickname oder Federations-Adresse (@user@server)",
+  "workoutByAuthor": "Von {author}",
+  "@workoutByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSearchUsers": "Benutzersuche fehlgeschlagen",
+  "failedToLoadProfile": "Profil konnte nicht geladen werden"
 }

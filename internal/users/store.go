@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/travka/internal/auth"
+	"github.com/solargate/travka/internal/data"
 	"gopkg.in/yaml.v3"
 )
 
@@ -56,8 +57,8 @@ func (s *Store) ensureUserDirs() error {
 }
 
 func ensureUserDir(dataDir, nickname string) error {
-	userDir := filepath.Join(dataDir, nickname)
-	if err := os.Mkdir(userDir, 0700); err != nil && !os.IsExist(err) {
+	userDir := data.UserDir(dataDir, nickname)
+	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return err
 	}
 	return nil
@@ -138,6 +139,56 @@ func (s *Store) FindByID(id string) (*User, error) {
 		}
 	}
 	return nil, ErrUserNotFound
+}
+
+func (s *Store) FindByNickname(nickname string) (*User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := range s.users {
+		if strings.EqualFold(s.users[i].Nickname, nickname) {
+			user := s.users[i]
+			return &user, nil
+		}
+	}
+	return nil, ErrUserNotFound
+}
+
+func (s *Store) Search(query, excludeUserID string, limit int) ([]User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if limit <= 0 {
+		limit = 20
+	}
+	query = strings.ToLower(strings.TrimSpace(query))
+	if query == "" {
+		return nil, nil
+	}
+
+	result := make([]User, 0, limit)
+	for i := range s.users {
+		if s.users[i].ID == excludeUserID {
+			continue
+		}
+		nick := strings.ToLower(s.users[i].Nickname)
+		name := strings.ToLower(s.users[i].Name)
+		if strings.HasPrefix(nick, query) || strings.Contains(nick, query) || strings.Contains(name, query) {
+			result = append(result, s.users[i])
+			if len(result) >= limit {
+				break
+			}
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) ListAll() ([]User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := make([]User, len(s.users))
+	copy(result, s.users)
+	return result, nil
 }
 
 func (s *Store) Create(nickname, name, email, password string) (*User, error) {

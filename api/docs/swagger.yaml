@@ -31,6 +31,29 @@ definitions:
         example: email already registered
         type: string
     type: object
+  v1.FollowRequest:
+    properties:
+      handle:
+        example: bob
+        type: string
+    required:
+    - handle
+    type: object
+  v1.FollowResponse:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      target_handle:
+        type: string
+      target_is_local:
+        type: boolean
+      target_name:
+        type: string
+      target_nickname:
+        type: string
+    type: object
   v1.LoginRequest:
     properties:
       email:
@@ -104,8 +127,40 @@ definitions:
         example: solarwind
         type: string
     type: object
+  v1.UserSearchResult:
+    properties:
+      handle:
+        example: bob@travka.example
+        type: string
+      is_local:
+        example: true
+        type: boolean
+      name:
+        example: Bob
+        type: string
+      nickname:
+        example: bob
+        type: string
+    type: object
+  v1.WorkoutAuthorResponse:
+    properties:
+      handle:
+        example: bob@travka.example
+        type: string
+      is_local:
+        example: true
+        type: boolean
+      name:
+        example: Bob
+        type: string
+      nickname:
+        example: bob
+        type: string
+    type: object
   v1.WorkoutResponse:
     properties:
+      author:
+        $ref: '#/definitions/v1.WorkoutAuthorResponse'
       description:
         example: Easy session
         type: string
@@ -123,6 +178,9 @@ definitions:
         type: string
       name:
         example: Morning run
+        type: string
+      owner:
+        example: solarwind
         type: string
       sport_type:
         example: Run
@@ -236,6 +294,94 @@ paths:
       summary: Server info
       tags:
       - server_info
+  /social/follow:
+    post:
+      consumes:
+      - application/json
+      description: Follow a local or remote user by nickname or handle
+      parameters:
+      - description: Follow target
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.FollowRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.FollowResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Follow user
+      tags:
+      - social
+  /social/follow/{id}:
+    delete:
+      description: Remove a follow relationship
+      parameters:
+      - description: Follow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unfollow user
+      tags:
+      - social
+  /social/following:
+    get:
+      description: Return users the authenticated user follows
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.FollowResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List following
+      tags:
+      - social
   /status:
     get:
       description: Get server status
@@ -247,6 +393,41 @@ paths:
       summary: Server status
       tags:
       - server_info
+  /users/search:
+    get:
+      description: Search local users by nickname or resolve a federated handle
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.UserSearchResult'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search users
+      tags:
+      - users
   /workouts:
     get:
       description: Return workouts for the authenticated user sorted by start date
@@ -345,6 +526,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
       produces:
       - image/png
       responses:
@@ -373,6 +558,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
         type: string
       produces:
       - application/gpx+xml

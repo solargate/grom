@@ -1053,6 +1053,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load workout track'**
   String get failedToLoadWorkoutTrack;
+
+  /// No description provided for @userSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'User search'**
+  String get userSearch;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @searchUsersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname or @user@server'**
+  String get searchUsersHint;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get follow;
+
+  /// No description provided for @unfollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get unfollow;
+
+  /// No description provided for @following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get following;
+
+  /// No description provided for @followPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get followPending;
+
+  /// No description provided for @noUsersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get noUsersFound;
+
+  /// No description provided for @noFollowingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not following anyone yet'**
+  String get noFollowingYet;
+
+  /// No description provided for @searchByNicknameOrHandle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by nickname or federated handle (@user@server)'**
+  String get searchByNicknameOrHandle;
+
+  /// No description provided for @workoutByAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'By {author}'**
+  String workoutByAuthor(String author);
+
+  /// No description provided for @failedToSearchUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to search users'**
+  String get failedToSearchUsers;
+
+  /// No description provided for @failedToLoadProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load profile'**
+  String get failedToLoadProfile;
 }
 
 class _AppLocalizationsDelegate

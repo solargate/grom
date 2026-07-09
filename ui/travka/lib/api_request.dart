@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'models/downloaded_track.dart';
 import 'models/parsed_track_metadata.dart';
+import 'models/social.dart';
 import 'models/workout.dart';
 import 'server_storage.dart';
 
@@ -217,21 +218,34 @@ class ApiRequest {
     throw _parseError(response);
   }
 
-  String mapPreviewUrl(String workoutId) {
-    return _uri('/api/v1/workouts/$workoutId/map-preview').toString();
+  String mapPreviewUrl(String workoutId, {String? owner}) {
+    var uri = _uri('/api/v1/workouts/$workoutId/map-preview');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    return uri.toString();
   }
 
-  String workoutTrackUrl(String workoutId) {
-    return _uri('/api/v1/workouts/$workoutId/track').toString();
+  String workoutTrackUrl(String workoutId, {String? owner}) {
+    var uri = _uri('/api/v1/workouts/$workoutId/track');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    return uri.toString();
   }
 
   Future<DownloadedTrack> downloadWorkoutTrack({
     required String token,
     required String workoutId,
     required String fallbackFilename,
+    String? owner,
   }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/track');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
     final response = await http.get(
-      _uri('/api/v1/workouts/$workoutId/track'),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -267,6 +281,78 @@ class ApiRequest {
       final json = jsonDecode(response.body) as List<dynamic>;
       return json
           .map((item) => Workout.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<UserSearchResult>> searchUsers({
+    required String token,
+    required String query,
+  }) async {
+    final response = await http.get(
+      _uri('/api/v1/users/search?q=${Uri.encodeQueryComponent(query)}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<FollowInfo> followUser({
+    required String token,
+    required String handle,
+  }) async {
+    final response = await http.post(
+      _uri('/api/v1/social/follow'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'handle': handle}),
+    );
+
+    if (response.statusCode == 201) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return FollowInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<void> unfollowUser({
+    required String token,
+    required String followId,
+  }) async {
+    final response = await http.delete(
+      _uri('/api/v1/social/follow/$followId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<FollowInfo>> listFollowing(String token) async {
+    final response = await http.get(
+      _uri('/api/v1/social/following'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => FollowInfo.fromJson(item as Map<String, dynamic>))
           .toList();
     }
 
