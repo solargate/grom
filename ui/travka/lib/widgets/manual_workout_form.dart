@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:travka/l10n/app_localizations.dart';
 import 'package:travka/l10n/sport_type_localizations.dart';
+import 'package:travka/models/equipment.dart';
 import 'package:travka/models/sport_types.dart';
+
+import 'equipment_picker_field.dart';
 
 class ManualWorkoutForm extends StatelessWidget {
   const ManualWorkoutForm({
@@ -16,6 +19,8 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.durationSeconds,
     required this.distanceKm,
     required this.trackFilename,
+    required this.equipment,
+    required this.selectedEquipmentIds,
     required this.isSubmitting,
     required this.isPickingFile,
     required this.isParsingTrack,
@@ -25,6 +30,8 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.onPickTime,
     required this.onPickDuration,
     required this.onPickDistance,
+    required this.onPickEquipment,
+    required this.onRemoveEquipment,
     required this.onPickTrack,
     required this.onRemoveTrack,
     required this.onCancel,
@@ -40,6 +47,8 @@ class ManualWorkoutForm extends StatelessWidget {
   final int durationSeconds;
   final double distanceKm;
   final String? trackFilename;
+  final List<Equipment> equipment;
+  final List<String> selectedEquipmentIds;
   final bool isSubmitting;
   final bool isPickingFile;
   final bool isParsingTrack;
@@ -49,6 +58,8 @@ class ManualWorkoutForm extends StatelessWidget {
   final VoidCallback onPickTime;
   final VoidCallback onPickDuration;
   final VoidCallback onPickDistance;
+  final VoidCallback onPickEquipment;
+  final ValueChanged<String> onRemoveEquipment;
   final VoidCallback onPickTrack;
   final VoidCallback onRemoveTrack;
   final VoidCallback onCancel;
@@ -181,6 +192,14 @@ class ManualWorkoutForm extends StatelessWidget {
                 ),
                 child: Text(distanceText),
               ),
+            ),
+            const SizedBox(height: 16),
+            EquipmentPickerField(
+              equipment: equipment,
+              selectedIds: selectedEquipmentIds,
+              isSubmitting: isSubmitting,
+              onPick: onPickEquipment,
+              onRemove: onRemoveEquipment,
             ),
             const SizedBox(height: 16),
             _TrackPickerField(

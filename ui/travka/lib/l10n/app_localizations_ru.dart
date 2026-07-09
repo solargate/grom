@@ -559,4 +559,122 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Не удалось загрузить профиль';
+
+  @override
+  String get equipment => 'Снаряжение';
+
+  @override
+  String get addEquipment => 'Добавить';
+
+  @override
+  String get selectEquipment => 'Выбрать снаряжение';
+
+  @override
+  String get equipmentType => 'Тип';
+
+  @override
+  String get equipmentName => 'Наименование';
+
+  @override
+  String get equipmentBrand => 'Марка';
+
+  @override
+  String get equipmentModel => 'Модель';
+
+  @override
+  String get equipmentWeight => 'Вес (кг)';
+
+  @override
+  String get equipmentNotes => 'Примечания';
+
+  @override
+  String get workoutEquipment => 'Снаряжение';
+
+  @override
+  String get bikeType => 'Тип велосипеда';
+
+  @override
+  String get waterEquipmentType => 'Тип водного оборудования';
+
+  @override
+  String get deleteEquipment => 'Удалить';
+
+  @override
+  String get deleteEquipmentConfirm =>
+      'Удалить это снаряжение? Оно будет убрано из всех тренировок.';
+
+  @override
+  String get noEquipmentYet => 'У вас пока нет снаряжения';
+
+  @override
+  String get equipmentSaved => 'Снаряжение сохранено';
+
+  @override
+  String get equipmentDeleted => 'Снаряжение удалено';
+
+  @override
+  String get failedToLoadEquipment => 'Не удалось загрузить снаряжение';
+
+  @override
+  String get failedToSaveEquipment => 'Не удалось сохранить снаряжение';
+
+  @override
+  String get enterEquipmentName => 'Введите наименование';
+
+  @override
+  String get equipmentTypeBike => 'Велосипед';
+
+  @override
+  String get equipmentTypeShoes => 'Обувь';
+
+  @override
+  String get equipmentTypeWater => 'Водное оборудование';
+
+  @override
+  String get equipmentTypeOther => 'Другое';
+
+  @override
+  String get equipmentSubtypeEmpty => 'Не выбрано';
+
+  @override
+  String get bikeTypeMountain => 'Горный';
+
+  @override
+  String get bikeTypeGravel => 'Гравийный';
+
+  @override
+  String get bikeTypeRoad => 'Шоссейный';
+
+  @override
+  String get bikeTypeTouring => 'Туристический';
+
+  @override
+  String get bikeTypeTriathlon => 'Разделочный';
+
+  @override
+  String get bikeTypeCyclocross => 'Кроссовый';
+
+  @override
+  String get bikeTypeFixie => 'Фикс';
+
+  @override
+  String get bikeTypeBmx => 'BMX';
+
+  @override
+  String get waterTypeSup => 'САП';
+
+  @override
+  String get waterTypeKayak => 'Каяк';
+
+  @override
+  String get waterTypeCanoe => 'Каноэ';
+
+  @override
+  String get waterTypeCanoeDouble => 'Байдарка';
+
+  @override
+  String get waterTypePackraft => 'Пакрафт';
+
+  @override
+  String get waterTypeSurf => 'Сёрф';
 }

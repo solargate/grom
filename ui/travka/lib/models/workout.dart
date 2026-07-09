@@ -1,5 +1,22 @@
 import 'social.dart';
 
+class WorkoutEquipmentItem {
+  WorkoutEquipmentItem({
+    required this.id,
+    required this.name,
+  });
+
+  final String id;
+  final String name;
+
+  factory WorkoutEquipmentItem.fromJson(Map<String, dynamic> json) {
+    return WorkoutEquipmentItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
+}
+
 class Workout {
   Workout({
     required this.id,
@@ -13,6 +30,7 @@ class Workout {
     this.track = '',
     this.hasMapPreview = false,
     this.author,
+    this.equipment = const [],
   });
 
   final String id;
@@ -26,6 +44,7 @@ class Workout {
   final String track;
   final bool hasMapPreview;
   final WorkoutAuthor? author;
+  final List<WorkoutEquipmentItem> equipment;
 
   double get distanceKm => distance / 1000;
 
@@ -36,6 +55,15 @@ class Workout {
     final authorJson = json['author'];
     if (authorJson is Map<String, dynamic>) {
       author = WorkoutAuthor.fromJson(authorJson);
+    }
+    final equipmentJson = json['equipment'];
+    final equipment = <WorkoutEquipmentItem>[];
+    if (equipmentJson is List) {
+      for (final item in equipmentJson) {
+        if (item is Map<String, dynamic>) {
+          equipment.add(WorkoutEquipmentItem.fromJson(item));
+        }
+      }
     }
     return Workout(
       id: json['id'] as String,
@@ -49,6 +77,7 @@ class Workout {
       track: json['track'] as String? ?? '',
       hasMapPreview: json['has_map_preview'] as bool? ?? false,
       author: author,
+      equipment: equipment,
     );
   }
 
@@ -72,6 +101,7 @@ class CreateWorkoutDraft {
     required this.startDate,
     required this.durationSeconds,
     required this.distanceKm,
+    this.equipmentIds = const [],
   });
 
   final String name;
@@ -80,6 +110,7 @@ class CreateWorkoutDraft {
   final DateTime startDate;
   final int durationSeconds;
   final double distanceKm;
+  final List<String> equipmentIds;
 
   Map<String, dynamic> toJson() {
     return {
@@ -89,6 +120,7 @@ class CreateWorkoutDraft {
       'start_date': startDate.toUtc().toIso8601String(),
       'duration_seconds': durationSeconds,
       'distance': distanceKm * 1000,
+      if (equipmentIds.isNotEmpty) 'equipment_ids': equipmentIds,
     };
   }
 }

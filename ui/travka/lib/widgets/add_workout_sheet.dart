@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:travka/l10n/app_localizations.dart';
 import 'package:travka/models/sport_types.dart';
@@ -7,10 +9,12 @@ import 'package:travka/platform/track_file_picker.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/recorded_track.dart';
+import '../models/equipment.dart';
 import '../models/workout.dart';
 import '../services/track_recording_service.dart';
 import 'manual_workout_form.dart';
 import 'record_workout_tab.dart';
+import 'equipment_picker_field.dart';
 
 Future<bool?> showAddWorkoutSheet(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
@@ -63,6 +67,9 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   String? _trackFilename;
   List<int>? _trackBytes;
   bool _isParsingTrack = false;
+  List<Equipment> _userEquipment = [];
+  List<String> _selectedEquipmentIds = [];
+  Map<String, List<String>> _lastEquipmentBySport = {};
 
   bool get _showRecordTab => isMobileClient;
 
@@ -76,6 +83,38 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _tabController = TabController(length: 2, vsync: this);
       _recorder.addListener(_onRecorderChanged);
     }
+    _loadEquipmentData();
+  }
+
+  Future<void> _loadEquipmentData() async {
+    final token = await AuthStorage.getToken();
+    if (token == null) {
+      return;
+    }
+
+    try {
+      final me = await _api.getMe(token);
+      final equipment = await _api.listEquipment(token);
+      if (!mounted) return;
+      setState(() {
+        _userEquipment = equipment;
+        _lastEquipmentBySport = me.lastEquipmentBySport;
+        _applyLastEquipmentForSport(_sportTypeId);
+      });
+    } catch (_) {
+      // Keep form usable without equipment presets.
+    }
+  }
+
+  void _applyLastEquipmentForSport(String sportTypeId) {
+    final lastIds = _lastEquipmentBySport[sportTypeId];
+    if (lastIds == null || lastIds.isEmpty) {
+      _selectedEquipmentIds = [];
+      return;
+    }
+    final existingIds = _userEquipment.map((item) => item.id).toSet();
+    _selectedEquipmentIds =
+        lastIds.where((id) => existingIds.contains(id)).toList();
   }
 
   @override
@@ -220,8 +259,29 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     );
 
     if (selected != null) {
-      setState(() => _sportTypeId = selected);
+      setState(() {
+        _sportTypeId = selected;
+        _applyLastEquipmentForSport(selected);
+      });
     }
+  }
+
+  Future<void> _pickEquipment() async {
+    final selected = await showEquipmentPickerSheet(
+      context,
+      equipment: _userEquipment,
+      selectedIds: _selectedEquipmentIds,
+    );
+    if (selected != null) {
+      setState(() => _selectedEquipmentIds = selected);
+    }
+  }
+
+  void _removeEquipment(String id) {
+    setState(() {
+      _selectedEquipmentIds =
+          _selectedEquipmentIds.where((itemId) => itemId != id).toList();
+    });
   }
 
   List<Widget> _buildCategorySection(
@@ -384,6 +444,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         startDate: _startDateTime,
         durationSeconds: _durationSeconds,
         distanceKm: _distanceKm,
+        equipmentIds: _selectedEquipmentIds,
       );
 
       if (_trackBytes != null && _trackFilename != null) {
@@ -396,6 +457,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
             'start_date': draft.startDate.toUtc().toIso8601String(),
             'duration_seconds': draft.durationSeconds.toString(),
             'distance': (draft.distanceKm * 1000).toString(),
+            if (draft.equipmentIds.isNotEmpty)
+              'equipment_ids': jsonEncode(draft.equipmentIds),
           },
           trackBytes: _trackBytes!,
           trackFilename: _trackFilename!,
@@ -439,6 +502,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       durationSeconds: _durationSeconds,
       distanceKm: _distanceKm,
       trackFilename: _trackFilename,
+      equipment: _userEquipment,
+      selectedEquipmentIds: _selectedEquipmentIds,
       isSubmitting: _isSubmitting,
       isPickingFile: _isPickingFile,
       isParsingTrack: _isParsingTrack,
@@ -448,6 +513,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       onPickTime: _pickTime,
       onPickDuration: _pickDuration,
       onPickDistance: _pickDistance,
+      onPickEquipment: _pickEquipment,
+      onRemoveEquipment: _removeEquipment,
       onPickTrack: _pickTrack,
       onRemoveTrack: _removeTrack,
       onCancel: _handleCancel,

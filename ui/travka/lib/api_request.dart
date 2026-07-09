@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'models/downloaded_track.dart';
+import 'models/equipment.dart';
 import 'models/parsed_track_metadata.dart';
 import 'models/social.dart';
 import 'models/workout.dart';
@@ -24,19 +25,33 @@ class UserInfo {
     required this.nickname,
     required this.name,
     required this.email,
+    this.lastEquipmentBySport = const {},
   });
 
   final String id;
   final String nickname;
   final String name;
   final String email;
+  final Map<String, List<String>> lastEquipmentBySport;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
+    final lastEquipmentRaw = json['last_equipment_by_sport'];
+    final lastEquipment = <String, List<String>>{};
+    if (lastEquipmentRaw is Map<String, dynamic>) {
+      for (final entry in lastEquipmentRaw.entries) {
+        final value = entry.value;
+        if (value is List) {
+          lastEquipment[entry.key] =
+              value.map((item) => item.toString()).toList();
+        }
+      }
+    }
     return UserInfo(
       id: json['id'] as String,
       nickname: json['nickname'] as String,
       name: json['name'] as String? ?? '',
       email: json['email'] as String,
+      lastEquipmentBySport: lastEquipment,
     );
   }
 }
@@ -370,6 +385,81 @@ class ApiRequest {
       return json
           .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
           .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<Equipment>> listEquipment(String token) async {
+    final response = await http.get(
+      _uri('/api/v1/equipment'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => Equipment.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<Equipment> createEquipment({
+    required String token,
+    required EquipmentDraft body,
+  }) async {
+    final response = await http.post(
+      _uri('/api/v1/equipment'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body.toJson()),
+    );
+
+    if (response.statusCode == 201) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Equipment.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<Equipment> updateEquipment({
+    required String token,
+    required String id,
+    required EquipmentDraft body,
+  }) async {
+    final response = await http.put(
+      _uri('/api/v1/equipment/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Equipment.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<void> deleteEquipment({
+    required String token,
+    required String id,
+  }) async {
+    final response = await http.delete(
+      _uri('/api/v1/equipment/$id'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 204) {
+      return;
     }
 
     throw _parseError(response);

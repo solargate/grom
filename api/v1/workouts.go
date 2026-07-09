@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -26,12 +27,13 @@ func initWorkoutStore() {
 }
 
 type CreateWorkoutRequest struct {
-	Name            string  `json:"name" binding:"required" example:"Morning run"`
-	Description     string  `json:"description" example:"Easy session"`
-	SportType       string  `json:"sport_type" binding:"required" example:"Run"`
-	StartDate       string  `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
-	DurationSeconds int     `json:"duration_seconds" example:"3600"`
-	Distance        float64 `json:"distance" example:"5200"`
+	Name            string   `json:"name" binding:"required" example:"Morning run"`
+	Description     string   `json:"description" example:"Easy session"`
+	SportType       string   `json:"sport_type" binding:"required" example:"Run"`
+	StartDate       string   `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
+	DurationSeconds int      `json:"duration_seconds" example:"3600"`
+	Distance        float64  `json:"distance" example:"5200"`
+	EquipmentIDs    []string `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
 type CreateWorkoutForm struct {
@@ -41,6 +43,7 @@ type CreateWorkoutForm struct {
 	StartDate       string                `form:"start_date" binding:"required"`
 	DurationSeconds int                   `form:"duration_seconds"`
 	Distance        float64               `form:"distance"`
+	EquipmentIDs    string                `form:"equipment_ids"`
 	Track           *multipart.FileHeader `form:"track"`
 }
 
@@ -68,11 +71,24 @@ type WorkoutResponse struct {
 	DurationSeconds int                    `json:"duration_seconds" example:"3600"`
 	Distance        float64                `json:"distance" example:"5200"`
 	Track           string                 `json:"track,omitempty" example:"track.gpx"`
+	Equipment       []WorkoutEquipmentItem `json:"equipment,omitempty"`
 	HasMapPreview   bool                   `json:"has_map_preview" example:"true"`
 	Author          *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
+type WorkoutEquipmentItem struct {
+	ID   string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name string `json:"name" example:"Gravel bike"`
+}
+
 func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
+	equipment := make([]WorkoutEquipmentItem, 0, len(workout.Equipment))
+	for _, item := range workout.Equipment {
+		equipment = append(equipment, WorkoutEquipmentItem{
+			ID:   item.ID,
+			Name: item.Name,
+		})
+	}
 	return WorkoutResponse{
 		ID:              workout.ID,
 		Name:            workout.Name,
@@ -82,6 +98,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		DurationSeconds: workout.DurationSeconds,
 		Distance:        workout.Distance,
 		Track:           workout.Track,
+		Equipment:       equipment,
 		HasMapPreview:   workout.HasMapPreview,
 	}
 }
@@ -247,6 +264,12 @@ func createWorkout(ctx *gin.Context) {
 		return
 	}
 
+	equipmentItems, err := resolveWorkoutEquipment(nickname, req.EquipmentIDs)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		return
+	}
+
 	workout, err := workoutStore.Create(nickname, &workouts.Workout{
 		Name:            req.Name,
 		Description:     req.Description,
@@ -254,10 +277,15 @@ func createWorkout(ctx *gin.Context) {
 		StartDate:       startDate,
 		DurationSeconds: req.DurationSeconds,
 		Distance:        req.Distance,
+		Equipment:       equipmentItems,
 	})
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
+	}
+
+	if userID, err := currentUserID(ctx); err == nil {
+		saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
 	}
 
 	publishCreatedWorkout(nickname, workout)
@@ -293,6 +321,17 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
+	equipmentIDs, err := parseEquipmentIDsForm(form.EquipmentIDs)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid equipment_ids format"})
+		return
+	}
+	equipmentItems, err := resolveWorkoutEquipment(nickname, equipmentIDs)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		return
+	}
+
 	workout := &workouts.Workout{
 		Name:            form.Name,
 		Description:     form.Description,
@@ -300,6 +339,7 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		StartDate:       startDate,
 		DurationSeconds: form.DurationSeconds,
 		Distance:        form.Distance,
+		Equipment:       equipmentItems,
 	}
 
 	var trackInput *workouts.TrackInput
@@ -327,8 +367,24 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
+	if userID, err := currentUserID(ctx); err == nil {
+		saveLastEquipmentForSport(userID, form.SportType, equipmentIDs)
+	}
+
 	publishCreatedWorkout(nickname, created)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(created))
+}
+
+func parseEquipmentIDsForm(raw string) ([]string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	var ids []string
+	if err := json.Unmarshal([]byte(raw), &ids); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // parseTrack godoc

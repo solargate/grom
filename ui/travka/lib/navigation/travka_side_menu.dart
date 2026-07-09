@@ -27,7 +27,7 @@ class TravkaSideMenu extends StatelessWidget {
 
   int get _settingsIndex {
     if (isLoggedIn) {
-      return 5;
+      return 6;
     }
     return 3;
   }
@@ -41,6 +41,8 @@ class TravkaSideMenu extends StatelessWidget {
           return 1;
         case TravkaDestination.profile:
           return 2;
+        case TravkaDestination.equipment:
+          return 3;
         case TravkaDestination.login:
         case TravkaDestination.register:
           return 0;
@@ -56,6 +58,7 @@ class TravkaSideMenu extends StatelessWidget {
         return 2;
       case TravkaDestination.userSearch:
       case TravkaDestination.profile:
+      case TravkaDestination.equipment:
         return 0;
     }
   }
@@ -75,6 +78,8 @@ class TravkaSideMenu extends StatelessWidget {
         case 2:
           onDestinationSelected(TravkaDestination.profile);
         case 3:
+          onDestinationSelected(TravkaDestination.equipment);
+        case 4:
           onLogout();
       }
       return;
@@ -135,6 +140,11 @@ class TravkaSideMenu extends StatelessWidget {
             icon: const Icon(Icons.person_outline),
             selectedIcon: const Icon(Icons.person),
             label: Text(l10n.profile),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.sports_outlined),
+            selectedIcon: const Icon(Icons.sports),
+            label: Text(l10n.equipment),
           ),
           NavigationDrawerDestination(
             icon: const Icon(Icons.logout_outlined),

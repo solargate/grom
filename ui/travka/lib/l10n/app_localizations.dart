@@ -1149,6 +1149,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load profile'**
   String get failedToLoadProfile;
+
+  /// No description provided for @equipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get equipment;
+
+  /// No description provided for @addEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addEquipment;
+
+  /// No description provided for @selectEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Select equipment'**
+  String get selectEquipment;
+
+  /// No description provided for @equipmentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get equipmentType;
+
+  /// No description provided for @equipmentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get equipmentName;
+
+  /// No description provided for @equipmentBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get equipmentBrand;
+
+  /// No description provided for @equipmentModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get equipmentModel;
+
+  /// No description provided for @equipmentWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (kg)'**
+  String get equipmentWeight;
+
+  /// No description provided for @equipmentNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get equipmentNotes;
+
+  /// No description provided for @workoutEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get workoutEquipment;
+
+  /// No description provided for @bikeType.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike type'**
+  String get bikeType;
+
+  /// No description provided for @waterEquipmentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Water equipment type'**
+  String get waterEquipmentType;
+
+  /// No description provided for @deleteEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteEquipment;
+
+  /// No description provided for @deleteEquipmentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this equipment? It will be removed from all workouts.'**
+  String get deleteEquipmentConfirm;
+
+  /// No description provided for @noEquipmentYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no equipment yet'**
+  String get noEquipmentYet;
+
+  /// No description provided for @equipmentSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment saved'**
+  String get equipmentSaved;
+
+  /// No description provided for @equipmentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment deleted'**
+  String get equipmentDeleted;
+
+  /// No description provided for @failedToLoadEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load equipment'**
+  String get failedToLoadEquipment;
+
+  /// No description provided for @failedToSaveEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save equipment'**
+  String get failedToSaveEquipment;
+
+  /// No description provided for @enterEquipmentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter equipment name'**
+  String get enterEquipmentName;
+
+  /// No description provided for @equipmentTypeBike.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike'**
+  String get equipmentTypeBike;
+
+  /// No description provided for @equipmentTypeShoes.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoes'**
+  String get equipmentTypeShoes;
+
+  /// No description provided for @equipmentTypeWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water equipment'**
+  String get equipmentTypeWater;
+
+  /// No description provided for @equipmentTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get equipmentTypeOther;
+
+  /// No description provided for @equipmentSubtypeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get equipmentSubtypeEmpty;
+
+  /// No description provided for @bikeTypeMountain.
+  ///
+  /// In en, this message translates to:
+  /// **'Mountain'**
+  String get bikeTypeMountain;
+
+  /// No description provided for @bikeTypeGravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gravel'**
+  String get bikeTypeGravel;
+
+  /// No description provided for @bikeTypeRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Road'**
+  String get bikeTypeRoad;
+
+  /// No description provided for @bikeTypeTouring.
+  ///
+  /// In en, this message translates to:
+  /// **'Touring'**
+  String get bikeTypeTouring;
+
+  /// No description provided for @bikeTypeTriathlon.
+  ///
+  /// In en, this message translates to:
+  /// **'Triathlon'**
+  String get bikeTypeTriathlon;
+
+  /// No description provided for @bikeTypeCyclocross.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyclocross'**
+  String get bikeTypeCyclocross;
+
+  /// No description provided for @bikeTypeFixie.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixie'**
+  String get bikeTypeFixie;
+
+  /// No description provided for @bikeTypeBmx.
+  ///
+  /// In en, this message translates to:
+  /// **'BMX'**
+  String get bikeTypeBmx;
+
+  /// No description provided for @waterTypeSup.
+  ///
+  /// In en, this message translates to:
+  /// **'SUP'**
+  String get waterTypeSup;
+
+  /// No description provided for @waterTypeKayak.
+  ///
+  /// In en, this message translates to:
+  /// **'Kayak'**
+  String get waterTypeKayak;
+
+  /// No description provided for @waterTypeCanoe.
+  ///
+  /// In en, this message translates to:
+  /// **'Canoe'**
+  String get waterTypeCanoe;
+
+  /// No description provided for @waterTypeCanoeDouble.
+  ///
+  /// In en, this message translates to:
+  /// **'Double canoe'**
+  String get waterTypeCanoeDouble;
+
+  /// No description provided for @waterTypePackraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Packraft'**
+  String get waterTypePackraft;
+
+  /// No description provided for @waterTypeSurf.
+  ///
+  /// In en, this message translates to:
+  /// **'Surf'**
+  String get waterTypeSurf;
 }
 
 class _AppLocalizationsDelegate

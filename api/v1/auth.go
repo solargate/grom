@@ -38,10 +38,11 @@ type LoginRequest struct {
 }
 
 type UserResponse struct {
-	ID       string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Nickname string `json:"nickname" example:"solarwind"`
-	Name     string `json:"name" example:"Alexander Cheryomukhin"`
-	Email    string `json:"email" example:"solarwind.palm@gmail.com"`
+	ID                   string              `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Nickname             string              `json:"nickname" example:"solarwind"`
+	Name                 string              `json:"name" example:"Alexander Cheryomukhin"`
+	Email                string              `json:"email" example:"solarwind.palm@gmail.com"`
+	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
 }
 
 type LoginResponse struct {
@@ -56,10 +57,11 @@ type ErrorResponse struct {
 
 func toUserResponse(user *users.User) UserResponse {
 	return UserResponse{
-		ID:       user.ID,
-		Nickname: user.Nickname,
-		Name:     user.Name,
-		Email:    user.Email,
+		ID:                   user.ID,
+		Nickname:             user.Nickname,
+		Name:                 user.Name,
+		Email:                user.Email,
+		LastEquipmentBySport: user.LastEquipmentBySport,
 	}
 }
 

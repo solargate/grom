@@ -139,6 +139,218 @@
                 }
             }
         },
+        "/equipment": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return equipment catalog for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "equipment"
+                ],
+                "summary": "List equipment",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.EquipmentResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add new equipment item for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "equipment"
+                ],
+                "summary": "Create equipment",
+                "parameters": [
+                    {
+                        "description": "Equipment data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.CreateEquipmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EquipmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/equipment/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update existing equipment item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "equipment"
+                ],
+                "summary": "Update equipment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Equipment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Equipment data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.UpdateEquipmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EquipmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete equipment and remove it from all workouts and saved sport presets",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "equipment"
+                ],
+                "summary": "Delete equipment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Equipment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/server_info": {
             "get": {
                 "description": "Get server info",
@@ -695,6 +907,47 @@
         }
     },
     "definitions": {
+        "v1.CreateEquipmentRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "bike_type": {
+                    "type": "string",
+                    "example": "gravel"
+                },
+                "brand": {
+                    "type": "string",
+                    "example": "Canyon"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "Grizl"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Gravel bike"
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "Race setup"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bike"
+                },
+                "water_type": {
+                    "type": "string",
+                    "example": ""
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "example": 9.5
+                }
+            }
+        },
         "v1.CreateWorkoutRequest": {
             "type": "object",
             "required": [
@@ -715,6 +968,15 @@
                     "type": "integer",
                     "example": 3600
                 },
+                "equipment_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000"
+                    ]
+                },
                 "name": {
                     "type": "string",
                     "example": "Morning run"
@@ -726,6 +988,47 @@
                 "start_date": {
                     "type": "string",
                     "example": "2026-07-05T14:30:00+03:00"
+                }
+            }
+        },
+        "v1.EquipmentResponse": {
+            "type": "object",
+            "properties": {
+                "bike_type": {
+                    "type": "string",
+                    "example": "gravel"
+                },
+                "brand": {
+                    "type": "string",
+                    "example": "Canyon"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "Grizl"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Gravel bike"
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "Race setup"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bike"
+                },
+                "water_type": {
+                    "type": "string",
+                    "example": ""
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "example": 9.5
                 }
             }
         },
@@ -871,6 +1174,47 @@
                 }
             }
         },
+        "v1.UpdateEquipmentRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "bike_type": {
+                    "type": "string",
+                    "example": "gravel"
+                },
+                "brand": {
+                    "type": "string",
+                    "example": "Canyon"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "Grizl"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Gravel bike"
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "Race setup"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bike"
+                },
+                "water_type": {
+                    "type": "string",
+                    "example": ""
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "example": 9.5
+                }
+            }
+        },
         "v1.UserResponse": {
             "type": "object",
             "properties": {
@@ -881,6 +1225,15 @@
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "last_equipment_by_sport": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "name": {
                     "type": "string",
@@ -934,6 +1287,19 @@
                 }
             }
         },
+        "v1.WorkoutEquipmentItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Gravel bike"
+                }
+            }
+        },
         "v1.WorkoutResponse": {
             "type": "object",
             "properties": {
@@ -951,6 +1317,12 @@
                 "duration_seconds": {
                     "type": "integer",
                     "example": 3600
+                },
+                "equipment": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.WorkoutEquipmentItem"
+                    }
                 },
                 "has_map_preview": {
                     "type": "boolean",

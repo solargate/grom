@@ -124,3 +124,43 @@ func TestStoreCreateFailsIfWorkoutDirExists(t *testing.T) {
 		t.Fatalf("expected ErrWorkoutExists, got %v", err)
 	}
 }
+
+func TestStoreRemoveEquipmentFromAll(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	startDate := time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC)
+	created, err := store.Create("athlete", &Workout{
+		Name:      "Morning run",
+		SportType: "Run",
+		StartDate: startDate,
+		Equipment: []WorkoutEquipment{
+			{ID: "eq-1", Name: "Shoes"},
+			{ID: "eq-2", Name: "Watch"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	if err := store.RemoveEquipmentFromAll("athlete", "eq-1"); err != nil {
+		t.Fatalf("RemoveEquipmentFromAll() error = %v", err)
+	}
+
+	workouts, err := store.List("athlete")
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(workouts) != 1 {
+		t.Fatalf("expected 1 workout, got %d", len(workouts))
+	}
+	if len(workouts[0].Equipment) != 1 {
+		t.Fatalf("expected 1 equipment item, got %d", len(workouts[0].Equipment))
+	}
+	if workouts[0].Equipment[0].ID != "eq-2" {
+		t.Fatalf("expected eq-2 to remain, got %q", workouts[0].Equipment[0].ID)
+	}
+	if workouts[0].ID != created.ID {
+		t.Fatalf("expected same workout id")
+	}
+}

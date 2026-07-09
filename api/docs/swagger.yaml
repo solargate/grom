@@ -1,5 +1,35 @@
 basePath: /api/v1
 definitions:
+  v1.CreateEquipmentRequest:
+    properties:
+      bike_type:
+        example: gravel
+        type: string
+      brand:
+        example: Canyon
+        type: string
+      model:
+        example: Grizl
+        type: string
+      name:
+        example: Gravel bike
+        type: string
+      notes:
+        example: Race setup
+        type: string
+      type:
+        example: bike
+        type: string
+      water_type:
+        example: ""
+        type: string
+      weight_kg:
+        example: 9.5
+        type: number
+    required:
+    - name
+    - type
+    type: object
   v1.CreateWorkoutRequest:
     properties:
       description:
@@ -11,6 +41,12 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      equipment_ids:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        items:
+          type: string
+        type: array
       name:
         example: Morning run
         type: string
@@ -24,6 +60,36 @@ definitions:
     - name
     - sport_type
     - start_date
+    type: object
+  v1.EquipmentResponse:
+    properties:
+      bike_type:
+        example: gravel
+        type: string
+      brand:
+        example: Canyon
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      model:
+        example: Grizl
+        type: string
+      name:
+        example: Gravel bike
+        type: string
+      notes:
+        example: Race setup
+        type: string
+      type:
+        example: bike
+        type: string
+      water_type:
+        example: ""
+        type: string
+      weight_kg:
+        example: 9.5
+        type: number
     type: object
   v1.ErrorResponse:
     properties:
@@ -123,6 +189,36 @@ definitions:
     - nickname
     - password
     type: object
+  v1.UpdateEquipmentRequest:
+    properties:
+      bike_type:
+        example: gravel
+        type: string
+      brand:
+        example: Canyon
+        type: string
+      model:
+        example: Grizl
+        type: string
+      name:
+        example: Gravel bike
+        type: string
+      notes:
+        example: Race setup
+        type: string
+      type:
+        example: bike
+        type: string
+      water_type:
+        example: ""
+        type: string
+      weight_kg:
+        example: 9.5
+        type: number
+    required:
+    - name
+    - type
+    type: object
   v1.UserResponse:
     properties:
       email:
@@ -131,6 +227,12 @@ definitions:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+      last_equipment_by_sport:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
       name:
         example: Alexander Cheryomukhin
         type: string
@@ -168,6 +270,15 @@ definitions:
         example: bob
         type: string
     type: object
+  v1.WorkoutEquipmentItem:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: Gravel bike
+        type: string
+    type: object
   v1.WorkoutResponse:
     properties:
       author:
@@ -181,6 +292,10 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      equipment:
+        items:
+          $ref: '#/definitions/v1.WorkoutEquipmentItem'
+        type: array
       has_map_preview:
         example: true
         type: boolean
@@ -294,6 +409,142 @@ paths:
       summary: Register new user
       tags:
       - auth
+  /equipment:
+    get:
+      description: Return equipment catalog for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EquipmentResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List equipment
+      tags:
+      - equipment
+    post:
+      consumes:
+      - application/json
+      description: Add new equipment item for the authenticated user
+      parameters:
+      - description: Equipment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.CreateEquipmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.EquipmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create equipment
+      tags:
+      - equipment
+  /equipment/{id}:
+    delete:
+      description: Delete equipment and remove it from all workouts and saved sport
+        presets
+      parameters:
+      - description: Equipment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete equipment
+      tags:
+      - equipment
+    put:
+      consumes:
+      - application/json
+      description: Update existing equipment item
+      parameters:
+      - description: Equipment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Equipment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.UpdateEquipmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EquipmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update equipment
+      tags:
+      - equipment
   /server_info:
     get:
       description: Get server info

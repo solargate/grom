@@ -62,6 +62,12 @@ func RunRouter() {
 		workoutGroup.GET("/:id/track", getWorkoutTrack)
 		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
 		workoutGroup.GET("", listWorkouts)
+
+		equipmentGroup := apiV1.Group("/equipment", auth.AuthRequired())
+		equipmentGroup.GET("", listEquipment)
+		equipmentGroup.POST("", createEquipment)
+		equipmentGroup.PUT("/:id", updateEquipment)
+		equipmentGroup.DELETE("/:id", deleteEquipment)
 	}
 
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)
