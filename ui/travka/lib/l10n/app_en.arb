@@ -229,9 +229,11 @@
   "follow": "Follow",
   "unfollow": "Unfollow",
   "following": "Following",
+  "followers": "Followers",
   "followPending": "Pending",
   "noUsersFound": "No users found",
   "noFollowingYet": "You are not following anyone yet",
+  "noFollowersYet": "No one is following you yet",
   "searchByNicknameOrHandle": "Search by nickname or federated handle (@user@server)",
   "workoutByAuthor": "By {author}",
   "@workoutByAuthor": {

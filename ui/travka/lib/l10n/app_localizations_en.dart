@@ -533,6 +533,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get following => 'Following';
 
   @override
+  String get followers => 'Followers';
+
+  @override
   String get followPending => 'Pending';
 
   @override
@@ -540,6 +543,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noFollowingYet => 'You are not following anyone yet';
+
+  @override
+  String get noFollowersYet => 'No one is following you yet';
 
   @override
   String get searchByNicknameOrHandle =>

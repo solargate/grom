@@ -1096,6 +1096,12 @@ abstract class AppLocalizations {
   /// **'Following'**
   String get following;
 
+  /// No description provided for @followers.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers'**
+  String get followers;
+
   /// No description provided for @followPending.
   ///
   /// In en, this message translates to:
@@ -1113,6 +1119,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are not following anyone yet'**
   String get noFollowingYet;
+
+  /// No description provided for @noFollowersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is following you yet'**
+  String get noFollowersYet;
 
   /// No description provided for @searchByNicknameOrHandle.
   ///

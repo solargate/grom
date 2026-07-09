@@ -52,7 +52,7 @@ func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
 	case "Create":
 		return p.handleCreate(nickname, activity)
 	case "Undo":
-		return nil
+		return p.handleUndo(nickname, activity)
 	default:
 		return nil
 	}
@@ -66,10 +66,14 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 	followID, _ := activity["id"].(string)
 
 	if p.followersStore != nil {
+		handle := actorToHandle(followerActor)
+		if handle == "" {
+			handle = followerActor
+		}
 		_ = p.followersStore.Add(targetNickname, InboundFollower{
 			ActorURI: followerActor,
 			Inbox:    strings.TrimSuffix(followerActor, "/") + "/inbox",
-			Handle:   followerActor,
+			Handle:   handle,
 		})
 	}
 
@@ -91,6 +95,24 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 		return p.delivery.postActivity(inbox, accept)
 	}
 	return nil
+}
+
+func (p *InboxProcessor) handleUndo(targetNickname string, activity map[string]any) error {
+	if p.followersStore == nil {
+		return nil
+	}
+	object, ok := activity["object"].(map[string]any)
+	if !ok || object["type"] != "Follow" {
+		return nil
+	}
+	followerActor, _ := object["actor"].(string)
+	if followerActor == "" {
+		followerActor, _ = activity["actor"].(string)
+	}
+	if followerActor == "" {
+		return nil
+	}
+	return p.followersStore.Remove(targetNickname, followerActor)
 }
 
 func (p *InboxProcessor) handleAccept(viewerNickname string, activity map[string]any) error {

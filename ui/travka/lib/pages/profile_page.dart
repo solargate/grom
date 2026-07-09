@@ -22,6 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _name = '';
   List<FollowInfo> _following = [];
+  List<FollowerInfo> _followers = [];
   bool _isLoading = true;
   String? _error;
 
@@ -45,10 +46,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final me = await _api.getMe(token);
       final following = await _api.listFollowing(token);
+      final followers = await _api.listFollowers(token);
       if (!mounted) return;
       setState(() {
         _name = me.name;
         _following = following.where((f) => f.status == 'active' || f.status == 'pending').toList();
+        _followers = followers;
         _isLoading = false;
       });
     } on ApiException catch (e) {
@@ -123,6 +126,35 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.followers,
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          if (_followers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                l10n.noFollowersYet,
+                style: theme.textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            ..._followers.map(
+              (follower) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(follower.followerNickname),
+                  subtitle: Text(
+                    follower.followerName.isNotEmpty
+                        ? '${follower.followerName} · ${follower.followerHandle}'
+                        : follower.followerHandle,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 24),
           Text(
             l10n.following,

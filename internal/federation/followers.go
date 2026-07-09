@@ -55,7 +55,7 @@ func (s *FollowersStore) Add(nickname string, follower InboundFollower) error {
 	return s.save(path, file)
 }
 
-func (s *FollowersStore) ListInboxes(nickname string) ([]string, error) {
+func (s *FollowersStore) List(nickname string) ([]InboundFollower, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -71,13 +71,51 @@ func (s *FollowersStore) ListInboxes(nickname string) ([]string, error) {
 	if err := yaml.Unmarshal(data, &file); err != nil {
 		return nil, fmt.Errorf("parse followers: %w", err)
 	}
-	inboxes := make([]string, 0, len(file.Followers))
-	for i := range file.Followers {
-		if file.Followers[i].Inbox != "" {
-			inboxes = append(inboxes, file.Followers[i].Inbox)
+	return file.Followers, nil
+}
+
+func (s *FollowersStore) ListInboxes(nickname string) ([]string, error) {
+	followers, err := s.List(nickname)
+	if err != nil {
+		return nil, err
+	}
+	inboxes := make([]string, 0, len(followers))
+	for i := range followers {
+		if followers[i].Inbox != "" {
+			inboxes = append(inboxes, followers[i].Inbox)
 		}
 	}
 	return inboxes, nil
+}
+
+func (s *FollowersStore) Remove(nickname, actorURI string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	path := s.path(nickname)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	var file followersFile
+	if err := yaml.Unmarshal(data, &file); err != nil {
+		return fmt.Errorf("parse followers: %w", err)
+	}
+
+	filtered := file.Followers[:0]
+	for i := range file.Followers {
+		if file.Followers[i].ActorURI != actorURI {
+			filtered = append(filtered, file.Followers[i])
+		}
+	}
+	if len(filtered) == len(file.Followers) {
+		return nil
+	}
+	file.Followers = filtered
+	return s.save(path, file)
 }
 
 func (s *FollowersStore) save(path string, file followersFile) error {

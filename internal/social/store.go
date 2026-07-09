@@ -115,6 +115,19 @@ func (s *Store) ListActiveFollowing(followerID string) ([]Follow, error) {
 	return result, nil
 }
 
+func (s *Store) ListActiveByTarget(targetHandle string) ([]Follow, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]Follow, 0)
+	for i := range s.follows {
+		if s.follows[i].TargetHandle == targetHandle && s.follows[i].Status == StatusActive {
+			result = append(result, s.follows[i])
+		}
+	}
+	return result, nil
+}
+
 func (s *Store) FindExisting(followerID, targetHandle string) (*Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -54,6 +54,7 @@ func RunRouter() {
 		socialGroup.POST("/follow", followUser)
 		socialGroup.DELETE("/follow/:id", unfollowUser)
 		socialGroup.GET("/following", listFollowing)
+		socialGroup.GET("/followers", listFollowers)
 
 		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
 		workoutGroup.POST("", createWorkout)

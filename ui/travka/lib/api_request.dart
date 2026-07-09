@@ -359,6 +359,22 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<List<FollowerInfo>> listFollowers(String token) async {
+    final response = await http.get(
+      _uri('/api/v1/social/followers'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
   ApiException _parseError(http.Response response) {
     try {
       final json = jsonDecode(response.body) as Map<String, dynamic>;

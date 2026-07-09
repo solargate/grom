@@ -531,6 +531,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get following => 'Подписки';
 
   @override
+  String get followers => 'Подписчики';
+
+  @override
   String get followPending => 'Ожидание';
 
   @override
@@ -538,6 +541,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noFollowingYet => 'Вы ни на кого не подписаны';
+
+  @override
+  String get noFollowersYet => 'На вас пока никто не подписан';
 
   @override
   String get searchByNicknameOrHandle =>

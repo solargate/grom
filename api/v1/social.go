@@ -27,6 +27,9 @@ func initSocialService() error {
 		return err
 	}
 	socialService = social.NewService(userStore, followStore)
+	if err := initFollowersStore(); err != nil {
+		return err
+	}
 	if config.Cfg.Federation.Enabled {
 		delivery, err := federation.NewDelivery(userStore, socialService)
 		if err != nil {
@@ -35,6 +38,30 @@ func initSocialService() error {
 		socialService.SetDelivery(delivery)
 	}
 	return nil
+}
+
+func initFollowersStore() error {
+	if followersStore == nil {
+		followersStore = federation.NewFollowersStore(config.Cfg.Data.ResolvedDir)
+	}
+	socialService.SetInboundFollowers(federation.NewInboundFollowersAdapter(followersStore))
+	return nil
+}
+
+type FollowerResponse struct {
+	FollowerHandle   string `json:"follower_handle"`
+	FollowerNickname string `json:"follower_nickname"`
+	FollowerName     string `json:"follower_name"`
+	FollowerIsLocal  bool   `json:"follower_is_local"`
+}
+
+func toFollowerResponse(f social.Follower) FollowerResponse {
+	return FollowerResponse{
+		FollowerHandle:   f.FollowerHandle,
+		FollowerNickname: f.FollowerNickname,
+		FollowerName:     f.FollowerName,
+		FollowerIsLocal:  f.FollowerIsLocal,
+	}
 }
 
 func currentUserID(ctx *gin.Context) (string, error) {
@@ -172,6 +199,40 @@ func listFollowing(ctx *gin.Context) {
 	response := make([]FollowResponse, 0, len(follows))
 	for i := range follows {
 		response = append(response, toFollowResponse(&follows[i]))
+	}
+	ctx.JSON(http.StatusOK, response)
+}
+
+// listFollowers godoc
+// @Summary      List followers
+// @Description  Return users who follow the authenticated user
+// @Tags         social
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}  FollowerResponse
+// @Failure      401  {object}  ErrorResponse
+// @Router       /social/followers [get]
+func listFollowers(ctx *gin.Context) {
+	if err := initSocialService(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
+		return
+	}
+
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	followers, err := socialService.ListFollowers(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list followers"})
+		return
+	}
+
+	response := make([]FollowerResponse, 0, len(followers))
+	for i := range followers {
+		response = append(response, toFollowerResponse(followers[i]))
 	}
 	ctx.JSON(http.StatusOK, response)
 }

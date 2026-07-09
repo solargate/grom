@@ -50,6 +50,29 @@ class FollowInfo {
   }
 }
 
+class FollowerInfo {
+  FollowerInfo({
+    required this.followerHandle,
+    required this.followerNickname,
+    required this.followerName,
+    required this.followerIsLocal,
+  });
+
+  final String followerHandle;
+  final String followerNickname;
+  final String followerName;
+  final bool followerIsLocal;
+
+  factory FollowerInfo.fromJson(Map<String, dynamic> json) {
+    return FollowerInfo(
+      followerHandle: json['follower_handle'] as String,
+      followerNickname: json['follower_nickname'] as String,
+      followerName: json['follower_name'] as String? ?? '',
+      followerIsLocal: json['follower_is_local'] as bool? ?? true,
+    );
+  }
+}
+
 class UserSearchResult {
   UserSearchResult({
     required this.nickname,

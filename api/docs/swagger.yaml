@@ -54,6 +54,17 @@ definitions:
       target_nickname:
         type: string
     type: object
+  v1.FollowerResponse:
+    properties:
+      follower_handle:
+        type: string
+      follower_is_local:
+        type: boolean
+      follower_name:
+        type: string
+      follower_nickname:
+        type: string
+    type: object
   v1.LoginRequest:
     properties:
       email:
@@ -359,6 +370,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Unfollow user
+      tags:
+      - social
+  /social/followers:
+    get:
+      description: Return users who follow the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.FollowerResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List followers
       tags:
       - social
   /social/following:

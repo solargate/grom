@@ -24,7 +24,10 @@ func initFederation() error {
 			return
 		}
 		workoutInboxStore = federation.NewWorkoutInboxStore(config.Cfg.Data.ResolvedDir)
-		followersStore = federation.NewFollowersStore(config.Cfg.Data.ResolvedDir)
+		if err := initFollowersStore(); err != nil {
+			initErr = err
+			return
+		}
 		if config.Cfg.Federation.Enabled {
 			var err error
 			federationDelivery, err = federation.NewDelivery(userStore, socialService)

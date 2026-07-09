@@ -229,9 +229,11 @@
   "follow": "Подписаться",
   "unfollow": "Отписаться",
   "following": "Подписки",
+  "followers": "Подписчики",
   "followPending": "Ожидание",
   "noUsersFound": "Пользователи не найдены",
   "noFollowingYet": "Вы ни на кого не подписаны",
+  "noFollowersYet": "На вас пока никто не подписан",
   "searchByNicknameOrHandle": "Поиск по никнейму или федеративному адресу (@user@server)",
   "workoutByAuthor": "Автор: {author}",
   "@workoutByAuthor": {

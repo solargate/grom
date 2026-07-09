@@ -537,6 +537,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get following => 'Abonniert';
 
   @override
+  String get followers => 'Follower';
+
+  @override
   String get followPending => 'Ausstehend';
 
   @override
@@ -544,6 +547,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noFollowingYet => 'Sie folgen noch niemandem';
+
+  @override
+  String get noFollowersYet => 'Ihnen folgt noch niemand';
 
   @override
   String get searchByNicknameOrHandle =>

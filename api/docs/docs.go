@@ -268,6 +268,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/social/followers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return users who follow the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "social"
+                ],
+                "summary": "List followers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.FollowerResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/social/following": {
             "get": {
                 "security": [
@@ -741,6 +775,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "target_nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.FollowerResponse": {
+            "type": "object",
+            "properties": {
+                "follower_handle": {
+                    "type": "string"
+                },
+                "follower_is_local": {
+                    "type": "boolean"
+                },
+                "follower_name": {
+                    "type": "string"
+                },
+                "follower_nickname": {
                     "type": "string"
                 }
             }

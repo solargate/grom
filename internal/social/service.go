@@ -22,17 +22,27 @@ type Delivery interface {
 	DeliverUndo(follow *Follow) error
 }
 
+type InboundFollowerInfo struct {
+	Handle   string
+	Nickname string
+}
+
+type InboundFollowersSource interface {
+	ListInboundFollowers(nickname string) ([]InboundFollowerInfo, error)
+}
+
 type noopDelivery struct{}
 
 func (noopDelivery) DeliverFollow(*Follow) error { return nil }
 func (noopDelivery) DeliverUndo(*Follow) error   { return nil }
 
 type Service struct {
-	users    *users.Store
-	follows  *Store
-	domain   string
-	enabled  bool
-	delivery Delivery
+	users            *users.Store
+	follows          *Store
+	domain           string
+	enabled          bool
+	delivery         Delivery
+	inboundFollowers InboundFollowersSource
 }
 
 func NewService(userStore *users.Store, followStore *Store) *Service {
@@ -52,6 +62,12 @@ func NewService(userStore *users.Store, followStore *Store) *Service {
 func (s *Service) SetDelivery(d Delivery) {
 	if d != nil {
 		s.delivery = d
+	}
+}
+
+func (s *Service) SetInboundFollowers(src InboundFollowersSource) {
+	if src != nil {
+		s.inboundFollowers = src
 	}
 }
 
@@ -279,6 +295,63 @@ func (s *Service) Unfollow(followerID, followID string) error {
 
 func (s *Service) ListFollowing(followerID string) ([]Follow, error) {
 	return s.follows.ListByFollower(followerID)
+}
+
+type Follower struct {
+	FollowerHandle   string `json:"follower_handle"`
+	FollowerNickname string `json:"follower_nickname"`
+	FollowerName     string `json:"follower_name"`
+	FollowerIsLocal  bool   `json:"follower_is_local"`
+}
+
+func (s *Service) ListFollowers(userID string) ([]Follower, error) {
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	targetHandle := s.LocalHandle(user.Nickname)
+	localFollows, err := s.follows.ListActiveByTarget(targetHandle)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Follower, 0, len(localFollows))
+	seen := make(map[string]struct{}, len(localFollows))
+
+	for i := range localFollows {
+		follower, err := s.users.FindByID(localFollows[i].FollowerID)
+		if err != nil {
+			continue
+		}
+		handle := s.LocalHandle(follower.Nickname)
+		seen[handle] = struct{}{}
+		result = append(result, Follower{
+			FollowerHandle:   handle,
+			FollowerNickname: follower.Nickname,
+			FollowerName:     follower.Name,
+			FollowerIsLocal:  true,
+		})
+	}
+
+	if s.inboundFollowers != nil {
+		inbound, err := s.inboundFollowers.ListInboundFollowers(user.Nickname)
+		if err != nil {
+			return nil, err
+		}
+		for i := range inbound {
+			if _, ok := seen[inbound[i].Handle]; ok {
+				continue
+			}
+			result = append(result, Follower{
+				FollowerHandle:   inbound[i].Handle,
+				FollowerNickname: inbound[i].Nickname,
+				FollowerIsLocal:  false,
+			})
+		}
+	}
+
+	return result, nil
 }
 
 func (s *Service) ActiveFollowingNicknames(followerID string) ([]string, error) {

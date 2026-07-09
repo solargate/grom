@@ -229,9 +229,11 @@
   "follow": "Folgen",
   "unfollow": "Entfolgen",
   "following": "Abonniert",
+  "followers": "Follower",
   "followPending": "Ausstehend",
   "noUsersFound": "Keine Benutzer gefunden",
   "noFollowingYet": "Sie folgen noch niemandem",
+  "noFollowersYet": "Ihnen folgt noch niemand",
   "searchByNicknameOrHandle": "Suche nach Nickname oder Federations-Adresse (@user@server)",
   "workoutByAuthor": "Von {author}",
   "@workoutByAuthor": {

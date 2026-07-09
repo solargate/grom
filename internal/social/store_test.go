@@ -100,3 +100,47 @@ func TestFollowStoreDuplicate(t *testing.T) {
 		t.Fatalf("expected ErrAlreadyFollowing, got %v", err)
 	}
 }
+
+func TestFollowStoreListActiveByTarget(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := store.Create(Follow{
+		FollowerID:     "user-a",
+		TargetHandle:   "bob@localhost",
+		TargetNickname: "bob",
+		Status:         StatusActive,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Create(Follow{
+		FollowerID:     "user-c",
+		TargetHandle:   "bob@localhost",
+		TargetNickname: "bob",
+		Status:         StatusPending,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Create(Follow{
+		FollowerID:     "user-a",
+		TargetHandle:   "alice@localhost",
+		TargetNickname: "alice",
+		Status:         StatusActive,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := store.ListActiveByTarget("bob@localhost")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("expected 1 active follower for bob, got %d", len(list))
+	}
+	if list[0].FollowerID != "user-a" {
+		t.Fatalf("expected follower user-a, got %q", list[0].FollowerID)
+	}
+}
