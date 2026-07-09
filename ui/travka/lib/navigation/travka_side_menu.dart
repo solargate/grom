@@ -27,7 +27,7 @@ class TravkaSideMenu extends StatelessWidget {
 
   int get _settingsIndex {
     if (isLoggedIn) {
-      return 6;
+      return 5;
     }
     return 3;
   }

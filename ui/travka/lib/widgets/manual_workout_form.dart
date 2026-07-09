@@ -83,8 +83,10 @@ class ManualWorkoutForm extends StatelessWidget {
 
     return Form(
       key: formKey,
-      child: SingleChildScrollView(
-        child: Column(
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showTitle) ...[
@@ -235,6 +237,7 @@ class ManualWorkoutForm extends StatelessWidget {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

@@ -50,6 +50,8 @@ class _TravkaShellState extends State<TravkaShell> {
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
       _selectedDestination == TravkaDestination.home && _viewingWorkout != null;
+  bool get _shouldInterceptBack =>
+      _isViewingWorkout || _selectedDestination != TravkaDestination.home;
 
   @override
   void initState() {
@@ -134,6 +136,16 @@ class _TravkaShellState extends State<TravkaShell> {
       setState(() => _isWorkoutMapExpanded = false);
     } else {
       _closeWorkoutDetail();
+    }
+  }
+
+  void _handleShellBack() {
+    if (_isViewingWorkout) {
+      _handleWorkoutDetailBack();
+      return;
+    }
+    if (_selectedDestination != TravkaDestination.home) {
+      _onDestinationSelected(TravkaDestination.home);
     }
   }
 
@@ -291,8 +303,8 @@ class _TravkaShellState extends State<TravkaShell> {
       key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        leading: _isViewingWorkout
-            ? BackButton(onPressed: _handleWorkoutDetailBack)
+        leading: _shouldInterceptBack
+            ? BackButton(onPressed: _handleShellBack)
             : null,
         title: Text(
           _isViewingWorkout ? _viewingWorkout!.name : _appBarTitle(),
@@ -328,8 +340,8 @@ class _TravkaShellState extends State<TravkaShell> {
                       height: kToolbarHeight,
                       child: Row(
                         children: [
-                          if (_isViewingWorkout)
-                            BackButton(onPressed: _handleWorkoutDetailBack),
+                          if (_shouldInterceptBack)
+                            BackButton(onPressed: _handleShellBack),
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
@@ -365,10 +377,10 @@ class _TravkaShellState extends State<TravkaShell> {
     final l10n = AppLocalizations.of(context)!;
 
     return PopScope(
-      canPop: !_isViewingWorkout,
+      canPop: !_shouldInterceptBack,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _isViewingWorkout) {
-          _handleWorkoutDetailBack();
+        if (!didPop) {
+          _handleShellBack();
         }
       },
       child: LayoutBuilder(
