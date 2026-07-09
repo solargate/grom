@@ -1,6 +1,7 @@
 package federation
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/social"
+	"github.com/solargate/travka/internal/tracks"
 	"github.com/solargate/travka/internal/users"
 	"github.com/solargate/travka/internal/workouts"
 )
@@ -134,7 +136,22 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 	if workout.ID == "" || workout.Name == "" {
 		return nil
 	}
-	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout)
+
+	var trackData []byte
+	if workout.Track != "" {
+		if encoded := stringValue(object, "trackData"); encoded != "" {
+			decoded, err := base64.StdEncoding.DecodeString(encoded)
+			if err != nil {
+				return fmt.Errorf("decode track data: %w", err)
+			}
+			if len(decoded) > tracks.MaxTrackSizeBytes {
+				return fmt.Errorf("track data too large")
+			}
+			trackData = decoded
+		}
+	}
+
+	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData)
 }
 
 func actorToHandle(actor string) string {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/users"
 )
@@ -247,15 +248,15 @@ func (s *Service) Follow(followerID, rawHandle string) (*Follow, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.delivery.DeliverFollow(created); err != nil {
+	activityID := fmt.Sprintf("%s/follows/%s", s.ActorURI(follower.Nickname), uuid.NewString())
+	created, err = s.follows.UpdateActivityID(created.ID, activityID)
+	if err != nil {
 		_ = s.follows.Delete(created.ID)
 		return nil, err
 	}
-	if created.FollowActivityID != "" {
-		// Persist activity id assigned during delivery.
-		if updated, err := s.follows.UpdateActivityID(created.ID, created.FollowActivityID); err == nil {
-			return updated, nil
-		}
+	if err := s.delivery.DeliverFollow(created); err != nil {
+		_ = s.follows.Delete(created.ID)
+		return nil, err
 	}
 	return created, nil
 }
@@ -287,9 +288,7 @@ func (s *Service) ActiveFollowingNicknames(followerID string) ([]string, error) 
 	}
 	nicknames := make([]string, 0, len(follows))
 	for i := range follows {
-		if follows[i].TargetIsLocal {
-			nicknames = append(nicknames, follows[i].TargetNickname)
-		}
+		nicknames = append(nicknames, follows[i].TargetNickname)
 	}
 	return nicknames, nil
 }

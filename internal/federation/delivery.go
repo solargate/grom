@@ -2,6 +2,7 @@ package federation
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,8 +42,11 @@ func (d *Delivery) DeliverFollow(follow *social.Follow) error {
 		return err
 	}
 
-	activityID := fmt.Sprintf("%s/follows/%s", actorURL(follower.Nickname), uuid.NewString())
-	follow.FollowActivityID = activityID
+	activityID := follow.FollowActivityID
+	if activityID == "" {
+		activityID = fmt.Sprintf("%s/follows/%s", actorURL(follower.Nickname), uuid.NewString())
+		follow.FollowActivityID = activityID
+	}
 
 	activity := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
@@ -191,7 +195,7 @@ func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any
 	return actor, nil
 }
 
-func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string) error {
+func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte) error {
 	if len(followerInboxes) == 0 {
 		return nil
 	}
@@ -206,6 +210,9 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		"durationSeconds": workout.DurationSeconds,
 		"distance":        workout.Distance,
 		"track":           workout.Track,
+	}
+	if workout.Track != "" && len(trackData) > 0 {
+		object["trackData"] = base64.StdEncoding.EncodeToString(trackData)
 	}
 	activity := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",

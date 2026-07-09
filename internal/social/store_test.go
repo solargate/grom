@@ -45,6 +45,41 @@ func TestFollowStoreLocalFollow(t *testing.T) {
 	}
 }
 
+func TestFollowStoreFindByFollowActivityID(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := store.Create(Follow{
+		FollowerID:     "user-a",
+		TargetHandle:   "bob@remote.test:8445",
+		TargetNickname: "bob",
+		Status:         StatusPending,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	activityID := "https://local.test/users/alice/follows/abc-123"
+	updated, err := store.UpdateActivityID(created.ID, activityID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.FollowActivityID != activityID {
+		t.Fatalf("expected activity id %q, got %q", activityID, updated.FollowActivityID)
+	}
+
+	found, err := store.FindByFollowActivityID(activityID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found.ID != created.ID {
+		t.Fatalf("expected follow %q, got %q", created.ID, found.ID)
+	}
+}
+
 func TestFollowStoreDuplicate(t *testing.T) {
 	dir := t.TempDir()
 	store, err := NewStore(dir)

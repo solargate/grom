@@ -273,7 +273,11 @@ func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	if err != nil || len(inboxes) == 0 {
 		return
 	}
-	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes)
+	var trackData []byte
+	if workout.Track != "" {
+		trackData, _, _ = workoutStore.TrackFile(nickname, workout.ID)
+	}
+	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData)
 }
 
 func createWorkoutMultipart(ctx *gin.Context, nickname string) {
@@ -396,6 +400,14 @@ func getWorkoutTrack(ctx *gin.Context) {
 	data, filename, err := workoutStore.TrackFile(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			_ = initFederation()
+			if workoutInboxStore != nil {
+				data, filename, err = workoutInboxStore.TrackFile(nickname, owner, workoutID)
+			}
+		}
+	}
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
 			return
 		}
@@ -447,6 +459,14 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 	}
 
 	path, err := workoutStore.MapPreviewPath(owner, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			_ = initFederation()
+			if workoutInboxStore != nil {
+				path, err = workoutInboxStore.MapPreviewPath(nickname, owner, workoutID)
+			}
+		}
+	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
