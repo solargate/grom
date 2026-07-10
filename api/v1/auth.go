@@ -167,3 +167,46 @@ func getMe(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, toUserResponse(user))
 }
+
+type UpdateProfileRequest struct {
+	Name string `json:"name" example:"Alexander Cheryomukhin"`
+}
+
+// updateMe godoc
+// @Summary      Update current user profile
+// @Description  Update profile fields for the authenticated user
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  UpdateProfileRequest  true  "Profile data"
+// @Success      200   {object}  UserResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      401   {object}  ErrorResponse
+// @Router       /auth/me [patch]
+func updateMe(ctx *gin.Context) {
+	userID, _ := ctx.Get(auth.ContextUserIDKey)
+	id, ok := userID.(string)
+	if !ok || id == "" {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	user, err := userStore.UpdateProfile(id, req.Name)
+	if err != nil {
+		if errors.Is(err, users.ErrUserNotFound) {
+			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update profile"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toUserResponse(user))
+}

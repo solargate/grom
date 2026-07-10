@@ -150,6 +150,27 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<UserInfo> updateMe({
+    required String token,
+    required String name,
+  }) async {
+    final response = await http.patch(
+      _uri('/api/v1/auth/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'name': name}),
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Workout> createWorkout({
     required String token,
     required Map<String, dynamic> body,

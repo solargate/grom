@@ -223,7 +223,7 @@ abstract class AppLocalizations {
   /// No description provided for @nameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Name'**
+  /// **'Full name'**
   String get nameLabel;
 
   /// No description provided for @passwordMinLength.
@@ -1149,6 +1149,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load profile'**
   String get failedToLoadProfile;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfile;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved'**
+  String get profileSaved;
+
+  /// No description provided for @failedToSaveProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save profile'**
+  String get failedToSaveProfile;
 
   /// No description provided for @equipment.
   ///

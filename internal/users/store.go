@@ -240,6 +240,25 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 	return &user, nil
 }
 
+func (s *Store) UpdateProfile(userID, name string) (*User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	name = strings.TrimSpace(name)
+	for i := range s.users {
+		if s.users[i].ID != userID {
+			continue
+		}
+		s.users[i].Name = name
+		if err := s.save(); err != nil {
+			return nil, err
+		}
+		user := s.users[i]
+		return &user, nil
+	}
+	return nil, ErrUserNotFound
+}
+
 func (s *Store) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

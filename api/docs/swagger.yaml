@@ -219,6 +219,12 @@ definitions:
     - name
     - type
     type: object
+  v1.UpdateProfileRequest:
+    properties:
+      name:
+        example: Alexander Cheryomukhin
+        type: string
+    type: object
   v1.UserResponse:
     properties:
       email:
@@ -377,6 +383,37 @@ paths:
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - auth
+    patch:
+      consumes:
+      - application/json
+      description: Update profile fields for the authenticated user
+      parameters:
+      - description: Profile data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
       tags:
       - auth
   /auth/register:

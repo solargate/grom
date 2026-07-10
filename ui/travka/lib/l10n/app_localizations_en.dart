@@ -74,7 +74,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nicknameLabel => 'Nickname *';
 
   @override
-  String get nameLabel => 'Name';
+  String get nameLabel => 'Full name';
 
   @override
   String get passwordMinLength => 'Password must be at least 8 characters';
@@ -561,6 +561,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Failed to load profile';
+
+  @override
+  String get editProfile => 'Edit profile';
+
+  @override
+  String get profileSaved => 'Profile saved';
+
+  @override
+  String get failedToSaveProfile => 'Failed to save profile';
 
   @override
   String get equipment => 'Equipment';

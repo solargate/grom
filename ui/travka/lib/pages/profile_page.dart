@@ -4,6 +4,7 @@ import 'package:travka/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/social.dart';
+import '../widgets/profile_form_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -70,6 +71,16 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _openEditProfile() async {
+    final saved = await showProfileFormDialog(
+      context,
+      initialName: _name,
+    );
+    if (saved == true) {
+      await _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -104,25 +115,39 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.nickname,
-                    style: theme.textTheme.titleLarge,
-                  ),
-                  if (_name.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      _name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: _openEditProfile,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.nickname,
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          if (_name.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              _name,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                    Icon(
+                      Icons.edit_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ],
-                ],
+                ),
               ),
             ),
           ),

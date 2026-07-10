@@ -47,6 +47,7 @@ func RunRouter() {
 		authGroup.POST("/register", register)
 		authGroup.POST("/login", login)
 		authGroup.GET("/me", auth.AuthRequired(), getMe)
+		authGroup.PATCH("/me", auth.AuthRequired(), updateMe)
 
 		apiV1.GET("/users/search", auth.AuthRequired(), searchUsers)
 

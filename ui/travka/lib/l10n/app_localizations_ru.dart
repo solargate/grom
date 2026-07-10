@@ -74,7 +74,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nicknameLabel => 'Nickname *';
 
   @override
-  String get nameLabel => 'Имя';
+  String get nameLabel => 'Полное имя';
 
   @override
   String get passwordMinLength => 'Пароль должен быть не короче 8 символов';
@@ -559,6 +559,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Не удалось загрузить профиль';
+
+  @override
+  String get editProfile => 'Редактирование профиля';
+
+  @override
+  String get profileSaved => 'Профиль сохранён';
+
+  @override
+  String get failedToSaveProfile => 'Не удалось сохранить профиль';
 
   @override
   String get equipment => 'Снаряжение';
