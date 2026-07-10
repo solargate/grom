@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:travka/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
+import 'workout_author_header.dart';
 import 'workout_info_section.dart';
 import 'workout_map_preview.dart';
 
@@ -25,9 +25,7 @@ class WorkoutCard extends StatelessWidget {
     final theme = Theme.of(context);
     final api = ApiRequest();
     final owner = workout.ownerNickname;
-    final showAuthor = workout.author != null &&
-        currentUserNickname != null &&
-        workout.author!.nickname != currentUserNickname;
+    final author = workout.author;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -42,18 +40,14 @@ class WorkoutCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (showAuthor) ...[
-                    Text(
-                      AppLocalizations.of(context)!.workoutByAuthor(
-                        workout.author!.name.isNotEmpty
-                            ? workout.author!.name
-                            : workout.author!.nickname,
-                      ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  if (author != null) ...[
+                    WorkoutAuthorHeader(
+                      author: author,
+                      authToken: authToken,
+                      currentUserNickname: currentUserNickname,
+                      avatarRadius: 20,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                   ],
                   Text(
                     workout.name,

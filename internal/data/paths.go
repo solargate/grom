@@ -8,8 +8,14 @@ import (
 
 const UsersSubdir = "users"
 
+const AvatarFileName = "avatar.webp"
+
 func UserDir(dataDir, nickname string) string {
 	return filepath.Join(dataDir, UsersSubdir, nickname)
+}
+
+func UserAvatarPath(dataDir, nickname string) string {
+	return filepath.Join(UserDir(dataDir, nickname), AvatarFileName)
 }
 
 func ResolveDataDir(location string) (string, error) {

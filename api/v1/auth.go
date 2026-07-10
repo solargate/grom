@@ -42,6 +42,8 @@ type UserResponse struct {
 	Nickname             string              `json:"nickname" example:"solarwind"`
 	Name                 string              `json:"name" example:"Alexander Cheryomukhin"`
 	Email                string              `json:"email" example:"solarwind.palm@gmail.com"`
+	HasAvatar            bool                `json:"has_avatar" example:"true"`
+	AvatarURL            string              `json:"avatar_url,omitempty" example:"/api/v1/users/solarwind/avatar"`
 	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
 }
 
@@ -56,11 +58,14 @@ type ErrorResponse struct {
 }
 
 func toUserResponse(user *users.User) UserResponse {
+	hasAvatar, avatarURL := localAvatarFieldsForUser(user.Nickname)
 	return UserResponse{
 		ID:                   user.ID,
 		Nickname:             user.Nickname,
 		Name:                 user.Name,
 		Email:                user.Email,
+		HasAvatar:            hasAvatar,
+		AvatarURL:            avatarURL,
 		LastEquipmentBySport: user.LastEquipmentBySport,
 	}
 }

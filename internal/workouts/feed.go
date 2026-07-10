@@ -3,13 +3,17 @@ package workouts
 import (
 	"sort"
 	"time"
+
+	"github.com/solargate/travka/internal/avatars"
 )
 
 type FeedAuthor struct {
-	Nickname string `json:"nickname"`
-	Name     string `json:"name"`
-	Handle   string `json:"handle"`
-	IsLocal  bool   `json:"is_local"`
+	Nickname  string `json:"nickname"`
+	Name      string `json:"name"`
+	Handle    string `json:"handle"`
+	IsLocal   bool   `json:"is_local"`
+	HasAvatar bool   `json:"has_avatar"`
+	AvatarURL string `json:"avatar_url,omitempty"`
 }
 
 type FeedWorkout struct {
@@ -54,10 +58,13 @@ func (f *FeedService) ListFeed(viewerNickname string, followedLocal []FeedAuthor
 	if err != nil {
 		return nil, err
 	}
+	viewerHasAvatar, viewerAvatarURL := avatars.Fields(f.store.DataDir(), viewerNickname)
 	viewerAuthor := FeedAuthor{
-		Nickname: viewerNickname,
-		Handle:   f.localHandle(viewerNickname),
-		IsLocal:  true,
+		Nickname:  viewerNickname,
+		Handle:    f.localHandle(viewerNickname),
+		IsLocal:   true,
+		HasAvatar: viewerHasAvatar,
+		AvatarURL: viewerAvatarURL,
 	}
 	for i := range own {
 		items = append(items, tagged{
@@ -118,12 +125,14 @@ func (f *FeedService) CanAccessWorkout(viewerNickname string, followedLocal []st
 	return false
 }
 
-func FeedAuthorFromFollow(nickname, name, handle string, isLocal bool) FeedAuthor {
+func FeedAuthorFromFollow(nickname, name, handle string, isLocal bool, hasAvatar bool, avatarURL string) FeedAuthor {
 	return FeedAuthor{
-		Nickname: nickname,
-		Name:     name,
-		Handle:   handle,
-		IsLocal:  isLocal,
+		Nickname:  nickname,
+		Name:      name,
+		Handle:    handle,
+		IsLocal:   isLocal,
+		HasAvatar: hasAvatar,
+		AvatarURL: avatarURL,
 	}
 }
 

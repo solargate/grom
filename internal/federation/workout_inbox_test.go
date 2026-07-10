@@ -30,7 +30,7 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	}
 	ownerHandle := "test2@192.168.1.251:8445"
 
-	if err := store.Save("solarwind", ownerHandle, workout, gpxData); err != nil {
+	if err := store.Save("solarwind", ownerHandle, workout, gpxData, nil); err != nil {
 		t.Fatal(err)
 	}
 

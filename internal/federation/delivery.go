@@ -36,6 +36,10 @@ func NewDelivery(userStore *users.Store, socialSvc *social.Service) (*Delivery, 
 	}, nil
 }
 
+func (d *Delivery) Client() *http.Client {
+	return d.client
+}
+
 func (d *Delivery) DeliverFollow(follow *social.Follow) error {
 	follower, err := d.userStore.FindByID(follow.FollowerID)
 	if err != nil {
@@ -134,12 +138,15 @@ func (d *Delivery) ResolveRemote(parsed social.ParsedHandle) (*social.UserSearch
 	if err != nil {
 		return nil, err
 	}
-	name, _ := actor["name"].(string)
+	name := ExtractActorName(actor)
+	avatarURL := ExtractIconURL(actor)
 	return &social.UserSearchResult{
-		Nickname: parsed.Nickname,
-		Name:     name,
-		Handle:   parsed.Handle,
-		IsLocal:  false,
+		Nickname:  parsed.Nickname,
+		Name:      name,
+		Handle:    parsed.Handle,
+		IsLocal:   false,
+		HasAvatar: avatarURL != "",
+		AvatarURL: avatarURL,
 	}, nil
 }
 

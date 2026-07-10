@@ -15,6 +15,7 @@ type Follow struct {
 	TargetHandle     string    `yaml:"target_handle" json:"target_handle"`
 	TargetNickname   string    `yaml:"target_nickname" json:"target_nickname"`
 	TargetName       string    `yaml:"target_name" json:"target_name"`
+	TargetAvatarURL  string    `yaml:"target_avatar_url,omitempty" json:"target_avatar_url,omitempty"`
 	TargetIsLocal    bool      `yaml:"target_is_local" json:"target_is_local"`
 	Status           string    `yaml:"status" json:"status"`
 	FollowActivityID string    `yaml:"follow_activity_id,omitempty" json:"follow_activity_id,omitempty"`

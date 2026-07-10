@@ -25,6 +25,8 @@ class UserInfo {
     required this.nickname,
     required this.name,
     required this.email,
+    this.hasAvatar = false,
+    this.avatarUrl,
     this.lastEquipmentBySport = const {},
   });
 
@@ -32,6 +34,8 @@ class UserInfo {
   final String nickname;
   final String name;
   final String email;
+  final bool hasAvatar;
+  final String? avatarUrl;
   final Map<String, List<String>> lastEquipmentBySport;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
@@ -51,6 +55,8 @@ class UserInfo {
       nickname: json['nickname'] as String,
       name: json['name'] as String? ?? '',
       email: json['email'] as String,
+      hasAvatar: json['has_avatar'] as bool? ?? false,
+      avatarUrl: json['avatar_url'] as String?,
       lastEquipmentBySport: lastEquipment,
     );
   }
@@ -169,6 +175,74 @@ class ApiRequest {
     }
 
     throw _parseError(response);
+  }
+
+  Future<UserInfo> uploadAvatar({
+    required String token,
+    required List<int> bytes,
+  }) async {
+    final request = http.MultipartRequest(
+      'PUT',
+      _uri('/api/v1/auth/me/avatar'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'avatar',
+        bytes,
+        filename: 'avatar.png',
+      ),
+    );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<UserInfo> deleteAvatar({
+    required String token,
+  }) async {
+    final response = await http.delete(
+      _uri('/api/v1/auth/me/avatar'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  static String resolveAvatarUrl({
+    required String nickname,
+    bool hasAvatar = false,
+    String? avatarUrl,
+  }) {
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+        return avatarUrl;
+      }
+      final base = ServerStorage.cachedBaseUrl;
+      if (base == null || base.isEmpty) {
+        return avatarUrl;
+      }
+      return Uri.parse(base).resolve(
+        avatarUrl.startsWith('/') ? avatarUrl.substring(1) : avatarUrl,
+      ).toString();
+    }
+    if (!hasAvatar) {
+      return '';
+    }
+    final api = ApiRequest();
+    return api._uri('/api/v1/users/$nickname/avatar').toString();
   }
 
   Future<Workout> createWorkout({

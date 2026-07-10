@@ -6,6 +6,7 @@ import 'package:travka/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../models/workout.dart';
 import '../services/track_parser.dart';
+import '../widgets/workout_author_header.dart';
 import '../widgets/workout_info_section.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
@@ -16,12 +17,14 @@ class WorkoutDetailView extends StatefulWidget {
     super.key,
     required this.workout,
     required this.authToken,
+    this.currentUserNickname,
     this.isMapExpanded = false,
     this.onMapExpandedChanged,
   });
 
   final Workout workout;
   final String authToken;
+  final String? currentUserNickname;
   final bool isMapExpanded;
   final ValueChanged<bool>? onMapExpandedChanged;
 
@@ -198,6 +201,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final points = _trackPoints;
+    final author = widget.workout.author;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -219,6 +223,15 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (author != null) ...[
+                                WorkoutAuthorHeader(
+                                  author: author,
+                                  authToken: widget.authToken,
+                                  currentUserNickname: widget.currentUserNickname,
+                                  avatarRadius: 22,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               Text(
                                 widget.workout.name,
                                 style: theme.textTheme.titleMedium?.copyWith(

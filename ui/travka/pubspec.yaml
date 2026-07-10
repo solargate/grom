@@ -40,6 +40,9 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.2
   file_picker: ^10.2.0
+  image_picker: ^1.1.2
+  image_cropper: ^8.0.2
+  image: ^4.5.4
   web: ^1.1.0
   geolocator: ^13.0.2
   flutter_foreground_task: ^9.2.2
@@ -50,6 +53,7 @@ dependencies:
   permission_handler: ^11.3.1
   gpx: ^2.3.0
   fit_sdk: ^0.3.0
+  crop_your_image: ^2.0.0
 
 dev_dependencies:
   flutter_test:

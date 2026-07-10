@@ -148,6 +148,90 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/me/avatar": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a square avatar image (webp, png, or jpeg)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Upload current user avatar",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Avatar image",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove avatar for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Delete current user avatar",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Create a new user account",
@@ -406,6 +490,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/federation/authors/{ownerKey}/avatar": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return cached avatar for a remote author in the viewer's federation inbox",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "federation"
+                ],
+                "summary": "Get federated author avatar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Encoded remote author handle",
+                        "name": "ownerKey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/server_info": {
             "get": {
                 "description": "Get server info",
@@ -652,6 +782,52 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{nickname}/avatar": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return avatar image for a local user",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user avatar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User nickname",
+                        "name": "nickname",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     },
                     "401": {
@@ -1117,8 +1293,14 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
+                "target_avatar_url": {
+                    "type": "string"
+                },
                 "target_handle": {
                     "type": "string"
+                },
+                "target_has_avatar": {
+                    "type": "boolean"
                 },
                 "target_is_local": {
                     "type": "boolean"
@@ -1134,8 +1316,14 @@ const docTemplate = `{
         "v1.FollowerResponse": {
             "type": "object",
             "properties": {
+                "follower_avatar_url": {
+                    "type": "string"
+                },
                 "follower_handle": {
                     "type": "string"
+                },
+                "follower_has_avatar": {
+                    "type": "boolean"
                 },
                 "follower_is_local": {
                     "type": "boolean"
@@ -1282,9 +1470,17 @@ const docTemplate = `{
         "v1.UserResponse": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "/api/v1/users/solarwind/avatar"
+                },
                 "email": {
                     "type": "string",
                     "example": "solarwind.palm@gmail.com"
+                },
+                "has_avatar": {
+                    "type": "boolean",
+                    "example": true
                 },
                 "id": {
                     "type": "string",
@@ -1312,9 +1508,17 @@ const docTemplate = `{
         "v1.UserSearchResult": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "/api/v1/users/bob/avatar"
+                },
                 "handle": {
                     "type": "string",
                     "example": "bob@travka.example"
+                },
+                "has_avatar": {
+                    "type": "boolean",
+                    "example": true
                 },
                 "is_local": {
                     "type": "boolean",
@@ -1333,9 +1537,17 @@ const docTemplate = `{
         "v1.WorkoutAuthorResponse": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "/api/v1/users/bob/avatar"
+                },
                 "handle": {
                     "type": "string",
                     "example": "bob@travka.example"
+                },
+                "has_avatar": {
+                    "type": "boolean",
+                    "example": true
                 },
                 "is_local": {
                     "type": "boolean",

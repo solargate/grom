@@ -3,6 +3,7 @@ module github.com/solargate/travka
 go 1.26.0
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/flopp/go-staticmaps v0.0.0-20260318105611-d3eb636a6468
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -15,6 +16,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/tkrajina/gpxgo v1.4.0
 	golang.org/x/crypto v0.53.0
+	golang.org/x/image v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -67,7 +69,6 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.7.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.28.0 // indirect
-	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect

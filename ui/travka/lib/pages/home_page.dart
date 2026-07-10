@@ -111,6 +111,7 @@ class _HomePageState extends State<HomePage> {
       return WorkoutDetailView(
         workout: viewingWorkout,
         authToken: _authToken!,
+        currentUserNickname: widget.nickname,
         isMapExpanded: widget.isMapExpanded,
         onMapExpandedChanged: widget.onMapExpandedChanged,
       );

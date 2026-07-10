@@ -573,6 +573,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileSaved => 'Profil gespeichert';
 
   @override
+  String get avatarUpdated => 'Avatar aktualisiert';
+
+  @override
+  String get failedToUploadAvatar => 'Avatar konnte nicht hochgeladen werden';
+
+  @override
+  String get cropAvatarTitle => 'Avatar zuschneiden';
+
+  @override
+  String get cropAvatarDone => 'Fertig';
+
+  @override
   String get failedToSaveProfile => 'Profil konnte nicht gespeichert werden';
 
   @override

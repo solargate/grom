@@ -3,29 +3,64 @@ import 'package:travka/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
+import '../services/avatar_cache.dart';
+import '../services/avatar_image_service.dart';
+import '../widgets/user_avatar.dart';
 
-Future<bool?> showProfileFormDialog(
+class ProfileFormResult {
+  const ProfileFormResult({
+    required this.saved,
+    required this.avatarChanged,
+    this.hasAvatar = false,
+    this.avatarUrl,
+  });
+
+  final bool saved;
+  final bool avatarChanged;
+  final bool hasAvatar;
+  final String? avatarUrl;
+}
+
+Future<ProfileFormResult?> showProfileFormDialog(
   BuildContext context, {
   required String initialName,
+  required String nickname,
+  bool initialHasAvatar = false,
+  String? initialAvatarUrl,
+  String? initialAuthToken,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   if (width >= 600) {
-    return showDialog<bool>(
+    return showDialog<ProfileFormResult>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
-          child: ProfileFormDialog(initialName: initialName),
+          child: ProfileFormDialog(
+            initialName: initialName,
+            nickname: nickname,
+            initialHasAvatar: initialHasAvatar,
+            initialAvatarUrl: initialAvatarUrl,
+            initialAuthToken: initialAuthToken,
+            navigatorContext: context,
+          ),
         ),
       ),
     );
   }
 
-  return showModalBottomSheet<bool>(
+  return showModalBottomSheet<ProfileFormResult>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => ProfileFormDialog(initialName: initialName),
+    builder: (sheetContext) => ProfileFormDialog(
+      initialName: initialName,
+      nickname: nickname,
+      initialHasAvatar: initialHasAvatar,
+      initialAvatarUrl: initialAvatarUrl,
+      initialAuthToken: initialAuthToken,
+      navigatorContext: context,
+    ),
   );
 }
 
@@ -33,9 +68,19 @@ class ProfileFormDialog extends StatefulWidget {
   const ProfileFormDialog({
     super.key,
     required this.initialName,
+    required this.nickname,
+    required this.navigatorContext,
+    this.initialHasAvatar = false,
+    this.initialAvatarUrl,
+    this.initialAuthToken,
   });
 
   final String initialName;
+  final String nickname;
+  final BuildContext navigatorContext;
+  final bool initialHasAvatar;
+  final String? initialAvatarUrl;
+  final String? initialAuthToken;
 
   @override
   State<ProfileFormDialog> createState() => _ProfileFormDialogState();
@@ -46,11 +91,30 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
   final _api = ApiRequest();
   late final TextEditingController _nameController;
   bool _isSubmitting = false;
+  bool _isUploadingAvatar = false;
+  bool _hasAvatar = false;
+  String? _avatarUrl;
+  String? _authToken;
+  bool _avatarChanged = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
+    _hasAvatar = widget.initialHasAvatar;
+    _avatarUrl = widget.initialAvatarUrl;
+    _authToken = widget.initialAuthToken;
+    if (_authToken == null) {
+      _loadToken();
+    }
+  }
+
+  Future<void> _loadToken() async {
+    final token = await AuthStorage.getToken();
+    if (!mounted || token == null) {
+      return;
+    }
+    setState(() => _authToken = token);
   }
 
   @override
@@ -59,8 +123,73 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
     super.dispose();
   }
 
+  void _close({required bool saved}) {
+    Navigator.pop(
+      context,
+      ProfileFormResult(
+        saved: saved,
+        avatarChanged: _avatarChanged,
+        hasAvatar: _hasAvatar,
+        avatarUrl: _avatarUrl,
+      ),
+    );
+  }
+
+  Future<void> _changeAvatar() async {
+    if (_isUploadingAvatar || _isSubmitting) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      final bytes = await AvatarImageService.pickCropAndEncode(
+        context,
+        navigatorContext: widget.navigatorContext,
+      );
+      if (bytes == null || !mounted) {
+        return;
+      }
+
+      final token = _authToken ?? await AuthStorage.getToken();
+      if (token == null || !mounted) {
+        return;
+      }
+      _authToken = token;
+
+      setState(() => _isUploadingAvatar = true);
+
+      final user = await _api.uploadAvatar(token: token, bytes: bytes);
+      if (!mounted) return;
+      AvatarCache.instance.bump(widget.nickname);
+      setState(() {
+        _hasAvatar = user.hasAvatar;
+        _avatarUrl = user.avatarUrl;
+        _avatarChanged = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.avatarUpdated)),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Avatar upload failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.failedToUploadAvatar)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+    }
+  }
+
   Future<void> _save() async {
-    final token = await AuthStorage.getToken();
+    final token = _authToken ?? await AuthStorage.getToken();
     if (token == null || !mounted) {
       return;
     }
@@ -78,7 +207,7 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.profileSaved)),
       );
-      Navigator.pop(context, true);
+      _close(saved: true);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +228,7 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isBusy = _isSubmitting || _isUploadingAvatar;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -118,6 +248,32 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 20),
+            Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  UserAvatar(
+                    nickname: widget.nickname,
+                    hasAvatar: _hasAvatar,
+                    avatarUrl: _avatarUrl,
+                    authToken: _authToken,
+                    radius: 48,
+                    onTap: isBusy ? null : _changeAvatar,
+                    showEditBadge: true,
+                  ),
+                  if (_isUploadingAvatar)
+                    const Positioned.fill(
+                      child: ColoredBox(
+                        color: Color(0x66000000),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
@@ -125,23 +281,21 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
                 border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
-              onFieldSubmitted: _isSubmitting ? null : (_) => _save(),
+              onFieldSubmitted: isBusy ? null : (_) => _save(),
             ),
             const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.pop(context, false),
+                    onPressed: isBusy ? null : () => _close(saved: false),
                     child: Text(l10n.cancel),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    onPressed: _isSubmitting ? null : _save,
+                    onPressed: isBusy ? null : _save,
                     child: _isSubmitting
                         ? const SizedBox(
                             height: 20,

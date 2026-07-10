@@ -111,8 +111,12 @@ definitions:
         type: string
       status:
         type: string
+      target_avatar_url:
+        type: string
       target_handle:
         type: string
+      target_has_avatar:
+        type: boolean
       target_is_local:
         type: boolean
       target_name:
@@ -122,8 +126,12 @@ definitions:
     type: object
   v1.FollowerResponse:
     properties:
+      follower_avatar_url:
+        type: string
       follower_handle:
         type: string
+      follower_has_avatar:
+        type: boolean
       follower_is_local:
         type: boolean
       follower_name:
@@ -227,9 +235,15 @@ definitions:
     type: object
   v1.UserResponse:
     properties:
+      avatar_url:
+        example: /api/v1/users/solarwind/avatar
+        type: string
       email:
         example: solarwind.palm@gmail.com
         type: string
+      has_avatar:
+        example: true
+        type: boolean
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
@@ -248,9 +262,15 @@ definitions:
     type: object
   v1.UserSearchResult:
     properties:
+      avatar_url:
+        example: /api/v1/users/bob/avatar
+        type: string
       handle:
         example: bob@travka.example
         type: string
+      has_avatar:
+        example: true
+        type: boolean
       is_local:
         example: true
         type: boolean
@@ -263,9 +283,15 @@ definitions:
     type: object
   v1.WorkoutAuthorResponse:
     properties:
+      avatar_url:
+        example: /api/v1/users/bob/avatar
+        type: string
       handle:
         example: bob@travka.example
         type: string
+      has_avatar:
+        example: true
+        type: boolean
       is_local:
         example: true
         type: boolean
@@ -414,6 +440,59 @@ paths:
       security:
       - BearerAuth: []
       summary: Update current user profile
+      tags:
+      - auth
+  /auth/me/avatar:
+    delete:
+      description: Remove avatar for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete current user avatar
+      tags:
+      - auth
+    put:
+      consumes:
+      - multipart/form-data
+      description: Upload a square avatar image (webp, png, or jpeg)
+      parameters:
+      - description: Avatar image
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload current user avatar
       tags:
       - auth
   /auth/register:
@@ -582,6 +661,36 @@ paths:
       summary: Update equipment
       tags:
       - equipment
+  /federation/authors/{ownerKey}/avatar:
+    get:
+      description: Return cached avatar for a remote author in the viewer's federation
+        inbox
+      parameters:
+      - description: Encoded remote author handle
+        in: path
+        name: ownerKey
+        required: true
+        type: string
+      produces:
+      - image/webp
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get federated author avatar
+      tags:
+      - federation
   /server_info:
     get:
       description: Get server info
@@ -713,6 +822,35 @@ paths:
       summary: Server status
       tags:
       - server_info
+  /users/{nickname}/avatar:
+    get:
+      description: Return avatar image for a local user
+      parameters:
+      - description: User nickname
+        in: path
+        name: nickname
+        required: true
+        type: string
+      produces:
+      - image/webp
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user avatar
+      tags:
+      - users
   /users/search:
     get:
       description: Search local users by nickname or resolve a federated handle

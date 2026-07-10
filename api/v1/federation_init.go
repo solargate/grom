@@ -35,6 +35,7 @@ func initFederation() error {
 				initErr = err
 				return
 			}
+			workoutInboxStore.SetHTTPClient(federationDelivery.Client())
 			federationInboxProc = federation.NewInboxProcessor(userStore, socialService, federationDelivery, workoutInboxStore, followersStore)
 		}
 	})

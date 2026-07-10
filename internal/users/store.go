@@ -33,6 +33,10 @@ type Store struct {
 	users   []User
 }
 
+func (s *Store) DataDir() string {
+	return s.dataDir
+}
+
 func NewStore(dataDir string) (*Store, error) {
 	s := &Store{
 		dataDir: dataDir,

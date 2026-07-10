@@ -48,8 +48,12 @@ func RunRouter() {
 		authGroup.POST("/login", login)
 		authGroup.GET("/me", auth.AuthRequired(), getMe)
 		authGroup.PATCH("/me", auth.AuthRequired(), updateMe)
+		authGroup.PUT("/me/avatar", auth.AuthRequired(), uploadMyAvatar)
+		authGroup.DELETE("/me/avatar", auth.AuthRequired(), deleteMyAvatar)
 
 		apiV1.GET("/users/search", auth.AuthRequired(), searchUsers)
+		apiV1.GET("/users/:nickname/avatar", auth.AuthRequired(), getUserAvatar)
+		apiV1.GET("/federation/authors/:ownerKey/avatar", auth.AuthRequired(), getFederatedAuthorAvatar)
 
 		socialGroup := apiV1.Group("/social", auth.AuthRequired())
 		socialGroup.POST("/follow", followUser)

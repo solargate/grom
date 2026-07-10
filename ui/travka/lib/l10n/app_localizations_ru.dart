@@ -567,6 +567,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileSaved => 'Профиль сохранён';
 
   @override
+  String get avatarUpdated => 'Аватар обновлён';
+
+  @override
+  String get failedToUploadAvatar => 'Не удалось загрузить аватар';
+
+  @override
+  String get cropAvatarTitle => 'Обрезка аватарки';
+
+  @override
+  String get cropAvatarDone => 'Готово';
+
+  @override
   String get failedToSaveProfile => 'Не удалось сохранить профиль';
 
   @override

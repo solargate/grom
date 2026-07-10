@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/solargate/travka/internal/avatars"
 	"github.com/solargate/travka/internal/config"
 	"github.com/solargate/travka/internal/users"
 )
@@ -138,10 +139,12 @@ func validateNicknamePart(nickname string) error {
 }
 
 type UserSearchResult struct {
-	Nickname string `json:"nickname"`
-	Name     string `json:"name"`
-	Handle   string `json:"handle"`
-	IsLocal  bool   `json:"is_local"`
+	Nickname  string `json:"nickname"`
+	Name      string `json:"name"`
+	Handle    string `json:"handle"`
+	IsLocal   bool   `json:"is_local"`
+	HasAvatar bool   `json:"has_avatar"`
+	AvatarURL string `json:"avatar_url,omitempty"`
 }
 
 func (s *Service) SearchLocal(query string, excludeUserID string) ([]UserSearchResult, error) {
@@ -252,13 +255,27 @@ func (s *Service) Follow(followerID, rawHandle string) (*Follow, error) {
 		return nil, ErrRemoteNotReady
 	}
 
+	targetName := ""
+	targetAvatarURL := ""
+	type remoteResolver interface {
+		ResolveRemote(parsed ParsedHandle) (*UserSearchResult, error)
+	}
+	if r, ok := s.delivery.(remoteResolver); ok {
+		if remote, err := r.ResolveRemote(parsed); err == nil {
+			targetName = remote.Name
+			targetAvatarURL = remote.AvatarURL
+		}
+	}
+
 	follow := Follow{
-		FollowerID:     followerID,
-		TargetActorURI: fmt.Sprintf("https://%s/users/%s", parsed.Domain, parsed.Nickname),
-		TargetHandle:   parsed.Handle,
-		TargetNickname: parsed.Nickname,
-		Status:         StatusPending,
-		CreatedAt:      time.Now().UTC(),
+		FollowerID:      followerID,
+		TargetActorURI:  fmt.Sprintf("https://%s/users/%s", parsed.Domain, parsed.Nickname),
+		TargetHandle:    parsed.Handle,
+		TargetNickname:  parsed.Nickname,
+		TargetName:      targetName,
+		TargetAvatarURL: targetAvatarURL,
+		Status:          StatusPending,
+		CreatedAt:       time.Now().UTC(),
 	}
 	created, err := s.follows.Create(follow)
 	if err != nil {
@@ -302,6 +319,8 @@ type Follower struct {
 	FollowerNickname string `json:"follower_nickname"`
 	FollowerName     string `json:"follower_name"`
 	FollowerIsLocal  bool   `json:"follower_is_local"`
+	FollowerHasAvatar bool  `json:"follower_has_avatar"`
+	FollowerAvatarURL string `json:"follower_avatar_url,omitempty"`
 }
 
 func (s *Service) ListFollowers(userID string) ([]Follower, error) {
@@ -326,11 +345,14 @@ func (s *Service) ListFollowers(userID string) ([]Follower, error) {
 		}
 		handle := s.LocalHandle(follower.Nickname)
 		seen[handle] = struct{}{}
+		hasAvatar, avatarURL := avatars.Fields(s.users.DataDir(), follower.Nickname)
 		result = append(result, Follower{
-			FollowerHandle:   handle,
-			FollowerNickname: follower.Nickname,
-			FollowerName:     follower.Name,
-			FollowerIsLocal:  true,
+			FollowerHandle:    handle,
+			FollowerNickname:  follower.Nickname,
+			FollowerName:      follower.Name,
+			FollowerIsLocal:   true,
+			FollowerHasAvatar: hasAvatar,
+			FollowerAvatarURL: avatarURL,
 		})
 	}
 

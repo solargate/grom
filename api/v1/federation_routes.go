@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/solargate/travka/internal/avatars"
 	"github.com/solargate/travka/internal/config"
 	fed "github.com/solargate/travka/internal/federation"
+	"github.com/solargate/travka/internal/data"
 	"github.com/solargate/travka/internal/users"
 )
 
@@ -17,6 +19,7 @@ var federationUserStore *users.Store
 func RegisterFederationRoutes(router *gin.Engine, userStore *users.Store) {
 	federationUserStore = userStore
 	router.GET("/.well-known/webfinger", webfingerHandler(userStore))
+	router.GET("/users/:nickname/avatar", publicAvatarHandler(userStore))
 	router.GET("/users/:nickname", actorHandler(userStore))
 	router.POST("/users/:nickname/inbox", inboxHandler(userStore))
 	router.GET("/users/:nickname/outbox", outboxHandler())
@@ -82,7 +85,7 @@ func actorHandler(userStore *users.Store) gin.HandlerFunc {
 			ctx.Status(http.StatusInternalServerError)
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H{
+		response := gin.H{
 			"@context": []string{
 				"https://www.w3.org/ns/activitystreams",
 				"https://w3id.org/security/v1",
@@ -103,7 +106,37 @@ func actorHandler(userStore *users.Store) gin.HandlerFunc {
 			"endpoints": gin.H{
 				"sharedInbox": fmt.Sprintf("https://%s/inbox", publicDomain()),
 			},
-		})
+		}
+		if avatars.Has(config.Cfg.Data.ResolvedDir, user.Nickname) {
+			response["icon"] = gin.H{
+				"type":      "Image",
+				"mediaType": "image/webp",
+				"url":       publicAvatarURL(user.Nickname),
+			}
+		}
+		ctx.JSON(http.StatusOK, response)
+	}
+}
+
+func publicAvatarHandler(userStore *users.Store) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		nickname := strings.TrimSpace(ctx.Param("nickname"))
+		if nickname == "" {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if _, err := userStore.FindByNickname(nickname); err != nil {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if !avatars.Has(config.Cfg.Data.ResolvedDir, nickname) {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		path := data.UserAvatarPath(config.Cfg.Data.ResolvedDir, nickname)
+		ctx.Header("Cache-Control", "public, max-age=86400")
+		ctx.Header("Content-Type", "image/webp")
+		ctx.File(path)
 	}
 }
 

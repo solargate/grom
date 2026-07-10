@@ -28,6 +28,10 @@ func NewStore(dataDir string) *Store {
 	return &Store{dataDir: dataDir}
 }
 
+func (s *Store) DataDir() string {
+	return s.dataDir
+}
+
 const workoutsSubdir = "workouts"
 
 func (s *Store) userDir(nickname string) string {

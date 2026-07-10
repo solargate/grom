@@ -75,6 +75,7 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 			Inbox:    strings.TrimSuffix(followerActor, "/") + "/inbox",
 			Handle:   handle,
 		})
+		p.cacheInboundFollowerAvatar(targetNickname, handle)
 	}
 
 	if p.autoAccept && p.delivery != nil {
@@ -95,6 +96,29 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 		return p.delivery.postActivity(inbox, accept)
 	}
 	return nil
+}
+
+func (p *InboxProcessor) cacheInboundFollowerAvatar(targetNickname, handle string) {
+	if p.inboxStore == nil || p.delivery == nil || handle == "" {
+		return
+	}
+	parsed := social.ParsedHandle{
+		Nickname: ownerNicknameFromDir(ownerDirName(handle)),
+		Domain:   domainFromHandle(handle),
+		Handle:   handle,
+	}
+	actor, err := fetchActor(p.delivery.Client(), parsed)
+	if err != nil {
+		return
+	}
+	_ = p.inboxStore.EnsureAuthor(
+		targetNickname,
+		handle,
+		parsed.Nickname,
+		ExtractActorName(actor),
+		ExtractIconURL(actor),
+		true,
+	)
 }
 
 func (p *InboxProcessor) handleUndo(targetNickname string, activity map[string]any) error {
@@ -135,8 +159,8 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 	if !ok {
 		return nil
 	}
-	actor, _ := activity["actor"].(string)
-	ownerHandle := actorToHandle(actor)
+	actorURI, _ := activity["actor"].(string)
+	ownerHandle := actorToHandle(actorURI)
 	if ownerHandle == "" {
 		return nil
 	}
@@ -173,7 +197,26 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		}
 	}
 
-	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData)
+	var actorDoc map[string]any
+	if p.delivery != nil && actorURI != "" {
+		parsed := social.ParsedHandle{
+			Nickname: ownerNicknameFromDir(ownerDirName(ownerHandle)),
+			Domain:   domainFromHandle(ownerHandle),
+			Handle:   ownerHandle,
+		}
+		if fetched, err := fetchActor(p.delivery.client, parsed); err == nil {
+			actorDoc = fetched
+		}
+	}
+
+	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData, actorDoc)
+}
+
+func domainFromHandle(handle string) string {
+	if idx := strings.LastIndex(handle, "@"); idx >= 0 && idx < len(handle)-1 {
+		return handle[idx+1:]
+	}
+	return ""
 }
 
 func actorToHandle(actor string) string {

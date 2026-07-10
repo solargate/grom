@@ -49,18 +49,35 @@ func initFollowersStore() error {
 }
 
 type FollowerResponse struct {
-	FollowerHandle   string `json:"follower_handle"`
-	FollowerNickname string `json:"follower_nickname"`
-	FollowerName     string `json:"follower_name"`
-	FollowerIsLocal  bool   `json:"follower_is_local"`
+	FollowerHandle    string `json:"follower_handle"`
+	FollowerNickname  string `json:"follower_nickname"`
+	FollowerName      string `json:"follower_name"`
+	FollowerIsLocal   bool   `json:"follower_is_local"`
+	FollowerHasAvatar bool   `json:"follower_has_avatar"`
+	FollowerAvatarURL string `json:"follower_avatar_url,omitempty"`
 }
 
-func toFollowerResponse(f social.Follower) FollowerResponse {
+func toFollowerResponse(f social.Follower, viewerNickname string) FollowerResponse {
+	if f.FollowerIsLocal {
+		hasAvatar, avatarURL := localAvatarFieldsForUser(f.FollowerNickname)
+		return FollowerResponse{
+			FollowerHandle:    f.FollowerHandle,
+			FollowerNickname:  f.FollowerNickname,
+			FollowerName:      f.FollowerName,
+			FollowerIsLocal:   f.FollowerIsLocal,
+			FollowerHasAvatar: hasAvatar,
+			FollowerAvatarURL: avatarURL,
+		}
+	}
+
+	hasAvatar, avatarURL := remoteFollowerAvatarFields(viewerNickname, &f)
 	return FollowerResponse{
-		FollowerHandle:   f.FollowerHandle,
-		FollowerNickname: f.FollowerNickname,
-		FollowerName:     f.FollowerName,
-		FollowerIsLocal:  f.FollowerIsLocal,
+		FollowerHandle:    f.FollowerHandle,
+		FollowerNickname:  f.FollowerNickname,
+		FollowerName:      f.FollowerName,
+		FollowerIsLocal:   f.FollowerIsLocal,
+		FollowerHasAvatar: hasAvatar,
+		FollowerAvatarURL: avatarURL,
 	}
 }
 
@@ -78,22 +95,41 @@ type FollowRequest struct {
 }
 
 type FollowResponse struct {
-	ID             string `json:"id"`
-	TargetHandle   string `json:"target_handle"`
-	TargetNickname string `json:"target_nickname"`
-	TargetName     string `json:"target_name"`
-	TargetIsLocal  bool   `json:"target_is_local"`
-	Status         string `json:"status"`
+	ID              string `json:"id"`
+	TargetHandle    string `json:"target_handle"`
+	TargetNickname  string `json:"target_nickname"`
+	TargetName      string `json:"target_name"`
+	TargetIsLocal   bool   `json:"target_is_local"`
+	TargetHasAvatar bool   `json:"target_has_avatar"`
+	TargetAvatarURL string `json:"target_avatar_url,omitempty"`
+	Status          string `json:"status"`
 }
 
-func toFollowResponse(f *social.Follow) FollowResponse {
+func toFollowResponse(f *social.Follow, viewerNickname string) FollowResponse {
+	if f.TargetIsLocal {
+		hasAvatar, avatarURL := localAvatarFieldsForUser(f.TargetNickname)
+		return FollowResponse{
+			ID:              f.ID,
+			TargetHandle:    f.TargetHandle,
+			TargetNickname:  f.TargetNickname,
+			TargetName:      f.TargetName,
+			TargetIsLocal:   f.TargetIsLocal,
+			TargetHasAvatar: hasAvatar,
+			TargetAvatarURL: avatarURL,
+			Status:          f.Status,
+		}
+	}
+
+	hasAvatar, avatarURL := remoteFollowAvatarFields(viewerNickname, f)
 	return FollowResponse{
-		ID:             f.ID,
-		TargetHandle:   f.TargetHandle,
-		TargetNickname: f.TargetNickname,
-		TargetName:     f.TargetName,
-		TargetIsLocal:  f.TargetIsLocal,
-		Status:         f.Status,
+		ID:              f.ID,
+		TargetHandle:    f.TargetHandle,
+		TargetNickname:  f.TargetNickname,
+		TargetName:      f.TargetName,
+		TargetIsLocal:   f.TargetIsLocal,
+		TargetHasAvatar: hasAvatar,
+		TargetAvatarURL: avatarURL,
+		Status:          f.Status,
 	}
 }
 
@@ -135,7 +171,14 @@ func followUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, toFollowResponse(follow))
+	viewer, err := userStore.FindByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		return
+	}
+	cacheRemoteFollowAvatar(viewer.Nickname, follow)
+
+	ctx.JSON(http.StatusCreated, toFollowResponse(follow, viewer.Nickname))
 }
 
 // unfollowUser godoc
@@ -196,9 +239,15 @@ func listFollowing(ctx *gin.Context) {
 		return
 	}
 
+	viewer, err := userStore.FindByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		return
+	}
+
 	response := make([]FollowResponse, 0, len(follows))
 	for i := range follows {
-		response = append(response, toFollowResponse(&follows[i]))
+		response = append(response, toFollowResponse(&follows[i], viewer.Nickname))
 	}
 	ctx.JSON(http.StatusOK, response)
 }
@@ -230,9 +279,15 @@ func listFollowers(ctx *gin.Context) {
 		return
 	}
 
+	viewer, err := userStore.FindByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		return
+	}
+
 	response := make([]FollowerResponse, 0, len(followers))
 	for i := range followers {
-		response = append(response, toFollowerResponse(followers[i]))
+		response = append(response, toFollowerResponse(followers[i], viewer.Nickname))
 	}
 	ctx.JSON(http.StatusOK, response)
 }

@@ -1162,6 +1162,30 @@ abstract class AppLocalizations {
   /// **'Profile saved'**
   String get profileSaved;
 
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar updated'**
+  String get avatarUpdated;
+
+  /// No description provided for @failedToUploadAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload avatar'**
+  String get failedToUploadAvatar;
+
+  /// No description provided for @cropAvatarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop avatar'**
+  String get cropAvatarTitle;
+
+  /// No description provided for @cropAvatarDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get cropAvatarDone;
+
   /// No description provided for @failedToSaveProfile.
   ///
   /// In en, this message translates to:

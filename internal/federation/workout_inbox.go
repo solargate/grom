@@ -3,11 +3,13 @@ package federation
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/solargate/travka/internal/avatars"
 	"github.com/solargate/travka/internal/data"
 	"github.com/solargate/travka/internal/maprender"
 	"github.com/solargate/travka/internal/tracks"
@@ -17,10 +19,39 @@ import (
 
 type WorkoutInboxStore struct {
 	dataDir string
+	client  *http.Client
 }
 
 func NewWorkoutInboxStore(dataDir string) *WorkoutInboxStore {
 	return &WorkoutInboxStore{dataDir: dataDir}
+}
+
+func (s *WorkoutInboxStore) SetHTTPClient(client *http.Client) {
+	s.client = client
+}
+
+func (s *WorkoutInboxStore) ownerDir(viewerNickname, handle string) string {
+	return filepath.Join(s.inboxDir(viewerNickname), ownerDirName(handle))
+}
+
+func (s *WorkoutInboxStore) EnsureAuthor(viewerNickname, handle, nickname, name, remoteAvatarURL string, refresh bool) error {
+	dir := s.ownerDir(viewerNickname, handle)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	return mergeAuthorMetaWithRefresh(dir, handle, nickname, authorActor(name, remoteAvatarURL), s.client, refresh)
+}
+
+func (s *WorkoutInboxStore) AuthorAvatarFields(viewerNickname, handle string) (bool, string) {
+	ownerDir := s.ownerDir(viewerNickname, handle)
+	if _, err := os.Stat(ownerDir); err != nil {
+		return false, ""
+	}
+	meta, err := readAuthorMeta(ownerDir)
+	if err != nil {
+		return false, ""
+	}
+	return authorAvatarFields(ownerDir, handle, meta)
 }
 
 func (s *WorkoutInboxStore) inboxDir(viewerNickname string) string {
@@ -71,9 +102,14 @@ func ownerHandleFromDir(dirName string) string {
 	return strings.ReplaceAll(dirName, "_", "@")
 }
 
-func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte) error {
-	dir := filepath.Join(s.inboxDir(viewerNickname), ownerDirName(ownerHandle))
+func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, actor map[string]any) error {
+	dir := s.ownerDir(viewerNickname, ownerHandle)
 	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
+	nickname := ownerNicknameFromDir(ownerDirName(ownerHandle))
+	if err := mergeAuthorMeta(dir, ownerHandle, nickname, actor, s.client); err != nil {
 		return err
 	}
 
@@ -176,6 +212,62 @@ func (s *WorkoutInboxStore) MapPreviewPath(viewerNickname, ownerNickname, workou
 	return path, nil
 }
 
+func (s *WorkoutInboxStore) ownerDirForKey(viewerNickname, ownerKey string) (string, error) {
+	ownerKey = strings.TrimSpace(ownerKey)
+	if ownerKey == "" {
+		return "", avatars.ErrAvatarNotFound
+	}
+	ownerDir := filepath.Join(s.inboxDir(viewerNickname), ownerKey)
+	info, err := os.Stat(ownerDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", avatars.ErrAvatarNotFound
+		}
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", avatars.ErrAvatarNotFound
+	}
+	return ownerDir, nil
+}
+
+func (s *WorkoutInboxStore) AvatarPath(viewerNickname, ownerKey string) (string, error) {
+	ownerDir, err := s.ownerDirForKey(viewerNickname, ownerKey)
+	if err != nil {
+		return "", err
+	}
+
+	path := federatedAvatarPath(ownerDir)
+	if _, err := os.Stat(path); err == nil {
+		return path, nil
+	}
+
+	meta, err := readAuthorMeta(ownerDir)
+	if err != nil {
+		return "", err
+	}
+	remoteURL := effectiveRemoteAvatarURL(meta)
+	if remoteURL == "" {
+		return "", avatars.ErrAvatarNotFound
+	}
+
+	if s.client == nil {
+		return "", avatars.ErrAvatarNotFound
+	}
+	if err := cacheRemoteAvatar(s.client, ownerDir, remoteURL); err != nil {
+		return "", err
+	}
+
+	meta.AvatarVersion++
+	meta.AvatarURL = FederatedAvatarAPIPath(meta.Handle, meta.AvatarVersion)
+	if meta.RemoteAvatarURL == "" {
+		meta.RemoteAvatarURL = remoteURL
+	}
+	_ = writeAuthorMeta(ownerDir, meta)
+
+	return federatedAvatarPath(ownerDir), nil
+}
+
 func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
@@ -194,12 +286,27 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 		ownerDir := filepath.Join(root, ownerEntry.Name())
 		handle := ownerHandleFromDir(ownerEntry.Name())
 		nickname := ownerNicknameFromDir(ownerEntry.Name())
+		meta, err := readAuthorMeta(ownerDir)
+		if err != nil {
+			return nil, err
+		}
+		if meta.Handle != "" {
+			handle = meta.Handle
+		}
+		if meta.Nickname != "" {
+			nickname = meta.Nickname
+		}
+		authorName := meta.Name
+		authorHasAvatar, authorAvatarURL := authorAvatarFields(ownerDir, handle, meta)
 		files, err := os.ReadDir(ownerDir)
 		if err != nil {
 			return nil, err
 		}
 		for _, fileEntry := range files {
 			if fileEntry.IsDir() || !strings.HasSuffix(fileEntry.Name(), ".yaml") {
+				continue
+			}
+			if fileEntry.Name() == authorMetaFileName {
 				continue
 			}
 			workoutID := strings.TrimSuffix(fileEntry.Name(), ".yaml")
@@ -211,9 +318,12 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 				Workout: *workout,
 				Owner:   nickname,
 				Author: workouts.FeedAuthor{
-					Nickname: nickname,
-					Handle:   handle,
-					IsLocal:  false,
+					Nickname:  nickname,
+					Name:      authorName,
+					Handle:    handle,
+					IsLocal:   false,
+					HasAvatar: authorHasAvatar,
+					AvatarURL: authorAvatarURL,
 				},
 			})
 		}

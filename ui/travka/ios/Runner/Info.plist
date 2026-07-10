@@ -49,6 +49,8 @@
 	<string>Travka needs your location to record workout GPS tracks and show your position on the map.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Travka needs background location access to continue recording your workout when the app is in the background.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Travka needs access to your photo library to set your profile avatar.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

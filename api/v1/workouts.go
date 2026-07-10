@@ -55,10 +55,12 @@ type ParseTrackResponse struct {
 }
 
 type WorkoutAuthorResponse struct {
-	Nickname string `json:"nickname" example:"bob"`
-	Name     string `json:"name" example:"Bob"`
-	Handle   string `json:"handle" example:"bob@travka.example"`
-	IsLocal  bool   `json:"is_local" example:"true"`
+	Nickname  string `json:"nickname" example:"bob"`
+	Name      string `json:"name" example:"Bob"`
+	Handle    string `json:"handle" example:"bob@travka.example"`
+	IsLocal   bool   `json:"is_local" example:"true"`
+	HasAvatar bool   `json:"has_avatar" example:"true"`
+	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/bob/avatar"`
 }
 
 type WorkoutResponse struct {
@@ -107,10 +109,12 @@ func toFeedWorkoutResponse(item *workouts.FeedWorkout) WorkoutResponse {
 	resp := toWorkoutResponse(&item.Workout)
 	resp.Owner = item.Owner
 	resp.Author = &WorkoutAuthorResponse{
-		Nickname: item.Author.Nickname,
-		Name:     item.Author.Name,
-		Handle:   item.Author.Handle,
-		IsLocal:  item.Author.IsLocal,
+		Nickname:  item.Author.Nickname,
+		Name:      item.Author.Name,
+		Handle:    item.Author.Handle,
+		IsLocal:   item.Author.IsLocal,
+		HasAvatar: item.Author.HasAvatar,
+		AvatarURL: item.Author.AvatarURL,
 	}
 	return resp
 }
@@ -581,11 +585,14 @@ func listWorkouts(ctx *gin.Context) {
 		if !follows[i].TargetIsLocal {
 			continue
 		}
+		hasAvatar, avatarURL := localAvatarFieldsForUser(follows[i].TargetNickname)
 		followedAuthors = append(followedAuthors, workouts.FeedAuthor{
-			Nickname: follows[i].TargetNickname,
-			Name:     follows[i].TargetName,
-			Handle:   follows[i].TargetHandle,
-			IsLocal:  true,
+			Nickname:  follows[i].TargetNickname,
+			Name:      follows[i].TargetName,
+			Handle:    follows[i].TargetHandle,
+			IsLocal:   true,
+			HasAvatar: hasAvatar,
+			AvatarURL: avatarURL,
 		})
 	}
 

@@ -569,6 +569,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSaved => 'Profile saved';
 
   @override
+  String get avatarUpdated => 'Avatar updated';
+
+  @override
+  String get failedToUploadAvatar => 'Failed to upload avatar';
+
+  @override
+  String get cropAvatarTitle => 'Crop avatar';
+
+  @override
+  String get cropAvatarDone => 'Done';
+
+  @override
   String get failedToSaveProfile => 'Failed to save profile';
 
   @override

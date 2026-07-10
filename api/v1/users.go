@@ -8,20 +8,24 @@ import (
 )
 
 type UserSearchResult struct {
-	Nickname string `json:"nickname" example:"bob"`
-	Name     string `json:"name" example:"Bob"`
-	Handle   string `json:"handle" example:"bob@travka.example"`
-	IsLocal  bool   `json:"is_local" example:"true"`
+	Nickname  string `json:"nickname" example:"bob"`
+	Name      string `json:"name" example:"Bob"`
+	Handle    string `json:"handle" example:"bob@travka.example"`
+	IsLocal   bool   `json:"is_local" example:"true"`
+	HasAvatar bool   `json:"has_avatar" example:"true"`
+	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/bob/avatar"`
 }
 
 func toUserSearchResults(items []social.UserSearchResult) []UserSearchResult {
 	result := make([]UserSearchResult, len(items))
 	for i := range items {
 		result[i] = UserSearchResult{
-			Nickname: items[i].Nickname,
-			Name:     items[i].Name,
-			Handle:   items[i].Handle,
-			IsLocal:  items[i].IsLocal,
+			Nickname:  items[i].Nickname,
+			Name:      items[i].Name,
+			Handle:    items[i].Handle,
+			IsLocal:   items[i].IsLocal,
+			HasAvatar: items[i].HasAvatar,
+			AvatarURL: items[i].AvatarURL,
 		}
 	}
 	return result
@@ -61,5 +65,11 @@ func searchUsers(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, []UserSearchResult{})
 		return
 	}
-	ctx.JSON(http.StatusOK, toUserSearchResults(results))
+	response := toUserSearchResults(results)
+	for i := range response {
+		if response[i].IsLocal {
+			response[i].HasAvatar, response[i].AvatarURL = localAvatarFieldsForUser(response[i].Nickname)
+		}
+	}
+	ctx.JSON(http.StatusOK, response)
 }
