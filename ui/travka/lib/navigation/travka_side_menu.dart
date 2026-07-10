@@ -13,7 +13,6 @@ class TravkaSideMenu extends StatelessWidget {
     required this.serverTitle,
     required this.isLoggedIn,
     required this.onLogout,
-    required this.onOpenSettings,
     this.nickname,
   });
 
@@ -23,14 +22,6 @@ class TravkaSideMenu extends StatelessWidget {
   final String? nickname;
   final bool isLoggedIn;
   final VoidCallback onLogout;
-  final VoidCallback onOpenSettings;
-
-  int get _settingsIndex {
-    if (isLoggedIn) {
-      return 5;
-    }
-    return 3;
-  }
 
   int get _selectedIndex {
     if (isLoggedIn) {
@@ -43,6 +34,8 @@ class TravkaSideMenu extends StatelessWidget {
           return 2;
         case TravkaDestination.equipment:
           return 3;
+        case TravkaDestination.settings:
+          return 5;
         case TravkaDestination.login:
         case TravkaDestination.register:
           return 0;
@@ -56,6 +49,8 @@ class TravkaSideMenu extends StatelessWidget {
         return 1;
       case TravkaDestination.register:
         return 2;
+      case TravkaDestination.settings:
+        return 3;
       case TravkaDestination.userSearch:
       case TravkaDestination.profile:
       case TravkaDestination.equipment:
@@ -64,11 +59,6 @@ class TravkaSideMenu extends StatelessWidget {
   }
 
   void _onDestinationSelected(int index) {
-    if (index == _settingsIndex) {
-      onOpenSettings();
-      return;
-    }
-
     if (isLoggedIn) {
       switch (index) {
         case 0:
@@ -81,6 +71,8 @@ class TravkaSideMenu extends StatelessWidget {
           onDestinationSelected(TravkaDestination.equipment);
         case 4:
           onLogout();
+        case 5:
+          onDestinationSelected(TravkaDestination.settings);
       }
       return;
     }
@@ -92,6 +84,8 @@ class TravkaSideMenu extends StatelessWidget {
         onDestinationSelected(TravkaDestination.login);
       case 2:
         onDestinationSelected(TravkaDestination.register);
+      case 3:
+        onDestinationSelected(TravkaDestination.settings);
     }
   }
 

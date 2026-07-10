@@ -3,22 +3,8 @@ import 'package:travka/l10n/app_localizations.dart';
 
 import '../locale_storage.dart';
 
-Future<void> showSettingsDialog(
-  BuildContext context, {
-  required Locale locale,
-  required ValueChanged<Locale> onLocaleChanged,
-}) {
-  return showDialog<void>(
-    context: context,
-    builder: (context) => SettingsDialog(
-      locale: locale,
-      onLocaleChanged: onLocaleChanged,
-    ),
-  );
-}
-
-class SettingsDialog extends StatelessWidget {
-  const SettingsDialog({
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({
     super.key,
     required this.locale,
     required this.onLocaleChanged,
@@ -43,12 +29,11 @@ class SettingsDialog extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return AlertDialog(
-      title: Text(l10n.settings),
-      content: SizedBox(
-        width: 320,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -81,12 +66,6 @@ class SettingsDialog extends StatelessWidget {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(MaterialLocalizations.of(context).closeButtonLabel),
-        ),
-      ],
     );
   }
 }

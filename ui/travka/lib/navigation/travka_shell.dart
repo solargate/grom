@@ -8,13 +8,13 @@ import '../models/workout.dart';
 import '../pages/equipment_page.dart';
 import '../pages/home_page.dart';
 import '../pages/profile_page.dart';
+import '../pages/settings_page.dart';
 import '../pages/user_search_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
-import '../widgets/settings_dialog.dart';
 import '../widgets/track_recording_recovery_dialog.dart';
 import '../widgets/workout_detail_menu.dart';
 import 'travka_destination.dart';
@@ -50,8 +50,9 @@ class _TravkaShellState extends State<TravkaShell> {
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
       _selectedDestination == TravkaDestination.home && _viewingWorkout != null;
-  bool get _shouldInterceptBack =>
-      _isViewingWorkout || _selectedDestination != TravkaDestination.home;
+  bool get _shouldShowHeaderBackButton => _isViewingWorkout;
+  bool get _shouldInterceptPop =>
+      _isViewingWorkout || !_selectedDestination.isHome;
 
   @override
   void initState() {
@@ -144,7 +145,7 @@ class _TravkaShellState extends State<TravkaShell> {
       _handleWorkoutDetailBack();
       return;
     }
-    if (_selectedDestination != TravkaDestination.home) {
+    if (!_selectedDestination.isHome) {
       _onDestinationSelected(TravkaDestination.home);
     }
   }
@@ -211,6 +212,8 @@ class _TravkaShellState extends State<TravkaShell> {
         return l10n.signIn;
       case TravkaDestination.register:
         return l10n.register;
+      case TravkaDestination.settings:
+        return l10n.settings;
     }
   }
 
@@ -221,15 +224,6 @@ class _TravkaShellState extends State<TravkaShell> {
     return _title;
   }
 
-  void _onOpenSettings() {
-    _scaffoldKey.currentState?.closeDrawer();
-    showSettingsDialog(
-      context,
-      locale: widget.locale,
-      onLocaleChanged: widget.onLocaleChanged,
-    );
-  }
-
   Widget _buildSideMenu() {
     return TravkaSideMenu(
       selectedDestination: _selectedDestination,
@@ -238,7 +232,6 @@ class _TravkaShellState extends State<TravkaShell> {
       nickname: _nickname,
       isLoggedIn: _isLoggedIn,
       onLogout: _logout,
-      onOpenSettings: _onOpenSettings,
     );
   }
 
@@ -276,6 +269,11 @@ class _TravkaShellState extends State<TravkaShell> {
           padding: const EdgeInsets.all(24),
           child: RegistrationForm(onRegistered: _onRegistered),
         );
+      case TravkaDestination.settings:
+        return SettingsPage(
+          locale: widget.locale,
+          onLocaleChanged: widget.onLocaleChanged,
+        );
     }
   }
 
@@ -303,7 +301,7 @@ class _TravkaShellState extends State<TravkaShell> {
       key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        leading: _shouldInterceptBack
+        leading: _shouldShowHeaderBackButton
             ? BackButton(onPressed: _handleShellBack)
             : null,
         title: Text(
@@ -340,7 +338,7 @@ class _TravkaShellState extends State<TravkaShell> {
                       height: kToolbarHeight,
                       child: Row(
                         children: [
-                          if (_shouldInterceptBack)
+                          if (_shouldShowHeaderBackButton)
                             BackButton(onPressed: _handleShellBack),
                           Expanded(
                             child: Align(
@@ -377,7 +375,7 @@ class _TravkaShellState extends State<TravkaShell> {
     final l10n = AppLocalizations.of(context)!;
 
     return PopScope(
-      canPop: !_shouldInterceptBack,
+      canPop: !_shouldInterceptPop,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           _handleShellBack();
