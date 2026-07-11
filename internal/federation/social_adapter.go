@@ -3,7 +3,7 @@ package federation
 import (
 	"strings"
 
-	"github.com/solargate/travka/internal/social"
+	"github.com/solargate/grom/internal/social"
 )
 
 type inboundFollowersAdapter struct {

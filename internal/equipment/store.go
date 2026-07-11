@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/solargate/travka/internal/data"
+	"github.com/solargate/grom/internal/data"
 	"gopkg.in/yaml.v3"
 )
 

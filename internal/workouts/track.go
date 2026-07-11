@@ -9,8 +9,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/solargate/travka/internal/maprender"
-	"github.com/solargate/travka/internal/tracks"
+	"github.com/solargate/grom/internal/maprender"
+	"github.com/solargate/grom/internal/tracks"
 )
 
 const MapPreviewFileName = "map-preview.png"
@@ -122,7 +122,7 @@ func deviceForTrack(trackName string, parsed *tracks.Data) string {
 			return device
 		}
 	}
-	return DeviceTravka
+	return DeviceGrom
 }
 
 func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, error) {

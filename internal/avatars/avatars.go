@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/chai2010/webp"
-	"github.com/solargate/travka/internal/data"
+	"github.com/solargate/grom/internal/data"
 	"golang.org/x/image/draw"
 )
 

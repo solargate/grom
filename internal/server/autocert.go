@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/grom/internal/config"
 	"golang.org/x/crypto/acme/autocert"
 )
 

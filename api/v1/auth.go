@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/auth"
-	"github.com/solargate/travka/internal/users"
+	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/users"
 )
 
 var userStore *users.Store

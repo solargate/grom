@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/data"
-	"github.com/solargate/travka/internal/maprender"
-	"github.com/solargate/travka/internal/tracks"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/maprender"
+	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/workouts"
 	"gopkg.in/yaml.v3"
 )
 

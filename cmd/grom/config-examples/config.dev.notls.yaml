@@ -1,0 +1,15 @@
+server:
+  name: "Grom dev (HTTP)"
+  port: 8080
+  tls:
+    mode: off
+
+federation:
+  enabled: false
+
+auth:
+  jwt_secret: "change-me-in-production-min-32-chars!!"
+  jwt_ttl_hours: 24
+
+data:
+  location: data

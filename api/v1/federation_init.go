@@ -3,17 +3,17 @@ package v1
 import (
 	"sync"
 
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/federation"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 var (
 	federationOnce      sync.Once
-	workoutInboxStore     *federation.WorkoutInboxStore
-	followersStore        *federation.FollowersStore
-	federationDelivery    *federation.Delivery
-	federationInboxProc   *federation.InboxProcessor
+	workoutInboxStore   *federation.WorkoutInboxStore
+	followersStore      *federation.FollowersStore
+	federationDelivery  *federation.Delivery
+	federationInboxProc *federation.InboxProcessor
 )
 
 func initFederation() error {

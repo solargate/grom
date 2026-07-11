@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Travka API documentation server",
-        "title": "Travka API",
+        "description": "Grom API documentation server",
+        "title": "Grom API",
         "contact": {
             "name": "Alexander Cheryomukhin",
             "email": "solarwind.palm@gmail.com"
@@ -1512,7 +1512,7 @@
                 },
                 "handle": {
                     "type": "string",
-                    "example": "bob@travka.example"
+                    "example": "bob@grom.example"
                 },
                 "has_avatar": {
                     "type": "boolean",
@@ -1541,7 +1541,7 @@
                 },
                 "handle": {
                     "type": "string",
-                    "example": "bob@travka.example"
+                    "example": "bob@grom.example"
                 },
                 "has_avatar": {
                     "type": "boolean",
@@ -1586,7 +1586,7 @@
                 },
                 "device": {
                     "type": "string",
-                    "example": "Travka"
+                    "example": "Grom"
                 },
                 "distance": {
                     "type": "number",

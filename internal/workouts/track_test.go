@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/solargate/travka/internal/tracks"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestStoreCreateWithTrack(t *testing.T) {
@@ -41,8 +41,8 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	if created.Track != tracks.TrackFileGPX {
 		t.Fatalf("track = %q", created.Track)
 	}
-	if created.Device != workouts.DeviceTravka {
-		t.Fatalf("device = %q, want %q", created.Device, workouts.DeviceTravka)
+	if created.Device != workouts.DeviceGrom {
+		t.Fatalf("device = %q, want %q", created.Device, workouts.DeviceGrom)
 	}
 	if created.DurationSeconds != 4200 {
 		t.Fatalf("duration = %d, want 4200", created.DurationSeconds)
@@ -61,7 +61,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !containsAll(string(yamlData), "track: track.gpx", "duration_seconds: 4200", "device: Travka") {
+	if !containsAll(string(yamlData), "track: track.gpx", "duration_seconds: 4200", "device: Grom") {
 		t.Fatalf("unexpected yaml: %s", yamlData)
 	}
 

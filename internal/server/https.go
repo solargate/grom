@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/grom/internal/config"
 )
 
 func Run(router *gin.Engine) error {

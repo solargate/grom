@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/social"
+	"github.com/solargate/grom/internal/social"
 )
 
 type UserSearchResult struct {
 	Nickname  string `json:"nickname" example:"bob"`
 	Name      string `json:"name" example:"Bob"`
-	Handle    string `json:"handle" example:"bob@travka.example"`
+	Handle    string `json:"handle" example:"bob@grom.example"`
 	IsLocal   bool   `json:"is_local" example:"true"`
 	HasAvatar bool   `json:"has_avatar" example:"true"`
 	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/bob/avatar"`

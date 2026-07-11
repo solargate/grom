@@ -1,0 +1,21 @@
+server:
+  name: "Grom"
+  port: 8080
+  tls:
+    mode: autocert
+    port: 443
+    autocert:
+      email: admin@example.com
+
+federation:
+  enabled: true
+  domain: grom.example.com
+  auto_accept_follows: false
+  tls_insecure_skip_verify: false
+
+auth:
+  jwt_secret: "REPLACE_WITH_STRONG_SECRET"
+  jwt_ttl_hours: 24
+
+data:
+  location: /var/lib/grom/data

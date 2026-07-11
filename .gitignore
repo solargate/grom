@@ -1,11 +1,11 @@
 .vscode/
 .cursor/
-cmd/travka/travka
-cmd/travka/data/
+cmd/grom/grom
+cmd/grom/data/
 
-cmd/travka/*
-!cmd/travka/main.go
-!cmd/travka/config-examples
+cmd/grom/*
+!cmd/grom/main.go
+!cmd/grom/config-examples
 
 internal/web/dist/*
 #!internal/web/dist/index.html

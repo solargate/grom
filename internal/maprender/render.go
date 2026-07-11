@@ -9,13 +9,13 @@ import (
 
 	sm "github.com/flopp/go-staticmaps"
 	"github.com/golang/geo/s2"
-	"github.com/solargate/travka/internal/tracks"
+	"github.com/solargate/grom/internal/tracks"
 )
 
 const (
 	PreviewWidth  = 640
 	PreviewHeight = 360
-	userAgent     = "Travka/1.0 (https://github.com/solargate/travka)"
+	userAgent     = "Grom/1.0 (https://github.com/solargate/grom)"
 
 	// Values > 1 add padding around the track; 1.0 matches track extent.
 	boundsFillFraction       = 1.0

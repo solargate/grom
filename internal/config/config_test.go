@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/grom/internal/config"
 )
 
 func baseCfg() config.Config {
@@ -62,7 +62,7 @@ func TestFinalizeConfig_ProdAutocert(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "autocert"
 	cfg.Federation.Enabled = true
-	cfg.Federation.Domain = "travka.example.com"
+	cfg.Federation.Domain = "grom.example.com"
 
 	if err := config.FinalizeConfig(&cfg); err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestFinalizeConfig_ProdAutocert(t *testing.T) {
 	if cfg.Server.TLS.Port != 443 {
 		t.Fatalf("tls port = %d, want 443", cfg.Server.TLS.Port)
 	}
-	if len(cfg.Server.TLS.Autocert.Domains) != 1 || cfg.Server.TLS.Autocert.Domains[0] != "travka.example.com" {
+	if len(cfg.Server.TLS.Autocert.Domains) != 1 || cfg.Server.TLS.Autocert.Domains[0] != "grom.example.com" {
 		t.Fatalf("domains = %v", cfg.Server.TLS.Autocert.Domains)
 	}
 	wantCache := filepath.Join(cfg.Data.ResolvedDir, "acme-cache")
@@ -113,7 +113,7 @@ func TestFinalizeConfig_AutocertRejectsPortInDomain(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "autocert"
 	cfg.Federation.Enabled = true
-	cfg.Federation.Domain = "travka.example.com:8443"
+	cfg.Federation.Domain = "grom.example.com:8443"
 
 	if err := config.FinalizeConfig(&cfg); err == nil {
 		t.Fatal("expected error for domain with port and autocert")
@@ -138,7 +138,7 @@ func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)
 	}
-	if got := config.HostWithoutPort("travka.example.com"); got != "travka.example.com" {
+	if got := config.HostWithoutPort("grom.example.com"); got != "grom.example.com" {
 		t.Fatalf("HostWithoutPort = %q", got)
 	}
 }

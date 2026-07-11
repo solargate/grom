@@ -1,4 +1,4 @@
-module github.com/solargate/travka
+module github.com/solargate/grom
 
 go 1.26.0
 

@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/equipment"
-	"github.com/solargate/travka/internal/users"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 var equipmentStore *equipment.Store

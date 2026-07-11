@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/solargate/travka/internal/data"
+	"github.com/solargate/grom/internal/data"
 	"github.com/spf13/viper"
 )
 

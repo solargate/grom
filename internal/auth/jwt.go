@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/solargate/travka/internal/config"
+	"github.com/solargate/grom/internal/config"
 )
 
 const ContextUserIDKey = "userID"
@@ -25,7 +25,7 @@ func GenerateToken(userID, email string) (string, time.Time, error) {
 			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-			Issuer:    "travka",
+			Issuer:    "grom",
 		},
 		Email: email,
 	}

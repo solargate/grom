@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/solargate/travka/internal/tracks"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {

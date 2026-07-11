@@ -3,9 +3,9 @@ package v1
 import (
 	"strings"
 
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/social"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/social"
 )
 
 func localAvatarFieldsForUser(nickname string) (hasAvatar bool, avatarURL string) {

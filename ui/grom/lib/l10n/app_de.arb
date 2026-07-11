@@ -1,0 +1,295 @@
+{
+  "@@locale": "de",
+  "appTitle": "Grom",
+  "home": "Startseite",
+  "signIn": "Anmelden",
+  "register": "Registrieren",
+  "signOut": "Abmelden",
+  "settings": "Einstellungen",
+  "add": "Hinzufügen",
+  "welcomeUser": "Willkommen, {nickname}!",
+  "@welcomeUser": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "registrationSuccessful": "Registrierung erfolgreich. Bitte melden Sie sich an.",
+  "signedOut": "Sie haben sich abgemeldet",
+  "signedInAs": "Angemeldet als {nickname}",
+  "@signedInAs": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSignIn": "Anmeldung fehlgeschlagen",
+  "failedToRegister": "Registrierung fehlgeschlagen",
+  "enterEmail": "E-Mail eingeben",
+  "enterValidEmail": "Gültige E-Mail eingeben",
+  "emailLabel": "E-Mail *",
+  "enterPassword": "Passwort eingeben",
+  "passwordLabel": "Passwort *",
+  "enterNickname": "Nickname eingeben",
+  "nicknameLabel": "Nickname *",
+  "nameLabel": "Vollständiger Name",
+  "passwordMinLength": "Passwort muss mindestens 8 Zeichen lang sein",
+  "confirmPasswordLabel": "Passwort bestätigen *",
+  "confirmPassword": "Passwort bestätigen",
+  "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
+  "serverUrlLabel": "Server-URL *",
+  "enterServerUrl": "Server-URL eingeben",
+  "enterValidServerUrl": "Gültige URL eingeben (https://...)",
+  "language": "Sprache",
+  "languageEnglish": "English",
+  "languageRussian": "Русский",
+  "languageGerman": "Deutsch",
+  "addWorkout": "Training hinzufügen",
+  "workoutName": "Trainingsname",
+  "workoutDescription": "Beschreibung",
+  "workoutType": "Trainingstyp",
+  "workoutDate": "Datum",
+  "workoutStartTime": "Startzeit",
+  "workoutDuration": "Dauer",
+  "workoutDistance": "Distanz",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "selectWorkoutType": "Trainingstyp auswählen",
+  "enterWorkoutName": "Trainingsname eingeben",
+  "workoutSaved": "Training gespeichert",
+  "failedToSaveWorkout": "Training konnte nicht gespeichert werden",
+  "failedToLoadWorkouts": "Trainings konnten nicht geladen werden",
+  "retry": "Erneut versuchen",
+  "expandMap": "Karte vergrößern",
+  "collapseMap": "Karte verkleinern",
+  "noWorkoutsYet": "Sie haben noch keine Trainings",
+  "durationZero": "0 s",
+  "distanceZero": "0 km",
+  "durationHours": "{hours} Std",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} Min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationSeconds": "{seconds} s",
+  "@durationSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "distanceKilometers": "{value} km",
+  "@distanceKilometers": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMeters": "{value} m",
+  "@distanceMeters": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "selectDuration": "Dauer auswählen",
+  "selectDistance": "Distanz auswählen",
+  "hoursLabel": "Stunden",
+  "minutesLabel": "Minuten",
+  "secondsLabel": "Sekunden",
+  "kilometersLabel": "Kilometer",
+  "sportCategoryFoot": "Laufsport",
+  "sportCategoryCycle": "Radsport",
+  "sportCategoryWater": "Wassersport",
+  "sportCategoryWinter": "Wintersport",
+  "sportCategoryOther": "Andere Sportarten",
+  "sportTypeRun": "Laufen",
+  "sportTypeHike": "Wandern",
+  "sportTypeTrailRun": "Trailrun",
+  "sportTypeWheelchair": "Rollstuhl",
+  "sportTypeWalk": "Gehen",
+  "sportTypeRide": "Radfahren",
+  "sportTypeEBikeRide": "E-Bike",
+  "sportTypeMountainBikeRide": "Mountainbike",
+  "sportTypeEMountainBikeRide": "E-Mountainbike",
+  "sportTypeGravelRide": "Gravel",
+  "sportTypeVelomobile": "Velomobil",
+  "sportTypeHandcycle": "Handbike",
+  "sportTypeCanoeing": "Kanu",
+  "sportTypeStandUpPaddling": "SUP",
+  "sportTypeKayaking": "Kajak",
+  "sportTypeSurfing": "Surfen",
+  "sportTypeKitesurf": "Kitesurfen",
+  "sportTypeSwim": "Schwimmen",
+  "sportTypeRowing": "Rudern",
+  "sportTypeWindsurf": "Windsurfen",
+  "sportTypeSail": "Segeln",
+  "sportTypeIceSkate": "Eislaufen",
+  "sportTypeNordicSki": "Skilanglauf",
+  "sportTypeAlpineSki": "Skifahren",
+  "sportTypeSnowboard": "Snowboard",
+  "sportTypeBackcountrySki": "Skitour",
+  "sportTypeSnowshoe": "Schneeschuhwandern",
+  "sportTypeWorkout": "Workout",
+  "sportTypeGolf": "Golf",
+  "sportTypeBadminton": "Badminton",
+  "sportTypeElliptical": "Crosstrainer",
+  "sportTypeBasketball": "Basketball",
+  "sportTypeInlineSkate": "Inlineskaten",
+  "sportTypeSkateboard": "Skateboard",
+  "sportTypeTennis": "Tennis",
+  "sportTypeStairStepper": "Stepper",
+  "sportTypePadel": "Padel",
+  "sportTypeRockClimbing": "Klettern",
+  "sportTypeSoccer": "Fußball",
+  "sportTypePickleball": "Pickleball",
+  "sportTypeWeightTraining": "Krafttraining",
+  "sportTypeVolleyball": "Volleyball",
+  "sportTypeRollerSki": "Rollerski",
+  "sportTypeSquash": "Squash",
+  "sportTypeCrossfit": "Crossfit",
+  "sportTypeYoga": "Yoga",
+  "sportTypeDance": "Tanz",
+  "sportTypeTableTennis": "Tischtennis",
+  "sportTypePilates": "Pilates",
+  "sportTypeRacquetball": "Racquetball",
+  "sportTypeHiit": "HIIT",
+  "sportTypeCricket": "Cricket",
+  "workoutTrack": "Track",
+  "selectTrackFile": "FIT- oder GPX-Datei auswählen",
+  "trackFileSelected": "{filename}",
+  "@trackFileSelected": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "removeTrack": "Track entfernen",
+  "invalidTrackFormat": "Nur FIT- und GPX-Dateien werden unterstützt",
+  "failedToParseTrack": "Trackdatei konnte nicht gelesen werden",
+  "trackMetadataApplied": "Werte aus dem Track übernommen",
+  "tabRecord": "Aufzeichnen",
+  "tabManual": "Manuell",
+  "recordStart": "Aufzeichnen",
+  "recordPause": "Pause",
+  "recordFinish": "Beenden",
+  "recordingDuration": "Dauer",
+  "currentSpeed": "Geschwindigkeit",
+  "speedKmh": "{speed} km/h",
+  "@speedKmh": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "speedUnavailable": "—",
+  "locationPermissionDenied": "Standortberechtigung ist für die Trackaufzeichnung erforderlich",
+  "notificationPermissionDenied": "Benachrichtigungsberechtigung ist für die Aufzeichnung erforderlich",
+  "locationServicesDisabled": "Aktivieren Sie die Ortungsdienste für die Trackaufzeichnung",
+  "openSettings": "Einstellungen öffnen",
+  "discardRecordingTitle": "Aufzeichnung verwerfen?",
+  "discardRecordingMessage": "Die aktuelle Trackaufzeichnung geht verloren.",
+  "discardRecordingConfirm": "Verwerfen",
+  "recordingNotificationTitle": "Training wird aufgezeichnet",
+  "recordingNotificationText": "Tippen, um zu Grom zurückzukehren",
+  "recordingNotificationChannelName": "Trainingsaufzeichnung",
+  "recordingPausedNotificationText": "Trainingsaufzeichnung pausiert",
+  "backgroundLocationRationale": "Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.",
+  "doNotDismissNotification": "Benachrichtigung während der Aufzeichnung nicht entfernen",
+  "recordingInProgress": "Aufzeichnung läuft",
+  "restoreRecordingTitle": "Aufzeichnung fortsetzen?",
+  "restoreRecordingMessage": "Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?",
+  "restoreRecordingConfirm": "Fortsetzen",
+  "restoreRecordingDiscard": "Verwerfen",
+  "editWorkout": "Bearbeiten",
+  "deleteWorkout": "Löschen",
+  "workoutActions": "Trainingsaktionen",
+  "failedToLoadWorkoutTrack": "Trainingsstrecke konnte nicht geladen werden",
+  "userSearch": "Benutzersuche",
+  "profile": "Profil",
+  "searchUsersHint": "Nickname oder @user@server",
+  "search": "Suchen",
+  "follow": "Folgen",
+  "unfollow": "Entfolgen",
+  "following": "Abonniert",
+  "followers": "Follower",
+  "followPending": "Ausstehend",
+  "noUsersFound": "Keine Benutzer gefunden",
+  "noFollowingYet": "Sie folgen noch niemandem",
+  "noFollowersYet": "Ihnen folgt noch niemand",
+  "searchByNicknameOrHandle": "Suche nach Nickname oder Federations-Adresse (@user@server)",
+  "workoutByAuthor": "Von {author}",
+  "@workoutByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSearchUsers": "Benutzersuche fehlgeschlagen",
+  "failedToLoadProfile": "Profil konnte nicht geladen werden",
+  "editProfile": "Profil bearbeiten",
+  "profileSaved": "Profil gespeichert",
+  "avatarUpdated": "Avatar aktualisiert",
+  "failedToUploadAvatar": "Avatar konnte nicht hochgeladen werden",
+  "cropAvatarTitle": "Avatar zuschneiden",
+  "cropAvatarDone": "Fertig",
+  "failedToSaveProfile": "Profil konnte nicht gespeichert werden",
+  "equipment": "Ausrüstung",
+  "addEquipment": "Hinzufügen",
+  "selectEquipment": "Ausrüstung auswählen",
+  "equipmentType": "Typ",
+  "equipmentName": "Bezeichnung",
+  "equipmentBrand": "Marke",
+  "equipmentModel": "Modell",
+  "equipmentWeight": "Gewicht (kg)",
+  "equipmentNotes": "Notizen",
+  "workoutEquipment": "Ausrüstung",
+  "workoutDevice": "Gerät",
+  "bikeType": "Fahrradtyp",
+  "waterEquipmentType": "Wasserausrüstungstyp",
+  "deleteEquipment": "Löschen",
+  "deleteEquipmentConfirm": "Diese Ausrüstung löschen? Sie wird aus allen Trainingseinheiten entfernt.",
+  "noEquipmentYet": "Sie haben noch keine Ausrüstung",
+  "equipmentSaved": "Ausrüstung gespeichert",
+  "equipmentDeleted": "Ausrüstung gelöscht",
+  "failedToLoadEquipment": "Ausrüstung konnte nicht geladen werden",
+  "failedToSaveEquipment": "Ausrüstung konnte nicht gespeichert werden",
+  "enterEquipmentName": "Bezeichnung eingeben",
+  "equipmentTypeBike": "Fahrrad",
+  "equipmentTypeShoes": "Schuhe",
+  "equipmentTypeWater": "Wasserausrüstung",
+  "equipmentTypeOther": "Sonstiges",
+  "equipmentSubtypeEmpty": "Nicht ausgewählt",
+  "bikeTypeMountain": "Mountainbike",
+  "bikeTypeGravel": "Gravelbike",
+  "bikeTypeRoad": "Rennrad",
+  "bikeTypeTouring": "Tourenrad",
+  "bikeTypeTriathlon": "Triathlonrad",
+  "bikeTypeCyclocross": "Cyclocross",
+  "bikeTypeFixie": "Fixie",
+  "bikeTypeBmx": "BMX",
+  "waterTypeSup": "SUP",
+  "waterTypeKayak": "Kajak",
+  "waterTypeCanoe": "Kanu",
+  "waterTypeCanoeDouble": "Zweier-Kanu",
+  "waterTypePackraft": "Packraft",
+  "waterTypeSurf": "Surfen"
+}

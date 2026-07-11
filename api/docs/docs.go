@@ -1518,7 +1518,7 @@ const docTemplate = `{
                 },
                 "handle": {
                     "type": "string",
-                    "example": "bob@travka.example"
+                    "example": "bob@grom.example"
                 },
                 "has_avatar": {
                     "type": "boolean",
@@ -1547,7 +1547,7 @@ const docTemplate = `{
                 },
                 "handle": {
                     "type": "string",
-                    "example": "bob@travka.example"
+                    "example": "bob@grom.example"
                 },
                 "has_avatar": {
                     "type": "boolean",
@@ -1592,7 +1592,7 @@ const docTemplate = `{
                 },
                 "device": {
                     "type": "string",
-                    "example": "Travka"
+                    "example": "Grom"
                 },
                 "distance": {
                     "type": "number",
@@ -1655,8 +1655,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Travka API",
-	Description:      "Travka API documentation server",
+	Title:            "Grom API",
+	Description:      "Grom API documentation server",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

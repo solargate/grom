@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/users"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/users"
 )
 
 var (
-	ErrInvalidHandle   = errors.New("invalid user handle")
-	ErrUserNotFound    = errors.New("user not found")
-	ErrRemoteNotReady  = errors.New("remote federation is not enabled on this server")
+	ErrInvalidHandle  = errors.New("invalid user handle")
+	ErrUserNotFound   = errors.New("user not found")
+	ErrRemoteNotReady = errors.New("remote federation is not enabled on this server")
 )
 
 type Delivery interface {
@@ -315,11 +315,11 @@ func (s *Service) ListFollowing(followerID string) ([]Follow, error) {
 }
 
 type Follower struct {
-	FollowerHandle   string `json:"follower_handle"`
-	FollowerNickname string `json:"follower_nickname"`
-	FollowerName     string `json:"follower_name"`
-	FollowerIsLocal  bool   `json:"follower_is_local"`
-	FollowerHasAvatar bool  `json:"follower_has_avatar"`
+	FollowerHandle    string `json:"follower_handle"`
+	FollowerNickname  string `json:"follower_nickname"`
+	FollowerName      string `json:"follower_name"`
+	FollowerIsLocal   bool   `json:"follower_is_local"`
+	FollowerHasAvatar bool   `json:"follower_has_avatar"`
 	FollowerAvatarURL string `json:"follower_avatar_url,omitempty"`
 }
 

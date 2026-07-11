@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/data"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/data"
 )
 
 // uploadMyAvatar godoc

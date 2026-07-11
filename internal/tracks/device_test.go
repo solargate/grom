@@ -70,7 +70,7 @@ func TestExtractDeviceKeepsProductNameWithBrand(t *testing.T) {
 }
 
 func TestParseWahooElemntDevice(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "cmd", "travka", "1.fit"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "cmd", "grom", "1.fit"))
 	if err != nil {
 		t.Skipf("sample FIT not available: %v", err)
 	}
@@ -104,14 +104,14 @@ func TestParseFITDevice(t *testing.T) {
 	}
 	activity.Sessions = []*mesgdef.Session{
 		{
-			Timestamp:         start,
-			StartTime:         start,
-			TotalElapsedTime:  3600000,
-			TotalTimerTime:    3600000,
-			TotalDistance:     5200000,
-			Sport:             typedef.SportRunning,
-			Event:             typedef.EventSession,
-			EventType:         typedef.EventTypeStop,
+			Timestamp:        start,
+			StartTime:        start,
+			TotalElapsedTime: 3600000,
+			TotalTimerTime:   3600000,
+			TotalDistance:    5200000,
+			Sport:            typedef.SportRunning,
+			Event:            typedef.EventSession,
+			EventType:        typedef.EventTypeStop,
 		},
 	}
 	activity.Activity = &mesgdef.Activity{

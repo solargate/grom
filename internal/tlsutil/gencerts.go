@@ -44,7 +44,7 @@ func GenerateCerts(opts GenOptions) error {
 	}
 	caTmpl := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "Travka Test CA"},
+		Subject:               pkix.Name{CommonName: "Grom Test CA"},
 		NotBefore:             time.Now().UTC(),
 		NotAfter:              time.Now().UTC().Add(10 * 365 * 24 * time.Hour),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,

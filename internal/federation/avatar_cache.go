@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/data"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/data"
 )
 
 func federatedAvatarPath(ownerDir string) string {

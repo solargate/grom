@@ -1,3 +1,3 @@
 package workouts
 
-const DeviceTravka = "Travka"
+const DeviceGrom = "Grom"

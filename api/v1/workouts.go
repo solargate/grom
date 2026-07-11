@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/auth"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/social"
-	"github.com/solargate/travka/internal/tracks"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/social"
+	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 var workoutStore *workouts.Store
@@ -58,7 +58,7 @@ type ParseTrackResponse struct {
 type WorkoutAuthorResponse struct {
 	Nickname  string `json:"nickname" example:"bob"`
 	Name      string `json:"name" example:"Bob"`
-	Handle    string `json:"handle" example:"bob@travka.example"`
+	Handle    string `json:"handle" example:"bob@grom.example"`
 	IsLocal   bool   `json:"is_local" example:"true"`
 	HasAvatar bool   `json:"has_avatar" example:"true"`
 	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/bob/avatar"`
@@ -71,7 +71,7 @@ type WorkoutResponse struct {
 	Description     string                 `json:"description,omitempty" example:"Easy session"`
 	SportType       string                 `json:"sport_type" example:"Run"`
 	StartDate       string                 `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
-	Device          string                 `json:"device,omitempty" example:"Travka"`
+	Device          string                 `json:"device,omitempty" example:"Grom"`
 	DurationSeconds int                    `json:"duration_seconds" example:"3600"`
 	Distance        float64                `json:"distance" example:"5200"`
 	Track           string                 `json:"track,omitempty" example:"track.gpx"`

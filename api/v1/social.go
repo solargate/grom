@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/auth"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/federation"
-	"github.com/solargate/travka/internal/social"
+	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/social"
 )
 
 var socialService *social.Service

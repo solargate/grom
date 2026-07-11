@@ -269,7 +269,7 @@ definitions:
         example: /api/v1/users/bob/avatar
         type: string
       handle:
-        example: bob@travka.example
+        example: bob@grom.example
         type: string
       has_avatar:
         example: true
@@ -290,7 +290,7 @@ definitions:
         example: /api/v1/users/bob/avatar
         type: string
       handle:
-        example: bob@travka.example
+        example: bob@grom.example
         type: string
       has_avatar:
         example: true
@@ -322,7 +322,7 @@ definitions:
         example: Easy session
         type: string
       device:
-        example: Travka
+        example: Grom
         type: string
       distance:
         example: 5200
@@ -361,11 +361,11 @@ info:
   contact:
     email: solarwind.palm@gmail.com
     name: Alexander Cheryomukhin
-  description: Travka API documentation server
+  description: Grom API documentation server
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Travka API
+  title: Grom API
   version: "1.0"
 paths:
   /auth/login:

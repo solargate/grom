@@ -3,19 +3,19 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 
-	_ "github.com/solargate/travka/api/docs"
-	"github.com/solargate/travka/internal/auth"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/server"
-	"github.com/solargate/travka/internal/web"
+	_ "github.com/solargate/grom/api/docs"
+	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/server"
+	"github.com/solargate/grom/internal/web"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @title          Travka API
+// @title          Grom API
 // @version        1.0
-// @description    Travka API documentation server
+// @description    Grom API documentation server
 // @contact.name   Alexander Cheryomukhin
 // @contact.email  solarwind.palm@gmail.com
 // @license.name  Apache 2.0

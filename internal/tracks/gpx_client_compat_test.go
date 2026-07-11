@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/solargate/travka/internal/tracks"
+	"github.com/solargate/grom/internal/tracks"
 )
 
 func TestParseClientGeneratedGPX(t *testing.T) {

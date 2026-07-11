@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/travka/internal/avatars"
-	"github.com/solargate/travka/internal/config"
-	fed "github.com/solargate/travka/internal/federation"
-	"github.com/solargate/travka/internal/data"
-	"github.com/solargate/travka/internal/users"
+	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/data"
+	fed "github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/users"
 )
 
 var federationUserStore *users.Store

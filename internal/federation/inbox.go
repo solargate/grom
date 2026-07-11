@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/solargate/travka/internal/config"
-	"github.com/solargate/travka/internal/social"
-	"github.com/solargate/travka/internal/tracks"
-	"github.com/solargate/travka/internal/users"
-	"github.com/solargate/travka/internal/workouts"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/social"
+	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 type InboxProcessor struct {

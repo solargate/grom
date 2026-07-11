@@ -1,10 +1,10 @@
-# Project Travka
+# Project Grom
 
 Self-hosted workout tracker with optional ActivityPub federation.
 
 ## TLS configuration
 
-Travka supports four deployment profiles via `server.tls.mode`:
+Grom supports four deployment profiles via `server.tls.mode`:
 
 | Profile | Config file | `tls.mode` | Federation |
 |---------|-------------|------------|------------|
@@ -13,14 +13,14 @@ Travka supports four deployment profiles via `server.tls.mode`:
 | Prod, HTTP only | `config.prod.notls.yaml` | `off` | disabled |
 | Prod, Let's Encrypt | `config.prod.tls.yaml` | `autocert` | enabled |
 
-Example configs live in `cmd/travka/`.
+Example configs live in `cmd/grom/`.
 
 ### Dev with static TLS
 
 Generate self-signed certificates before the first run:
 
 ```bash
-cd cmd/travka
+cd cmd/grom
 go run . gencerts -ip 192.168.1.251 -domain 192.168.1.251
 go run . -config config.dev.tls.yaml
 ```

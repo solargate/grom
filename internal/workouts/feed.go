@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/solargate/travka/internal/avatars"
+	"github.com/solargate/grom/internal/avatars"
 )
 
 type FeedAuthor struct {
@@ -23,9 +23,9 @@ type FeedWorkout struct {
 }
 
 type FeedService struct {
-	store       *Store
-	domain      string
-	federated   FederatedWorkoutSource
+	store     *Store
+	domain    string
+	federated FederatedWorkoutSource
 }
 
 type FederatedWorkoutSource interface {
