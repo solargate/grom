@@ -1,0 +1,15 @@
+server:
+  name: "Travka"
+  port: 8080
+  tls:
+    mode: off
+
+federation:
+  enabled: false
+
+auth:
+  jwt_secret: "REPLACE_WITH_STRONG_SECRET"
+  jwt_ttl_hours: 24
+
+data:
+  location: /var/lib/travka/data

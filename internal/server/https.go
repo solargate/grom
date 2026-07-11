@@ -13,24 +13,27 @@ import (
 )
 
 func Run(router *gin.Engine) error {
-	if config.Cfg.Server.TLS.Enabled {
-		return runTLS(router)
+	switch config.ResolveTLSMode(&config.Cfg) {
+	case config.TLSModeStatic:
+		return runStaticTLS(router)
+	case config.TLSModeAutocert:
+		return runAutocertTLS(router)
+	default:
+		port := config.Cfg.Server.Port
+		if port <= 0 {
+			port = 8080
+		}
+		return router.Run(":" + strconv.Itoa(port))
 	}
-	return router.Run(":" + strconv.Itoa(config.Cfg.Server.Port))
 }
 
-func runTLS(router *gin.Engine) error {
+func runStaticTLS(router *gin.Engine) error {
 	certFile := config.Cfg.Server.TLS.CertFile
 	keyFile := config.Cfg.Server.TLS.KeyFile
-	if certFile == "" || keyFile == "" {
-		return fmt.Errorf("server.tls.cert_file and server.tls.key_file are required when TLS is enabled")
-	}
 
 	tlsPort := config.Cfg.Server.TLS.Port
-	addr := ":" + strconv.Itoa(tlsPort)
-
 	srv := &http.Server{
-		Addr:    addr,
+		Addr:    ":" + strconv.Itoa(tlsPort),
 		Handler: router,
 	}
 

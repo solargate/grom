@@ -1,4 +1,4 @@
-.PHONY: all travka doc web cli android android-apk android-aab android-debug clean
+.PHONY: all travka doc web cli android android-apk android-aab android-debug gencerts clean
 
 all: travka
 
@@ -26,6 +26,9 @@ android-aab:
 
 android-debug:
 	cd ui/travka && flutter build apk --debug
+
+gencerts:
+	cd cmd/travka && go run . gencerts -ip $(IP) -domain $(DOMAIN)
 
 clean:
 	rm -f cmd/travka/travka

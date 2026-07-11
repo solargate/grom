@@ -3,8 +3,9 @@
 cmd/travka/travka
 cmd/travka/data/
 
-cmd/travka
+cmd/travka/*
 !cmd/travka/main.go
+!cmd/travka/config-examples
 
 internal/web/dist/*
 #!internal/web/dist/index.html
