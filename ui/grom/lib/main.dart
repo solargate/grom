@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
+import 'app_theme.dart';
 import 'locale_storage.dart';
 import 'navigation/grom_shell.dart';
 import 'platform/is_mobile_client.dart';
@@ -64,11 +65,7 @@ class _GromAppState extends State<GromApp> {
       localeResolutionCallback: (deviceLocale, supportedLocales) {
         return LocaleStorage.resolveLocale(deviceLocale);
       },
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 45, 148, 49)),
-        useMaterial3: true,
-      ),
+      theme: buildAppTheme(),
       home: GromShell(
         locale: _locale,
         onLocaleChanged: _setLocale,
