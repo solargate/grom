@@ -5,6 +5,7 @@ import "time"
 type WorkoutEquipment struct {
 	ID   string `yaml:"id" json:"id"`
 	Name string `yaml:"name" json:"name"`
+	Type string `yaml:"type,omitempty" json:"type,omitempty"`
 }
 
 type Workout struct {

@@ -83,6 +83,7 @@ type WorkoutResponse struct {
 type WorkoutEquipmentItem struct {
 	ID   string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name string `json:"name" example:"Gravel bike"`
+	Type string `json:"type,omitempty" example:"bike"`
 }
 
 func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
@@ -91,6 +92,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		equipment = append(equipment, WorkoutEquipmentItem{
 			ID:   item.ID,
 			Name: item.Name,
+			Type: item.Type,
 		})
 	}
 	return WorkoutResponse{
@@ -602,8 +604,20 @@ func listWorkouts(ctx *gin.Context) {
 		})
 	}
 
+	if userStore == nil {
+		if err := initUserStore(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init user store"})
+			return
+		}
+	}
+	viewer, err := userStore.FindByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		return
+	}
+
 	feedSvc := newFeedService()
-	items, err := feedSvc.ListFeed(nickname, followedAuthors)
+	items, err := feedSvc.ListFeed(nickname, viewer.Name, followedAuthors)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list workouts"})
 		return

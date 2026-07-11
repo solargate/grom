@@ -19,6 +19,23 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+class ServerInfo {
+  ServerInfo({
+    required this.name,
+    this.federationEnabled = false,
+  });
+
+  final String name;
+  final bool federationEnabled;
+
+  factory ServerInfo.fromJson(Map<String, dynamic> json) {
+    return ServerInfo(
+      name: json['name'] as String? ?? 'Grom Home',
+      federationEnabled: json['federation_enabled'] as bool? ?? false,
+    );
+  }
+}
+
 class UserInfo {
   UserInfo({
     required this.id,
@@ -83,13 +100,13 @@ class ApiRequest {
     return Uri.parse(base).resolve(path.startsWith('/') ? path.substring(1) : path);
   }
 
-  Future<String> getServerInfo() async {
+  Future<ServerInfo> getServerInfo() async {
     final response = await http.get(_uri('/api/v1/server_info'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return json['name'] as String;
+      return ServerInfo.fromJson(json);
     }
-    return 'Grom Home';
+    return ServerInfo(name: 'Grom Home');
   }
 
   Future<UserInfo> register({

@@ -287,6 +287,7 @@ func resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([]workouts
 		result = append(result, workouts.WorkoutEquipment{
 			ID:   item.ID,
 			Name: item.Name,
+			Type: item.Type,
 		})
 	}
 	return result, nil

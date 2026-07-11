@@ -11,6 +11,7 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     this.nickname,
+    this.federationEnabled = false,
     this.refreshToken = 0,
     this.viewingWorkout,
     this.isMapExpanded = false,
@@ -19,6 +20,7 @@ class HomePage extends StatefulWidget {
   });
 
   final String? nickname;
+  final bool federationEnabled;
   final int refreshToken;
   final Workout? viewingWorkout;
   final bool isMapExpanded;
@@ -111,7 +113,7 @@ class _HomePageState extends State<HomePage> {
       return WorkoutDetailView(
         workout: viewingWorkout,
         authToken: _authToken!,
-        currentUserNickname: widget.nickname,
+        federationEnabled: widget.federationEnabled,
         isMapExpanded: widget.isMapExpanded,
         onMapExpandedChanged: widget.onMapExpandedChanged,
       );
@@ -164,7 +166,7 @@ class _HomePageState extends State<HomePage> {
           return WorkoutCard(
             workout: _workouts[index],
             authToken: _authToken ?? '',
-            currentUserNickname: widget.nickname,
+            federationEnabled: widget.federationEnabled,
             onTap: () => _openWorkout(_workouts[index]),
           );
         },

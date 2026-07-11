@@ -1,3 +1,3 @@
 package workouts
 
-const DeviceGrom = "Grom"
+const DeviceGrom = "Grom App"

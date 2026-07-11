@@ -1577,6 +1577,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Gravel bike"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bike"
                 }
             }
         },

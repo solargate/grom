@@ -28,7 +28,7 @@ func TestFeedServiceMerge(t *testing.T) {
 	}
 
 	feed := NewFeedService(store, "localhost")
-	items, err := feed.ListFeed("alice", []FeedAuthor{
+	items, err := feed.ListFeed("alice", "Alice", []FeedAuthor{
 		{Nickname: "bob", Name: "Bob", Handle: "bob@localhost", IsLocal: true},
 	})
 	if err != nil {
@@ -39,5 +39,8 @@ func TestFeedServiceMerge(t *testing.T) {
 	}
 	if items[0].Name != "Alice run" {
 		t.Fatalf("expected newest first, got %s", items[0].Name)
+	}
+	if items[0].Author.Name != "Alice" {
+		t.Fatalf("expected viewer name on own workout, got %q", items[0].Author.Name)
 	}
 }

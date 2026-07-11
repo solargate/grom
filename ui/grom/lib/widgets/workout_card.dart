@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
-import 'workout_author_header.dart';
-import 'workout_info_section.dart';
+import 'workout_header_section.dart';
 import 'workout_map_preview.dart';
 
 class WorkoutCard extends StatelessWidget {
@@ -11,13 +10,13 @@ class WorkoutCard extends StatelessWidget {
     super.key,
     required this.workout,
     required this.authToken,
-    this.currentUserNickname,
+    this.federationEnabled = false,
     this.onTap,
   });
 
   final Workout workout;
   final String authToken;
-  final String? currentUserNickname;
+  final bool federationEnabled;
   final VoidCallback? onTap;
 
   @override
@@ -25,7 +24,6 @@ class WorkoutCard extends StatelessWidget {
     final theme = Theme.of(context);
     final api = ApiRequest();
     final owner = workout.ownerNickname;
-    final author = workout.author;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -37,30 +35,12 @@ class WorkoutCard extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (author != null) ...[
-                    WorkoutAuthorHeader(
-                      author: author,
-                      authToken: authToken,
-                      currentUserNickname: currentUserNickname,
-                      avatarRadius: 20,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  Text(
-                    workout.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  WorkoutInfoSection(
-                    workout: workout,
-                    descriptionMaxLines: 2,
-                  ),
-                ],
+              child: WorkoutHeaderSection(
+                workout: workout,
+                authToken: authToken,
+                author: workout.author,
+                federationEnabled: federationEnabled,
+                descriptionMaxLines: 2,
               ),
             ),
             if (workout.hasMapPreview)

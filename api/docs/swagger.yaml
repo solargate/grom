@@ -313,6 +313,9 @@ definitions:
       name:
         example: Gravel bike
         type: string
+      type:
+        example: bike
+        type: string
     type: object
   v1.WorkoutResponse:
     properties:

@@ -145,3 +145,14 @@ String formatDistance(AppLocalizations l10n, double meters) {
   }
   return l10n.distanceMeters(meters.round());
 }
+
+String formatDistanceKm(AppLocalizations l10n, double meters) {
+  if (meters <= 0) {
+    return l10n.distanceZero;
+  }
+  final km = meters / 1000;
+  if (km >= 10) {
+    return l10n.distanceKilometers(km.toStringAsFixed(1));
+  }
+  return l10n.distanceKilometers(km.toStringAsFixed(2));
+}

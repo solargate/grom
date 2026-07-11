@@ -47,7 +47,7 @@ func (f *FeedService) SetFederatedSource(src FederatedWorkoutSource) {
 	f.federated = src
 }
 
-func (f *FeedService) ListFeed(viewerNickname string, followedLocal []FeedAuthor) ([]FeedWorkout, error) {
+func (f *FeedService) ListFeed(viewerNickname, viewerName string, followedLocal []FeedAuthor) ([]FeedWorkout, error) {
 	type tagged struct {
 		workout FeedWorkout
 	}
@@ -61,6 +61,7 @@ func (f *FeedService) ListFeed(viewerNickname string, followedLocal []FeedAuthor
 	viewerHasAvatar, viewerAvatarURL := avatars.Fields(f.store.DataDir(), viewerNickname)
 	viewerAuthor := FeedAuthor{
 		Nickname:  viewerNickname,
+		Name:      viewerName,
 		Handle:    f.localHandle(viewerNickname),
 		IsLocal:   true,
 		HasAvatar: viewerHasAvatar,

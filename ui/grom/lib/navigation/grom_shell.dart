@@ -41,6 +41,7 @@ class _GromShellState extends State<GromShell> {
   final ApiRequest _api = ApiRequest();
 
   String _title = 'Grom Home';
+  bool _federationEnabled = false;
   String? _nickname;
   GromDestination _selectedDestination = GromDestination.home;
   int _workoutRefreshToken = 0;
@@ -62,9 +63,12 @@ class _GromShellState extends State<GromShell> {
 
   Future<void> _loadInitialData() async {
     String name = 'Grom';
+    var federationEnabled = false;
     if (!isMobileClient || ServerStorage.cachedBaseUrl != null) {
       try {
-        name = await _api.getServerInfo();
+        final serverInfo = await _api.getServerInfo();
+        name = serverInfo.name;
+        federationEnabled = serverInfo.federationEnabled;
       } catch (_) {
         // Network or server errors: keep default title.
       }
@@ -89,6 +93,7 @@ class _GromShellState extends State<GromShell> {
     if (!mounted) return;
     setState(() {
       _title = name;
+      _federationEnabled = federationEnabled;
       _nickname = nickname;
     });
 
@@ -240,6 +245,7 @@ class _GromShellState extends State<GromShell> {
       case GromDestination.home:
         return HomePage(
           nickname: _nickname,
+          federationEnabled: _federationEnabled,
           refreshToken: _workoutRefreshToken,
           viewingWorkout: _viewingWorkout,
           isMapExpanded: _isWorkoutMapExpanded,
