@@ -38,7 +38,7 @@ const sportTypeCatalog = <SportTypeInfo>[
   SportTypeInfo(id: 'Velomobile', category: SportCategory.cycle, icon: Icons.sports_motorsports),
   SportTypeInfo(id: 'Handcycle', category: SportCategory.cycle, icon: Icons.accessible_forward),
   SportTypeInfo(id: 'Canoeing', category: SportCategory.water, icon: Icons.kayaking),
-  SportTypeInfo(id: 'StandUpPaddling', category: SportCategory.water, icon: Icons.surfing),
+  SportTypeInfo(id: 'SUP', category: SportCategory.water, icon: Icons.surfing),
   SportTypeInfo(id: 'Kayaking', category: SportCategory.water, icon: Icons.kayaking),
   SportTypeInfo(id: 'Surfing', category: SportCategory.water, icon: Icons.surfing),
   SportTypeInfo(id: 'Kitesurf', category: SportCategory.water, icon: Icons.air),
@@ -75,11 +75,7 @@ const sportTypeCatalog = <SportTypeInfo>[
   SportTypeInfo(id: 'TableTennis', category: SportCategory.other, icon: Icons.sports_tennis),
   SportTypeInfo(id: 'Pilates', category: SportCategory.other, icon: Icons.self_improvement),
   SportTypeInfo(id: 'Racquetball', category: SportCategory.other, icon: Icons.sports_tennis),
-  SportTypeInfo(
-    id: 'HighIntensityIntervalTraining',
-    category: SportCategory.other,
-    icon: Icons.local_fire_department,
-  ),
+  SportTypeInfo(id: 'HIIT', category: SportCategory.other, icon: Icons.local_fire_department,),
   SportTypeInfo(id: 'Cricket', category: SportCategory.other, icon: Icons.sports),
 ];
 

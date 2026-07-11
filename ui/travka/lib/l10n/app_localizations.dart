@@ -595,7 +595,7 @@ abstract class AppLocalizations {
   /// No description provided for @sportTypeStandUpPaddling.
   ///
   /// In en, this message translates to:
-  /// **'Stand Up Paddling'**
+  /// **'SUP'**
   String get sportTypeStandUpPaddling;
 
   /// No description provided for @sportTypeKayaking.

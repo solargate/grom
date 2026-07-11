@@ -249,13 +249,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sportTypeRide => 'Велосипед';
 
   @override
-  String get sportTypeEBikeRide => 'Э-велосипед';
+  String get sportTypeEBikeRide => 'Электровелосипед';
 
   @override
   String get sportTypeMountainBikeRide => 'Горный велосипед';
 
   @override
-  String get sportTypeEMountainBikeRide => 'Э-горный велосипед';
+  String get sportTypeEMountainBikeRide => 'Горный электровелосипед';
 
   @override
   String get sportTypeGravelRide => 'Гревел';
@@ -381,7 +381,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sportTypeRacquetball => 'Ракетбол';
 
   @override
-  String get sportTypeHiit => 'ВИИТ';
+  String get sportTypeHiit => 'HIIT';
 
   @override
   String get sportTypeCricket => 'Крикет';

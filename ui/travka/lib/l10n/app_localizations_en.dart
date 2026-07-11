@@ -270,7 +270,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sportTypeCanoeing => 'Canoe';
 
   @override
-  String get sportTypeStandUpPaddling => 'Stand Up Paddling';
+  String get sportTypeStandUpPaddling => 'SUP';
 
   @override
   String get sportTypeKayaking => 'Kayak';
