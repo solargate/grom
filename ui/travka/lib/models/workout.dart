@@ -27,6 +27,7 @@ class Workout {
     required this.durationSeconds,
     required this.distance,
     this.owner = '',
+    this.device = '',
     this.track = '',
     this.hasMapPreview = false,
     this.author,
@@ -41,6 +42,7 @@ class Workout {
   final DateTime startDate;
   final int durationSeconds;
   final double distance;
+  final String device;
   final String track;
   final bool hasMapPreview;
   final WorkoutAuthor? author;
@@ -74,6 +76,7 @@ class Workout {
       startDate: DateTime.parse(json['start_date'] as String),
       durationSeconds: json['duration_seconds'] as int? ?? 0,
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
+      device: json['device'] as String? ?? '',
       track: json['track'] as String? ?? '',
       hasMapPreview: json['has_map_preview'] as bool? ?? false,
       author: author,

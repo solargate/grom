@@ -81,6 +81,7 @@ func (s *Store) Create(nickname string, workout *Workout) (*Workout, error) {
 	workout.ID = id
 	workout.Name = trimWorkoutName(workout.Name)
 	workout.Description = trimWorkoutDescription(workout.Description)
+	workout.Device = DeviceTravka
 
 	return s.saveWorkout(nickname, workout)
 }

@@ -170,6 +170,10 @@ func parseFIT(data []byte) (*Data, error) {
 		}
 	}
 
+	if device := extractDevice(activity); device != "" {
+		result.Device = &device
+	}
+
 	return result, nil
 }
 

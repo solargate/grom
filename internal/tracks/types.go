@@ -17,6 +17,7 @@ type Data struct {
 	StartTime       *time.Time
 	DurationSeconds *int
 	DistanceMeters  *float64
+	Device          *string
 	Points          []LatLng
 }
 

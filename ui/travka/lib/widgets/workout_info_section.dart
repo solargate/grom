@@ -86,6 +86,20 @@ class WorkoutInfoSection extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
               ],
+              if (workout.device.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.workoutDevice,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  workout.device,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
             ],
           ),
         ),

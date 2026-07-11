@@ -262,6 +262,7 @@
   "equipmentWeight": "Вес (кг)",
   "equipmentNotes": "Примечания",
   "workoutEquipment": "Снаряжение",
+  "workoutDevice": "Устройство",
   "bikeType": "Тип велосипеда",
   "waterEquipmentType": "Тип водного оборудования",
   "deleteEquipment": "Удалить",

@@ -164,6 +164,9 @@ definitions:
     type: object
   v1.ParseTrackResponse:
     properties:
+      device:
+        example: Garmin Edge 530
+        type: string
       distance:
         example: 5200
         type: number
@@ -317,6 +320,9 @@ definitions:
         $ref: '#/definitions/v1.WorkoutAuthorResponse'
       description:
         example: Easy session
+        type: string
+      device:
+        example: Travka
         type: string
       distance:
         example: 5200

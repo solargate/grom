@@ -49,6 +49,7 @@ type CreateWorkoutForm struct {
 
 type ParseTrackResponse struct {
 	StartDate       string  `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
+	Device          string  `json:"device,omitempty" example:"Garmin Edge 530"`
 	DurationSeconds int     `json:"duration_seconds,omitempty" example:"3600"`
 	Distance        float64 `json:"distance,omitempty" example:"5200"`
 	HasGPS          bool    `json:"has_gps" example:"true"`
@@ -70,6 +71,7 @@ type WorkoutResponse struct {
 	Description     string                 `json:"description,omitempty" example:"Easy session"`
 	SportType       string                 `json:"sport_type" example:"Run"`
 	StartDate       string                 `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
+	Device          string                 `json:"device,omitempty" example:"Travka"`
 	DurationSeconds int                    `json:"duration_seconds" example:"3600"`
 	Distance        float64                `json:"distance" example:"5200"`
 	Track           string                 `json:"track,omitempty" example:"track.gpx"`
@@ -97,6 +99,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		Description:     workout.Description,
 		SportType:       workout.SportType,
 		StartDate:       workout.StartDate.Format(time.RFC3339),
+		Device:          workout.Device,
 		DurationSeconds: workout.DurationSeconds,
 		Distance:        workout.Distance,
 		Track:           workout.Track,
@@ -125,6 +128,9 @@ func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
 	}
 	if data.StartTime != nil {
 		resp.StartDate = data.StartTime.Format(time.RFC3339)
+	}
+	if data.Device != nil {
+		resp.Device = *data.Device
 	}
 	if data.DurationSeconds != nil {
 		resp.DurationSeconds = *data.DurationSeconds

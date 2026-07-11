@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -51,6 +52,7 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 	workout.DurationSeconds = durationSeconds
 	workout.Distance = distanceMeters
 	workout.Track = trackName
+	workout.Device = deviceForTrack(trackName, parsed)
 
 	if err := s.validateWorkout(workout); err != nil {
 		return nil, err
@@ -112,6 +114,15 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 	result := *workout
 	return &result, nil
+}
+
+func deviceForTrack(trackName string, parsed *tracks.Data) string {
+	if trackName == tracks.TrackFileFIT && parsed != nil && parsed.Device != nil {
+		if device := strings.TrimSpace(*parsed.Device); device != "" {
+			return device
+		}
+	}
+	return DeviceTravka
 }
 
 func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, error) {

@@ -41,6 +41,9 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	if created.Track != tracks.TrackFileGPX {
 		t.Fatalf("track = %q", created.Track)
 	}
+	if created.Device != workouts.DeviceTravka {
+		t.Fatalf("device = %q, want %q", created.Device, workouts.DeviceTravka)
+	}
 	if created.DurationSeconds != 4200 {
 		t.Fatalf("duration = %d, want 4200", created.DurationSeconds)
 	}
@@ -58,7 +61,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !containsAll(string(yamlData), "track: track.gpx", "duration_seconds: 4200") {
+	if !containsAll(string(yamlData), "track: track.gpx", "duration_seconds: 4200", "device: Travka") {
 		t.Fatalf("unexpected yaml: %s", yamlData)
 	}
 

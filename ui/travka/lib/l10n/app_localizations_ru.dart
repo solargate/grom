@@ -612,6 +612,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutEquipment => 'Снаряжение';
 
   @override
+  String get workoutDevice => 'Устройство';
+
+  @override
   String get bikeType => 'Тип велосипеда';
 
   @override

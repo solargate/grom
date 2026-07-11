@@ -618,6 +618,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutEquipment => 'Ausrüstung';
 
   @override
+  String get workoutDevice => 'Gerät';
+
+  @override
   String get bikeType => 'Fahrradtyp';
 
   @override

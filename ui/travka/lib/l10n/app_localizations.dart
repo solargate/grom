@@ -1252,6 +1252,12 @@ abstract class AppLocalizations {
   /// **'Equipment'**
   String get workoutEquipment;
 
+  /// No description provided for @workoutDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get workoutDevice;
+
   /// No description provided for @bikeType.
   ///
   /// In en, this message translates to:

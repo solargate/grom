@@ -1372,6 +1372,10 @@ const docTemplate = `{
         "v1.ParseTrackResponse": {
             "type": "object",
             "properties": {
+                "device": {
+                    "type": "string",
+                    "example": "Garmin Edge 530"
+                },
                 "distance": {
                     "type": "number",
                     "example": 5200
@@ -1585,6 +1589,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Easy session"
+                },
+                "device": {
+                    "type": "string",
+                    "example": "Travka"
                 },
                 "distance": {
                     "type": "number",

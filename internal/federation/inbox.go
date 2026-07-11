@@ -170,6 +170,7 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		Name:            stringValue(object, "name"),
 		Description:     stringValue(object, "content"),
 		SportType:       stringValue(object, "sportType"),
+		Device:          stringValue(object, "device"),
 		DurationSeconds: intValue(object, "durationSeconds"),
 		Distance:        floatValue(object, "distance"),
 		Track:           stringValue(object, "track"),

@@ -58,6 +58,9 @@ func TestStoreCreateAndList(t *testing.T) {
 	if workouts[0].Distance != 5200 {
 		t.Fatalf("expected distance 5200, got %v", workouts[0].Distance)
 	}
+	if workouts[0].Device != DeviceTravka {
+		t.Fatalf("expected device %q, got %q", DeviceTravka, workouts[0].Device)
+	}
 }
 
 func TestStoreRejectsInvalidSportType(t *testing.T) {

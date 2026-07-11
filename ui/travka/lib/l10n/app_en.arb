@@ -262,6 +262,7 @@
   "equipmentWeight": "Weight (kg)",
   "equipmentNotes": "Notes",
   "workoutEquipment": "Equipment",
+  "workoutDevice": "Device",
   "bikeType": "Bike type",
   "waterEquipmentType": "Water equipment type",
   "deleteEquipment": "Delete",

@@ -214,6 +214,7 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		"content":         workout.Description,
 		"sportType":       workout.SportType,
 		"startDate":       workout.StartDate.UTC().Format(time.RFC3339),
+		"device":          workout.Device,
 		"durationSeconds": workout.DurationSeconds,
 		"distance":        workout.Distance,
 		"track":           workout.Track,
