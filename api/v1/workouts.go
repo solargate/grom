@@ -571,7 +571,7 @@ func getWorkoutTrack(ctx *gin.Context) {
 // @Summary      Get workout map preview
 // @Description  Return cached map preview image for a workout with a track
 // @Tags         workouts
-// @Produce      png
+// @Produce      image/webp
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
@@ -617,6 +617,7 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 	}
 
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
+	ctx.Header("Content-Type", "image/webp")
 	ctx.File(path)
 }
 

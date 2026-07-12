@@ -720,4 +720,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get waterTypeSurf => 'Surf';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get mapDataAttributionTitle => 'Map data';
+
+  @override
+  String get openStreetMapAttribution => '© OpenStreetMap contributors';
+
+  @override
+  String get openStreetMapLicense =>
+      'Map previews and interactive maps use data from OpenStreetMap, available under the Open Database License (ODbL).';
+
+  @override
+  String get openStreetMapCopyrightLink =>
+      'OpenStreetMap copyright and license';
 }

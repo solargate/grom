@@ -1461,6 +1461,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Surf'**
   String get waterTypeSurf;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @mapDataAttributionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map data'**
+  String get mapDataAttributionTitle;
+
+  /// No description provided for @openStreetMapAttribution.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get openStreetMapAttribution;
+
+  /// No description provided for @openStreetMapLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'Map previews and interactive maps use data from OpenStreetMap, available under the Open Database License (ODbL).'**
+  String get openStreetMapLicense;
+
+  /// No description provided for @openStreetMapCopyrightLink.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenStreetMap copyright and license'**
+  String get openStreetMapCopyrightLink;
 }
 
 class _AppLocalizationsDelegate

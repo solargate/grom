@@ -13,7 +13,7 @@ import (
 	"github.com/solargate/grom/internal/tracks"
 )
 
-const MapPreviewFileName = "map-preview.png"
+const MapPreviewFileName = "map-preview.webp"
 
 type TrackInput struct {
 	Filename string

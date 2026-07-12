@@ -1040,7 +1040,7 @@ const docTemplate = `{
                 ],
                 "description": "Return cached map preview image for a workout with a track",
                 "produces": [
-                    "image/png"
+                    "image/webp"
                 ],
                 "tags": [
                     "workouts"

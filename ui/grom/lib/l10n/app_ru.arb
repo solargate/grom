@@ -303,5 +303,10 @@
   "waterTypeCanoe": "Каноэ",
   "waterTypeCanoeDouble": "Байдарка",
   "waterTypePackraft": "Пакрафт",
-  "waterTypeSurf": "Сёрф"
+  "waterTypeSurf": "Сёрф",
+  "about": "О приложении",
+  "mapDataAttributionTitle": "Картографические данные",
+  "openStreetMapAttribution": "© Участники OpenStreetMap",
+  "openStreetMapLicense": "Превью и интерактивные карты используют данные OpenStreetMap, доступные по лицензии Open Database License (ODbL).",
+  "openStreetMapCopyrightLink": "Авторские права и лицензия OpenStreetMap"
 }

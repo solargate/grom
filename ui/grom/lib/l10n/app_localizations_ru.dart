@@ -718,4 +718,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get waterTypeSurf => 'Сёрф';
+
+  @override
+  String get about => 'О приложении';
+
+  @override
+  String get mapDataAttributionTitle => 'Картографические данные';
+
+  @override
+  String get openStreetMapAttribution => '© Участники OpenStreetMap';
+
+  @override
+  String get openStreetMapLicense =>
+      'Превью и интерактивные карты используют данные OpenStreetMap, доступные по лицензии Open Database License (ODbL).';
+
+  @override
+  String get openStreetMapCopyrightLink =>
+      'Авторские права и лицензия OpenStreetMap';
 }

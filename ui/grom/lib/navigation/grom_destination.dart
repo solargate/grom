@@ -5,6 +5,7 @@ enum GromDestination {
   equipment,
   login,
   register,
+  about,
   settings,
 }
 

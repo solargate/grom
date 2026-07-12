@@ -303,5 +303,10 @@
   "waterTypeCanoe": "Kanu",
   "waterTypeCanoeDouble": "Zweier-Kanu",
   "waterTypePackraft": "Packraft",
-  "waterTypeSurf": "Surfen"
+  "waterTypeSurf": "Surfen",
+  "about": "Über",
+  "mapDataAttributionTitle": "Kartendaten",
+  "openStreetMapAttribution": "© OpenStreetMap-Mitwirkende",
+  "openStreetMapLicense": "Kartenvorschauen und interaktive Karten nutzen Daten von OpenStreetMap unter der Open Database License (ODbL).",
+  "openStreetMapCopyrightLink": "OpenStreetMap Urheberrecht und Lizenz"
 }

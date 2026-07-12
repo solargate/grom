@@ -34,8 +34,10 @@ class GromSideMenu extends StatelessWidget {
           return 2;
         case GromDestination.equipment:
           return 3;
-        case GromDestination.settings:
+        case GromDestination.about:
           return 5;
+        case GromDestination.settings:
+          return 6;
         case GromDestination.login:
         case GromDestination.register:
           return 0;
@@ -49,8 +51,10 @@ class GromSideMenu extends StatelessWidget {
         return 1;
       case GromDestination.register:
         return 2;
-      case GromDestination.settings:
+      case GromDestination.about:
         return 3;
+      case GromDestination.settings:
+        return 4;
       case GromDestination.userSearch:
       case GromDestination.profile:
       case GromDestination.equipment:
@@ -72,6 +76,8 @@ class GromSideMenu extends StatelessWidget {
         case 4:
           onLogout();
         case 5:
+          onDestinationSelected(GromDestination.about);
+        case 6:
           onDestinationSelected(GromDestination.settings);
       }
       return;
@@ -85,6 +91,8 @@ class GromSideMenu extends StatelessWidget {
       case 2:
         onDestinationSelected(GromDestination.register);
       case 3:
+        onDestinationSelected(GromDestination.about);
+      case 4:
         onDestinationSelected(GromDestination.settings);
     }
   }
@@ -157,6 +165,11 @@ class GromSideMenu extends StatelessWidget {
             label: Text(l10n.register),
           ),
         ],
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.info_outline),
+          selectedIcon: const Icon(Icons.info),
+          label: Text(l10n.about),
+        ),
         NavigationDrawerDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),

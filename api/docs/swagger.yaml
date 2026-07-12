@@ -1005,7 +1005,7 @@ paths:
         name: owner
         type: string
       produces:
-      - image/png
+      - image/webp
       responses:
         "200":
           description: OK

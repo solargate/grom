@@ -5,6 +5,7 @@ import '../api_request.dart';
 import '../auth_storage.dart';
 import '../login.dart';
 import '../models/workout.dart';
+import '../pages/about_page.dart';
 import '../pages/equipment_page.dart';
 import '../pages/home_page.dart';
 import '../pages/profile_page.dart';
@@ -246,6 +247,8 @@ class _GromShellState extends State<GromShell> {
         return l10n.signIn;
       case GromDestination.register:
         return l10n.register;
+      case GromDestination.about:
+        return l10n.about;
       case GromDestination.settings:
         return l10n.settings;
     }
@@ -322,6 +325,8 @@ class _GromShellState extends State<GromShell> {
           padding: const EdgeInsets.all(24),
           child: RegistrationForm(onRegistered: _onRegistered),
         );
+      case GromDestination.about:
+        return const AboutPage();
       case GromDestination.settings:
         return SettingsPage(
           locale: widget.locale,
