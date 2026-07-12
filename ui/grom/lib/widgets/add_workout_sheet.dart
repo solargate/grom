@@ -456,7 +456,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _durationSeconds = track.durationSeconds;
       _distanceKm = track.distanceMeters / 1000;
     });
-    _tabController?.animateTo(1);
+    _tabController?.animateTo(0);
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.trackMetadataApplied)),
@@ -601,18 +601,18 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
                   TabBar(
                     controller: _tabController,
                     onTap: (index) {
-                      if (_recorder.isActive && index == 1) {
-                        _tabController?.index = 0;
+                      if (_recorder.isActive && index == 0) {
+                        _tabController?.index = 1;
                       }
                     },
                     tabs: [
-                      Tab(text: l10n.tabRecord),
                       Tab(
                         child: Opacity(
                           opacity: _recorder.isActive ? 0.38 : 1.0,
                           child: Text(l10n.tabManual),
                         ),
                       ),
+                      Tab(text: l10n.tabRecord),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -623,8 +623,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
                           ? const NeverScrollableScrollPhysics()
                           : null,
                       children: [
-                        RecordWorkoutTab(onFinished: _applyRecordedTrack),
                         _buildManualTab(showTitle: false),
+                        RecordWorkoutTab(onFinished: _applyRecordedTrack),
                       ],
                     ),
                   ),
