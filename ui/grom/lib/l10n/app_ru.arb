@@ -308,5 +308,26 @@
   "mapDataAttributionTitle": "Картографические данные",
   "openStreetMapAttribution": "© Участники OpenStreetMap",
   "openStreetMapLicense": "Превью и интерактивные карты используют данные OpenStreetMap, доступные по лицензии Open Database License (ODbL).",
-  "openStreetMapCopyrightLink": "Авторские права и лицензия OpenStreetMap"
+  "openStreetMapCopyrightLink": "Авторские права и лицензия OpenStreetMap",
+  "integration": "Интеграция",
+  "strava": "Strava",
+  "importStravaArchive": "Импорт архива Strava",
+  "uploading": "Загрузка",
+  "importing": "Импорт",
+  "stravaImportCompleted": "Импорт Strava завершён: импортировано {imported}, пропущено {skipped}, не разобрано в CSV {parseSkipped}, ошибок {errors}",
+  "@stravaImportCompleted": {
+    "placeholders": {
+      "imported": { "type": "int" },
+      "skipped": { "type": "int" },
+      "parseSkipped": { "type": "int" },
+      "errors": { "type": "int" }
+    }
+  },
+  "stravaImportFailed": "Импорт Strava не удался: {message}",
+  "@stravaImportFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaImportInProgress": "Импорт уже выполняется"
 }

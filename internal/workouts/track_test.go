@@ -10,6 +10,53 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
+func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
+	dir := t.TempDir()
+	store := workouts.NewStore(dir)
+
+	gpxData, err := os.ReadFile(filepath.Join("..", "tracks", "testdata", "sample.gpx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := tracks.Parse(gpxData, "sample.gpx")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	startDate := time.Date(2026, 7, 6, 10, 0, 0, 0, time.UTC)
+	created, err := store.Create("athlete", &workouts.Workout{
+		Name:            "CSV metrics",
+		SportType:       "Run",
+		StartDate:       startDate,
+		DurationSeconds: 2184,
+		Distance:        10004.7,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	updated, err := store.AttachTrack("athlete", created, &workouts.TrackInput{
+		Filename: "sample.gpx",
+		Data:     gpxData,
+		Parsed:   parsed,
+	})
+	if err != nil {
+		t.Fatalf("AttachTrack() error = %v", err)
+	}
+	if updated.DurationSeconds != 2184 {
+		t.Fatalf("duration = %d, want 2184", updated.DurationSeconds)
+	}
+	if updated.Distance != 10004.7 {
+		t.Fatalf("distance = %v, want 10004.7", updated.Distance)
+	}
+	if !updated.StartDate.Equal(startDate) {
+		t.Fatalf("start_date changed to %v", updated.StartDate)
+	}
+	if updated.Track != tracks.TrackFileGPX {
+		t.Fatalf("track = %q", updated.Track)
+	}
+}
+
 func TestStoreCreateWithTrack(t *testing.T) {
 	dir := t.TempDir()
 	store := workouts.NewStore(dir)

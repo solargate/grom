@@ -30,17 +30,9 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 		return nil, err
 	}
 
-	trackName, err := tracks.TrackFileName(track.Filename)
+	trackName, parsed, err := prepareTrackInput(track)
 	if err != nil {
 		return nil, err
-	}
-
-	parsed := track.Parsed
-	if parsed == nil {
-		parsed, err = tracks.Parse(track.Data, track.Filename)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	startDate := workout.StartDate
@@ -58,18 +50,95 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 		return nil, err
 	}
 
+	created, workoutDirPath, cleanup, err := s.prepareNewWorkoutDir(nickname, workout)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := writeTrackArtifacts(workoutDirPath, track.Data, parsed, workout); err != nil {
+		cleanup()
+		return nil, err
+	}
+
+	filePath := workoutFilePath(s.userDir(nickname), workout.StartDate, workout.ID)
+	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		cleanup()
+		return nil, err
+	}
+
+	result := *created
+	return &result, nil
+}
+
+// AttachTrack saves a track file and map preview for an existing workout without
+// overwriting start_date, duration_seconds, or distance from the track.
+func (s *Store) AttachTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
+	if workout == nil || workout.ID == "" {
+		return nil, ErrInvalidWorkout
+	}
+	if track == nil {
+		return workout, nil
+	}
+
+	trackName, parsed, err := prepareTrackInput(track)
+	if err != nil {
+		return nil, err
+	}
+
+	workoutDirPath, err := s.findWorkoutDir(nickname, workout.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workout.Track = trackName
+	if device := deviceForTrack(trackName, parsed); device != DeviceGrom {
+		workout.Device = device
+	}
+
+	if err := writeTrackArtifacts(workoutDirPath, track.Data, parsed, workout); err != nil {
+		return nil, err
+	}
+
+	dirName := filepath.Base(workoutDirPath)
+	filePath := filepath.Join(workoutDirPath, dirName+".yaml")
+	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		return nil, err
+	}
+
+	result := *workout
+	return &result, nil
+}
+
+func prepareTrackInput(track *TrackInput) (string, *tracks.Data, error) {
+	trackName, err := tracks.TrackFileName(track.Filename)
+	if err != nil {
+		return "", nil, err
+	}
+
+	parsed := track.Parsed
+	if parsed == nil {
+		parsed, err = tracks.Parse(track.Data, track.Filename)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+
+	return trackName, parsed, nil
+}
+
+func (s *Store) prepareNewWorkoutDir(nickname string, workout *Workout) (*Workout, string, func(), error) {
 	userDir := s.userDir(nickname)
 	if err := os.MkdirAll(userDir, 0700); err != nil {
-		return nil, fmt.Errorf("create user dir: %w", err)
+		return nil, "", nil, fmt.Errorf("create user dir: %w", err)
 	}
 	wd := workoutsDir(userDir)
 	if err := os.MkdirAll(wd, 0700); err != nil {
-		return nil, fmt.Errorf("create workouts dir: %w", err)
+		return nil, "", nil, fmt.Errorf("create workouts dir: %w", err)
 	}
 
 	id, err := s.allocateWorkoutID(wd)
 	if err != nil {
-		return nil, err
+		return nil, "", nil, err
 	}
 	workout.ID = id
 	workout.Name = trimWorkoutName(workout.Name)
@@ -77,29 +146,27 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 	workoutDirPath := workoutDir(userDir, workout.StartDate, workout.ID)
 	if _, err := os.Stat(workoutDirPath); err == nil {
-		return nil, ErrWorkoutExists
+		return nil, "", nil, ErrWorkoutExists
 	}
 	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
-		return nil, fmt.Errorf("create workout dir: %w", err)
+		return nil, "", nil, fmt.Errorf("create workout dir: %w", err)
 	}
 
 	cleanup := func() {
 		_ = os.RemoveAll(workoutDirPath)
 	}
 
-	trackPath := filepath.Join(workoutDirPath, trackName)
-	if err := os.WriteFile(trackPath, track.Data, 0600); err != nil {
-		cleanup()
-		return nil, fmt.Errorf("write track: %w", err)
+	result := *workout
+	return &result, workoutDirPath, cleanup, nil
+}
+
+func writeTrackArtifacts(workoutDirPath string, trackData []byte, parsed *tracks.Data, workout *Workout) error {
+	trackPath := filepath.Join(workoutDirPath, workout.Track)
+	if err := os.WriteFile(trackPath, trackData, 0600); err != nil {
+		return fmt.Errorf("write track: %w", err)
 	}
 
-	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
-	if err := writeWorkoutYAML(filePath, workout); err != nil {
-		cleanup()
-		return nil, err
-	}
-
-	if parsed.HasGPS() {
+	if parsed != nil && parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			log.Printf("map preview render failed for workout %s: %v", workout.ID, err)
 		} else if len(preview) > 0 {
@@ -112,8 +179,7 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 		}
 	}
 
-	result := *workout
-	return &result, nil
+	return nil
 }
 
 func deviceForTrack(trackName string, parsed *tracks.Data) string {
@@ -203,6 +269,36 @@ func (s *Store) findWorkoutDir(nickname, workoutID string) (string, error) {
 		}
 	}
 	return "", ErrWorkoutNotFound
+}
+
+func (s *Store) HasStravaActivityID(nickname, stravaActivityID string) (bool, error) {
+	stravaActivityID = strings.TrimSpace(stravaActivityID)
+	if stravaActivityID == "" {
+		return false, nil
+	}
+
+	wd := workoutsDir(s.userDir(nickname))
+	entries, err := os.ReadDir(wd)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		workout, err := readWorkoutFromDir(filepath.Join(wd, entry.Name()))
+		if err != nil {
+			continue
+		}
+		if workout.StravaActivityID == stravaActivityID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func workoutHasMapPreview(dir string) bool {

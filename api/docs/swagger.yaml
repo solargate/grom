@@ -200,6 +200,47 @@ definitions:
     - nickname
     - password
     type: object
+  v1.StravaImportResultResponse:
+    properties:
+      errors:
+        example: 0
+        type: integer
+      imported:
+        example: 100
+        type: integer
+      parse_skipped:
+        example: 0
+        type: integer
+      skipped:
+        example: 2
+        type: integer
+    type: object
+  v1.StravaImportStatusResponse:
+    properties:
+      active:
+        example: true
+        type: boolean
+      import_current:
+        example: 412
+        type: integer
+      import_progress:
+        example: 0.42
+        type: number
+      import_total:
+        example: 982
+        type: integer
+      message:
+        example: ""
+        type: string
+      phase:
+        example: importing
+        type: string
+      result:
+        $ref: '#/definitions/v1.StravaImportResultResponse'
+      upload_progress:
+        example: 1
+        type: number
+    type: object
   v1.UpdateEquipmentRequest:
     properties:
       bike_type:
@@ -707,6 +748,64 @@ paths:
       summary: Get federated author avatar
       tags:
       - federation
+  /integrations/strava/import:
+    post:
+      consumes:
+      - multipart/form-data
+      - application/zip
+      description: Upload a Strava ZIP archive and start background import
+      parameters:
+      - description: Strava bulk export ZIP (multipart)
+        in: formData
+        name: archive
+        type: file
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/v1.StravaImportStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Import Strava bulk export archive
+      tags:
+      - integrations
+  /integrations/strava/import/status:
+    get:
+      description: Returns current upload/import progress for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.StravaImportStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Strava import status
+      tags:
+      - integrations
   /server_info:
     get:
       description: Get server info

@@ -530,6 +530,98 @@
                 }
             }
         },
+        "/integrations/strava/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a Strava ZIP archive and start background import",
+                "consumes": [
+                    "multipart/form-data",
+                    "application/zip"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "integrations"
+                ],
+                "summary": "Import Strava bulk export archive",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Strava bulk export ZIP (multipart)",
+                        "name": "archive",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/v1.StravaImportStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/integrations/strava/import/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns current upload/import progress for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "integrations"
+                ],
+                "summary": "Get Strava import status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.StravaImportStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/server_info": {
             "get": {
                 "description": "Get server info",
@@ -1412,6 +1504,63 @@
                     "type": "string",
                     "minLength": 8,
                     "example": "secret123"
+                }
+            }
+        },
+        "v1.StravaImportResultResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "imported": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "parse_skipped": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "skipped": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "v1.StravaImportStatusResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "import_current": {
+                    "type": "integer",
+                    "example": 412
+                },
+                "import_progress": {
+                    "type": "number",
+                    "example": 0.42
+                },
+                "import_total": {
+                    "type": "integer",
+                    "example": 982
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "phase": {
+                    "type": "string",
+                    "example": "importing"
+                },
+                "result": {
+                    "$ref": "#/definitions/v1.StravaImportResultResponse"
+                },
+                "upload_progress": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },

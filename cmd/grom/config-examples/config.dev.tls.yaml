@@ -20,3 +20,6 @@ auth:
 
 data:
   location: data
+
+import:
+  temp_dir: tmp

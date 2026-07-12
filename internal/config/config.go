@@ -54,6 +54,10 @@ type Config struct {
 		Location    string `mapstructure:"location" yaml:"location"`
 		ResolvedDir string `mapstructure:"-" yaml:"-"`
 	} `mapstructure:"data" yaml:"data"`
+	Import struct {
+		TempDir         string `mapstructure:"temp_dir" yaml:"temp_dir"`
+		ResolvedTempDir string `mapstructure:"-" yaml:"-"`
+	} `mapstructure:"import" yaml:"import"`
 }
 
 var Cfg Config
@@ -162,6 +166,19 @@ func FinalizeConfig(cfg *Config) error {
 		return fmt.Errorf("create data directory: %w", err)
 	}
 	cfg.Data.ResolvedDir = resolvedDir
+
+	tempDir := strings.TrimSpace(cfg.Import.TempDir)
+	if tempDir == "" {
+		tempDir = "tmp"
+	}
+	resolvedTempDir, err := data.ResolveDataDir(tempDir)
+	if err != nil {
+		return fmt.Errorf("resolve import temp dir: %w", err)
+	}
+	if err := os.MkdirAll(resolvedTempDir, 0700); err != nil {
+		return fmt.Errorf("create import temp directory: %w", err)
+	}
+	cfg.Import.ResolvedTempDir = resolvedTempDir
 
 	if mode == TLSModeAutocert {
 		if cfg.Server.TLS.Autocert.CacheDir == "" {

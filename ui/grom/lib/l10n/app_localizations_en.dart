@@ -737,4 +737,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get openStreetMapCopyrightLink =>
       'OpenStreetMap copyright and license';
+
+  @override
+  String get integration => 'Integration';
+
+  @override
+  String get strava => 'Strava';
+
+  @override
+  String get importStravaArchive => 'Import Strava archive';
+
+  @override
+  String get uploading => 'Uploading';
+
+  @override
+  String get importing => 'Importing';
+
+  @override
+  String stravaImportCompleted(
+      int imported, int skipped, int parseSkipped, int errors) {
+    return 'Strava import completed: $imported imported, $skipped skipped, $parseSkipped CSV parse skipped, $errors errors';
+  }
+
+  @override
+  String stravaImportFailed(String message) {
+    return 'Strava import failed: $message';
+  }
+
+  @override
+  String get stravaImportInProgress => 'Another import is already in progress';
 }

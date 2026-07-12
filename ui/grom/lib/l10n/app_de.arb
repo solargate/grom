@@ -308,5 +308,26 @@
   "mapDataAttributionTitle": "Kartendaten",
   "openStreetMapAttribution": "© OpenStreetMap-Mitwirkende",
   "openStreetMapLicense": "Kartenvorschauen und interaktive Karten nutzen Daten von OpenStreetMap unter der Open Database License (ODbL).",
-  "openStreetMapCopyrightLink": "OpenStreetMap Urheberrecht und Lizenz"
+  "openStreetMapCopyrightLink": "OpenStreetMap Urheberrecht und Lizenz",
+  "integration": "Integration",
+  "strava": "Strava",
+  "importStravaArchive": "Strava-Archiv importieren",
+  "uploading": "Hochladen",
+  "importing": "Importieren",
+  "stravaImportCompleted": "Strava-Import abgeschlossen: {imported} importiert, {skipped} übersprungen, {parseSkipped} CSV nicht gelesen, {errors} Fehler",
+  "@stravaImportCompleted": {
+    "placeholders": {
+      "imported": { "type": "int" },
+      "skipped": { "type": "int" },
+      "parseSkipped": { "type": "int" },
+      "errors": { "type": "int" }
+    }
+  },
+  "stravaImportFailed": "Strava-Import fehlgeschlagen: {message}",
+  "@stravaImportFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaImportInProgress": "Ein Import läuft bereits"
 }

@@ -8,6 +8,7 @@ import '../models/workout.dart';
 import '../pages/about_page.dart';
 import '../pages/equipment_page.dart';
 import '../pages/home_page.dart';
+import '../pages/integration_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/user_search_page.dart';
@@ -243,6 +244,8 @@ class _GromShellState extends State<GromShell> {
         return l10n.profile;
       case GromDestination.equipment:
         return l10n.equipment;
+      case GromDestination.integration:
+        return l10n.integration;
       case GromDestination.login:
         return l10n.signIn;
       case GromDestination.register:
@@ -315,6 +318,8 @@ class _GromShellState extends State<GromShell> {
         return ProfilePage(nickname: _nickname!);
       case GromDestination.equipment:
         return const EquipmentPage();
+      case GromDestination.integration:
+        return const IntegrationPage();
       case GromDestination.login:
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),

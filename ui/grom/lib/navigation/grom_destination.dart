@@ -3,6 +3,7 @@ enum GromDestination {
   userSearch,
   profile,
   equipment,
+  integration,
   login,
   register,
   about,

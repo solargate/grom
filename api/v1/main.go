@@ -75,6 +75,10 @@ func RunRouter() {
 		equipmentGroup.POST("", createEquipment)
 		equipmentGroup.PUT("/:id", updateEquipment)
 		equipmentGroup.DELETE("/:id", deleteEquipment)
+
+		integrationsGroup := apiV1.Group("/integrations", auth.AuthRequired())
+		integrationsGroup.POST("/strava/import", importStravaArchive)
+		integrationsGroup.GET("/strava/import/status", getStravaImportStatus)
 	}
 
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)

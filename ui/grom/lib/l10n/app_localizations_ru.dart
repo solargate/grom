@@ -735,4 +735,33 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get openStreetMapCopyrightLink =>
       'Авторские права и лицензия OpenStreetMap';
+
+  @override
+  String get integration => 'Интеграция';
+
+  @override
+  String get strava => 'Strava';
+
+  @override
+  String get importStravaArchive => 'Импорт архива Strava';
+
+  @override
+  String get uploading => 'Загрузка';
+
+  @override
+  String get importing => 'Импорт';
+
+  @override
+  String stravaImportCompleted(
+      int imported, int skipped, int parseSkipped, int errors) {
+    return 'Импорт Strava завершён: импортировано $imported, пропущено $skipped, не разобрано в CSV $parseSkipped, ошибок $errors';
+  }
+
+  @override
+  String stravaImportFailed(String message) {
+    return 'Импорт Strava не удался: $message';
+  }
+
+  @override
+  String get stravaImportInProgress => 'Импорт уже выполняется';
 }

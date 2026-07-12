@@ -13,3 +13,6 @@ auth:
 
 data:
   location: /var/lib/grom/data
+
+import:
+  temp_dir: tmp

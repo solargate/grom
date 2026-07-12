@@ -1491,6 +1491,55 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OpenStreetMap copyright and license'**
   String get openStreetMapCopyrightLink;
+
+  /// No description provided for @integration.
+  ///
+  /// In en, this message translates to:
+  /// **'Integration'**
+  String get integration;
+
+  /// No description provided for @strava.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava'**
+  String get strava;
+
+  /// No description provided for @importStravaArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Strava archive'**
+  String get importStravaArchive;
+
+  /// No description provided for @uploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading'**
+  String get uploading;
+
+  /// No description provided for @importing.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing'**
+  String get importing;
+
+  /// No description provided for @stravaImportCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava import completed: {imported} imported, {skipped} skipped, {parseSkipped} CSV parse skipped, {errors} errors'**
+  String stravaImportCompleted(
+      int imported, int skipped, int parseSkipped, int errors);
+
+  /// No description provided for @stravaImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava import failed: {message}'**
+  String stravaImportFailed(String message);
+
+  /// No description provided for @stravaImportInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Another import is already in progress'**
+  String get stravaImportInProgress;
 }
 
 class _AppLocalizationsDelegate

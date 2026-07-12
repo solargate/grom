@@ -617,6 +617,113 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<Map<String, dynamic>> uploadStravaArchiveRaw({
+    required String token,
+    required List<int> bytes,
+    void Function(double progress)? onProgress,
+  }) async {
+    final request = http.StreamedRequest(
+      'POST',
+      _uri('/api/v1/integrations/strava/import'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Content-Type'] = 'application/zip';
+    request.contentLength = bytes.length;
+    request.sink.add(bytes);
+    await request.sink.close();
+    return _sendStravaStreamedRequest(request, onProgress);
+  }
+
+  Future<Map<String, dynamic>> uploadStravaArchiveRawStream({
+    required String token,
+    required Stream<List<int>> stream,
+    required int length,
+    void Function(double progress)? onProgress,
+  }) async {
+    final request = http.StreamedRequest(
+      'POST',
+      _uri('/api/v1/integrations/strava/import'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Content-Type'] = 'application/zip';
+    request.contentLength = length;
+
+    var sent = 0;
+    await for (final chunk in stream) {
+      request.sink.add(chunk);
+      sent += chunk.length;
+      if (onProgress != null && length > 0) {
+        onProgress(sent / length);
+      }
+    }
+    await request.sink.close();
+    return _sendStravaStreamedRequest(request, onProgress);
+  }
+
+  Future<Map<String, dynamic>> uploadStravaArchive({
+    required String token,
+    required List<int> bytes,
+    required String filename,
+    void Function(double progress)? onProgress,
+  }) async {
+    return uploadStravaArchiveRaw(
+      token: token,
+      bytes: bytes,
+      onProgress: onProgress,
+    );
+  }
+
+  Future<Map<String, dynamic>> uploadStravaArchiveFromStream({
+    required String token,
+    required Stream<List<int>> stream,
+    required int length,
+    required String filename,
+    void Function(double progress)? onProgress,
+  }) async {
+    return uploadStravaArchiveRawStream(
+      token: token,
+      stream: stream,
+      length: length,
+      onProgress: onProgress,
+    );
+  }
+
+  Future<Map<String, dynamic>> _sendStravaStreamedRequest(
+    http.StreamedRequest request,
+    void Function(double progress)? onProgress,
+  ) async {
+    if (onProgress != null) {
+      onProgress(0);
+    }
+
+    final streamed = await request.send();
+
+    if (onProgress != null) {
+      onProgress(1);
+    }
+
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 202) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<Map<String, dynamic>> getStravaImportStatus(String token) async {
+    final response = await http.get(
+      _uri('/api/v1/integrations/strava/import/status'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw _parseError(response);
+  }
+
   ApiException _parseError(http.Response response) {
     try {
       final json = jsonDecode(response.body) as Map<String, dynamic>;

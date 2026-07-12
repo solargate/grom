@@ -34,10 +34,12 @@ class GromSideMenu extends StatelessWidget {
           return 2;
         case GromDestination.equipment:
           return 3;
+        case GromDestination.integration:
+          return 4;
         case GromDestination.about:
-          return 5;
-        case GromDestination.settings:
           return 6;
+        case GromDestination.settings:
+          return 7;
         case GromDestination.login:
         case GromDestination.register:
           return 0;
@@ -58,6 +60,7 @@ class GromSideMenu extends StatelessWidget {
       case GromDestination.userSearch:
       case GromDestination.profile:
       case GromDestination.equipment:
+      case GromDestination.integration:
         return 0;
     }
   }
@@ -74,10 +77,12 @@ class GromSideMenu extends StatelessWidget {
         case 3:
           onDestinationSelected(GromDestination.equipment);
         case 4:
-          onLogout();
+          onDestinationSelected(GromDestination.integration);
         case 5:
-          onDestinationSelected(GromDestination.about);
+          onLogout();
         case 6:
+          onDestinationSelected(GromDestination.about);
+        case 7:
           onDestinationSelected(GromDestination.settings);
       }
       return;
@@ -147,6 +152,11 @@ class GromSideMenu extends StatelessWidget {
             icon: const Icon(Icons.sports_outlined),
             selectedIcon: const Icon(Icons.sports),
             label: Text(l10n.equipment),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.integration_instructions_outlined),
+            selectedIcon: const Icon(Icons.integration_instructions),
+            label: Text(l10n.integration),
           ),
           NavigationDrawerDestination(
             icon: const Icon(Icons.logout_outlined),
