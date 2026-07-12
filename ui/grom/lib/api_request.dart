@@ -286,8 +286,9 @@ class ApiRequest {
   Future<Workout> createWorkoutMultipart({
     required String token,
     required Map<String, String> fields,
-    required List<int> trackBytes,
-    required String trackFilename,
+    List<int>? trackBytes,
+    String? trackFilename,
+    List<({String filename, List<int> bytes})>? photos,
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -297,13 +298,26 @@ class ApiRequest {
     for (final entry in fields.entries) {
       request.fields[entry.key] = entry.value;
     }
-    request.files.add(
-      http.MultipartFile.fromBytes(
-        'track',
-        trackBytes,
-        filename: trackFilename,
-      ),
-    );
+    if (trackBytes != null && trackFilename != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'track',
+          trackBytes,
+          filename: trackFilename,
+        ),
+      );
+    }
+    if (photos != null) {
+      for (final photo in photos) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'photos',
+            photo.bytes,
+            filename: photo.filename,
+          ),
+        );
+      }
+    }
 
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
@@ -347,6 +361,32 @@ class ApiRequest {
 
   String mapPreviewUrl(String workoutId, {String? owner}) {
     var uri = _uri('/api/v1/workouts/$workoutId/map-preview');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    return uri.toString();
+  }
+
+  String mediaPreviewUrl(
+    String workoutId,
+    String filename, {
+    String? owner,
+  }) {
+    final encoded = Uri.encodeComponent(filename);
+    var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded/preview');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    return uri.toString();
+  }
+
+  String mediaOriginalUrl(
+    String workoutId,
+    String filename, {
+    String? owner,
+  }) {
+    final encoded = Uri.encodeComponent(filename);
+    var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded');
     if (owner != null && owner.isNotEmpty) {
       uri = uri.replace(queryParameters: {'owner': owner});
     }

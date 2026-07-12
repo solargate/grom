@@ -47,6 +47,7 @@ class _GromShellState extends State<GromShell> {
   int _workoutRefreshToken = 0;
   Workout? _viewingWorkout;
   bool _isWorkoutMapExpanded = false;
+  int? _workoutPhotoViewerIndex;
 
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
@@ -120,12 +121,14 @@ class _GromShellState extends State<GromShell> {
           _viewingWorkout != null) {
         _viewingWorkout = null;
         _isWorkoutMapExpanded = false;
+        _workoutPhotoViewerIndex = null;
         return;
       }
       _selectedDestination = destination;
       if (destination != GromDestination.home) {
         _viewingWorkout = null;
         _isWorkoutMapExpanded = false;
+        _workoutPhotoViewerIndex = null;
       }
     });
   }
@@ -134,11 +137,14 @@ class _GromShellState extends State<GromShell> {
     setState(() {
       _viewingWorkout = null;
       _isWorkoutMapExpanded = false;
+      _workoutPhotoViewerIndex = null;
     });
   }
 
   void _handleWorkoutDetailBack() {
-    if (_isWorkoutMapExpanded) {
+    if (_workoutPhotoViewerIndex != null) {
+      setState(() => _workoutPhotoViewerIndex = null);
+    } else if (_isWorkoutMapExpanded) {
       setState(() => _isWorkoutMapExpanded = false);
     } else {
       _closeWorkoutDetail();
@@ -197,6 +203,7 @@ class _GromShellState extends State<GromShell> {
       _selectedDestination = GromDestination.home;
       _viewingWorkout = null;
       _isWorkoutMapExpanded = false;
+      _workoutPhotoViewerIndex = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.signedOut)),
@@ -253,10 +260,17 @@ class _GromShellState extends State<GromShell> {
             setState(() {
               _viewingWorkout = workout;
               _isWorkoutMapExpanded = false;
+              if (workout == null) {
+                _workoutPhotoViewerIndex = null;
+              }
             });
           },
           onMapExpandedChanged: (expanded) {
             setState(() => _isWorkoutMapExpanded = expanded);
+          },
+          photoViewerIndex: _workoutPhotoViewerIndex,
+          onPhotoViewerIndexChanged: (index) {
+            setState(() => _workoutPhotoViewerIndex = index);
           },
         );
       case GromDestination.userSearch:

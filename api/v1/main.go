@@ -32,7 +32,7 @@ func RunRouter() {
 	}
 
 	router := gin.Default()
-	router.MaxMultipartMemory = 20 << 20
+	router.MaxMultipartMemory = 128 << 20
 
 	if config.Cfg.Federation.Enabled {
 		RegisterFederationRoutes(router, userStore)
@@ -66,6 +66,8 @@ func RunRouter() {
 		workoutGroup.POST("/parse-track", parseTrack)
 		workoutGroup.GET("/:id/track", getWorkoutTrack)
 		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
+		workoutGroup.GET("/:id/media/:filename/preview", getWorkoutMediaPreview)
+		workoutGroup.GET("/:id/media/:filename", getWorkoutMediaOriginal)
 		workoutGroup.GET("", listWorkouts)
 
 		equipmentGroup := apiV1.Group("/equipment", auth.AuthRequired())

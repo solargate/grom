@@ -19,5 +19,7 @@ type Workout struct {
 	Distance        float64            `yaml:"distance" json:"distance"`
 	Track           string             `yaml:"track,omitempty" json:"track,omitempty"`
 	Equipment       []WorkoutEquipment `yaml:"equipment,omitempty" json:"equipment,omitempty"`
+	MediaFiles      []string           `yaml:"media_files,omitempty" json:"media_files,omitempty"`
 	HasMapPreview   bool               `yaml:"-" json:"has_map_preview"`
+	HasMedia        bool               `yaml:"-" json:"has_media"`
 }

@@ -202,7 +202,7 @@ func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any
 	return actor, nil
 }
 
-func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte) error {
+func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
 	if len(followerInboxes) == 0 {
 		return nil
 	}
@@ -221,6 +221,17 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 	}
 	if workout.Track != "" && len(trackData) > 0 {
 		object["trackData"] = base64.StdEncoding.EncodeToString(trackData)
+	}
+	if len(mediaFiles) > 0 {
+		items := make([]map[string]any, 0, len(mediaFiles))
+		for _, file := range mediaFiles {
+			items = append(items, map[string]any{
+				"filename":  file.Filename,
+				"mediaType": workouts.MediaContentType(file.Filename),
+				"data":      base64.StdEncoding.EncodeToString(file.Data),
+			})
+		}
+		object["mediaItems"] = items
 	}
 	activity := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",

@@ -394,6 +394,36 @@ abstract class AppLocalizations {
   /// **'Expand map'**
   String get expandMap;
 
+  /// No description provided for @addPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos'**
+  String get addPhotos;
+
+  /// No description provided for @photosSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} photos selected'**
+  String photosSelected(int count);
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get removePhoto;
+
+  /// No description provided for @failedToUploadPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload photos'**
+  String get failedToUploadPhotos;
+
+  /// No description provided for @closePhotoViewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closePhotoViewer;
+
   /// No description provided for @collapseMap.
   ///
   /// In en, this message translates to:

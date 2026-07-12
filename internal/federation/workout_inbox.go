@@ -70,6 +70,10 @@ func federatedMapPreviewPath(ownerDir, workoutID string) string {
 	return filepath.Join(ownerDir, workoutID+"_"+workouts.MapPreviewFileName)
 }
 
+func federatedMediaDir(ownerDir, workoutID string) string {
+	return filepath.Join(ownerDir, workoutID+"_"+workouts.MediaSubdir)
+}
+
 func (s *WorkoutInboxStore) findOwnerDir(viewerNickname, ownerNickname string) (string, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
@@ -102,7 +106,7 @@ func ownerHandleFromDir(dirName string) string {
 	return strings.ReplaceAll(dirName, "_", "@")
 }
 
-func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, actor map[string]any) error {
+func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput, actor map[string]any) error {
 	dir := s.ownerDir(viewerNickname, ownerHandle)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
@@ -140,6 +144,16 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 		}
 	}
 
+	if len(mediaFiles) > 0 {
+		mediaDir := federatedMediaDir(dir, workout.ID)
+		savedNames, err := workouts.SaveMediaFilesToDir(mediaDir, mediaFiles)
+		if err != nil {
+			return err
+		}
+		workout.MediaFiles = savedNames
+		workout.HasMedia = len(savedNames) > 0
+	}
+
 	path := filepath.Join(dir, workout.ID+".yaml")
 	data, err := yaml.Marshal(workout)
 	if err != nil {
@@ -168,6 +182,12 @@ func (s *WorkoutInboxStore) readWorkout(ownerDir, workoutID string) (*workouts.W
 	if _, err := os.Stat(federatedMapPreviewPath(ownerDir, workoutID)); err == nil {
 		workout.HasMapPreview = true
 	}
+	if len(workout.MediaFiles) == 0 {
+		if files, err := workouts.ListMediaFilesInDir(federatedMediaDir(ownerDir, workoutID)); err == nil {
+			workout.MediaFiles = files
+		}
+	}
+	workout.HasMedia = len(workout.MediaFiles) > 0
 	return &workout, nil
 }
 
@@ -206,6 +226,50 @@ func (s *WorkoutInboxStore) MapPreviewPath(viewerNickname, ownerNickname, workou
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return "", workouts.ErrWorkoutNotFound
+		}
+		return "", err
+	}
+	return path, nil
+}
+
+func (s *WorkoutInboxStore) MediaOriginalPath(viewerNickname, ownerNickname, workoutID, filename string) (string, error) {
+	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+	if err != nil {
+		return "", err
+	}
+	if _, err := s.readWorkout(ownerDir, workoutID); err != nil {
+		return "", err
+	}
+	safeName, err := workouts.SanitizeMediaFilename(filename)
+	if err != nil {
+		return "", err
+	}
+	path := workouts.MediaOriginalPathInDir(federatedMediaDir(ownerDir, workoutID), safeName)
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return "", workouts.ErrPhotoNotFound
+		}
+		return "", err
+	}
+	return path, nil
+}
+
+func (s *WorkoutInboxStore) MediaPreviewPath(viewerNickname, ownerNickname, workoutID, filename string) (string, error) {
+	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+	if err != nil {
+		return "", err
+	}
+	if _, err := s.readWorkout(ownerDir, workoutID); err != nil {
+		return "", err
+	}
+	safeName, err := workouts.SanitizeMediaFilename(filename)
+	if err != nil {
+		return "", err
+	}
+	path := workouts.MediaPreviewPathInDir(federatedMediaDir(ownerDir, workoutID), safeName)
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return "", workouts.ErrPhotoNotFound
 		}
 		return "", err
 	}

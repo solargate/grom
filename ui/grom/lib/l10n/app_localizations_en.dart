@@ -161,6 +161,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expandMap => 'Expand map';
 
   @override
+  String get addPhotos => 'Add photos';
+
+  @override
+  String photosSelected(int count) {
+    return '$count photos selected';
+  }
+
+  @override
+  String get removePhoto => 'Remove photo';
+
+  @override
+  String get failedToUploadPhotos => 'Failed to upload photos';
+
+  @override
+  String get closePhotoViewer => 'Close';
+
+  @override
   String get collapseMap => 'Collapse map';
 
   @override

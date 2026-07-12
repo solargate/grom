@@ -162,6 +162,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get expandMap => 'Karte vergrößern';
 
   @override
+  String get addPhotos => 'Fotos hinzufügen';
+
+  @override
+  String photosSelected(int count) {
+    return '$count Fotos ausgewählt';
+  }
+
+  @override
+  String get removePhoto => 'Foto entfernen';
+
+  @override
+  String get failedToUploadPhotos => 'Fotos konnten nicht hochgeladen werden';
+
+  @override
+  String get closePhotoViewer => 'Schließen';
+
+  @override
   String get collapseMap => 'Karte verkleinern';
 
   @override

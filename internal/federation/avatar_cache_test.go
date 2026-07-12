@@ -58,7 +58,7 @@ func TestWorkoutInboxStoreCachesRemoteAvatar(t *testing.T) {
 		},
 	}
 
-	if err := store.Save("solarwind", ownerHandle, workout, nil, actor); err != nil {
+	if err := store.Save("solarwind", ownerHandle, workout, nil, nil, actor); err != nil {
 		t.Fatal(err)
 	}
 
@@ -138,7 +138,7 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 		SportType: "Run",
 		StartDate: time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
 	}
-	if err := store.Save("solarwind", ownerHandle, workout1, nil, actor()); err != nil {
+	if err := store.Save("solarwind", ownerHandle, workout1, nil, nil, actor()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -155,7 +155,7 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 		SportType: "Run",
 		StartDate: time.Date(2026, 7, 9, 10, 0, 0, 0, time.UTC),
 	}
-	if err := store.Save("solarwind", ownerHandle, workout2, nil, actor()); err != nil {
+	if err := store.Save("solarwind", ownerHandle, workout2, nil, nil, actor()); err != nil {
 		t.Fatal(err)
 	}
 

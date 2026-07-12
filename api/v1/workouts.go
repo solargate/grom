@@ -77,6 +77,8 @@ type WorkoutResponse struct {
 	Track           string                 `json:"track,omitempty" example:"track.gpx"`
 	Equipment       []WorkoutEquipmentItem `json:"equipment,omitempty"`
 	HasMapPreview   bool                   `json:"has_map_preview" example:"true"`
+	HasMedia        bool                   `json:"has_media" example:"true"`
+	MediaFiles      []string               `json:"media_files,omitempty"`
 	Author          *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
@@ -107,6 +109,8 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		Track:           workout.Track,
 		Equipment:       equipment,
 		HasMapPreview:   workout.HasMapPreview,
+		HasMedia:        workout.HasMedia,
+		MediaFiles:      workout.MediaFiles,
 	}
 }
 
@@ -219,7 +223,10 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 		errors.Is(err, tracks.ErrInvalidFormat),
 		errors.Is(err, tracks.ErrTrackTooLarge),
 		errors.Is(err, tracks.ErrEmptyTrack),
-		errors.Is(err, tracks.ErrInvalidTrack):
+		errors.Is(err, tracks.ErrInvalidTrack),
+		errors.Is(err, workouts.ErrInvalidPhoto),
+		errors.Is(err, workouts.ErrPhotoTooLarge),
+		errors.Is(err, workouts.ErrTooManyPhotos):
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 	case errors.Is(err, workouts.ErrWorkoutExists):
 		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
@@ -305,6 +312,56 @@ func createWorkout(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
 }
 
+func readPhotoFile(file *multipart.FileHeader) ([]byte, error) {
+	opened, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer opened.Close()
+
+	data, err := io.ReadAll(io.LimitReader(opened, workouts.MaxPhotoBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > workouts.MaxPhotoBytes {
+		return nil, workouts.ErrPhotoTooLarge
+	}
+	return data, nil
+}
+
+func readWorkoutPhotos(ctx *gin.Context) ([]workouts.MediaFileInput, error) {
+	form, err := ctx.MultipartForm()
+	if err != nil || form == nil {
+		return nil, nil
+	}
+	headers := form.File["photos"]
+	if len(headers) == 0 {
+		return nil, nil
+	}
+	if len(headers) > workouts.MaxPhotosPerWorkout {
+		return nil, workouts.ErrTooManyPhotos
+	}
+	files := make([]workouts.MediaFileInput, 0, len(headers))
+	for _, header := range headers {
+		data, err := readPhotoFile(header)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, workouts.MediaFileInput{
+			Filename: header.Filename,
+			Data:     data,
+		})
+	}
+	return files, nil
+}
+
+func attachWorkoutPhotos(nickname string, workout *workouts.Workout, photos []workouts.MediaFileInput) (*workouts.Workout, error) {
+	if len(photos) == 0 {
+		return workout, nil
+	}
+	return workoutStore.AddMedia(nickname, workout, photos)
+}
+
 func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	if err := initFederation(); err != nil || federationDelivery == nil || followersStore == nil {
 		return
@@ -317,7 +374,11 @@ func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	if workout.Track != "" {
 		trackData, _, _ = workoutStore.TrackFile(nickname, workout.ID)
 	}
-	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData)
+	var mediaFiles []workouts.MediaFileInput
+	if workout.HasMedia {
+		mediaFiles, _ = workoutStore.ReadMediaPayload(nickname, workout.ID)
+	}
+	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData, mediaFiles)
 }
 
 func createWorkoutMultipart(ctx *gin.Context, nickname string) {
@@ -374,6 +435,17 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 
 	created, err := workoutStore.CreateWithTrack(nickname, workout, trackInput)
+	if err != nil {
+		handleCreateWorkoutError(ctx, err)
+		return
+	}
+
+	photos, err := readWorkoutPhotos(ctx)
+	if err != nil {
+		handleCreateWorkoutError(ctx, err)
+		return
+	}
+	created, err = attachWorkoutPhotos(nickname, created, photos)
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
@@ -545,6 +617,92 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 	}
 
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
+	ctx.File(path)
+}
+
+func getWorkoutMediaPreview(ctx *gin.Context) {
+	initWorkoutStore()
+
+	nickname, err := currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		return
+	}
+
+	filename := ctx.Param("filename")
+	path, err := workoutStore.MediaPreviewFile(owner, workoutID, filename)
+	if err != nil {
+		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
+			_ = initFederation()
+			if workoutInboxStore != nil {
+				path, err = workoutInboxStore.MediaPreviewPath(nickname, owner, workoutID, filename)
+			}
+		}
+	}
+	if err != nil {
+		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load photo preview"})
+		return
+	}
+
+	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
+	ctx.Header("Content-Type", "image/webp")
+	ctx.File(path)
+}
+
+func getWorkoutMediaOriginal(ctx *gin.Context) {
+	initWorkoutStore()
+
+	nickname, err := currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		return
+	}
+
+	filename := ctx.Param("filename")
+	path, err := workoutStore.MediaOriginalFile(owner, workoutID, filename)
+	if err != nil {
+		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
+			_ = initFederation()
+			if workoutInboxStore != nil {
+				path, err = workoutInboxStore.MediaOriginalPath(nickname, owner, workoutID, filename)
+			}
+		}
+	}
+	if err != nil {
+		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load photo"})
+		return
+	}
+
+	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
+	ctx.Header("Content-Type", workouts.MediaContentType(filename))
 	ctx.File(path)
 }
 

@@ -1616,9 +1616,19 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "has_media": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "id": {
                     "type": "string",
                     "example": "38472901"
+                },
+                "media_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "type": "string",

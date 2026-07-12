@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/platform/is_mobile_client.dart';
 import 'package:grom/platform/track_file_picker.dart';
+import 'package:grom/platform/workout_photo_picker.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
@@ -70,6 +72,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   List<Equipment> _userEquipment = [];
   List<String> _selectedEquipmentIds = [];
   Map<String, List<String>> _lastEquipmentBySport = {};
+  List<({String filename, Uint8List bytes})> _selectedPhotos = [];
+  bool _isPickingPhotos = false;
 
   bool get _showRecordTab => isMobileClient;
 
@@ -284,6 +288,41 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     });
   }
 
+  Future<void> _pickPhotos() async {
+    if (_isPickingPhotos || _isSubmitting) {
+      return;
+    }
+    setState(() => _isPickingPhotos = true);
+    try {
+      final picked = await pickWorkoutPhotos();
+      if (!mounted || picked.isEmpty) {
+        return;
+      }
+      setState(() {
+        _selectedPhotos = [
+          ..._selectedPhotos,
+          ...picked.map((item) => (filename: item.filename, bytes: item.bytes)),
+        ];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Photo pick failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingPhotos = false);
+      }
+    }
+  }
+
+  void _removePhoto(int index) {
+    setState(() {
+      _selectedPhotos = [
+        for (var i = 0; i < _selectedPhotos.length; i++)
+          if (i != index) _selectedPhotos[i],
+      ];
+    });
+  }
+
   List<Widget> _buildCategorySection(
     AppLocalizations l10n,
     SportCategory category,
@@ -447,21 +486,27 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         equipmentIds: _selectedEquipmentIds,
       );
 
-      if (_trackBytes != null && _trackFilename != null) {
+      final fields = {
+        'name': draft.name,
+        if (draft.description.isNotEmpty) 'description': draft.description,
+        'sport_type': draft.sportType,
+        'start_date': draft.startDate.toUtc().toIso8601String(),
+        'duration_seconds': draft.durationSeconds.toString(),
+        'distance': (draft.distanceKm * 1000).toString(),
+        if (draft.equipmentIds.isNotEmpty)
+          'equipment_ids': jsonEncode(draft.equipmentIds),
+      };
+
+      final hasTrack = _trackBytes != null && _trackFilename != null;
+      final hasPhotos = _selectedPhotos.isNotEmpty;
+
+      if (hasTrack || hasPhotos) {
         await _api.createWorkoutMultipart(
           token: token,
-          fields: {
-            'name': draft.name,
-            if (draft.description.isNotEmpty) 'description': draft.description,
-            'sport_type': draft.sportType,
-            'start_date': draft.startDate.toUtc().toIso8601String(),
-            'duration_seconds': draft.durationSeconds.toString(),
-            'distance': (draft.distanceKm * 1000).toString(),
-            if (draft.equipmentIds.isNotEmpty)
-              'equipment_ids': jsonEncode(draft.equipmentIds),
-          },
-          trackBytes: _trackBytes!,
-          trackFilename: _trackFilename!,
+          fields: fields,
+          trackBytes: hasTrack ? _trackBytes : null,
+          trackFilename: hasTrack ? _trackFilename : null,
+          photos: hasPhotos ? _selectedPhotos : null,
         );
       } else {
         await _api.createWorkout(token: token, body: draft.toJson());
@@ -504,9 +549,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       trackFilename: _trackFilename,
       equipment: _userEquipment,
       selectedEquipmentIds: _selectedEquipmentIds,
+      selectedPhotos: _selectedPhotos,
       isSubmitting: _isSubmitting,
       isPickingFile: _isPickingFile,
       isParsingTrack: _isParsingTrack,
+      isPickingPhotos: _isPickingPhotos,
       showTitle: showTitle,
       onPickSportType: _pickSportType,
       onPickDate: _pickDate,
@@ -515,6 +562,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       onPickDistance: _pickDistance,
       onPickEquipment: _pickEquipment,
       onRemoveEquipment: _removeEquipment,
+      onPickPhotos: _pickPhotos,
+      onRemovePhoto: _removePhoto,
       onPickTrack: _pickTrack,
       onRemoveTrack: _removeTrack,
       onCancel: _handleCancel,

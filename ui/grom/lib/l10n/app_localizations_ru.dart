@@ -161,6 +161,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get expandMap => 'Расширить карту';
 
   @override
+  String get addPhotos => 'Добавить фотографии';
+
+  @override
+  String photosSelected(int count) {
+    return 'Выбрано фотографий: $count';
+  }
+
+  @override
+  String get removePhoto => 'Удалить фото';
+
+  @override
+  String get failedToUploadPhotos => 'Не удалось загрузить фотографии';
+
+  @override
+  String get closePhotoViewer => 'Закрыть';
+
+  @override
   String get collapseMap => 'Уменьшить карту';
 
   @override

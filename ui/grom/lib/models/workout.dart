@@ -33,6 +33,8 @@ class Workout {
     this.device = '',
     this.track = '',
     this.hasMapPreview = false,
+    this.hasMedia = false,
+    this.mediaFiles = const [],
     this.author,
     this.equipment = const [],
   });
@@ -48,6 +50,8 @@ class Workout {
   final String device;
   final String track;
   final bool hasMapPreview;
+  final bool hasMedia;
+  final List<String> mediaFiles;
   final WorkoutAuthor? author;
   final List<WorkoutEquipmentItem> equipment;
 
@@ -82,6 +86,11 @@ class Workout {
       device: json['device'] as String? ?? '',
       track: json['track'] as String? ?? '',
       hasMapPreview: json['has_map_preview'] as bool? ?? false,
+      hasMedia: json['has_media'] as bool? ?? false,
+      mediaFiles: (json['media_files'] as List<dynamic>?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          const [],
       author: author,
       equipment: equipment,
     );

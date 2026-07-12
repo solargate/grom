@@ -198,6 +198,11 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		}
 	}
 
+	mediaFiles, err := decodeMediaItems(object)
+	if err != nil {
+		return err
+	}
+
 	var actorDoc map[string]any
 	if p.delivery != nil && actorURI != "" {
 		parsed := social.ParsedHandle{
@@ -210,7 +215,7 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		}
 	}
 
-	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData, actorDoc)
+	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData, mediaFiles, actorDoc)
 }
 
 func domainFromHandle(handle string) string {
@@ -248,6 +253,40 @@ func workoutIDFromObject(object map[string]any) string {
 		return raw[idx+1:]
 	}
 	return raw
+}
+
+func decodeMediaItems(object map[string]any) ([]workouts.MediaFileInput, error) {
+	rawItems, ok := object["mediaItems"].([]any)
+	if !ok || len(rawItems) == 0 {
+		return nil, nil
+	}
+	if len(rawItems) > workouts.MaxPhotosPerWorkout {
+		return nil, fmt.Errorf("too many media items")
+	}
+	files := make([]workouts.MediaFileInput, 0, len(rawItems))
+	for _, raw := range rawItems {
+		item, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		filename := stringValue(item, "filename")
+		encoded := stringValue(item, "data")
+		if filename == "" || encoded == "" {
+			continue
+		}
+		data, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return nil, fmt.Errorf("decode media data: %w", err)
+		}
+		if len(data) > workouts.MaxPhotoBytes {
+			return nil, workouts.ErrPhotoTooLarge
+		}
+		files = append(files, workouts.MediaFileInput{
+			Filename: filename,
+			Data:     data,
+		})
+	}
+	return files, nil
 }
 
 func stringValue(m map[string]any, key string) string {

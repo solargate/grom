@@ -50,7 +50,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Grom needs background location access to continue recording your workout when the app is in the background.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Grom needs access to your photo library to set your profile avatar.</string>
+	<string>Grom needs access to your photo library to set your profile avatar and attach photos to workouts.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

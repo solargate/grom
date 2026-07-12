@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:grom/l10n/app_localizations.dart';
@@ -21,9 +23,11 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.trackFilename,
     required this.equipment,
     required this.selectedEquipmentIds,
+    required this.selectedPhotos,
     required this.isSubmitting,
     required this.isPickingFile,
     required this.isParsingTrack,
+    required this.isPickingPhotos,
     required this.showTitle,
     required this.onPickSportType,
     required this.onPickDate,
@@ -32,6 +36,8 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.onPickDistance,
     required this.onPickEquipment,
     required this.onRemoveEquipment,
+    required this.onPickPhotos,
+    required this.onRemovePhoto,
     required this.onPickTrack,
     required this.onRemoveTrack,
     required this.onCancel,
@@ -49,9 +55,11 @@ class ManualWorkoutForm extends StatelessWidget {
   final String? trackFilename;
   final List<Equipment> equipment;
   final List<String> selectedEquipmentIds;
+  final List<({String filename, Uint8List bytes})> selectedPhotos;
   final bool isSubmitting;
   final bool isPickingFile;
   final bool isParsingTrack;
+  final bool isPickingPhotos;
   final bool showTitle;
   final VoidCallback onPickSportType;
   final VoidCallback onPickDate;
@@ -60,6 +68,8 @@ class ManualWorkoutForm extends StatelessWidget {
   final VoidCallback onPickDistance;
   final VoidCallback onPickEquipment;
   final ValueChanged<String> onRemoveEquipment;
+  final VoidCallback onPickPhotos;
+  final ValueChanged<int> onRemovePhoto;
   final VoidCallback onPickTrack;
   final VoidCallback onRemoveTrack;
   final VoidCallback onCancel;
@@ -204,6 +214,14 @@ class ManualWorkoutForm extends StatelessWidget {
               onRemove: onRemoveEquipment,
             ),
             const SizedBox(height: 16),
+            _WorkoutPhotosField(
+              photos: selectedPhotos,
+              isSubmitting: isSubmitting,
+              isPickingPhotos: isPickingPhotos,
+              onPickPhotos: onPickPhotos,
+              onRemovePhoto: onRemovePhoto,
+            ),
+            const SizedBox(height: 16),
             _TrackPickerField(
               trackFilename: trackFilename,
               isSubmitting: isSubmitting,
@@ -240,6 +258,86 @@ class ManualWorkoutForm extends StatelessWidget {
         ),
         ),
       ),
+    );
+  }
+}
+
+class _WorkoutPhotosField extends StatelessWidget {
+  const _WorkoutPhotosField({
+    required this.photos,
+    required this.isSubmitting,
+    required this.isPickingPhotos,
+    required this.onPickPhotos,
+    required this.onRemovePhoto,
+  });
+
+  final List<({String filename, Uint8List bytes})> photos;
+  final bool isSubmitting;
+  final bool isPickingPhotos;
+  final VoidCallback onPickPhotos;
+  final ValueChanged<int> onRemovePhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.tonalIcon(
+          onPressed: (isSubmitting || isPickingPhotos) ? null : onPickPhotos,
+          icon: isPickingPhotos
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add_photo_alternate_outlined),
+          label: Text(l10n.addPhotos),
+        ),
+        if (photos.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(l10n.photosSelected(photos.length)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: photos.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final photo = photos[index];
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        photo.bytes,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: -8,
+                      right: -8,
+                      child: IconButton(
+                        tooltip: l10n.removePhoto,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: isSubmitting
+                            ? null
+                            : () => onRemovePhoto(index),
+                        icon: const Icon(Icons.cancel, size: 20),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

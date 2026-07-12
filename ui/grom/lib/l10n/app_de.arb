@@ -63,6 +63,18 @@
   "failedToLoadWorkouts": "Trainings konnten nicht geladen werden",
   "retry": "Erneut versuchen",
   "expandMap": "Karte vergrößern",
+  "addPhotos": "Fotos hinzufügen",
+  "photosSelected": "{count} Fotos ausgewählt",
+  "@photosSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removePhoto": "Foto entfernen",
+  "failedToUploadPhotos": "Fotos konnten nicht hochgeladen werden",
+  "closePhotoViewer": "Schließen",
   "collapseMap": "Karte verkleinern",
   "noWorkoutsYet": "Sie haben noch keine Trainings",
   "durationZero": "0 s",

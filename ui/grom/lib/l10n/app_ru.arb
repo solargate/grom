@@ -63,6 +63,18 @@
   "failedToLoadWorkouts": "Не удалось загрузить тренировки",
   "retry": "Повторить",
   "expandMap": "Расширить карту",
+  "addPhotos": "Добавить фотографии",
+  "photosSelected": "Выбрано фотографий: {count}",
+  "@photosSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removePhoto": "Удалить фото",
+  "failedToUploadPhotos": "Не удалось загрузить фотографии",
+  "closePhotoViewer": "Закрыть",
   "collapseMap": "Уменьшить карту",
   "noWorkoutsYet": "У вас пока нет тренировок",
   "durationZero": "0 с",

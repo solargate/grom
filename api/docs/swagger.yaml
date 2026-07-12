@@ -340,9 +340,16 @@ definitions:
       has_map_preview:
         example: true
         type: boolean
+      has_media:
+        example: true
+        type: boolean
       id:
         example: "38472901"
         type: string
+      media_files:
+        items:
+          type: string
+        type: array
       name:
         example: Morning run
         type: string

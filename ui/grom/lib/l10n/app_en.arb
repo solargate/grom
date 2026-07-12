@@ -63,6 +63,18 @@
   "failedToLoadWorkouts": "Failed to load workouts",
   "retry": "Retry",
   "expandMap": "Expand map",
+  "addPhotos": "Add photos",
+  "photosSelected": "{count} photos selected",
+  "@photosSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removePhoto": "Remove photo",
+  "failedToUploadPhotos": "Failed to upload photos",
+  "closePhotoViewer": "Close",
   "collapseMap": "Collapse map",
   "noWorkoutsYet": "You have no workouts yet",
   "durationZero": "0s",

@@ -17,6 +17,8 @@ class HomePage extends StatefulWidget {
     this.isMapExpanded = false,
     this.onViewingWorkoutChanged,
     this.onMapExpandedChanged,
+    this.photoViewerIndex,
+    this.onPhotoViewerIndexChanged,
   });
 
   final String? nickname;
@@ -26,6 +28,8 @@ class HomePage extends StatefulWidget {
   final bool isMapExpanded;
   final ValueChanged<Workout?>? onViewingWorkoutChanged;
   final ValueChanged<bool>? onMapExpandedChanged;
+  final int? photoViewerIndex;
+  final ValueChanged<int?>? onPhotoViewerIndexChanged;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -99,7 +103,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openWorkout(Workout workout) {
+    widget.onPhotoViewerIndexChanged?.call(null);
     widget.onViewingWorkoutChanged?.call(workout);
+  }
+
+  void _openWorkoutPhoto(Workout workout, int index) {
+    widget.onViewingWorkoutChanged?.call(workout);
+    widget.onPhotoViewerIndexChanged?.call(index);
   }
 
   @override
@@ -116,6 +126,8 @@ class _HomePageState extends State<HomePage> {
         federationEnabled: widget.federationEnabled,
         isMapExpanded: widget.isMapExpanded,
         onMapExpandedChanged: widget.onMapExpandedChanged,
+        photoViewerIndex: widget.photoViewerIndex,
+        onPhotoViewerIndexChanged: widget.onPhotoViewerIndexChanged,
       );
     }
 
@@ -168,6 +180,8 @@ class _HomePageState extends State<HomePage> {
             authToken: _authToken ?? '',
             federationEnabled: widget.federationEnabled,
             onTap: () => _openWorkout(_workouts[index]),
+            onPhotoTap: (photoIndex) =>
+                _openWorkoutPhoto(_workouts[index], photoIndex),
           );
         },
       ),

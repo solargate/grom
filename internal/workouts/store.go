@@ -199,6 +199,7 @@ func (s *Store) List(nickname string) ([]Workout, error) {
 			}
 		}
 		workout.HasMapPreview = workoutHasMapPreview(dirPath)
+		populateWorkoutMedia(&workout, dirPath)
 		workouts = append(workouts, workout)
 	}
 

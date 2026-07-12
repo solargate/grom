@@ -9,6 +9,8 @@ import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
+import '../widgets/workout_media_strip.dart';
+import '../widgets/workout_photo_viewer.dart';
 import '../widgets/workout_record_map.dart';
 
 class WorkoutDetailView extends StatefulWidget {
@@ -19,6 +21,8 @@ class WorkoutDetailView extends StatefulWidget {
     this.federationEnabled = false,
     this.isMapExpanded = false,
     this.onMapExpandedChanged,
+    this.photoViewerIndex,
+    this.onPhotoViewerIndexChanged,
   });
 
   final Workout workout;
@@ -26,6 +30,8 @@ class WorkoutDetailView extends StatefulWidget {
   final bool federationEnabled;
   final bool isMapExpanded;
   final ValueChanged<bool>? onMapExpandedChanged;
+  final int? photoViewerIndex;
+  final ValueChanged<int?>? onPhotoViewerIndexChanged;
 
   @override
   State<WorkoutDetailView> createState() => _WorkoutDetailViewState();
@@ -120,6 +126,10 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
     }
   }
 
+  void _openPhotoViewer(int index) {
+    widget.onPhotoViewerIndexChanged?.call(index);
+  }
+
   Widget _buildWorkoutRecordMap(List<LatLng> points) {
     return WorkoutRecordMap(
       controller: _mapController,
@@ -203,12 +213,15 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final showPhotoViewer = widget.photoViewerIndex != null &&
+            widget.workout.mediaFiles.isNotEmpty;
+
         return Stack(
           children: [
             IgnorePointer(
-              ignoring: widget.isMapExpanded,
+              ignoring: widget.isMapExpanded || showPhotoViewer,
               child: Opacity(
-                opacity: widget.isMapExpanded ? 0 : 1,
+                opacity: (widget.isMapExpanded || showPhotoViewer) ? 0 : 1,
                 child: SizedBox(
                   height: constraints.maxHeight,
                   child: SingleChildScrollView(
@@ -230,6 +243,20 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                             child: _buildTrackSection(l10n),
                           ),
+                        if (widget.workout.hasMedia)
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              _hasTrack ? 0 : 16,
+                              16,
+                              16,
+                            ),
+                            child: WorkoutMediaStrip(
+                              workout: widget.workout,
+                              authToken: widget.authToken,
+                              onPhotoTap: _openPhotoViewer,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -239,6 +266,17 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
             if (widget.isMapExpanded && _hasInteractiveMap && points != null)
               Positioned.fill(
                 child: _buildExpandedMapOverlay(points),
+              ),
+            if (showPhotoViewer)
+              Positioned.fill(
+                child: WorkoutPhotoViewer(
+                  workout: widget.workout,
+                  authToken: widget.authToken,
+                  initialIndex: widget.photoViewerIndex!.clamp(
+                    0,
+                    widget.workout.mediaFiles.length - 1,
+                  ),
+                ),
               ),
           ],
         );
