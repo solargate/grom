@@ -6,6 +6,7 @@ import '../auth_storage.dart';
 import '../models/workout.dart';
 import '../pages/workout_detail_page.dart';
 import '../widgets/workout_card.dart';
+import '../widgets/workout_photo_viewer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -19,6 +20,8 @@ class HomePage extends StatefulWidget {
     this.onMapExpandedChanged,
     this.photoViewerIndex,
     this.onPhotoViewerIndexChanged,
+    this.feedPhotoViewerWorkout,
+    this.onFeedPhotoViewerWorkoutChanged,
   });
 
   final String? nickname;
@@ -30,6 +33,8 @@ class HomePage extends StatefulWidget {
   final ValueChanged<bool>? onMapExpandedChanged;
   final int? photoViewerIndex;
   final ValueChanged<int?>? onPhotoViewerIndexChanged;
+  final Workout? feedPhotoViewerWorkout;
+  final ValueChanged<Workout?>? onFeedPhotoViewerWorkoutChanged;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -103,12 +108,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openWorkout(Workout workout) {
+    widget.onFeedPhotoViewerWorkoutChanged?.call(null);
     widget.onPhotoViewerIndexChanged?.call(null);
     widget.onViewingWorkoutChanged?.call(workout);
   }
 
   void _openWorkoutPhoto(Workout workout, int index) {
-    widget.onViewingWorkoutChanged?.call(workout);
+    widget.onFeedPhotoViewerWorkoutChanged?.call(workout);
     widget.onPhotoViewerIndexChanged?.call(index);
   }
 
@@ -169,22 +175,44 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadWorkouts,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _workouts.length,
-        itemBuilder: (context, index) {
-          return WorkoutCard(
-            workout: _workouts[index],
-            authToken: _authToken ?? '',
-            federationEnabled: widget.federationEnabled,
-            onTap: () => _openWorkout(_workouts[index]),
-            onPhotoTap: (photoIndex) =>
-                _openWorkoutPhoto(_workouts[index], photoIndex),
-          );
-        },
-      ),
+    final feedPhotoWorkout = widget.feedPhotoViewerWorkout;
+    final photoViewerIndex = widget.photoViewerIndex;
+    final showFeedPhotoViewer = feedPhotoWorkout != null &&
+        photoViewerIndex != null &&
+        feedPhotoWorkout.mediaFiles.isNotEmpty &&
+        _authToken != null;
+
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: _loadWorkouts,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: _workouts.length,
+            itemBuilder: (context, index) {
+              return WorkoutCard(
+                workout: _workouts[index],
+                authToken: _authToken ?? '',
+                federationEnabled: widget.federationEnabled,
+                onTap: () => _openWorkout(_workouts[index]),
+                onPhotoTap: (photoIndex) =>
+                    _openWorkoutPhoto(_workouts[index], photoIndex),
+              );
+            },
+          ),
+        ),
+        if (showFeedPhotoViewer)
+          Positioned.fill(
+            child: WorkoutPhotoViewer(
+              workout: feedPhotoWorkout,
+              authToken: _authToken!,
+              initialIndex: photoViewerIndex.clamp(
+                0,
+                feedPhotoWorkout.mediaFiles.length - 1,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

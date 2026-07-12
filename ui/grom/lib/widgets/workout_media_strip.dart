@@ -121,7 +121,7 @@ class _WorkoutMediaThumb extends StatelessWidget {
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
         child: SizedBox(
           width: size,

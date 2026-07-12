@@ -48,13 +48,20 @@ class _GromShellState extends State<GromShell> {
   Workout? _viewingWorkout;
   bool _isWorkoutMapExpanded = false;
   int? _workoutPhotoViewerIndex;
+  Workout? _feedPhotoViewerWorkout;
 
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
       _selectedDestination == GromDestination.home && _viewingWorkout != null;
-  bool get _shouldShowHeaderBackButton => _isViewingWorkout;
+  bool get _isViewingFeedPhoto =>
+      _selectedDestination == GromDestination.home &&
+      _viewingWorkout == null &&
+      _feedPhotoViewerWorkout != null &&
+      _workoutPhotoViewerIndex != null;
+  bool get _shouldShowHeaderBackButton =>
+      _isViewingWorkout || _isViewingFeedPhoto;
   bool get _shouldInterceptPop =>
-      _isViewingWorkout || !_selectedDestination.isHome;
+      _isViewingWorkout || _isViewingFeedPhoto || !_selectedDestination.isHome;
 
   @override
   void initState() {
@@ -122,6 +129,7 @@ class _GromShellState extends State<GromShell> {
         _viewingWorkout = null;
         _isWorkoutMapExpanded = false;
         _workoutPhotoViewerIndex = null;
+        _feedPhotoViewerWorkout = null;
         return;
       }
       _selectedDestination = destination;
@@ -129,6 +137,7 @@ class _GromShellState extends State<GromShell> {
         _viewingWorkout = null;
         _isWorkoutMapExpanded = false;
         _workoutPhotoViewerIndex = null;
+        _feedPhotoViewerWorkout = null;
       }
     });
   }
@@ -138,6 +147,14 @@ class _GromShellState extends State<GromShell> {
       _viewingWorkout = null;
       _isWorkoutMapExpanded = false;
       _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
+    });
+  }
+
+  void _closeFeedPhotoViewer() {
+    setState(() {
+      _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
     });
   }
 
@@ -154,6 +171,10 @@ class _GromShellState extends State<GromShell> {
   void _handleShellBack() {
     if (_isViewingWorkout) {
       _handleWorkoutDetailBack();
+      return;
+    }
+    if (_isViewingFeedPhoto) {
+      _closeFeedPhotoViewer();
       return;
     }
     if (!_selectedDestination.isHome) {
@@ -204,6 +225,7 @@ class _GromShellState extends State<GromShell> {
       _viewingWorkout = null;
       _isWorkoutMapExpanded = false;
       _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.signedOut)),
@@ -262,6 +284,8 @@ class _GromShellState extends State<GromShell> {
               _isWorkoutMapExpanded = false;
               if (workout == null) {
                 _workoutPhotoViewerIndex = null;
+              } else {
+                _feedPhotoViewerWorkout = null;
               }
             });
           },
@@ -270,7 +294,16 @@ class _GromShellState extends State<GromShell> {
           },
           photoViewerIndex: _workoutPhotoViewerIndex,
           onPhotoViewerIndexChanged: (index) {
-            setState(() => _workoutPhotoViewerIndex = index);
+            setState(() {
+              _workoutPhotoViewerIndex = index;
+              if (index == null && _viewingWorkout == null) {
+                _feedPhotoViewerWorkout = null;
+              }
+            });
+          },
+          feedPhotoViewerWorkout: _feedPhotoViewerWorkout,
+          onFeedPhotoViewerWorkoutChanged: (workout) {
+            setState(() => _feedPhotoViewerWorkout = workout);
           },
         );
       case GromDestination.userSearch:
@@ -300,7 +333,8 @@ class _GromShellState extends State<GromShell> {
   Widget? _buildFab(AppLocalizations l10n) {
     if (_selectedDestination != GromDestination.home ||
         !_isLoggedIn ||
-        _isViewingWorkout) {
+        _isViewingWorkout ||
+        _isViewingFeedPhoto) {
       return null;
     }
 
