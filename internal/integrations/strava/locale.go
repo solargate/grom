@@ -64,7 +64,7 @@ func parseStartDate(raw string, hint localeHint) (time.Time, error) {
 		}
 	}
 	for _, layout := range layouts {
-		if t, err := time.ParseInLocation(layout, raw, time.Local); err == nil {
+		if t, err := time.ParseInLocation(layout, raw, time.UTC); err == nil {
 			return t, nil
 		}
 	}
@@ -96,6 +96,7 @@ func englishDateLayouts() []string {
 
 func parseRussianDate(raw string) (time.Time, error) {
 	// Example: 7 июл. 2026 г., 13:38:54
+	// Strava bulk export stores activity start times in UTC without a timezone suffix.
 	parts := strings.SplitN(raw, ",", 2)
 	if len(parts) != 2 {
 		return time.Time{}, errInvalidDate
@@ -136,7 +137,7 @@ func parseRussianDate(raw string) (time.Time, error) {
 		second, _ = strconv.Atoi(strings.TrimSuffix(timeFields[2], "."))
 	}
 
-	return time.Date(year, month, day, hour, minute, second, 0, time.Local), nil
+	return time.Date(year, month, day, hour, minute, second, 0, time.UTC), nil
 }
 
 func parseInt(raw string) (*int, error) {
