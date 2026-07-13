@@ -910,6 +910,18 @@ abstract class AppLocalizations {
   /// **'Values updated from track'**
   String get trackMetadataApplied;
 
+  /// No description provided for @shareTrackLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to import a shared track'**
+  String get shareTrackLoginRequired;
+
+  /// No description provided for @shareTrackReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the shared file'**
+  String get shareTrackReadFailed;
+
   /// No description provided for @tabRecord.
   ///
   /// In en, this message translates to:

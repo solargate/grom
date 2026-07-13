@@ -435,6 +435,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackMetadataApplied => 'Werte aus dem Track übernommen';
 
   @override
+  String get shareTrackLoginRequired =>
+      'Melden Sie sich an, um einen geteilten Track zu importieren';
+
+  @override
+  String get shareTrackReadFailed =>
+      'Geteilte Datei konnte nicht gelesen werden';
+
+  @override
   String get tabRecord => 'Aufzeichnen';
 
   @override

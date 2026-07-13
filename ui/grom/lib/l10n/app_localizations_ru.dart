@@ -433,6 +433,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trackMetadataApplied => 'Значения обновлены из трека';
 
   @override
+  String get shareTrackLoginRequired =>
+      'Войдите, чтобы импортировать переданный трек';
+
+  @override
+  String get shareTrackReadFailed => 'Не удалось прочитать переданный файл';
+
+  @override
   String get tabRecord => 'Запись';
 
   @override

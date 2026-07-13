@@ -198,6 +198,8 @@
   "invalidTrackFormat": "Nur FIT- und GPX-Dateien werden unterstützt",
   "failedToParseTrack": "Trackdatei konnte nicht gelesen werden",
   "trackMetadataApplied": "Werte aus dem Track übernommen",
+  "shareTrackLoginRequired": "Melden Sie sich an, um einen geteilten Track zu importieren",
+  "shareTrackReadFailed": "Geteilte Datei konnte nicht gelesen werden",
   "tabRecord": "Aufzeichnen",
   "tabManual": "Manuell",
   "recordStart": "Aufzeichnen",

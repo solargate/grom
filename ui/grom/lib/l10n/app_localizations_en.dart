@@ -433,6 +433,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackMetadataApplied => 'Values updated from track';
 
   @override
+  String get shareTrackLoginRequired => 'Log in to import a shared track';
+
+  @override
+  String get shareTrackReadFailed => 'Could not read the shared file';
+
+  @override
   String get tabRecord => 'Record';
 
   @override

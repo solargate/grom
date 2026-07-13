@@ -14,11 +14,15 @@ import '../models/recorded_track.dart';
 import '../models/equipment.dart';
 import '../models/workout.dart';
 import '../services/track_recording_service.dart';
+import '../platform/shared_track_intent.dart';
 import 'manual_workout_form.dart';
 import 'record_workout_tab.dart';
 import 'equipment_picker_field.dart';
 
-Future<bool?> showAddWorkoutSheet(BuildContext context) {
+Future<bool?> showAddWorkoutSheet(
+  BuildContext context, {
+  SharedTrackPayload? initialTrack,
+}) {
   final width = MediaQuery.sizeOf(context).width;
   if (width >= 600) {
     return showDialog<bool>(
@@ -26,7 +30,7 @@ Future<bool?> showAddWorkoutSheet(BuildContext context) {
       builder: (context) => Dialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
-          child: const AddWorkoutSheet(),
+          child: AddWorkoutSheet(initialTrack: initialTrack),
         ),
       ),
     );
@@ -38,12 +42,14 @@ Future<bool?> showAddWorkoutSheet(BuildContext context) {
     useSafeArea: true,
     isDismissible: false,
     enableDrag: false,
-    builder: (context) => const AddWorkoutSheet(),
+    builder: (context) => AddWorkoutSheet(initialTrack: initialTrack),
   );
 }
 
 class AddWorkoutSheet extends StatefulWidget {
-  const AddWorkoutSheet({super.key});
+  const AddWorkoutSheet({super.key, this.initialTrack});
+
+  final SharedTrackPayload? initialTrack;
 
   @override
   State<AddWorkoutSheet> createState() => _AddWorkoutSheetState();
@@ -88,6 +94,17 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _recorder.addListener(_onRecorderChanged);
     }
     _loadEquipmentData();
+
+    final initialTrack = widget.initialTrack;
+    if (initialTrack != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _tabController?.index = 0;
+        _applyTrackFile(initialTrack.filename, initialTrack.bytes);
+      });
+    }
   }
 
   Future<void> _loadEquipmentData() async {
@@ -365,32 +382,40 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     }
     _isPickingFile = true;
 
-    final l10n = AppLocalizations.of(context)!;
-
     try {
       final picked = await pickTrackFile();
       if (picked == null) {
         return;
       }
+      await _applyTrackFile(picked.filename, picked.bytes);
+    } finally {
+      _isPickingFile = false;
+    }
+  }
 
-      final filename = picked.filename;
-      final bytes = picked.bytes;
+  Future<void> _applyTrackFile(String filename, List<int> bytes) async {
+    if (_isSubmitting) {
+      return;
+    }
 
-      final lower = filename.toLowerCase();
-      if (!lower.endsWith('.gpx') && !lower.endsWith('.fit')) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.invalidTrackFormat)),
-        );
-        return;
-      }
+    final l10n = AppLocalizations.of(context)!;
 
-      setState(() {
-        _trackFilename = filename;
-        _trackBytes = bytes;
-        _isParsingTrack = true;
-      });
+    final lower = filename.toLowerCase();
+    if (!lower.endsWith('.gpx') && !lower.endsWith('.fit')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.invalidTrackFormat)),
+      );
+      return;
+    }
 
+    setState(() {
+      _trackFilename = filename;
+      _trackBytes = bytes;
+      _isParsingTrack = true;
+    });
+
+    try {
       final token = await AuthStorage.getToken();
       if (token == null) {
         return;
@@ -427,12 +452,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       );
     } catch (e) {
       if (!mounted) return;
-      debugPrint('Track pick failed: $e');
+      debugPrint('Track apply failed: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.failedToParseTrack)),
       );
     } finally {
-      _isPickingFile = false;
       if (mounted) {
         setState(() => _isParsingTrack = false);
       }

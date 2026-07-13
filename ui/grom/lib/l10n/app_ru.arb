@@ -198,6 +198,8 @@
   "invalidTrackFormat": "Поддерживаются только файлы FIT и GPX",
   "failedToParseTrack": "Не удалось прочитать файл трека",
   "trackMetadataApplied": "Значения обновлены из трека",
+  "shareTrackLoginRequired": "Войдите, чтобы импортировать переданный трек",
+  "shareTrackReadFailed": "Не удалось прочитать переданный файл",
   "tabRecord": "Запись",
   "tabManual": "Вручную",
   "recordStart": "Запись",

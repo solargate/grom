@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
@@ -14,6 +16,7 @@ import '../pages/settings_page.dart';
 import '../pages/user_search_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../platform/file_download.dart';
+import '../platform/shared_track_intent.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../services/track_recording_service.dart';
@@ -54,6 +57,11 @@ class _GromShellState extends State<GromShell> {
   int? _workoutPhotoViewerIndex;
   Workout? _feedPhotoViewerWorkout;
 
+  bool _isShellReady = false;
+  StreamSubscription<SharedTrackPayload>? _sharedTrackSub;
+  SharedTrackPayload? _pendingSharedTrack;
+  bool _isProcessingSharedTrack = false;
+
   bool get _isLoggedIn => _nickname != null;
   bool get _isViewingWorkout =>
       _selectedDestination == GromDestination.home && _viewingWorkout != null;
@@ -70,7 +78,16 @@ class _GromShellState extends State<GromShell> {
   @override
   void initState() {
     super.initState();
+    if (isMobileClient) {
+      _sharedTrackSub = watchSharedTracks().listen(_handleIncomingSharedTrack);
+    }
     _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _sharedTrackSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadInitialData() async {
@@ -102,15 +119,110 @@ class _GromShellState extends State<GromShell> {
       }
     }
 
+    if (isMobileClient) {
+      await _maybeRecoverRecording();
+      final initialTrackResult = await takePendingSharedTrack();
+      if (initialTrackResult.readFailed && mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.shareTrackReadFailed)),
+        );
+      } else if (initialTrackResult.unsupportedFormat && mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.invalidTrackFormat)),
+        );
+      }
+      final initialTrack = initialTrackResult.payload;
+      if (initialTrack != null) {
+        _pendingSharedTrack = initialTrack;
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _title = name;
       _federationEnabled = federationEnabled;
       _nickname = nickname;
+      _isShellReady = true;
     });
 
-    if (isMobileClient) {
-      await _maybeRecoverRecording();
+    await _processPendingSharedTrack();
+  }
+
+  void _handleIncomingSharedTrack(SharedTrackPayload payload) {
+    _pendingSharedTrack = payload;
+    if (_isShellReady) {
+      unawaited(_processPendingSharedTrack());
+    }
+  }
+
+  Future<void> _processPendingSharedTrack() async {
+    if (_isProcessingSharedTrack || !_isShellReady || !mounted) {
+      return;
+    }
+
+    final payload = _pendingSharedTrack;
+    if (payload == null) {
+      return;
+    }
+
+    _isProcessingSharedTrack = true;
+    try {
+      if (!_isLoggedIn) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.shareTrackLoginRequired)),
+        );
+        setState(() => _selectedDestination = GromDestination.login);
+        return;
+      }
+
+      if (isMobileClient && TrackRecordingService.instance.isActive) {
+        final l10n = AppLocalizations.of(context)!;
+        final discard = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.discardRecordingTitle),
+            content: Text(l10n.discardRecordingMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.discardRecordingConfirm),
+              ),
+            ],
+          ),
+        );
+        if (discard != true) {
+          return;
+        }
+        await TrackRecordingService.instance.discardRecording();
+      }
+
+      _pendingSharedTrack = null;
+
+      setState(() {
+        _selectedDestination = GromDestination.home;
+        _viewingWorkout = null;
+        _isWorkoutMapExpanded = false;
+        _workoutPhotoViewerIndex = null;
+        _feedPhotoViewerWorkout = null;
+      });
+
+      if (!mounted) {
+        return;
+      }
+
+      final saved = await showAddWorkoutSheet(context, initialTrack: payload);
+      if (saved == true && mounted) {
+        setState(() => _workoutRefreshToken++);
+      }
+    } finally {
+      _isProcessingSharedTrack = false;
     }
   }
 
@@ -375,6 +487,7 @@ class _GromShellState extends State<GromShell> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.welcomeUser(user.nickname))),
     );
+    await _processPendingSharedTrack();
   }
 
   void _onRegistered() {
