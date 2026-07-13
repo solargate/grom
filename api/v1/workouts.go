@@ -381,6 +381,17 @@ func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData, mediaFiles)
 }
 
+func publishDeletedWorkout(nickname, workoutID string) {
+	if err := initFederation(); err != nil || federationDelivery == nil || followersStore == nil {
+		return
+	}
+	inboxes, err := followersStore.ListInboxes(nickname)
+	if err != nil || len(inboxes) == 0 {
+		return
+	}
+	_ = federationDelivery.DeliverWorkoutDelete(nickname, workoutID, inboxes)
+}
+
 func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	var form CreateWorkoutForm
 	if err := ctx.ShouldBind(&form); err != nil {
@@ -842,4 +853,39 @@ func listWorkouts(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+// deleteWorkout godoc
+// @Summary      Delete workout
+// @Description  Permanently delete the authenticated user's workout and notify federation followers
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Workout ID"
+// @Success      204
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id} [delete]
+func deleteWorkout(ctx *gin.Context) {
+	initWorkoutStore()
+
+	nickname, err := currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	if err := workoutStore.Delete(nickname, workoutID); err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to delete workout"})
+		return
+	}
+
+	publishDeletedWorkout(nickname, workoutID)
+	ctx.Status(http.StatusNoContent)
 }

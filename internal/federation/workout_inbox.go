@@ -1,6 +1,7 @@
 package federation
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -164,6 +165,36 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+func (s *WorkoutInboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error {
+	dir := s.ownerDir(viewerNickname, ownerHandle)
+	workout, err := s.readWorkout(dir, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if err := os.Remove(filepath.Join(dir, workoutID+".yaml")); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("delete federated workout yaml: %w", err)
+	}
+	if workout.Track != "" {
+		trackPath := federatedTrackPath(dir, workoutID, workout.Track)
+		if err := os.Remove(trackPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("delete federated track: %w", err)
+		}
+	}
+	previewPath := federatedMapPreviewPath(dir, workoutID)
+	if err := os.Remove(previewPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("delete federated map preview: %w", err)
+	}
+	mediaDir := federatedMediaDir(dir, workoutID)
+	if err := os.RemoveAll(mediaDir); err != nil {
+		return fmt.Errorf("delete federated media dir: %w", err)
+	}
+	return nil
 }
 
 func (s *WorkoutInboxStore) readWorkout(ownerDir, workoutID string) (*workouts.Workout, error) {

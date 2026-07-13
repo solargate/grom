@@ -51,6 +51,8 @@ func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
 		return p.handleAccept(nickname, activity)
 	case "Create":
 		return p.handleCreate(nickname, activity)
+	case "Delete":
+		return p.handleDelete(nickname, activity)
 	case "Undo":
 		return p.handleUndo(nickname, activity)
 	default:
@@ -216,6 +218,38 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 	}
 
 	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData, mediaFiles, actorDoc)
+}
+
+func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string]any) error {
+	if p.inboxStore == nil {
+		return nil
+	}
+	actorURI, _ := activity["actor"].(string)
+	ownerHandle := actorToHandle(actorURI)
+	if ownerHandle == "" {
+		return nil
+	}
+
+	workoutID := workoutIDFromDeleteObject(activity["object"])
+	if workoutID == "" {
+		return nil
+	}
+	return p.inboxStore.Delete(viewerNickname, ownerHandle, workoutID)
+}
+
+func workoutIDFromDeleteObject(raw any) string {
+	switch object := raw.(type) {
+	case string:
+		return workoutIDFromObject(map[string]any{"id": object})
+	case map[string]any:
+		if id := workoutIDFromObject(object); id != "" {
+			return id
+		}
+		if nested, ok := object["object"].(map[string]any); ok {
+			return workoutIDFromObject(nested)
+		}
+	}
+	return ""
 }
 
 func domainFromHandle(handle string) string {

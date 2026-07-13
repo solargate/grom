@@ -532,6 +532,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deleteWorkout => 'Löschen';
 
   @override
+  String get deleteWorkoutConfirm =>
+      'Die Trainingseinheit wird endgültig gelöscht und kann nicht wiederhergestellt werden.';
+
+  @override
+  String get workoutDeleted => 'Trainingseinheit gelöscht';
+
+  @override
+  String get failedToDeleteWorkout =>
+      'Trainingseinheit konnte nicht gelöscht werden';
+
+  @override
   String get workoutActions => 'Trainingsaktionen';
 
   @override

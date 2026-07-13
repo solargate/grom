@@ -208,7 +208,7 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 	}
 	author := actorURL(authorNickname)
 	object := map[string]any{
-		"id":              fmt.Sprintf("%s/workouts/%s", author, workout.ID),
+		"id":              workoutObjectURL(authorNickname, workout.ID),
 		"type":            "Workout",
 		"name":            workout.Name,
 		"content":         workout.Description,
@@ -239,6 +239,27 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		"type":     "Create",
 		"actor":    author,
 		"object":   object,
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	for _, inbox := range followerInboxes {
+		if err := d.postActivity(inbox, activity); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, followerInboxes []string) error {
+	if len(followerInboxes) == 0 {
+		return nil
+	}
+	author := actorURL(authorNickname)
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       fmt.Sprintf("%s/activities/%s", author, uuid.NewString()),
+		"type":     "Delete",
+		"actor":    author,
+		"object":   workoutObjectURL(authorNickname, workoutID),
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
 	for _, inbox := range followerInboxes {

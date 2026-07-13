@@ -25,6 +25,10 @@ func actorURL(nickname string) string {
 	return fmt.Sprintf("https://%s/users/%s", publicDomain(), nickname)
 }
 
+func workoutObjectURL(authorNickname, workoutID string) string {
+	return fmt.Sprintf("%s/workouts/%s", actorURL(authorNickname), workoutID)
+}
+
 var keyMu sync.Mutex
 
 func actorKeyPath(nickname string) string {

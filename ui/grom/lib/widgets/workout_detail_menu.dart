@@ -13,11 +13,15 @@ class WorkoutDetailMenu extends StatelessWidget {
     super.key,
     required this.hasTrack,
     required this.canDownloadOriginal,
+    this.canEdit = false,
+    this.canDelete = false,
     this.onSelected,
   });
 
   final bool hasTrack;
   final bool canDownloadOriginal;
+  final bool canEdit;
+  final bool canDelete;
   final ValueChanged<WorkoutDetailMenuAction>? onSelected;
 
   @override
@@ -28,14 +32,16 @@ class WorkoutDetailMenu extends StatelessWidget {
       tooltip: l10n.workoutActions,
       onSelected: onSelected,
       itemBuilder: (context) => [
-        PopupMenuItem(
-          value: WorkoutDetailMenuAction.edit,
-          child: Text(l10n.editWorkout),
-        ),
-        PopupMenuItem(
-          value: WorkoutDetailMenuAction.delete,
-          child: Text(l10n.deleteWorkout),
-        ),
+        if (canEdit)
+          PopupMenuItem(
+            value: WorkoutDetailMenuAction.edit,
+            child: Text(l10n.editWorkout),
+          ),
+        if (canDelete)
+          PopupMenuItem(
+            value: WorkoutDetailMenuAction.delete,
+            child: Text(l10n.deleteWorkout),
+          ),
         if (hasTrack)
           PopupMenuItem(
             value: WorkoutDetailMenuAction.downloadGpx,

@@ -529,6 +529,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteWorkout => 'Delete';
 
   @override
+  String get deleteWorkoutConfirm =>
+      'The workout will be permanently deleted and cannot be restored.';
+
+  @override
+  String get workoutDeleted => 'Workout deleted';
+
+  @override
+  String get failedToDeleteWorkout => 'Failed to delete workout';
+
+  @override
   String get workoutActions => 'Workout actions';
 
   @override

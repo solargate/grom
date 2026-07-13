@@ -259,3 +259,14 @@ func (s *Store) RemoveEquipmentFromAll(nickname, equipmentID string) error {
 
 	return nil
 }
+
+func (s *Store) Delete(nickname, workoutID string) error {
+	dir, err := s.findWorkoutDir(nickname, workoutID)
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(dir); err != nil {
+		return fmt.Errorf("delete workout dir: %w", err)
+	}
+	return nil
+}

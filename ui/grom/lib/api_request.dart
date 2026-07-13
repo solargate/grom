@@ -638,6 +638,22 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<void> deleteWorkout({
+    required String token,
+    required String workoutId,
+  }) async {
+    final response = await http.delete(
+      _uri('/api/v1/workouts/$workoutId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Map<String, dynamic>> uploadStravaArchiveRaw({
     required String token,
     required List<int> bytes,

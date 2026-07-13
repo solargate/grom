@@ -67,3 +67,44 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 		t.Fatalf("owner = %q", items[0].Owner)
 	}
 }
+
+func TestWorkoutInboxStoreDelete(t *testing.T) {
+	dir := t.TempDir()
+	store := NewWorkoutInboxStore(dir)
+
+	gpxData, err := os.ReadFile(filepath.Join("..", "tracks", "testdata", "sample.gpx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	workout := &workouts.Workout{
+		ID:              "38472901",
+		Name:            "Remote run",
+		SportType:       "Run",
+		StartDate:       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+		DurationSeconds: 4200,
+		Distance:        10000,
+		Track:           tracks.TrackFileGPX,
+	}
+	ownerHandle := "test2@192.168.1.251:8445"
+
+	if err := store.Save("solarwind", ownerHandle, workout, gpxData, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Delete("solarwind", ownerHandle, "38472901"); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+
+	items, err := store.List("solarwind")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("expected 0 items after delete, got %d", len(items))
+	}
+
+	if err := store.Delete("solarwind", ownerHandle, "38472901"); err != nil {
+		t.Fatalf("second Delete() error = %v", err)
+	}
+}

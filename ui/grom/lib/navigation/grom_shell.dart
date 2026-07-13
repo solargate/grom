@@ -213,9 +213,72 @@ class _GromShellState extends State<GromShell> {
         await _downloadWorkoutTrack(workout: workout, format: 'gpx');
       case WorkoutDetailMenuAction.downloadOriginal:
         await _downloadWorkoutTrack(workout: workout);
-      case WorkoutDetailMenuAction.edit:
       case WorkoutDetailMenuAction.delete:
+        await _confirmDeleteWorkout(workout);
+      case WorkoutDetailMenuAction.edit:
         break;
+    }
+  }
+
+  Future<void> _confirmDeleteWorkout(Workout workout) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteWorkout),
+        content: Text(l10n.deleteWorkoutConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.deleteWorkout),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final token = await AuthStorage.getToken();
+      if (token == null) {
+        if (!mounted) {
+          return;
+        }
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.failedToDeleteWorkout)),
+        );
+        return;
+      }
+
+      await _api.deleteWorkout(token: token, workoutId: workout.id);
+      if (!mounted) {
+        return;
+      }
+      _closeWorkoutDetail();
+      setState(() => _workoutRefreshToken++);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workoutDeleted)),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.failedToDeleteWorkout)),
+      );
     }
   }
 
@@ -284,6 +347,8 @@ class _GromShellState extends State<GromShell> {
     return WorkoutDetailMenu(
       hasTrack: workout.track.isNotEmpty,
       canDownloadOriginal: _isOwnWorkout(workout),
+      canEdit: _isOwnWorkout(workout),
+      canDelete: _isOwnWorkout(workout),
       onSelected: _handleWorkoutMenuAction,
     );
   }

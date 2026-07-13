@@ -167,3 +167,41 @@ func TestStoreRemoveEquipmentFromAll(t *testing.T) {
 		t.Fatalf("expected same workout id")
 	}
 }
+
+func TestStoreDelete(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	startDate := time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC)
+	created, err := store.Create("solarwind", &Workout{
+		Name: "Morning run", SportType: "Run", StartDate: startDate,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	expectedBase := "2026-07-05T143000Z-" + created.ID
+	expectedDir := filepath.Join(dir, "users", "solarwind", "workouts", expectedBase)
+	if err := os.WriteFile(filepath.Join(expectedDir, "extra.txt"), []byte("x"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Delete("solarwind", created.ID); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+	if _, err := os.Stat(expectedDir); !os.IsNotExist(err) {
+		t.Fatalf("expected workout dir removed, stat err = %v", err)
+	}
+
+	workouts, err := store.List("solarwind")
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(workouts) != 0 {
+		t.Fatalf("expected 0 workouts, got %d", len(workouts))
+	}
+
+	if err := store.Delete("solarwind", created.ID); err != ErrWorkoutNotFound {
+		t.Fatalf("expected ErrWorkoutNotFound on second delete, got %v", err)
+	}
+}

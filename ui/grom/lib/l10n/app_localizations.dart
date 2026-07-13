@@ -1084,6 +1084,24 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get deleteWorkout;
 
+  /// No description provided for @deleteWorkoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The workout will be permanently deleted and cannot be restored.'**
+  String get deleteWorkoutConfirm;
+
+  /// No description provided for @workoutDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout deleted'**
+  String get workoutDeleted;
+
+  /// No description provided for @failedToDeleteWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete workout'**
+  String get failedToDeleteWorkout;
+
   /// No description provided for @workoutActions.
   ///
   /// In en, this message translates to:

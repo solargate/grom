@@ -68,6 +68,7 @@ func RunRouter() {
 		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
 		workoutGroup.GET("/:id/media/:filename/preview", getWorkoutMediaPreview)
 		workoutGroup.GET("/:id/media/:filename", getWorkoutMediaOriginal)
+		workoutGroup.DELETE("/:id", deleteWorkout)
 		workoutGroup.GET("", listWorkouts)
 
 		equipmentGroup := apiV1.Group("/equipment", auth.AuthRequired())
