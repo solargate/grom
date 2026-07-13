@@ -134,6 +134,34 @@ func TestResolveTLSMode_LegacyEnabled(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_DataTempDir(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "off"
+	cfg.Data.TempDir = "custom-tmp"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Data.ResolvedTempDir == "" {
+		t.Fatal("ResolvedTempDir should be set")
+	}
+	if !filepath.IsAbs(cfg.Data.ResolvedTempDir) {
+		t.Fatalf("ResolvedTempDir = %q, want absolute path", cfg.Data.ResolvedTempDir)
+	}
+}
+
+func TestFinalizeConfig_DataTempDirDefault(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "off"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Data.ResolvedTempDir == "" {
+		t.Fatal("ResolvedTempDir should default to tmp")
+	}
+}
+
 func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)

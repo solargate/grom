@@ -51,13 +51,11 @@ type Config struct {
 		TLSInsecureSkipVerify bool   `mapstructure:"tls_insecure_skip_verify" yaml:"tls_insecure_skip_verify"`
 	} `mapstructure:"federation" yaml:"federation"`
 	Data struct {
-		Location    string `mapstructure:"location" yaml:"location"`
-		ResolvedDir string `mapstructure:"-" yaml:"-"`
-	} `mapstructure:"data" yaml:"data"`
-	Import struct {
+		Location        string `mapstructure:"location" yaml:"location"`
 		TempDir         string `mapstructure:"temp_dir" yaml:"temp_dir"`
+		ResolvedDir     string `mapstructure:"-" yaml:"-"`
 		ResolvedTempDir string `mapstructure:"-" yaml:"-"`
-	} `mapstructure:"import" yaml:"import"`
+	} `mapstructure:"data" yaml:"data"`
 }
 
 var Cfg Config
@@ -167,18 +165,18 @@ func FinalizeConfig(cfg *Config) error {
 	}
 	cfg.Data.ResolvedDir = resolvedDir
 
-	tempDir := strings.TrimSpace(cfg.Import.TempDir)
+	tempDir := strings.TrimSpace(cfg.Data.TempDir)
 	if tempDir == "" {
 		tempDir = "tmp"
 	}
 	resolvedTempDir, err := data.ResolveDataDir(tempDir)
 	if err != nil {
-		return fmt.Errorf("resolve import temp dir: %w", err)
+		return fmt.Errorf("resolve data temp dir: %w", err)
 	}
 	if err := os.MkdirAll(resolvedTempDir, 0700); err != nil {
-		return fmt.Errorf("create import temp directory: %w", err)
+		return fmt.Errorf("create data temp directory: %w", err)
 	}
-	cfg.Import.ResolvedTempDir = resolvedTempDir
+	cfg.Data.ResolvedTempDir = resolvedTempDir
 
 	if mode == TLSModeAutocert {
 		if cfg.Server.TLS.Autocert.CacheDir == "" {

@@ -24,7 +24,7 @@ func initStravaJobManager() {
 		initWorkoutStore()
 		initEquipmentStore()
 		stravaJobManager = strava.NewJobManager(
-			config.Cfg.Import.ResolvedTempDir,
+			config.Cfg.Data.ResolvedTempDir,
 			workoutStore,
 			equipmentStore,
 			publishCreatedWorkout,
