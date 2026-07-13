@@ -709,11 +709,13 @@ func getWorkoutMediaOriginal(ctx *gin.Context) {
 
 // listWorkouts godoc
 // @Summary      List workouts
-// @Description  Return workouts for the authenticated user sorted by start date descending
+// @Description  Return workouts for the authenticated user sorted by start date descending. Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts.
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth
+// @Param        scope  query  string  false  "feed (default) or own"
 // @Success      200  {array}   WorkoutResponse
+// @Failure      400  {object}  ErrorResponse
 // @Failure      401  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /workouts [get]
@@ -726,41 +728,13 @@ func listWorkouts(ctx *gin.Context) {
 		return
 	}
 
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
+	scope := strings.TrimSpace(ctx.Query("scope"))
+	if scope == "" {
+		scope = "feed"
 	}
-	_ = initFederation()
-
-	userID, err := currentUserID(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+	if scope != "feed" && scope != "own" {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid scope"})
 		return
-	}
-
-	follows, err := socialService.ListFollowing(userID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
-		return
-	}
-
-	followedAuthors := make([]workouts.FeedAuthor, 0)
-	for i := range follows {
-		if follows[i].Status != social.StatusActive {
-			continue
-		}
-		if !follows[i].TargetIsLocal {
-			continue
-		}
-		hasAvatar, avatarURL := localAvatarFieldsForUser(follows[i].TargetNickname)
-		followedAuthors = append(followedAuthors, workouts.FeedAuthor{
-			Nickname:  follows[i].TargetNickname,
-			Name:      follows[i].TargetName,
-			Handle:    follows[i].TargetHandle,
-			IsLocal:   true,
-			HasAvatar: hasAvatar,
-			AvatarURL: avatarURL,
-		})
 	}
 
 	if userStore == nil {
@@ -769,6 +743,13 @@ func listWorkouts(ctx *gin.Context) {
 			return
 		}
 	}
+
+	userID, err := currentUserID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	viewer, err := userStore.FindByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
@@ -776,7 +757,44 @@ func listWorkouts(ctx *gin.Context) {
 	}
 
 	feedSvc := newFeedService()
-	items, err := feedSvc.ListFeed(nickname, viewer.Name, followedAuthors)
+	var items []workouts.FeedWorkout
+
+	if scope == "own" {
+		items, err = feedSvc.ListOwn(nickname, viewer.Name)
+	} else {
+		if err := initSocialService(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
+			return
+		}
+		_ = initFederation()
+
+		follows, err := socialService.ListFollowing(userID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
+			return
+		}
+
+		followedAuthors := make([]workouts.FeedAuthor, 0)
+		for i := range follows {
+			if follows[i].Status != social.StatusActive {
+				continue
+			}
+			if !follows[i].TargetIsLocal {
+				continue
+			}
+			hasAvatar, avatarURL := localAvatarFieldsForUser(follows[i].TargetNickname)
+			followedAuthors = append(followedAuthors, workouts.FeedAuthor{
+				Nickname:  follows[i].TargetNickname,
+				Name:      follows[i].TargetName,
+				Handle:    follows[i].TargetHandle,
+				IsLocal:   true,
+				HasAvatar: hasAvatar,
+				AvatarURL: avatarURL,
+			})
+		}
+
+		items, err = feedSvc.ListFeed(nickname, viewer.Name, followedAuthors)
+	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list workouts"})
 		return

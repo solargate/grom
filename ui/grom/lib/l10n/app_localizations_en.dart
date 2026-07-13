@@ -15,6 +15,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
+  String get homeTabFeed => 'Feed';
+
+  @override
+  String get homeTabMyWorkouts => 'My workouts';
+
+  @override
   String get signIn => 'Sign in';
 
   @override

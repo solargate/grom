@@ -47,6 +47,34 @@ func (f *FeedService) SetFederatedSource(src FederatedWorkoutSource) {
 	f.federated = src
 }
 
+func (f *FeedService) ListOwn(viewerNickname, viewerName string) ([]FeedWorkout, error) {
+	own, err := f.store.List(viewerNickname)
+	if err != nil {
+		return nil, err
+	}
+	viewerHasAvatar, viewerAvatarURL := avatars.Fields(f.store.DataDir(), viewerNickname)
+	viewerAuthor := FeedAuthor{
+		Nickname:  viewerNickname,
+		Name:      viewerName,
+		Handle:    f.localHandle(viewerNickname),
+		IsLocal:   true,
+		HasAvatar: viewerHasAvatar,
+		AvatarURL: viewerAvatarURL,
+	}
+	result := make([]FeedWorkout, len(own))
+	for i := range own {
+		result[i] = FeedWorkout{
+			Workout: own[i],
+			Author:  viewerAuthor,
+			Owner:   viewerNickname,
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].StartDate.After(result[j].StartDate)
+	})
+	return result, nil
+}
+
 func (f *FeedService) ListFeed(viewerNickname, viewerName string, followedLocal []FeedAuthor) ([]FeedWorkout, error) {
 	type tagged struct {
 		workout FeedWorkout

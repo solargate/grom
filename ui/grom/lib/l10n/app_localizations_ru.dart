@@ -15,6 +15,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get home => 'Главная';
 
   @override
+  String get homeTabFeed => 'Лента';
+
+  @override
+  String get homeTabMyWorkouts => 'Мои тренировки';
+
+  @override
   String get signIn => 'Вход';
 
   @override

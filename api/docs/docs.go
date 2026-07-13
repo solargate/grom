@@ -944,7 +944,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return workouts for the authenticated user sorted by start date descending",
+                "description": "Return workouts for the authenticated user sorted by start date descending. Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts.",
                 "produces": [
                     "application/json"
                 ],
@@ -952,6 +952,14 @@ const docTemplate = `{
                     "workouts"
                 ],
                 "summary": "List workouts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "feed (default) or own",
+                        "name": "scope",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -960,6 +968,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/v1.WorkoutResponse"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
                         }
                     },
                     "401": {

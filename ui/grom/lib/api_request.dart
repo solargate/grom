@@ -438,9 +438,15 @@ class ApiRequest {
     return match?.group(1);
   }
 
-  Future<List<Workout>> listWorkouts(String token) async {
+  Future<List<Workout>> listWorkouts(
+    String token, {
+    String scope = 'feed',
+  }) async {
+    final uri = _uri('/api/v1/workouts').replace(
+      queryParameters: scope == 'feed' ? null : {'scope': scope},
+    );
     final response = await http.get(
-      _uri('/api/v1/workouts'),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
 

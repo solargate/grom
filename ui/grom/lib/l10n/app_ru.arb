@@ -2,6 +2,8 @@
   "@@locale": "ru",
   "appTitle": "Grom",
   "home": "Главная",
+  "homeTabFeed": "Лента",
+  "homeTabMyWorkouts": "Мои тренировки",
   "signIn": "Вход",
   "register": "Регистрация",
   "signOut": "Выйти",

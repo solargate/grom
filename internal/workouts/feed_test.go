@@ -44,3 +44,38 @@ func TestFeedServiceMerge(t *testing.T) {
 		t.Fatalf("expected viewer name on own workout, got %q", items[0].Author.Name)
 	}
 }
+
+func TestFeedServiceListOwn(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	_, err := store.Create("alice", &Workout{
+		Name:      "Alice run",
+		SportType: "Run",
+		StartDate: start,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.Create("bob", &Workout{
+		Name:      "Bob ride",
+		SportType: "Ride",
+		StartDate: start.Add(-time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	feed := NewFeedService(store, "localhost")
+	items, err := feed.ListOwn("alice", "Alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 own workout, got %d", len(items))
+	}
+	if items[0].Name != "Alice run" {
+		t.Fatalf("expected Alice run, got %s", items[0].Name)
+	}
+}

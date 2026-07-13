@@ -2,6 +2,8 @@
   "@@locale": "en",
   "appTitle": "Grom",
   "home": "Home",
+  "homeTabFeed": "Feed",
+  "homeTabMyWorkouts": "My workouts",
   "signIn": "Sign in",
   "register": "Register",
   "signOut": "Sign out",

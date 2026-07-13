@@ -40,6 +40,7 @@ class GromShell extends StatefulWidget {
 
 class _GromShellState extends State<GromShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _homePageKey = GlobalKey<HomePageState>();
   final ApiRequest _api = ApiRequest();
 
   String _title = 'Grom Home';
@@ -126,12 +127,20 @@ class _GromShellState extends State<GromShell> {
   void _onDestinationSelected(GromDestination destination) {
     setState(() {
       if (destination == GromDestination.home &&
-          _selectedDestination == GromDestination.home &&
-          _viewingWorkout != null) {
-        _viewingWorkout = null;
-        _isWorkoutMapExpanded = false;
-        _workoutPhotoViewerIndex = null;
-        _feedPhotoViewerWorkout = null;
+          _selectedDestination == GromDestination.home) {
+        if (_viewingWorkout != null) {
+          _viewingWorkout = null;
+          _isWorkoutMapExpanded = false;
+          _workoutPhotoViewerIndex = null;
+          _feedPhotoViewerWorkout = null;
+          return;
+        }
+        if (_isViewingFeedPhoto) {
+          _workoutPhotoViewerIndex = null;
+          _feedPhotoViewerWorkout = null;
+          return;
+        }
+        _homePageKey.currentState?.scrollActiveTabToTop();
         return;
       }
       _selectedDestination = destination;
@@ -279,6 +288,7 @@ class _GromShellState extends State<GromShell> {
     switch (_selectedDestination) {
       case GromDestination.home:
         return HomePage(
+          key: _homePageKey,
           nickname: _nickname,
           federationEnabled: _federationEnabled,
           refreshToken: _workoutRefreshToken,

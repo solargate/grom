@@ -5,8 +5,10 @@ import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/workout.dart';
 import '../pages/workout_detail_page.dart';
-import '../widgets/workout_card.dart';
+import '../widgets/workout_feed_list.dart';
 import '../widgets/workout_photo_viewer.dart';
+
+enum HomeFeedTab { feed, myWorkouts }
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -37,46 +39,64 @@ class HomePage extends StatefulWidget {
   final ValueChanged<Workout?>? onFeedPhotoViewerWorkoutChanged;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final ApiRequest _api = ApiRequest();
 
-  List<Workout> _workouts = [];
-  bool _isLoading = false;
-  String? _error;
+  TabController? _tabController;
+  bool _showFeedTab = false;
+  HomeFeedTab _activeTab = HomeFeedTab.myWorkouts;
   String? _authToken;
+  bool _isLoadingTabs = true;
+
+  final Map<HomeFeedTab, ScrollController> _scrollControllers = {
+    HomeFeedTab.feed: ScrollController(),
+    HomeFeedTab.myWorkouts: ScrollController(),
+  };
+
+  final Map<HomeFeedTab, GlobalKey<WorkoutFeedListState>> _feedListKeys = {
+    HomeFeedTab.feed: GlobalKey<WorkoutFeedListState>(),
+    HomeFeedTab.myWorkouts: GlobalKey<WorkoutFeedListState>(),
+  };
 
   @override
   void initState() {
     super.initState();
-    _loadWorkouts();
+    _loadTabState(resetToDefaultTab: true);
   }
 
   @override
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.nickname != oldWidget.nickname ||
-        widget.refreshToken != oldWidget.refreshToken) {
-      _loadWorkouts();
+    if (widget.nickname != oldWidget.nickname) {
+      _loadTabState(resetToDefaultTab: true);
+    } else if (widget.refreshToken != oldWidget.refreshToken) {
+      _loadTabState();
     }
   }
 
-  Future<void> _loadWorkouts() async {
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    for (final controller in _scrollControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _loadTabState({bool resetToDefaultTab = false}) async {
     if (widget.nickname == null) {
       setState(() {
-        _workouts = [];
-        _error = null;
-        _isLoading = false;
+        _showFeedTab = false;
+        _isLoadingTabs = false;
       });
+      _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    setState(() => _isLoadingTabs = true);
 
     try {
       final token = await AuthStorage.getToken();
@@ -84,26 +104,98 @@ class _HomePageState extends State<HomePage> {
         throw ApiException('Not authenticated');
       }
 
-      final workouts = await _api.listWorkouts(token);
+      final following = await _api.listFollowing(token);
       if (!mounted) return;
+
+      final showFeedTab =
+          following.any((follow) => follow.status == 'active');
+      final preferredTab = showFeedTab && resetToDefaultTab
+          ? HomeFeedTab.feed
+          : _activeTab == HomeFeedTab.feed && !showFeedTab
+              ? HomeFeedTab.myWorkouts
+              : _activeTab;
+
       setState(() {
-        _workouts = workouts;
-        _authToken = token;
-        _isLoading = false;
+        _showFeedTab = showFeedTab;
+        _activeTab = preferredTab;
+        _isLoadingTabs = false;
       });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
+      _syncTabController(showFeedTab: showFeedTab, preferredTab: preferredTab);
     } catch (_) {
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _error = l10n.failedToLoadWorkouts;
-        _isLoading = false;
+        _showFeedTab = false;
+        _isLoadingTabs = false;
       });
+      _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
+    }
+  }
+
+  void _syncTabController({
+    required bool showFeedTab,
+    required HomeFeedTab preferredTab,
+  }) {
+    final tabCount = showFeedTab ? 2 : 1;
+    final initialIndex = _tabIndexFor(preferredTab, showFeedTab: showFeedTab);
+
+    if (_tabController != null &&
+        _tabController!.length == tabCount &&
+        _tabController!.index == initialIndex) {
+      return;
+    }
+
+    _tabController?.dispose();
+    _tabController = TabController(
+      length: tabCount,
+      vsync: this,
+      initialIndex: initialIndex,
+    )..addListener(_handleTabChanged);
+  }
+
+  void _handleTabChanged() {
+    if (_tabController == null || _tabController!.indexIsChanging) {
+      return;
+    }
+    final tab = _tabForIndex(_tabController!.index);
+    if (tab != _activeTab) {
+      setState(() => _activeTab = tab);
+    }
+  }
+
+  int _tabIndexFor(HomeFeedTab tab, {required bool showFeedTab}) {
+    if (!showFeedTab) {
+      return 0;
+    }
+    return tab == HomeFeedTab.feed ? 0 : 1;
+  }
+
+  HomeFeedTab _tabForIndex(int index) {
+    if (!_showFeedTab) {
+      return HomeFeedTab.myWorkouts;
+    }
+    return index == 0 ? HomeFeedTab.feed : HomeFeedTab.myWorkouts;
+  }
+
+  void scrollActiveTabToTop() {
+    _scrollTabToTop(_activeTab);
+  }
+
+  void _scrollTabToTop(HomeFeedTab tab) {
+    final controller = _scrollControllers[tab];
+    if (controller == null || !controller.hasClients) {
+      return;
+    }
+    controller.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _onTabTapped(int index) {
+    final tab = _tabForIndex(index);
+    if (index == _tabController?.index) {
+      _scrollTabToTop(tab);
     }
   }
 
@@ -117,6 +209,7 @@ class _HomePageState extends State<HomePage> {
     widget.onFeedPhotoViewerWorkoutChanged?.call(workout);
     widget.onPhotoViewerIndexChanged?.call(index);
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -138,41 +231,10 @@ class _HomePageState extends State<HomePage> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    final tabController = _tabController;
 
-    if (_isLoading && _workouts.isEmpty) {
+    if (_isLoadingTabs || tabController == null) {
       return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null && _workouts.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loadWorkouts,
-                child: Text(l10n.retry),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_workouts.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l10n.noWorkoutsYet,
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
     }
 
     final feedPhotoWorkout = widget.feedPhotoViewerWorkout;
@@ -182,24 +244,65 @@ class _HomePageState extends State<HomePage> {
         feedPhotoWorkout.mediaFiles.isNotEmpty &&
         _authToken != null;
 
+    final tabs = <Widget>[
+      if (_showFeedTab) Tab(text: l10n.homeTabFeed),
+      Tab(text: l10n.homeTabMyWorkouts),
+    ];
+
+    final tabViews = <Widget>[
+      if (_showFeedTab)
+        WorkoutFeedList(
+          key: _feedListKeys[HomeFeedTab.feed],
+          nickname: widget.nickname!,
+          scope: 'feed',
+          scrollController: _scrollControllers[HomeFeedTab.feed]!,
+          refreshToken: widget.refreshToken,
+          federationEnabled: widget.federationEnabled,
+          onWorkoutTap: _openWorkout,
+          onPhotoTap: _openWorkoutPhoto,
+          onAuthTokenLoaded: (token) {
+            if (_authToken != token) {
+              setState(() => _authToken = token);
+            }
+          },
+        ),
+      WorkoutFeedList(
+        key: _feedListKeys[HomeFeedTab.myWorkouts],
+        nickname: widget.nickname!,
+        scope: 'own',
+        scrollController: _scrollControllers[HomeFeedTab.myWorkouts]!,
+        refreshToken: widget.refreshToken,
+        federationEnabled: widget.federationEnabled,
+        onWorkoutTap: _openWorkout,
+        onPhotoTap: _openWorkoutPhoto,
+        onAuthTokenLoaded: (token) {
+          if (_authToken == null) {
+            setState(() => _authToken = token);
+          }
+        },
+      ),
+    ];
+
     return Stack(
       children: [
-        RefreshIndicator(
-          onRefresh: _loadWorkouts,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _workouts.length,
-            itemBuilder: (context, index) {
-              return WorkoutCard(
-                workout: _workouts[index],
-                authToken: _authToken ?? '',
-                federationEnabled: widget.federationEnabled,
-                onTap: () => _openWorkout(_workouts[index]),
-                onPhotoTap: (photoIndex) =>
-                    _openWorkoutPhoto(_workouts[index], photoIndex),
-              );
-            },
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Material(
+              color: Theme.of(context).colorScheme.surface,
+              child: TabBar(
+                controller: tabController,
+                onTap: _onTabTapped,
+                tabs: tabs,
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: tabController,
+                children: tabViews,
+              ),
+            ),
+          ],
         ),
         if (showFeedPhotoViewer)
           Positioned.fill(

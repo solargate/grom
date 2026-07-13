@@ -112,6 +112,18 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
+  /// No description provided for @homeTabFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get homeTabFeed;
+
+  /// No description provided for @homeTabMyWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'My workouts'**
+  String get homeTabMyWorkouts;
+
   /// No description provided for @signIn.
   ///
   /// In en, this message translates to:

@@ -1004,7 +1004,13 @@ paths:
   /workouts:
     get:
       description: Return workouts for the authenticated user sorted by start date
-        descending
+        descending. Use scope=feed for the full feed (default) or scope=own for only
+        the viewer's workouts.
+      parameters:
+      - description: feed (default) or own
+        in: query
+        name: scope
+        type: string
       produces:
       - application/json
       responses:
@@ -1014,6 +1020,10 @@ paths:
             items:
               $ref: '#/definitions/v1.WorkoutResponse'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
