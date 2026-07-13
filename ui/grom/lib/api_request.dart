@@ -406,10 +406,18 @@ class ApiRequest {
     required String workoutId,
     required String fallbackFilename,
     String? owner,
+    String? format,
   }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/track');
+    final query = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      query['owner'] = owner;
+    }
+    if (format == 'gpx') {
+      query['format'] = 'gpx';
+    }
+    var uri = _uri('/api/v1/workouts/$workoutId/track');
+    if (query.isNotEmpty) {
+      uri = uri.replace(queryParameters: query);
     }
     final response = await http.get(
       uri,
@@ -433,6 +441,13 @@ class ApiRequest {
   String? _filenameFromContentDisposition(String? header) {
     if (header == null || header.isEmpty) {
       return null;
+    }
+    final utf8Match = RegExp(
+      r"filename\*=UTF-8''([^;]+)",
+      caseSensitive: false,
+    ).firstMatch(header);
+    if (utf8Match != null) {
+      return Uri.decodeComponent(utf8Match.group(1)!);
     }
     final match = RegExp(r'filename="?([^";]+)"?').firstMatch(header);
     return match?.group(1);

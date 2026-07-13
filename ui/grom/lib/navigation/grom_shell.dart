@@ -13,6 +13,7 @@ import '../pages/profile_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/user_search_page.dart';
 import '../platform/is_mobile_client.dart';
+import '../platform/file_download.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../services/track_recording_service.dart';
@@ -191,6 +192,100 @@ class _GromShellState extends State<GromShell> {
     if (!_selectedDestination.isHome) {
       _onDestinationSelected(GromDestination.home);
     }
+  }
+
+  bool _isOwnWorkout(Workout workout) {
+    final nickname = _nickname;
+    if (nickname == null) {
+      return false;
+    }
+    return workout.ownerNickname == nickname;
+  }
+
+  Future<void> _handleWorkoutMenuAction(WorkoutDetailMenuAction action) async {
+    final workout = _viewingWorkout;
+    if (workout == null) {
+      return;
+    }
+
+    switch (action) {
+      case WorkoutDetailMenuAction.downloadGpx:
+        await _downloadWorkoutTrack(workout: workout, format: 'gpx');
+      case WorkoutDetailMenuAction.downloadOriginal:
+        await _downloadWorkoutTrack(workout: workout);
+      case WorkoutDetailMenuAction.edit:
+      case WorkoutDetailMenuAction.delete:
+        break;
+    }
+  }
+
+  Future<void> _downloadWorkoutTrack({
+    required Workout workout,
+    String? format,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.downloadingTrack)));
+
+    try {
+      final token = await AuthStorage.getToken();
+      if (token == null) {
+        if (!mounted) {
+          return;
+        }
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.failedToDownloadTrack)),
+        );
+        return;
+      }
+
+      final owner = _isOwnWorkout(workout) ? null : workout.ownerNickname;
+      final downloaded = await _api.downloadWorkoutTrack(
+        token: token,
+        workoutId: workout.id,
+        fallbackFilename: workout.track,
+        owner: owner != null && owner.isNotEmpty ? owner : null,
+        format: format,
+      );
+      await saveDownloadedFile(
+        bytes: downloaded.bytes,
+        filename: downloaded.filename,
+      );
+      if (!mounted) {
+        return;
+      }
+      messenger.hideCurrentSnackBar();
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.failedToDownloadTrack)),
+      );
+    }
+  }
+
+  Widget _buildWorkoutDetailMenu() {
+    final workout = _viewingWorkout;
+    if (workout == null) {
+      return const SizedBox.shrink();
+    }
+
+    return WorkoutDetailMenu(
+      hasTrack: workout.track.isNotEmpty,
+      canDownloadOriginal: _isOwnWorkout(workout),
+      onSelected: _handleWorkoutMenuAction,
+    );
   }
 
   String _contentHeaderTitle(AppLocalizations l10n) {
@@ -382,7 +477,7 @@ class _GromShellState extends State<GromShell> {
           _isViewingWorkout ? _viewingWorkout!.name : _appBarTitle(),
         ),
         actions: [
-          if (_isViewingWorkout) const WorkoutDetailMenu(),
+          if (_isViewingWorkout) _buildWorkoutDetailMenu(),
         ],
       ),
       drawer: _isViewingWorkout ? null : _buildSideMenu(),
@@ -428,7 +523,7 @@ class _GromShellState extends State<GromShell> {
                               ),
                             ),
                           ),
-                          if (_isViewingWorkout) const WorkoutDetailMenu(),
+                          if (_isViewingWorkout) _buildWorkoutDetailMenu(),
                         ],
                       ),
                     ),

@@ -532,6 +532,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutActions => 'Workout actions';
 
   @override
+  String get downloadTrackAsGpx => 'Download track as GPX';
+
+  @override
+  String get downloadTrackOriginal => 'Download track (original)';
+
+  @override
+  String get downloadingTrack => 'Downloading track…';
+
+  @override
+  String get failedToDownloadTrack => 'Failed to download track';
+
+  @override
   String get failedToLoadWorkoutTrack => 'Failed to load workout track';
 
   @override

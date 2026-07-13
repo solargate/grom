@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
-enum WorkoutDetailMenuAction { edit, delete }
+enum WorkoutDetailMenuAction {
+  edit,
+  delete,
+  downloadGpx,
+  downloadOriginal,
+}
 
 class WorkoutDetailMenu extends StatelessWidget {
   const WorkoutDetailMenu({
     super.key,
+    required this.hasTrack,
+    required this.canDownloadOriginal,
     this.onSelected,
   });
 
+  final bool hasTrack;
+  final bool canDownloadOriginal;
   final ValueChanged<WorkoutDetailMenuAction>? onSelected;
 
   @override
@@ -27,6 +36,16 @@ class WorkoutDetailMenu extends StatelessWidget {
           value: WorkoutDetailMenuAction.delete,
           child: Text(l10n.deleteWorkout),
         ),
+        if (hasTrack)
+          PopupMenuItem(
+            value: WorkoutDetailMenuAction.downloadGpx,
+            child: Text(l10n.downloadTrackAsGpx),
+          ),
+        if (hasTrack && canDownloadOriginal)
+          PopupMenuItem(
+            value: WorkoutDetailMenuAction.downloadOriginal,
+            child: Text(l10n.downloadTrackOriginal),
+          ),
       ],
     );
   }

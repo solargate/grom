@@ -1196,7 +1196,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return the original GPX or FIT track file for a workout",
+                "description": "Return the workout track file. Use format=gpx to download as GPX (FIT is converted on the fly). Original format is only available for your own workouts.",
                 "produces": [
                     "application/gpx+xml",
                     "application/vnd.ant.fit"
@@ -1218,6 +1218,12 @@ const docTemplate = `{
                         "description": "Workout owner nickname (required for followed users' workouts)",
                         "name": "owner",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "gpx to download as GPX; omit for original file (own workouts only)",
+                        "name": "format",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1229,6 +1235,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/v1.ErrorResponse"
                         }

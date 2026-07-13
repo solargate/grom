@@ -191,27 +191,27 @@ func (s *WorkoutInboxStore) readWorkout(ownerDir, workoutID string) (*workouts.W
 	return &workout, nil
 }
 
-func (s *WorkoutInboxStore) TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, error) {
+func (s *WorkoutInboxStore) TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, string, error) {
 	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	workout, err := s.readWorkout(ownerDir, workoutID)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	if workout.Track == "" {
-		return nil, "", workouts.ErrWorkoutNotFound
+		return nil, "", "", workouts.ErrWorkoutNotFound
 	}
 	path := federatedTrackPath(ownerDir, workoutID, workout.Track)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, "", workouts.ErrWorkoutNotFound
+			return nil, "", "", workouts.ErrWorkoutNotFound
 		}
-		return nil, "", fmt.Errorf("read federated track: %w", err)
+		return nil, "", "", fmt.Errorf("read federated track: %w", err)
 	}
-	return data, workout.Track, nil
+	return data, workout.Track, workout.Name, nil
 }
 
 func (s *WorkoutInboxStore) MapPreviewPath(viewerNickname, ownerNickname, workoutID string) (string, error) {

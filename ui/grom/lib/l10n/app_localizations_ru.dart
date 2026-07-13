@@ -530,6 +530,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutActions => 'Действия с тренировкой';
 
   @override
+  String get downloadTrackAsGpx => 'Скачать трек как GPX';
+
+  @override
+  String get downloadTrackOriginal => 'Скачать трек (оригинал)';
+
+  @override
+  String get downloadingTrack => 'Скачивание трека…';
+
+  @override
+  String get failedToDownloadTrack => 'Не удалось скачать трек';
+
+  @override
   String get failedToLoadWorkoutTrack => 'Не удалось загрузить трек тренировки';
 
   @override

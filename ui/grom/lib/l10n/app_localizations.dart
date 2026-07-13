@@ -1090,6 +1090,30 @@ abstract class AppLocalizations {
   /// **'Workout actions'**
   String get workoutActions;
 
+  /// No description provided for @downloadTrackAsGpx.
+  ///
+  /// In en, this message translates to:
+  /// **'Download track as GPX'**
+  String get downloadTrackAsGpx;
+
+  /// No description provided for @downloadTrackOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Download track (original)'**
+  String get downloadTrackOriginal;
+
+  /// No description provided for @downloadingTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading track…'**
+  String get downloadingTrack;
+
+  /// No description provided for @failedToDownloadTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to download track'**
+  String get failedToDownloadTrack;
+
   /// No description provided for @failedToLoadWorkoutTrack.
   ///
   /// In en, this message translates to:

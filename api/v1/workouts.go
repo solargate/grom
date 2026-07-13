@@ -3,10 +3,10 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -372,7 +372,7 @@ func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	}
 	var trackData []byte
 	if workout.Track != "" {
-		trackData, _, _ = workoutStore.TrackFile(nickname, workout.ID)
+		trackData, _, _, _ = workoutStore.TrackFile(nickname, workout.ID)
 	}
 	var mediaFiles []workouts.MediaFileInput
 	if workout.HasMedia {
@@ -507,15 +507,17 @@ func parseTrack(ctx *gin.Context) {
 
 // getWorkoutTrack godoc
 // @Summary      Get workout track file
-// @Description  Return the original GPX or FIT track file for a workout
+// @Description  Return the workout track file. Use format=gpx to download as GPX (FIT is converted on the fly). Original format is only available for your own workouts.
 // @Tags         workouts
 // @Produce      application/gpx+xml
 // @Produce      application/vnd.ant.fit
 // @Security     BearerAuth
-// @Param        id  path  string  true  "Workout ID"
-// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Param        id      path   string  true   "Workout ID"
+// @Param        owner   query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Param        format  query  string  false  "gpx to download as GPX; omit for original file (own workouts only)"
 // @Success      200  {file}  binary
 // @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Router       /workouts/{id}/track [get]
 func getWorkoutTrack(ctx *gin.Context) {
@@ -537,12 +539,23 @@ func getWorkoutTrack(ctx *gin.Context) {
 		return
 	}
 
-	data, filename, err := workoutStore.TrackFile(owner, workoutID)
+	format := strings.ToLower(strings.TrimSpace(ctx.Query("format")))
+	wantGPX := format == "gpx"
+	if format != "" && !wantGPX {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid format"})
+		return
+	}
+	if !wantGPX && owner != nickname {
+		ctx.JSON(http.StatusForbidden, ErrorResponse{Error: "original track download is only available for your own workouts"})
+		return
+	}
+
+	data, storageName, workoutName, err := workoutStore.TrackFile(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			_ = initFederation()
 			if workoutInboxStore != nil {
-				data, filename, err = workoutInboxStore.TrackFile(nickname, owner, workoutID)
+				data, storageName, workoutName, err = workoutInboxStore.TrackFile(nickname, owner, workoutID)
 			}
 		}
 	}
@@ -555,16 +568,39 @@ func getWorkoutTrack(ctx *gin.Context) {
 		return
 	}
 
-	contentType := "application/octet-stream"
-	switch filename {
-	case tracks.TrackFileGPX:
+	var output []byte
+	var downloadFilename string
+	var contentType string
+
+	if wantGPX {
+		output, err = tracks.ExportGPX(data, storageName, workoutName)
+		if err != nil {
+			if errors.Is(err, tracks.ErrInvalidFormat) ||
+				errors.Is(err, tracks.ErrEmptyTrack) ||
+				errors.Is(err, tracks.ErrInvalidTrack) {
+				ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to export track"})
+			return
+		}
+		downloadFilename = workouts.TrackDownloadFilename(workoutName, ".gpx")
 		contentType = "application/gpx+xml"
-	case tracks.TrackFileFIT:
-		contentType = "application/vnd.ant.fit"
+	} else {
+		output = data
+		downloadFilename = workouts.TrackDownloadFilename(workoutName, filepath.Ext(storageName))
+		switch storageName {
+		case tracks.TrackFileGPX:
+			contentType = "application/gpx+xml"
+		case tracks.TrackFileFIT:
+			contentType = "application/vnd.ant.fit"
+		default:
+			contentType = "application/octet-stream"
+		}
 	}
 
-	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
-	ctx.Data(http.StatusOK, contentType, data)
+	ctx.Header("Content-Disposition", workouts.ContentDispositionAttachment(downloadFilename))
+	ctx.Data(http.StatusOK, contentType, output)
 }
 
 // getWorkoutMapPreview godoc

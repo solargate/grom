@@ -112,7 +112,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 		t.Fatalf("unexpected yaml: %s", yamlData)
 	}
 
-	trackData, trackName, err := store.TrackFile("athlete", created.ID)
+	trackData, trackName, _, err := store.TrackFile("athlete", created.ID)
 	if err != nil {
 		t.Fatalf("TrackFile() error = %v", err)
 	}

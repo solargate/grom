@@ -1135,7 +1135,9 @@ paths:
       - workouts
   /workouts/{id}/track:
     get:
-      description: Return the original GPX or FIT track file for a workout
+      description: Return the workout track file. Use format=gpx to download as GPX
+        (FIT is converted on the fly). Original format is only available for your
+        own workouts.
       parameters:
       - description: Workout ID
         in: path
@@ -1145,6 +1147,11 @@ paths:
       - description: Workout owner nickname (required for followed users' workouts)
         in: query
         name: owner
+        type: string
+      - description: gpx to download as GPX; omit for original file (own workouts
+          only)
+        in: query
+        name: format
         type: string
       produces:
       - application/gpx+xml
@@ -1156,6 +1163,10 @@ paths:
             type: file
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/v1.ErrorResponse'
         "404":

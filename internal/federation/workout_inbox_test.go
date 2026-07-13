@@ -34,7 +34,7 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	trackData, trackName, err := store.TrackFile("solarwind", "test2", "38472901")
+	trackData, trackName, _, err := store.TrackFile("solarwind", "test2", "38472901")
 	if err != nil {
 		t.Fatalf("TrackFile() error = %v", err)
 	}

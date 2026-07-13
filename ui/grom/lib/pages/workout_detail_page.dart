@@ -77,6 +77,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
         owner: widget.workout.ownerNickname.isNotEmpty
             ? widget.workout.ownerNickname
             : null,
+        format: 'gpx',
       );
       final points = parseTrackPoints(downloaded.bytes, downloaded.filename);
       if (!mounted) {

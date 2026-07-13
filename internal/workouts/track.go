@@ -191,29 +191,29 @@ func deviceForTrack(trackName string, parsed *tracks.Data) string {
 	return DeviceGrom
 }
 
-func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, error) {
+func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, string, error) {
 	dir, err := s.findWorkoutDir(nickname, workoutID)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	workout, err := readWorkoutFromDir(dir)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	if workout.Track == "" {
-		return nil, "", ErrWorkoutNotFound
+		return nil, "", "", ErrWorkoutNotFound
 	}
 
 	path := filepath.Join(dir, workout.Track)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, "", ErrWorkoutNotFound
+			return nil, "", "", ErrWorkoutNotFound
 		}
-		return nil, "", fmt.Errorf("read track: %w", err)
+		return nil, "", "", fmt.Errorf("read track: %w", err)
 	}
-	return data, workout.Track, nil
+	return data, workout.Track, workout.Name, nil
 }
 
 func readWorkoutFromDir(dir string) (*Workout, error) {
