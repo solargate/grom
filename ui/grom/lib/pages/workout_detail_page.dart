@@ -45,7 +45,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   bool _isLoadingTrack = false;
   String? _trackError;
 
-  bool get _hasTrack => widget.workout.track.isNotEmpty;
+  bool get _hasGpsMap => widget.workout.hasMapPreview;
 
   bool get _hasInteractiveMap {
     final points = _trackPoints;
@@ -58,7 +58,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   @override
   void initState() {
     super.initState();
-    if (_hasTrack) {
+    if (_hasGpsMap) {
       _loadTrack();
     }
   }
@@ -142,7 +142,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   }
 
   Widget _buildTrackSection(AppLocalizations l10n) {
-    if (!_hasTrack) {
+    if (!_hasGpsMap) {
       return const SizedBox.shrink();
     }
 
@@ -238,7 +238,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             federationEnabled: widget.federationEnabled,
                           ),
                         ),
-                        if (_hasTrack)
+                        if (_hasGpsMap)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                             child: _buildTrackSection(l10n),
@@ -247,7 +247,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                           Padding(
                             padding: EdgeInsets.fromLTRB(
                               16,
-                              _hasTrack ? 0 : 16,
+                              _hasGpsMap ? 0 : 16,
                               16,
                               16,
                             ),
