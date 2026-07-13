@@ -1,4 +1,4 @@
-.PHONY: all grom doc web cli android android-apk android-aab android-debug gencerts clean
+.PHONY: all grom doc web cli android android-apk android-aab android-debug gencerts test test-go test-ui clean
 
 all: grom
 
@@ -29,6 +29,14 @@ android-debug:
 
 gencerts:
 	cd cmd/grom && go run . gencerts -ip $(IP) -domain $(DOMAIN)
+
+test: test-go test-ui
+
+test-go:
+	go test ./...
+
+test-ui:
+	cd ui/grom && flutter test
 
 clean:
 	rm -f cmd/grom/grom
