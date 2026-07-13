@@ -567,6 +567,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Track konnte nicht heruntergeladen werden';
 
   @override
+  String get trackSaved => 'Track gespeichert';
+
+  @override
   String get failedToLoadWorkoutTrack =>
       'Trainingsstrecke konnte nicht geladen werden';
 

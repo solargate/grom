@@ -560,6 +560,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToDownloadTrack => 'Failed to download track';
 
   @override
+  String get trackSaved => 'Track saved';
+
+  @override
   String get failedToLoadWorkoutTrack => 'Failed to load workout track';
 
   @override

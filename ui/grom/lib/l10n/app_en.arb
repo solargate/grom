@@ -244,6 +244,7 @@
   "downloadTrackOriginal": "Download track (original)",
   "downloadingTrack": "Downloading track…",
   "failedToDownloadTrack": "Failed to download track",
+  "trackSaved": "Track saved",
   "failedToLoadWorkoutTrack": "Failed to load workout track",
   "userSearch": "User search",
   "profile": "Profile",

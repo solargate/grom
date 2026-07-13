@@ -244,6 +244,7 @@
   "downloadTrackOriginal": "Track (Original) herunterladen",
   "downloadingTrack": "Track wird heruntergeladen…",
   "failedToDownloadTrack": "Track konnte nicht heruntergeladen werden",
+  "trackSaved": "Track gespeichert",
   "failedToLoadWorkoutTrack": "Trainingsstrecke konnte nicht geladen werden",
   "userSearch": "Benutzersuche",
   "profile": "Profil",

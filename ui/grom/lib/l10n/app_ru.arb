@@ -244,6 +244,7 @@
   "downloadTrackOriginal": "Скачать трек (оригинал)",
   "downloadingTrack": "Скачивание трека…",
   "failedToDownloadTrack": "Не удалось скачать трек",
+  "trackSaved": "Трек сохранён",
   "failedToLoadWorkoutTrack": "Не удалось загрузить трек тренировки",
   "userSearch": "Поиск пользователей",
   "profile": "Профиль",

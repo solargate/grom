@@ -1144,6 +1144,12 @@ abstract class AppLocalizations {
   /// **'Failed to download track'**
   String get failedToDownloadTrack;
 
+  /// No description provided for @trackSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Track saved'**
+  String get trackSaved;
+
   /// No description provided for @failedToLoadWorkoutTrack.
   ///
   /// In en, this message translates to:

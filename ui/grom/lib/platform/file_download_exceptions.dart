@@ -1,0 +1,1 @@
+class SaveDownloadedFileCancelled implements Exception {}

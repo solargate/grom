@@ -431,6 +431,14 @@ class _GromShellState extends State<GromShell> {
         return;
       }
       messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.trackSaved)),
+      );
+    } on SaveDownloadedFileCancelled {
+      if (!mounted) {
+        return;
+      }
+      messenger.hideCurrentSnackBar();
     } on ApiException catch (e) {
       if (!mounted) {
         return;

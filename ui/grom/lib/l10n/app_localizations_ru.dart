@@ -559,6 +559,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get failedToDownloadTrack => 'Не удалось скачать трек';
 
   @override
+  String get trackSaved => 'Трек сохранён';
+
+  @override
   String get failedToLoadWorkoutTrack => 'Не удалось загрузить трек тренировки';
 
   @override
