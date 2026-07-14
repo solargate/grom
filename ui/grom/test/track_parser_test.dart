@@ -8,10 +8,10 @@ import 'package:grom/services/track_parser.dart';
 void main() {
   test('parseTrackPoints reads GPX track points', () {
     final samplePath = io.Directory.current.path.contains('ui/grom')
-        ? '../../testdata/sample.gpx'
-        : '../../../testdata/sample.gpx';
+        ? '../../testdata/1-sample.gpx'
+        : '../../../testdata/1-sample.gpx';
     final bytes = io.File(samplePath).readAsBytesSync();
-    final points = parseTrackPoints(bytes, 'sample.gpx');
+    final points = parseTrackPoints(bytes, '1-sample.gpx');
 
     expect(points.length, 3);
     expect(points.first.latitude, closeTo(55.7558, 0.0001));

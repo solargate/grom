@@ -14,7 +14,7 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	dir := t.TempDir()
 	store := NewWorkoutInboxStore(dir)
 
-	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "sample.gpx"))
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestWorkoutInboxStoreDelete(t *testing.T) {
 	dir := t.TempDir()
 	store := NewWorkoutInboxStore(dir)
 
-	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "sample.gpx"))
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}

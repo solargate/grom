@@ -10,7 +10,7 @@ import (
 )
 
 func TestParseClientGeneratedGPX(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "client_recorded.gpx"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "2-client-recorded.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}
