@@ -4,6 +4,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/workout.dart';
+import '../platform/is_mobile_client.dart';
 import 'workout_card.dart';
 
 class WorkoutFeedList extends StatefulWidget {
@@ -134,24 +135,44 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
       );
     }
 
+    final compact = isMobileClient;
+    final listView = ListView.builder(
+      controller: widget.scrollController,
+      padding: compact ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 8),
+      itemCount: _workouts.length,
+      itemBuilder: (context, index) {
+        final workout = _workouts[index];
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            WorkoutCard(
+              workout: workout,
+              authToken: _authToken ?? '',
+              federationEnabled: widget.federationEnabled,
+              compact: compact,
+              onTap: () => widget.onWorkoutTap(workout),
+              onPhotoTap: (photoIndex) =>
+                  widget.onPhotoTap(workout, photoIndex),
+            ),
+            if (compact && index < _workouts.length - 1)
+              Container(
+                height: 8,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+          ],
+        );
+      },
+    );
+
     return RefreshIndicator(
       onRefresh: _loadWorkouts,
-      child: ListView.builder(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _workouts.length,
-        itemBuilder: (context, index) {
-          final workout = _workouts[index];
-          return WorkoutCard(
-            workout: workout,
-            authToken: _authToken ?? '',
-            federationEnabled: widget.federationEnabled,
-            onTap: () => widget.onWorkoutTap(workout),
-            onPhotoTap: (photoIndex) =>
-                widget.onPhotoTap(workout, photoIndex),
-          );
-        },
-      ),
+      child: compact
+          ? ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context)
+                  .copyWith(scrollbars: false),
+              child: listView,
+            )
+          : listView,
     );
   }
 }
