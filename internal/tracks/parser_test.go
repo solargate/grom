@@ -35,6 +35,9 @@ func TestParseGPX(t *testing.T) {
 	if parsed.DurationSeconds == nil || *parsed.DurationSeconds != 4200 {
 		t.Fatalf("duration = %v, want 4200", parsed.DurationSeconds)
 	}
+	if parsed.DurationTotalSeconds == nil || *parsed.DurationTotalSeconds != 4200 {
+		t.Fatalf("duration_total = %v, want 4200", parsed.DurationTotalSeconds)
+	}
 	if parsed.DistanceMeters == nil || *parsed.DistanceMeters <= 0 {
 		t.Fatalf("expected positive distance, got %v", parsed.DistanceMeters)
 	}

@@ -8,6 +8,8 @@ class RecordedTrack {
     required this.durationTotalSeconds,
     required this.distanceMeters,
     required this.gpxBytes,
+    this.speedMaxKmh,
+    this.speedAvgKmh,
   });
 
   final List<RecordedTrackPoint> points;
@@ -16,4 +18,6 @@ class RecordedTrack {
   final int durationTotalSeconds;
   final double distanceMeters;
   final List<int> gpxBytes;
+  final double? speedMaxKmh;
+  final double? speedAvgKmh;
 }

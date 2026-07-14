@@ -409,6 +409,8 @@ class TrackRecordingService extends ChangeNotifier {
       return null;
     }
 
+    final speedStats = _computeSpeedStats();
+
     final track = RecordedTrack(
       points: List.unmodifiable(_points),
       startTime: startTime,
@@ -416,6 +418,8 @@ class TrackRecordingService extends ChangeNotifier {
       durationTotalSeconds: durationTotalSeconds,
       distanceMeters: distanceMeters,
       gpxBytes: _gpxEncoder.encode(points: _points),
+      speedMaxKmh: speedStats.maxKmh,
+      speedAvgKmh: speedStats.avgKmh,
     );
 
     await _resetSession();
@@ -685,6 +689,33 @@ class TrackRecordingService extends ChangeNotifier {
     await TrackRecordingForeground.updateNotification(
       title: notification.title,
       text: pausedText,
+    );
+  }
+
+  ({double? maxKmh, double? avgKmh}) _computeSpeedStats() {
+    var maxKmh = 0.0;
+    var sumKmh = 0.0;
+    var count = 0;
+
+    for (final point in _points) {
+      final speedMps = point.speedMps;
+      if (speedMps == null || speedMps < 0) {
+        continue;
+      }
+      final kmh = speedMps * 3.6;
+      if (kmh > maxKmh) {
+        maxKmh = kmh;
+      }
+      sumKmh += kmh;
+      count++;
+    }
+
+    if (count == 0) {
+      return (maxKmh: null, avgKmh: null);
+    }
+    return (
+      maxKmh: maxKmh > 0 ? maxKmh : null,
+      avgKmh: sumKmh / count,
     );
   }
 

@@ -3,7 +3,7 @@ import 'package:grom/services/movement_detector.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
-  test('MovementDetector triggers pause after 3 seconds without movement', () {
+  test('MovementDetector triggers pause after 5 seconds without movement', () {
     final detector = MovementDetector();
     final start = DateTime(2026, 3, 6, 12, 0, 0);
 
@@ -19,11 +19,15 @@ void main() {
     );
     expect(
       detector.isStationaryForPause(start.add(const Duration(seconds: 4))),
+      isFalse,
+    );
+    expect(
+      detector.isStationaryForPause(start.add(const Duration(seconds: 5))),
       isTrue,
     );
   });
 
-  test('MovementDetector triggers resume after 2 meters within 3 seconds', () {
+  test('MovementDetector triggers resume after 2 meters within 5 seconds', () {
     final detector = MovementDetector();
     final start = DateTime(2026, 3, 6, 12, 0, 0);
     final sampleTime = start.add(const Duration(seconds: 2));

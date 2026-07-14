@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ type CreateWorkoutRequest struct {
 	DurationSeconds      int      `json:"duration_seconds" example:"3600"`
 	DurationTotalSeconds int      `json:"duration_total_seconds,omitempty" example:"3900"`
 	Distance             float64  `json:"distance" example:"5200"`
+	SpeedMaxKmh          *float64 `json:"speed_max_kmh,omitempty" example:"32.5"`
+	SpeedAvgKmh          *float64 `json:"speed_avg_kmh,omitempty" example:"18.2"`
 	EquipmentIDs         []string `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
@@ -45,16 +48,41 @@ type CreateWorkoutForm struct {
 	DurationSeconds      int                   `form:"duration_seconds"`
 	DurationTotalSeconds int                   `form:"duration_total_seconds"`
 	Distance             float64               `form:"distance"`
+	SpeedMaxKmh          string                `form:"speed_max_kmh"`
+	SpeedAvgKmh          string                `form:"speed_avg_kmh"`
 	EquipmentIDs         string                `form:"equipment_ids"`
 	Track                *multipart.FileHeader `form:"track"`
 }
 
 type ParseTrackResponse struct {
-	StartDate       string  `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
-	Device          string  `json:"device,omitempty" example:"Garmin Edge 530"`
-	DurationSeconds int     `json:"duration_seconds,omitempty" example:"3600"`
-	Distance        float64 `json:"distance,omitempty" example:"5200"`
-	HasGPS          bool    `json:"has_gps" example:"true"`
+	StartDate            string   `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
+	Device               string   `json:"device,omitempty" example:"Garmin Edge 530"`
+	DurationSeconds      int      `json:"duration_seconds,omitempty" example:"3600"`
+	DurationTotalSeconds int      `json:"duration_total_seconds,omitempty" example:"3900"`
+	Distance             float64  `json:"distance,omitempty" example:"5200"`
+	HasGPS               bool     `json:"has_gps" example:"true"`
+	SpeedMaxKmh          *float64 `json:"speed_max_kmh,omitempty" example:"32.4"`
+	SpeedAvgKmh          *float64 `json:"speed_avg_kmh,omitempty" example:"17.5"`
+	ElevationGain        *float64 `json:"elevation_gain,omitempty" example:"77"`
+	ElevationLoss        *float64 `json:"elevation_loss,omitempty" example:"90"`
+	ElevationLow         *float64 `json:"elevation_low,omitempty" example:"130.6"`
+	ElevationHigh        *float64 `json:"elevation_high,omitempty" example:"183.6"`
+	GradeMax             *float64 `json:"grade_max,omitempty" example:"8.5"`
+	GradeAvg             *float64 `json:"grade_avg,omitempty" example:"2.1"`
+	CadenceMax           *float64 `json:"cadence_max,omitempty" example:"116"`
+	CadenceAvg           *float64 `json:"cadence_avg,omitempty" example:"34"`
+	HeartRateMax         *float64 `json:"heart_rate_max,omitempty" example:"187"`
+	HeartRateAvg         *float64 `json:"heart_rate_avg,omitempty" example:"130"`
+	WattsMax             *float64 `json:"watts_max,omitempty" example:"350"`
+	WattsAvg             *float64 `json:"watts_avg,omitempty" example:"180"`
+	Calories             *float64 `json:"calories,omitempty" example:"415"`
+	TemperatureMax       *float64 `json:"temperature_max,omitempty" example:"20"`
+	TemperatureAvg       *float64 `json:"temperature_avg,omitempty" example:"18"`
+	StepsTotal           *int     `json:"steps_total,omitempty" example:"2583"`
+	CyclesTotal          *int     `json:"cycles_total,omitempty" example:"1200"`
+	SetsTotal            *int     `json:"sets_total,omitempty" example:"12"`
+	RepsTotal            *int     `json:"reps_total,omitempty" example:"120"`
+	TempAvgKmm           *string  `json:"temp_avg_kmm,omitempty" example:"12:22"`
 }
 
 type WorkoutAuthorResponse struct {
@@ -131,22 +159,64 @@ func toFeedWorkoutResponse(item *workouts.FeedWorkout) WorkoutResponse {
 }
 
 func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
-	resp := ParseTrackResponse{
-		HasGPS: data.HasGPS(),
+	meta := data.Metadata()
+	return ParseTrackResponse{
+		StartDate:            meta.StartDate,
+		Device:               meta.Device,
+		DurationSeconds:      meta.DurationSeconds,
+		DurationTotalSeconds: meta.DurationTotalSeconds,
+		Distance:             meta.Distance,
+		HasGPS:               meta.HasGPS,
+		SpeedMaxKmh:          meta.SpeedMaxKmh,
+		SpeedAvgKmh:          meta.SpeedAvgKmh,
+		ElevationGain:        meta.ElevationGain,
+		ElevationLoss:        meta.ElevationLoss,
+		ElevationLow:         meta.ElevationLow,
+		ElevationHigh:        meta.ElevationHigh,
+		GradeMax:             meta.GradeMax,
+		GradeAvg:             meta.GradeAvg,
+		CadenceMax:           meta.CadenceMax,
+		CadenceAvg:           meta.CadenceAvg,
+		HeartRateMax:         meta.HeartRateMax,
+		HeartRateAvg:         meta.HeartRateAvg,
+		WattsMax:             meta.WattsMax,
+		WattsAvg:             meta.WattsAvg,
+		Calories:             meta.Calories,
+		TemperatureMax:       meta.TemperatureMax,
+		TemperatureAvg:       meta.TemperatureAvg,
+		StepsTotal:           meta.StepsTotal,
+		CyclesTotal:          meta.CyclesTotal,
+		SetsTotal:            meta.SetsTotal,
+		RepsTotal:            meta.RepsTotal,
+		TempAvgKmm:           meta.TempAvgKmm,
 	}
-	if data.StartTime != nil {
-		resp.StartDate = data.StartTime.Format(time.RFC3339)
+}
+
+func workoutFromCreateRequest(req CreateWorkoutRequest, startDate time.Time, equipment []workouts.WorkoutEquipment) *workouts.Workout {
+	return &workouts.Workout{
+		Name:                 req.Name,
+		Description:          req.Description,
+		SportType:            req.SportType,
+		StartDate:            startDate,
+		DurationSeconds:      req.DurationSeconds,
+		DurationTotalSeconds: req.DurationTotalSeconds,
+		Distance:             req.Distance,
+		SpeedMaxKmh:          req.SpeedMaxKmh,
+		SpeedAvgKmh:          req.SpeedAvgKmh,
+		Equipment:            equipment,
 	}
-	if data.Device != nil {
-		resp.Device = *data.Device
+}
+
+func parseOptionalFloatForm(raw string) (*float64, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
 	}
-	if data.DurationSeconds != nil {
-		resp.DurationSeconds = *data.DurationSeconds
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return nil, err
 	}
-	if data.DistanceMeters != nil {
-		resp.Distance = *data.DistanceMeters
-	}
-	return resp
+	return &v, nil
 }
 
 func currentUserNickname(ctx *gin.Context) (string, error) {
@@ -291,16 +361,7 @@ func createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	workout, err := workoutStore.Create(nickname, &workouts.Workout{
-		Name:                 req.Name,
-		Description:          req.Description,
-		SportType:            req.SportType,
-		StartDate:            startDate,
-		DurationSeconds:      req.DurationSeconds,
-		DurationTotalSeconds: req.DurationTotalSeconds,
-		Distance:             req.Distance,
-		Equipment:            equipmentItems,
-	})
+	workout, err := workoutStore.Create(nickname, workoutFromCreateRequest(req, startDate, equipmentItems))
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
@@ -419,6 +480,17 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
+	speedMaxKmh, err := parseOptionalFloatForm(form.SpeedMaxKmh)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid speed_max_kmh"})
+		return
+	}
+	speedAvgKmh, err := parseOptionalFloatForm(form.SpeedAvgKmh)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid speed_avg_kmh"})
+		return
+	}
+
 	workout := &workouts.Workout{
 		Name:                 form.Name,
 		Description:          form.Description,
@@ -427,6 +499,8 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		DurationSeconds:      form.DurationSeconds,
 		DurationTotalSeconds: form.DurationTotalSeconds,
 		Distance:             form.Distance,
+		SpeedMaxKmh:          speedMaxKmh,
+		SpeedAvgKmh:          speedAvgKmh,
 		Equipment:            equipmentItems,
 	}
 

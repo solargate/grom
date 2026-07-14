@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	ErrInvalidFormat   = fmt.Errorf("invalid track format: only FIT and GPX are supported")
-	ErrTrackTooLarge   = fmt.Errorf("track file exceeds size limit")
-	ErrEmptyTrack      = fmt.Errorf("track file is empty")
-	ErrInvalidTrack    = fmt.Errorf("invalid track file")
+	ErrInvalidFormat = fmt.Errorf("invalid track format: only FIT and GPX are supported")
+	ErrTrackTooLarge = fmt.Errorf("track file exceeds size limit")
+	ErrEmptyTrack    = fmt.Errorf("track file is empty")
+	ErrInvalidTrack  = fmt.Errorf("invalid track file")
 )
 
 func TrackFileName(filename string) (string, error) {
@@ -79,18 +79,16 @@ func parseGPX(data []byte) (*Data, error) {
 		start := timeBounds.StartTime
 		result.StartTime = &start
 	}
-	if !timeBounds.StartTime.IsZero() && !timeBounds.EndTime.IsZero() {
-		dur := int(timeBounds.EndTime.Sub(timeBounds.StartTime).Seconds())
-		if dur >= 0 {
-			result.DurationSeconds = &dur
-		}
-	}
+
+	result.Stats = extractGPXStats(gpxData)
+	populateLegacyDurationFields(result)
 
 	length := gpxData.Length2D()
 	if length > 0 {
 		result.DistanceMeters = &length
 	}
 
+	result.Stats.FinalizePace(result.DistanceMeters)
 	return result, nil
 }
 
@@ -142,11 +140,6 @@ func parseFIT(data []byte) (*Data, error) {
 			start := session.StartTime
 			result.StartTime = &start
 		}
-		elapsed := session.TotalElapsedTimeScaled()
-		if elapsed > 0 {
-			dur := int(math.Round(elapsed))
-			result.DurationSeconds = &dur
-		}
 		dist := session.TotalDistanceScaled()
 		if dist > 0 {
 			result.DistanceMeters = &dist
@@ -157,12 +150,7 @@ func parseFIT(data []byte) (*Data, error) {
 		start := firstTimestamp
 		result.StartTime = &start
 	}
-	if result.DurationSeconds == nil && hasTimestamp && !lastTimestamp.Before(firstTimestamp) {
-		dur := int(lastTimestamp.Sub(firstTimestamp).Seconds())
-		if dur >= 0 {
-			result.DurationSeconds = &dur
-		}
-	}
+
 	if result.DistanceMeters == nil && len(points) >= 2 {
 		dist := haversineDistance(points)
 		if dist > 0 {
@@ -170,11 +158,34 @@ func parseFIT(data []byte) (*Data, error) {
 		}
 	}
 
+	result.Stats = extractFITStats(activity)
+	populateLegacyDurationFields(result)
+
+	if result.DurationSeconds == nil && hasTimestamp && !lastTimestamp.Before(firstTimestamp) {
+		dur := int(lastTimestamp.Sub(firstTimestamp).Seconds())
+		if dur >= 0 {
+			result.DurationSeconds = &dur
+			result.Stats.DurationSeconds.setCalculated(dur)
+		}
+	}
+
 	if device := extractDevice(activity); device != "" {
 		result.Device = &device
 	}
 
+	result.Stats.FinalizePace(result.DistanceMeters)
 	return result, nil
+}
+
+func populateLegacyDurationFields(result *Data) {
+	if result.Stats.DurationSeconds.Value != nil {
+		v := *result.Stats.DurationSeconds.Value
+		result.DurationSeconds = &v
+	}
+	if result.Stats.DurationTotalSeconds.Value != nil {
+		v := *result.Stats.DurationTotalSeconds.Value
+		result.DurationTotalSeconds = &v
+	}
 }
 
 func validCoord(lat, lon float64) bool {
@@ -197,10 +208,9 @@ func haversineDistance(points []LatLng) float64 {
 	if len(points) < 2 {
 		return 0
 	}
-	const earthRadius = 6371000.0
 	var total float64
 	for i := 1; i < len(points); i++ {
-		total += haversine(points[i-1], points[i], earthRadius)
+		total += haversine(points[i-1], points[i], earthRadiusMeters)
 	}
 	return total
 }

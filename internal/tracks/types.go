@@ -14,11 +14,13 @@ type LatLng struct {
 }
 
 type Data struct {
-	StartTime       *time.Time
-	DurationSeconds *int
-	DistanceMeters  *float64
-	Device          *string
+	StartTime            *time.Time
+	DurationSeconds      *int
+	DurationTotalSeconds *int
+	DistanceMeters       *float64
+	Device               *string
 	Points          []LatLng
+	Stats                Stats
 }
 
 func (d *Data) HasGPS() bool {
@@ -37,5 +39,16 @@ func (d *Data) ApplyToWorkout(startDate *time.Time, durationSeconds *int, distan
 	}
 	if d.DistanceMeters != nil {
 		*distanceMeters = *d.DistanceMeters
+	}
+}
+
+func (d *Data) ApplyDurationTotal(durationTotalSeconds *int) {
+	if d == nil || durationTotalSeconds == nil {
+		return
+	}
+	if d.DurationTotalSeconds != nil {
+		*durationTotalSeconds = *d.DurationTotalSeconds
+	} else if d.Stats.DurationTotalSeconds.Value != nil {
+		*durationTotalSeconds = *d.Stats.DurationTotalSeconds.Value
 	}
 }

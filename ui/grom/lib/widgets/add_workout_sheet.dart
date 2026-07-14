@@ -71,6 +71,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   int _durationSeconds = 0;
   int? _durationTotalSeconds;
   double _distanceKm = 0;
+  double? _speedMaxKmh;
+  double? _speedAvgKmh;
   bool _isSubmitting = false;
   bool _isPickingFile = false;
   String? _trackFilename;
@@ -438,9 +440,14 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         if (metadata.durationSeconds != null) {
           _durationSeconds = metadata.durationSeconds!;
         }
+        if (metadata.durationTotalSeconds != null) {
+          _durationTotalSeconds = metadata.durationTotalSeconds;
+        }
         if (metadata.distanceMeters != null) {
           _distanceKm = metadata.distanceMeters! / 1000;
         }
+        _speedMaxKmh = metadata.speedMaxKmh;
+        _speedAvgKmh = metadata.speedAvgKmh;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -481,6 +488,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _durationSeconds = track.durationSeconds;
       _durationTotalSeconds = track.durationTotalSeconds;
       _distanceKm = track.distanceMeters / 1000;
+      _speedMaxKmh = track.speedMaxKmh;
+      _speedAvgKmh = track.speedAvgKmh;
     });
     _tabController?.animateTo(0);
     final l10n = AppLocalizations.of(context)!;
@@ -510,6 +519,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         durationSeconds: _durationSeconds,
         durationTotalSeconds: _durationTotalSeconds,
         distanceKm: _distanceKm,
+        speedMaxKmh: _speedMaxKmh,
+        speedAvgKmh: _speedAvgKmh,
         equipmentIds: _selectedEquipmentIds,
       );
 
@@ -522,6 +533,10 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         if (draft.durationTotalSeconds != null)
           'duration_total_seconds': draft.durationTotalSeconds.toString(),
         'distance': (draft.distanceKm * 1000).toString(),
+        if (draft.speedMaxKmh != null)
+          'speed_max_kmh': draft.speedMaxKmh!.toStringAsFixed(2),
+        if (draft.speedAvgKmh != null)
+          'speed_avg_kmh': draft.speedAvgKmh!.toStringAsFixed(2),
         if (draft.equipmentIds.isNotEmpty)
           'equipment_ids': jsonEncode(draft.equipmentIds),
       };

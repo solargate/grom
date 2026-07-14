@@ -18,6 +18,7 @@ type Workout struct {
 	DurationSeconds      int                `yaml:"duration_seconds" json:"duration_seconds"`
 	Distance             float64            `yaml:"distance" json:"distance"`
 	DurationTotalSeconds int                `yaml:"duration_total_seconds,omitempty" json:"duration_total_seconds,omitempty"`
+	TempAvgKmm           *string            `yaml:"temp_avg_kmm,omitempty" json:"temp_avg_kmm,omitempty"`
 	RelativeEffort       *float64           `yaml:"relative_effort,omitempty" json:"relative_effort,omitempty"`
 	RegularTrack         *bool              `yaml:"regular_track,omitempty" json:"regular_track,omitempty"`
 	SpeedMaxKmh          *float64           `yaml:"speed_max_kmh,omitempty" json:"speed_max_kmh,omitempty"`

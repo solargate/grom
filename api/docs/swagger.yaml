@@ -53,6 +53,12 @@ definitions:
       name:
         example: Morning run
         type: string
+      speed_avg_kmh:
+        example: 18.2
+        type: number
+      speed_max_kmh:
+        example: 32.5
+        type: number
       sport_type:
         example: Run
         type: string
@@ -167,6 +173,18 @@ definitions:
     type: object
   v1.ParseTrackResponse:
     properties:
+      cadence_avg:
+        example: 34
+        type: number
+      cadence_max:
+        example: 116
+        type: number
+      calories:
+        example: 415
+        type: number
+      cycles_total:
+        example: 1200
+        type: integer
       device:
         example: Garmin Edge 530
         type: string
@@ -176,12 +194,69 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      duration_total_seconds:
+        example: 3900
+        type: integer
+      elevation_gain:
+        example: 77
+        type: number
+      elevation_high:
+        example: 183.6
+        type: number
+      elevation_loss:
+        example: 90
+        type: number
+      elevation_low:
+        example: 130.6
+        type: number
+      grade_avg:
+        example: 2.1
+        type: number
+      grade_max:
+        example: 8.5
+        type: number
       has_gps:
         example: true
         type: boolean
+      heart_rate_avg:
+        example: 130
+        type: number
+      heart_rate_max:
+        example: 187
+        type: number
+      reps_total:
+        example: 120
+        type: integer
+      sets_total:
+        example: 12
+        type: integer
+      speed_avg_kmh:
+        example: 17.5
+        type: number
+      speed_max_kmh:
+        example: 32.4
+        type: number
       start_date:
         example: "2026-07-05T14:30:00+03:00"
         type: string
+      steps_total:
+        example: 2583
+        type: integer
+      temp_avg_kmm:
+        example: "12:22"
+        type: string
+      temperature_avg:
+        example: 18
+        type: number
+      temperature_max:
+        example: 20
+        type: number
+      watts_avg:
+        example: 180
+        type: number
+      watts_max:
+        example: 350
+        type: number
     type: object
   v1.RegisterRequest:
     properties:

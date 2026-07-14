@@ -37,14 +37,19 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 	startDate := workout.StartDate
 	durationSeconds := workout.DurationSeconds
+	durationTotalSeconds := workout.DurationTotalSeconds
 	distanceMeters := workout.Distance
 	parsed.ApplyToWorkout(&startDate, &durationSeconds, &distanceMeters)
+	parsed.ApplyDurationTotal(&durationTotalSeconds)
 
 	workout.StartDate = startDate
 	workout.DurationSeconds = durationSeconds
+	workout.DurationTotalSeconds = durationTotalSeconds
 	workout.Distance = distanceMeters
 	workout.Track = trackName
 	workout.Device = deviceForTrack(trackName, parsed)
+
+	MergeTrackStats(workout, parsed, MergeModeTrackCreate)
 
 	if err := s.validateWorkout(workout); err != nil {
 		return nil, err
@@ -98,6 +103,8 @@ func (s *Store) AttachTrack(nickname string, workout *Workout, track *TrackInput
 	if err := writeTrackArtifacts(workoutDirPath, track.Data, parsed, workout); err != nil {
 		return nil, err
 	}
+
+	MergeTrackStats(workout, parsed, MergeModeTrackAttach)
 
 	dirName := filepath.Base(workoutDirPath)
 	filePath := filepath.Join(workoutDirPath, dirName+".yaml")

@@ -1377,6 +1377,14 @@
                     "type": "string",
                     "example": "Morning run"
                 },
+                "speed_avg_kmh": {
+                    "type": "number",
+                    "example": 18.2
+                },
+                "speed_max_kmh": {
+                    "type": "number",
+                    "example": 32.5
+                },
                 "sport_type": {
                     "type": "string",
                     "example": "Run"
@@ -1537,6 +1545,22 @@
         "v1.ParseTrackResponse": {
             "type": "object",
             "properties": {
+                "cadence_avg": {
+                    "type": "number",
+                    "example": 34
+                },
+                "cadence_max": {
+                    "type": "number",
+                    "example": 116
+                },
+                "calories": {
+                    "type": "number",
+                    "example": 415
+                },
+                "cycles_total": {
+                    "type": "integer",
+                    "example": 1200
+                },
                 "device": {
                     "type": "string",
                     "example": "Garmin Edge 530"
@@ -1549,13 +1573,89 @@
                     "type": "integer",
                     "example": 3600
                 },
+                "duration_total_seconds": {
+                    "type": "integer",
+                    "example": 3900
+                },
+                "elevation_gain": {
+                    "type": "number",
+                    "example": 77
+                },
+                "elevation_high": {
+                    "type": "number",
+                    "example": 183.6
+                },
+                "elevation_loss": {
+                    "type": "number",
+                    "example": 90
+                },
+                "elevation_low": {
+                    "type": "number",
+                    "example": 130.6
+                },
+                "grade_avg": {
+                    "type": "number",
+                    "example": 2.1
+                },
+                "grade_max": {
+                    "type": "number",
+                    "example": 8.5
+                },
                 "has_gps": {
                     "type": "boolean",
                     "example": true
                 },
+                "heart_rate_avg": {
+                    "type": "number",
+                    "example": 130
+                },
+                "heart_rate_max": {
+                    "type": "number",
+                    "example": 187
+                },
+                "reps_total": {
+                    "type": "integer",
+                    "example": 120
+                },
+                "sets_total": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "speed_avg_kmh": {
+                    "type": "number",
+                    "example": 17.5
+                },
+                "speed_max_kmh": {
+                    "type": "number",
+                    "example": 32.4
+                },
                 "start_date": {
                     "type": "string",
                     "example": "2026-07-05T14:30:00+03:00"
+                },
+                "steps_total": {
+                    "type": "integer",
+                    "example": 2583
+                },
+                "temp_avg_kmm": {
+                    "type": "string",
+                    "example": "12:22"
+                },
+                "temperature_avg": {
+                    "type": "number",
+                    "example": 18
+                },
+                "temperature_max": {
+                    "type": "number",
+                    "example": 20
+                },
+                "watts_avg": {
+                    "type": "number",
+                    "example": 180
+                },
+                "watts_max": {
+                    "type": "number",
+                    "example": 350
                 }
             }
         },

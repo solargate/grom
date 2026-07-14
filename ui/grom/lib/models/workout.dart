@@ -117,6 +117,8 @@ class CreateWorkoutDraft {
     required this.durationSeconds,
     this.durationTotalSeconds,
     required this.distanceKm,
+    this.speedMaxKmh,
+    this.speedAvgKmh,
     this.equipmentIds = const [],
   });
 
@@ -127,6 +129,8 @@ class CreateWorkoutDraft {
   final int durationSeconds;
   final int? durationTotalSeconds;
   final double distanceKm;
+  final double? speedMaxKmh;
+  final double? speedAvgKmh;
   final List<String> equipmentIds;
 
   Map<String, dynamic> toJson() {
@@ -139,6 +143,8 @@ class CreateWorkoutDraft {
       if (durationTotalSeconds != null)
         'duration_total_seconds': durationTotalSeconds,
       'distance': distanceKm * 1000,
+      if (speedMaxKmh != null) 'speed_max_kmh': speedMaxKmh,
+      if (speedAvgKmh != null) 'speed_avg_kmh': speedAvgKmh,
       if (equipmentIds.isNotEmpty) 'equipment_ids': equipmentIds,
     };
   }
