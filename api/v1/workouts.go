@@ -27,24 +27,26 @@ func initWorkoutStore() {
 }
 
 type CreateWorkoutRequest struct {
-	Name            string   `json:"name" binding:"required" example:"Morning run"`
-	Description     string   `json:"description" example:"Easy session"`
-	SportType       string   `json:"sport_type" binding:"required" example:"Run"`
-	StartDate       string   `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
-	DurationSeconds int      `json:"duration_seconds" example:"3600"`
-	Distance        float64  `json:"distance" example:"5200"`
-	EquipmentIDs    []string `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name                 string   `json:"name" binding:"required" example:"Morning run"`
+	Description          string   `json:"description" example:"Easy session"`
+	SportType            string   `json:"sport_type" binding:"required" example:"Run"`
+	StartDate            string   `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
+	DurationSeconds      int      `json:"duration_seconds" example:"3600"`
+	DurationTotalSeconds int      `json:"duration_total_seconds,omitempty" example:"3900"`
+	Distance             float64  `json:"distance" example:"5200"`
+	EquipmentIDs         []string `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
 type CreateWorkoutForm struct {
-	Name            string                `form:"name" binding:"required"`
-	Description     string                `form:"description"`
-	SportType       string                `form:"sport_type" binding:"required"`
-	StartDate       string                `form:"start_date" binding:"required"`
-	DurationSeconds int                   `form:"duration_seconds"`
-	Distance        float64               `form:"distance"`
-	EquipmentIDs    string                `form:"equipment_ids"`
-	Track           *multipart.FileHeader `form:"track"`
+	Name                 string                `form:"name" binding:"required"`
+	Description          string                `form:"description"`
+	SportType            string                `form:"sport_type" binding:"required"`
+	StartDate            string                `form:"start_date" binding:"required"`
+	DurationSeconds      int                   `form:"duration_seconds"`
+	DurationTotalSeconds int                   `form:"duration_total_seconds"`
+	Distance             float64               `form:"distance"`
+	EquipmentIDs         string                `form:"equipment_ids"`
+	Track                *multipart.FileHeader `form:"track"`
 }
 
 type ParseTrackResponse struct {
@@ -290,13 +292,14 @@ func createWorkout(ctx *gin.Context) {
 	}
 
 	workout, err := workoutStore.Create(nickname, &workouts.Workout{
-		Name:            req.Name,
-		Description:     req.Description,
-		SportType:       req.SportType,
-		StartDate:       startDate,
-		DurationSeconds: req.DurationSeconds,
-		Distance:        req.Distance,
-		Equipment:       equipmentItems,
+		Name:                 req.Name,
+		Description:          req.Description,
+		SportType:            req.SportType,
+		StartDate:            startDate,
+		DurationSeconds:      req.DurationSeconds,
+		DurationTotalSeconds: req.DurationTotalSeconds,
+		Distance:             req.Distance,
+		Equipment:            equipmentItems,
 	})
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
@@ -417,13 +420,14 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 
 	workout := &workouts.Workout{
-		Name:            form.Name,
-		Description:     form.Description,
-		SportType:       form.SportType,
-		StartDate:       startDate,
-		DurationSeconds: form.DurationSeconds,
-		Distance:        form.Distance,
-		Equipment:       equipmentItems,
+		Name:                 form.Name,
+		Description:          form.Description,
+		SportType:            form.SportType,
+		StartDate:            startDate,
+		DurationSeconds:      form.DurationSeconds,
+		DurationTotalSeconds: form.DurationTotalSeconds,
+		Distance:             form.Distance,
+		Equipment:            equipmentItems,
 	}
 
 	var trackInput *workouts.TrackInput

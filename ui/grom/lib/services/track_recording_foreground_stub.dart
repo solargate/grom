@@ -19,6 +19,7 @@ class _NoopTrackRecordingForeground implements TrackRecordingForegroundPlatform 
     required String text,
     required String channelName,
     String? pausedText,
+    String? autoPausedText,
   }) async =>
       const ForegroundServiceFailure(error: 'unsupported_platform');
 

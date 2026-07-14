@@ -5,6 +5,7 @@ class RecordedTrack {
     required this.points,
     required this.startTime,
     required this.durationSeconds,
+    required this.durationTotalSeconds,
     required this.distanceMeters,
     required this.gpxBytes,
   });
@@ -12,6 +13,7 @@ class RecordedTrack {
   final List<RecordedTrackPoint> points;
   final DateTime startTime;
   final int durationSeconds;
+  final int durationTotalSeconds;
   final double distanceMeters;
   final List<int> gpxBytes;
 }

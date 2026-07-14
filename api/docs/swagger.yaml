@@ -41,6 +41,9 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      duration_total_seconds:
+        example: 3900
+        type: integer
       equipment_ids:
         example:
         - 550e8400-e29b-41d4-a716-446655440000

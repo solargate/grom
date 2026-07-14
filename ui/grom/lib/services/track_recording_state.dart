@@ -1,1 +1,1 @@
-enum TrackRecordingState { idle, recording, paused }
+enum TrackRecordingState { idle, recording, autoPaused, paused }

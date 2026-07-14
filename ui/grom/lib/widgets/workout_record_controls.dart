@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../app_theme.dart';
 import '../services/track_recording_service.dart';
+
+enum PauseButtonVariant { none, manual, auto }
 
 class WorkoutRecordControls extends StatelessWidget {
   const WorkoutRecordControls({
     super.key,
     required this.state,
+    required this.pauseVariant,
     required this.onPlay,
     required this.onPause,
     required this.onFinish,
@@ -15,6 +19,7 @@ class WorkoutRecordControls extends StatelessWidget {
   });
 
   final TrackRecordingState state;
+  final PauseButtonVariant pauseVariant;
   final VoidCallback onPlay;
   final VoidCallback onPause;
   final VoidCallback onFinish;
@@ -26,7 +31,13 @@ class WorkoutRecordControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isRecording = state == TrackRecordingState.recording;
+    final isAutoPaused = state == TrackRecordingState.autoPaused;
     final showFinish = state == TrackRecordingState.paused;
+    final showPauseButton = isRecording || isAutoPaused;
+
+    final pauseColor = pauseVariant == PauseButtonVariant.auto
+        ? kAutoPauseColor
+        : colorScheme.primary;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -40,20 +51,24 @@ class WorkoutRecordControls extends StatelessWidget {
         ],
         Semantics(
           button: true,
-          label: isRecording ? pauseLabel : playLabel,
+          label: showPauseButton ? pauseLabel : playLabel,
           child: Material(
-            color: colorScheme.primary,
+            color: showPauseButton ? pauseColor : colorScheme.primary,
             shape: const CircleBorder(),
             elevation: 2,
             child: InkWell(
               customBorder: const CircleBorder(),
-              onTap: isRecording ? onPause : onPlay,
+              onTap: showPauseButton ? onPause : onPlay,
               child: SizedBox(
                 width: 72,
                 height: 72,
                 child: Center(
-                  child: isRecording
-                      ? const _PauseIcon()
+                  child: showPauseButton
+                      ? _PauseIcon(
+                          color: pauseVariant == PauseButtonVariant.auto
+                              ? Colors.white
+                              : colorScheme.onPrimary,
+                        )
                       : const _PlayIcon(),
                 ),
               ),
@@ -79,11 +94,12 @@ class _PlayIcon extends StatelessWidget {
 }
 
 class _PauseIcon extends StatelessWidget {
-  const _PauseIcon();
+  const _PauseIcon({required this.color});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onPrimary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

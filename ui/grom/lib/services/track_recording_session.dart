@@ -18,6 +18,7 @@ class TrackRecordingSession {
 
   bool get isActive =>
       state == TrackRecordingState.recording ||
+      state == TrackRecordingState.autoPaused ||
       state == TrackRecordingState.paused;
 
   Map<String, dynamic> toJson() {

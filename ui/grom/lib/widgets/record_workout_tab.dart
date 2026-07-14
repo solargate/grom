@@ -76,7 +76,18 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
       text: l10n.recordingNotificationText,
       channelName: l10n.recordingNotificationChannelName,
       pausedText: l10n.recordingPausedNotificationText,
+      autoPausedText: l10n.recordingAutoPausedNotificationText,
     );
+  }
+
+  PauseButtonVariant _pauseVariant() {
+    if (_recorder.state == TrackRecordingState.autoPaused) {
+      return PauseButtonVariant.auto;
+    }
+    if (_recorder.state == TrackRecordingState.recording) {
+      return PauseButtonVariant.manual;
+    }
+    return PauseButtonVariant.none;
   }
 
   Future<void> _onPlay() async {
@@ -113,6 +124,10 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
   }
 
   Future<void> _onPause() async {
+    if (_recorder.state == TrackRecordingState.autoPaused) {
+      await _recorder.confirmManualPauseFromAutoPause();
+      return;
+    }
     await _recorder.pauseRecording();
   }
 
@@ -196,6 +211,7 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
     final mapHeight = MediaQuery.sizeOf(context).height * 0.42;
     final trackPoints = _recorder.polylinePoints;
     final followUser = _recorder.state == TrackRecordingState.recording;
+    final autoPauseEnabled = _recorder.autoPauseEnabled;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -222,6 +238,7 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
         const SizedBox(height: 16),
         WorkoutRecordControls(
           state: _recorder.state,
+          pauseVariant: _pauseVariant(),
           onPlay: _onPlay,
           onPause: _onPause,
           onFinish: _onFinish,
@@ -270,6 +287,20 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
               ],
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: FilterChip(
+            label: Text(
+              autoPauseEnabled
+                  ? l10n.autoPauseEnabled
+                  : l10n.autoPauseDisabled,
+            ),
+            selected: autoPauseEnabled,
+            onSelected: (selected) {
+              _recorder.setAutoPauseEnabled(selected);
+            },
+          ),
         ),
       ],
     );

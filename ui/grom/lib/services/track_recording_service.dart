@@ -8,7 +8,9 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/recorded_track.dart';
 import '../models/recorded_track_point.dart';
 import '../utils/geo_utils.dart';
+import 'autopause_storage.dart';
 import 'gpx_track_encoder.dart';
+import 'movement_detector.dart';
 import 'track_recording_foreground.dart';
 import 'track_recording_session.dart';
 import 'track_recording_state.dart';
@@ -22,12 +24,14 @@ class TrackRecordingNotificationStrings {
     required this.text,
     required this.channelName,
     this.pausedText,
+    this.autoPausedText,
   });
 
   final String title;
   final String text;
   final String channelName;
   final String? pausedText;
+  final String? autoPausedText;
 }
 
 class TrackRecordingService extends ChangeNotifier {
@@ -37,6 +41,7 @@ class TrackRecordingService extends ChangeNotifier {
 
   final GpxTrackEncoder _gpxEncoder = GpxTrackEncoder();
   final TrackRecordingStore _store = TrackRecordingStore.instance;
+  final MovementDetector _movementDetector = MovementDetector();
 
   TrackRecordingState _state = TrackRecordingState.idle;
   final List<RecordedTrackPoint> _points = [];
@@ -49,10 +54,12 @@ class TrackRecordingService extends ChangeNotifier {
   TrackRecordingNotificationStrings? _notificationStrings;
   String? _streamError;
   bool _initialized = false;
+  bool _autoPauseEnabled = true;
 
   bool get _useForegroundTask => TrackRecordingForeground.isSupported;
 
   TrackRecordingState get state => _state;
+  bool get autoPauseEnabled => _autoPauseEnabled;
   List<RecordedTrackPoint> get points => List.unmodifiable(_points);
   List<LatLng> get polylinePoints =>
       _points.map((p) => LatLng(p.latitude, p.longitude)).toList(growable: false);
@@ -69,6 +76,7 @@ class TrackRecordingService extends ChangeNotifier {
   double get currentSpeedKmh => _currentSpeedKmh;
   bool get isActive =>
       _state == TrackRecordingState.recording ||
+      _state == TrackRecordingState.autoPaused ||
       _state == TrackRecordingState.paused;
 
   Future<void> initialize() async {
@@ -76,6 +84,8 @@ class TrackRecordingService extends ChangeNotifier {
       return;
     }
     _initialized = true;
+
+    _autoPauseEnabled = await AutopauseStorage.getEnabled();
 
     await _store.init();
     await TrackRecordingForeground.initialize();
@@ -88,7 +98,8 @@ class TrackRecordingService extends ChangeNotifier {
 
     if (await TrackRecordingForeground.isRunning()) {
       _applySession(session);
-      if (_state == TrackRecordingState.recording) {
+      if (_state == TrackRecordingState.recording ||
+          _state == TrackRecordingState.autoPaused) {
         _startTickTimer();
       }
       notifyListeners();
@@ -107,6 +118,20 @@ class TrackRecordingService extends ChangeNotifier {
     _applySession(session);
     notifyListeners();
     return true;
+  }
+
+  Future<void> setAutoPauseEnabled(bool enabled) async {
+    if (_autoPauseEnabled == enabled) {
+      return;
+    }
+    _autoPauseEnabled = enabled;
+    await AutopauseStorage.setEnabled(enabled);
+
+    if (!enabled && _state == TrackRecordingState.autoPaused) {
+      await exitAutoPause();
+    }
+
+    notifyListeners();
   }
 
   Future<bool> ensureLocationReady() async {
@@ -202,6 +227,7 @@ class TrackRecordingService extends ChangeNotifier {
       _points.clear();
       _startTime = now;
       _accumulatedDuration = Duration.zero;
+      _movementDetector.reset();
     }
 
     _state = TrackRecordingState.recording;
@@ -230,13 +256,64 @@ class TrackRecordingService extends ChangeNotifier {
 
     if (_useForegroundTask) {
       await TrackRecordingForeground.sendCommand('pause');
-      final pausedText = _notificationStrings?.pausedText;
-      if (pausedText != null && _notificationStrings != null) {
-        await TrackRecordingForeground.updateNotification(
-          title: _notificationStrings!.title,
-          text: pausedText,
-        );
-      }
+      await _updatePausedNotification();
+    } else {
+      await _stopPositionStream();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> enterAutoPause() async {
+    if (_state != TrackRecordingState.recording || !_autoPauseEnabled) {
+      return;
+    }
+
+    _finalizeOpenSegment();
+    _state = TrackRecordingState.autoPaused;
+    _currentSpeedKmh = 0;
+    await _persistSession();
+    _stopTickTimer();
+    _startTickTimer();
+
+    if (_useForegroundTask) {
+      await _updateAutoPausedNotification();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> exitAutoPause() async {
+    if (_state != TrackRecordingState.autoPaused) {
+      return;
+    }
+
+    _state = TrackRecordingState.recording;
+    _segmentStartedAt = DateTime.now();
+    _movementDetector.reset();
+    await _persistSession();
+    _startTickTimer();
+
+    if (_useForegroundTask) {
+      await _updateRecordingNotification();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> confirmManualPauseFromAutoPause() async {
+    if (_state != TrackRecordingState.autoPaused) {
+      return;
+    }
+
+    _state = TrackRecordingState.paused;
+    _currentSpeedKmh = 0;
+    await _persistSession();
+    _stopTickTimer();
+
+    if (_useForegroundTask) {
+      await TrackRecordingForeground.sendCommand('pause');
+      await _updatePausedNotification();
     } else {
       await _stopPositionStream();
     }
@@ -261,6 +338,7 @@ class TrackRecordingService extends ChangeNotifier {
     _streamError = null;
     _state = TrackRecordingState.recording;
     _segmentStartedAt = DateTime.now();
+    _movementDetector.reset();
     await _persistSession();
     _startTickTimer();
 
@@ -268,10 +346,7 @@ class TrackRecordingService extends ChangeNotifier {
       if (!await TrackRecordingForeground.isRunning()) {
         await _startForegroundRecording(notificationStrings);
       } else {
-        await TrackRecordingForeground.updateNotification(
-          title: notificationStrings.title,
-          text: notificationStrings.text,
-        );
+        await _updateRecordingNotification();
         await TrackRecordingForeground.sendCommand('resume');
       }
     } else {
@@ -293,12 +368,17 @@ class TrackRecordingService extends ChangeNotifier {
     if (_state == TrackRecordingState.recording) {
       _startTickTimer();
       await _startForegroundRecording(notificationStrings);
+    } else if (_state == TrackRecordingState.autoPaused) {
+      _startTickTimer();
+      await _startForegroundRecording(notificationStrings);
+      await _updateAutoPausedNotification();
     } else {
       await TrackRecordingForeground.start(
         title: notificationStrings.title,
         text: notificationStrings.pausedText ?? notificationStrings.text,
         channelName: notificationStrings.channelName,
         pausedText: notificationStrings.pausedText,
+        autoPausedText: notificationStrings.autoPausedText,
       );
     }
 
@@ -314,11 +394,16 @@ class TrackRecordingService extends ChangeNotifier {
       _finalizeOpenSegment();
     }
 
+    final startTime = _startTime;
+    final durationTotalSeconds = startTime == null
+        ? durationSeconds
+        : DateTime.now().difference(startTime).inSeconds;
+
     await _stopRecordingInfrastructure();
     _stopTickTimer();
     _state = TrackRecordingState.idle;
 
-    if (_points.isEmpty || _startTime == null) {
+    if (_points.isEmpty || startTime == null) {
       await _resetSession();
       notifyListeners();
       return null;
@@ -326,8 +411,9 @@ class TrackRecordingService extends ChangeNotifier {
 
     final track = RecordedTrack(
       points: List.unmodifiable(_points),
-      startTime: _startTime!,
+      startTime: startTime,
       durationSeconds: durationSeconds,
+      durationTotalSeconds: durationTotalSeconds,
       distanceMeters: distanceMeters,
       gpxBytes: _gpxEncoder.encode(points: _points),
     );
@@ -353,12 +439,14 @@ class TrackRecordingService extends ChangeNotifier {
       text: notificationStrings.text,
       channelName: notificationStrings.channelName,
       pausedText: notificationStrings.pausedText,
+      autoPausedText: notificationStrings.autoPausedText,
     );
     if (result is ForegroundServiceFailure) {
       _streamError = result.error.toString();
       throw StateError('foreground_service_start_failed');
     }
-    if (_state == TrackRecordingState.recording) {
+    if (_state == TrackRecordingState.recording ||
+        _state == TrackRecordingState.autoPaused) {
       await TrackRecordingForeground.sendCommand('resume');
     }
   }
@@ -380,6 +468,7 @@ class TrackRecordingService extends ChangeNotifier {
     _currentSpeedKmh = 0;
     _notificationStrings = null;
     _streamError = null;
+    _movementDetector.reset();
     await _store.clear();
   }
 
@@ -416,6 +505,7 @@ class TrackRecordingService extends ChangeNotifier {
     _points
       ..clear()
       ..addAll(session.points);
+    _movementDetector.reset();
     if (_points.isNotEmpty) {
       final lastPoint = _points.last;
       if (lastPoint.speedMps != null && lastPoint.speedMps! >= 0) {
@@ -444,17 +534,7 @@ class TrackRecordingService extends ChangeNotifier {
       final point = RecordedTrackPoint.fromJson(
         Map<String, dynamic>.from(pointJson),
       );
-      if (_points.isEmpty ||
-          _points.last.timestamp != point.timestamp ||
-          _points.last.latitude != point.latitude ||
-          _points.last.longitude != point.longitude) {
-        _points.add(point);
-      }
-      final speedKmh = data['speedKmh'];
-      if (speedKmh is num) {
-        _currentSpeedKmh = speedKmh.toDouble();
-      }
-      notifyListeners();
+      unawaited(_handlePositionPoint(point, data['speedKmh']));
     }
   }
 
@@ -463,7 +543,9 @@ class TrackRecordingService extends ChangeNotifier {
     _positionSub = Geolocator.getPositionStream(
       locationSettings: _buildLocationSettings(forStream: true),
     ).listen(
-      _onPosition,
+      (position) {
+        unawaited(_handleGeolocatorPosition(position));
+      },
       onError: (Object error) {
         _streamError = error.toString();
         notifyListeners();
@@ -479,9 +561,7 @@ class TrackRecordingService extends ChangeNotifier {
   void _startTickTimer() {
     _tickTimer?.cancel();
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_state == TrackRecordingState.recording) {
-        notifyListeners();
-      }
+      unawaited(_onTick());
     });
   }
 
@@ -490,8 +570,28 @@ class TrackRecordingService extends ChangeNotifier {
     _tickTimer = null;
   }
 
-  Future<void> _onPosition(Position position) async {
-    if (_state != TrackRecordingState.recording) {
+  Future<void> _onTick() async {
+    if (_state == TrackRecordingState.recording) {
+      if (_autoPauseEnabled && _movementDetector.isStationaryForPause()) {
+        await enterAutoPause();
+        return;
+      }
+      notifyListeners();
+      return;
+    }
+
+    if (_state == TrackRecordingState.autoPaused) {
+      if (_movementDetector.hasRecentMovementForResume()) {
+        await exitAutoPause();
+        return;
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> _handleGeolocatorPosition(Position position) async {
+    if (_state != TrackRecordingState.recording &&
+        _state != TrackRecordingState.autoPaused) {
       return;
     }
 
@@ -513,12 +613,79 @@ class TrackRecordingService extends ChangeNotifier {
       accuracy: position.accuracy,
     );
 
-    _points.add(point);
-    if (position.speed >= 0) {
-      _currentSpeedKmh = position.speed * 3.6;
+    final speedKmh = position.speed >= 0 ? position.speed * 3.6 : null;
+    await _handlePositionPoint(point, speedKmh);
+  }
+
+  Future<void> _handlePositionPoint(
+    RecordedTrackPoint point,
+    Object? speedKmh,
+  ) async {
+    final position = LatLng(point.latitude, point.longitude);
+    _movementDetector.onPosition(position, point.timestamp);
+
+    if (_state == TrackRecordingState.recording) {
+      if (_points.isEmpty ||
+          _points.last.timestamp != point.timestamp ||
+          _points.last.latitude != point.latitude ||
+          _points.last.longitude != point.longitude) {
+        _points.add(point);
+      }
+      if (speedKmh is num) {
+        _currentSpeedKmh = speedKmh.toDouble();
+      } else if (point.speedMps != null && point.speedMps! >= 0) {
+        _currentSpeedKmh = point.speedMps! * 3.6;
+      }
+      await _persistSession();
+      notifyListeners();
+      return;
     }
-    await _persistSession();
-    notifyListeners();
+
+    if (_state == TrackRecordingState.autoPaused) {
+      if (speedKmh is num) {
+        _currentSpeedKmh = 0;
+      }
+      if (_movementDetector.hasRecentMovementForResume()) {
+        await exitAutoPause();
+      } else {
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> _updateRecordingNotification() async {
+    final notification = _notificationStrings;
+    if (notification == null) {
+      return;
+    }
+    await TrackRecordingForeground.updateNotification(
+      title: notification.title,
+      text: notification.text,
+    );
+  }
+
+  Future<void> _updateAutoPausedNotification() async {
+    final notification = _notificationStrings;
+    final autoPausedText = notification?.autoPausedText;
+    if (notification == null || autoPausedText == null) {
+      return;
+    }
+    await TrackRecordingForeground.updateNotification(
+      title: notification.title,
+      text: autoPausedText,
+    );
+  }
+
+  Future<void> _updatePausedNotification() async {
+    final notification = _notificationStrings;
+    final pausedText = notification?.pausedText;
+    if (notification == null || pausedText == null) {
+      return;
+    }
+    await TrackRecordingForeground.updateNotification(
+      title: notification.title,
+      text: pausedText,
+    );
   }
 
   LocationSettings _buildLocationSettings({required bool forStream}) {
@@ -526,8 +693,8 @@ class TrackRecordingService extends ChangeNotifier {
       final notification = _notificationStrings;
       return AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-        intervalDuration: const Duration(seconds: 5),
+        distanceFilter: 1,
+        intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: notification == null
             ? null
             : ForegroundNotificationConfig(
@@ -545,7 +712,7 @@ class TrackRecordingService extends ChangeNotifier {
       return AppleSettings(
         accuracy: LocationAccuracy.high,
         activityType: ActivityType.fitness,
-        distanceFilter: 5,
+        distanceFilter: 1,
         pauseLocationUpdatesAutomatically: false,
         showBackgroundLocationIndicator: true,
       );
@@ -553,7 +720,7 @@ class TrackRecordingService extends ChangeNotifier {
 
     return const LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
+      distanceFilter: 1,
     );
   }
 }

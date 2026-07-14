@@ -23,6 +23,7 @@ abstract class TrackRecordingForegroundPlatform {
     required String text,
     required String channelName,
     String? pausedText,
+    String? autoPausedText,
   });
   Future<ForegroundServiceResult> updateNotification({
     required String title,

@@ -69,6 +69,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   late DateTime _date;
   late TimeOfDay _time;
   int _durationSeconds = 0;
+  int? _durationTotalSeconds;
   double _distanceKm = 0;
   bool _isSubmitting = false;
   bool _isPickingFile = false;
@@ -478,6 +479,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _date = DateTime(localStart.year, localStart.month, localStart.day);
       _time = TimeOfDay(hour: localStart.hour, minute: localStart.minute);
       _durationSeconds = track.durationSeconds;
+      _durationTotalSeconds = track.durationTotalSeconds;
       _distanceKm = track.distanceMeters / 1000;
     });
     _tabController?.animateTo(0);
@@ -506,6 +508,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         sportType: _sportTypeId,
         startDate: _startDateTime,
         durationSeconds: _durationSeconds,
+        durationTotalSeconds: _durationTotalSeconds,
         distanceKm: _distanceKm,
         equipmentIds: _selectedEquipmentIds,
       );
@@ -516,6 +519,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         'sport_type': draft.sportType,
         'start_date': draft.startDate.toUtc().toIso8601String(),
         'duration_seconds': draft.durationSeconds.toString(),
+        if (draft.durationTotalSeconds != null)
+          'duration_total_seconds': draft.durationTotalSeconds.toString(),
         'distance': (draft.distanceKm * 1000).toString(),
         if (draft.equipmentIds.isNotEmpty)
           'equipment_ids': jsonEncode(draft.equipmentIds),

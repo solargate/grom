@@ -25,7 +25,8 @@ class TrackRecordingTaskHandler extends TaskHandler {
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     await _store.init();
     final session = await _store.load();
-    if (session?.state == TrackRecordingState.recording) {
+    if (session?.state == TrackRecordingState.recording ||
+        session?.state == TrackRecordingState.autoPaused) {
       await _startPositionStream();
     }
   }
@@ -62,8 +63,8 @@ class TrackRecordingTaskHandler extends TaskHandler {
     _positionSub = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-        intervalDuration: const Duration(seconds: 5),
+        distanceFilter: 1,
+        intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: null,
       ),
     ).listen(
@@ -88,7 +89,11 @@ class TrackRecordingTaskHandler extends TaskHandler {
 
   Future<void> _onPosition(Position position) async {
     final session = await _store.load();
-    if (session == null || session.state != TrackRecordingState.recording) {
+    if (session == null) {
+      return;
+    }
+    if (session.state != TrackRecordingState.recording &&
+        session.state != TrackRecordingState.autoPaused) {
       return;
     }
 
@@ -110,28 +115,21 @@ class TrackRecordingTaskHandler extends TaskHandler {
       accuracy: position.accuracy,
     );
 
-    final updated = TrackRecordingSession(
-      state: session.state,
-      startTime: session.startTime,
-      accumulatedDurationMs: session.accumulatedDurationMs,
-      segmentStartedAt: session.segmentStartedAt,
-      points: [...session.points, point],
-    );
-    await _store.save(updated);
+    if (session.state == TrackRecordingState.recording) {
+      final updated = TrackRecordingSession(
+        state: session.state,
+        startTime: session.startTime,
+        accumulatedDurationMs: session.accumulatedDurationMs,
+        segmentStartedAt: session.segmentStartedAt,
+        points: [...session.points, point],
+      );
+      await _store.save(updated);
+    }
 
     FlutterForegroundTask.sendDataToMain({
       'type': 'point',
       'point': point.toJson(),
       if (position.speed >= 0) 'speedKmh': position.speed * 3.6,
     });
-
-    final notificationText = await FlutterForegroundTask.getData<String>(
-      key: 'notificationText',
-    );
-    if (notificationText != null) {
-      FlutterForegroundTask.updateService(
-        notificationText: notificationText,
-      );
-    }
   }
 }

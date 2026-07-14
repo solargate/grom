@@ -1042,6 +1042,24 @@ abstract class AppLocalizations {
   /// **'Workout recording paused'**
   String get recordingPausedNotificationText;
 
+  /// No description provided for @recordingAutoPausedNotificationText.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout recording auto-paused'**
+  String get recordingAutoPausedNotificationText;
+
+  /// No description provided for @autoPauseEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-pause on'**
+  String get autoPauseEnabled;
+
+  /// No description provided for @autoPauseDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-pause off'**
+  String get autoPauseDisabled;
+
   /// No description provided for @backgroundLocationRationale.
   ///
   /// In en, this message translates to:

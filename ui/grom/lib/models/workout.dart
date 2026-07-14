@@ -115,6 +115,7 @@ class CreateWorkoutDraft {
     required this.sportType,
     required this.startDate,
     required this.durationSeconds,
+    this.durationTotalSeconds,
     required this.distanceKm,
     this.equipmentIds = const [],
   });
@@ -124,6 +125,7 @@ class CreateWorkoutDraft {
   final String sportType;
   final DateTime startDate;
   final int durationSeconds;
+  final int? durationTotalSeconds;
   final double distanceKm;
   final List<String> equipmentIds;
 
@@ -134,6 +136,8 @@ class CreateWorkoutDraft {
       'sport_type': sportType,
       'start_date': startDate.toUtc().toIso8601String(),
       'duration_seconds': durationSeconds,
+      if (durationTotalSeconds != null)
+        'duration_total_seconds': durationTotalSeconds,
       'distance': distanceKm * 1000,
       if (equipmentIds.isNotEmpty) 'equipment_ids': equipmentIds,
     };

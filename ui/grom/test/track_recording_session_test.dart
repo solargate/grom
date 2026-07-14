@@ -35,4 +35,19 @@ void main() {
     expect(restored.points.first.longitude, 37.62);
     expect(restored.points.first.speedMps, 2.5);
   });
+
+  test('TrackRecordingSession round-trips autoPaused state', () {
+    final timestamp = DateTime(2026, 3, 6, 12, 30);
+    final session = TrackRecordingSession(
+      state: TrackRecordingState.autoPaused,
+      startTime: timestamp,
+      accumulatedDurationMs: 120000,
+      segmentStartedAt: null,
+      points: const [],
+    );
+
+    final restored = TrackRecordingSession.fromJson(session.toJson());
+
+    expect(restored.state, TrackRecordingState.autoPaused);
+  });
 }

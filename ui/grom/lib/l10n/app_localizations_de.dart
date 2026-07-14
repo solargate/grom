@@ -510,6 +510,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Trainingsaufzeichnung pausiert';
 
   @override
+  String get recordingAutoPausedNotificationText =>
+      'Trainingsaufzeichnung automatisch pausiert';
+
+  @override
+  String get autoPauseEnabled => 'Autopause ein';
+
+  @override
+  String get autoPauseDisabled => 'Autopause aus';
+
+  @override
   String get backgroundLocationRationale =>
       'Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.';
 

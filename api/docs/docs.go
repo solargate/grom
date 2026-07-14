@@ -1366,6 +1366,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3600
                 },
+                "duration_total_seconds": {
+                    "type": "integer",
+                    "example": 3900
+                },
                 "equipment_ids": {
                     "type": "array",
                     "items": {

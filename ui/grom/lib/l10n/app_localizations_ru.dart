@@ -504,6 +504,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get recordingPausedNotificationText => 'Запись тренировки на паузе';
 
   @override
+  String get recordingAutoPausedNotificationText =>
+      'Запись тренировки на автопаузе';
+
+  @override
+  String get autoPauseEnabled => 'Автопауза включена';
+
+  @override
+  String get autoPauseDisabled => 'Автопауза выключена';
+
+  @override
   String get backgroundLocationRationale =>
       'Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.';
 

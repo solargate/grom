@@ -505,6 +505,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordingPausedNotificationText => 'Workout recording paused';
 
   @override
+  String get recordingAutoPausedNotificationText =>
+      'Workout recording auto-paused';
+
+  @override
+  String get autoPauseEnabled => 'Auto-pause on';
+
+  @override
+  String get autoPauseDisabled => 'Auto-pause off';
+
+  @override
   String get backgroundLocationRationale =>
       'Background location lets Grom keep recording your workout when you switch apps.';
 

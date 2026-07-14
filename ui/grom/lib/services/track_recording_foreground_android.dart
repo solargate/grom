@@ -68,6 +68,7 @@ class TrackRecordingForegroundAndroid implements TrackRecordingForegroundPlatfor
     required String text,
     required String channelName,
     String? pausedText,
+    String? autoPausedText,
   }) async {
     if (!isSupported) {
       return const ForegroundServiceFailure(error: 'unsupported_platform');
@@ -78,6 +79,12 @@ class TrackRecordingForegroundAndroid implements TrackRecordingForegroundPlatfor
       await FlutterForegroundTask.saveData(
         key: 'pausedNotificationText',
         value: pausedText,
+      );
+    }
+    if (autoPausedText != null) {
+      await FlutterForegroundTask.saveData(
+        key: 'autoPausedNotificationText',
+        value: autoPausedText,
       );
     }
 

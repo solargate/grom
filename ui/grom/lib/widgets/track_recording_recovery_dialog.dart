@@ -35,6 +35,7 @@ Future<void> showTrackRecordingRecoveryDialog(
           text: l10n.recordingNotificationText,
           channelName: l10n.recordingNotificationChannelName,
           pausedText: l10n.recordingPausedNotificationText,
+          autoPausedText: l10n.recordingAutoPausedNotificationText,
         ),
       );
     } catch (_) {

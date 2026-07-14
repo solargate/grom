@@ -24,12 +24,14 @@ class TrackRecordingForeground {
     required String text,
     required String channelName,
     String? pausedText,
+    String? autoPausedText,
   }) =>
       _platform.start(
         title: title,
         text: text,
         channelName: channelName,
         pausedText: pausedText,
+        autoPausedText: autoPausedText,
       );
 
   static Future<ForegroundServiceResult> updateNotification({
