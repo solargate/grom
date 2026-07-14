@@ -15,11 +15,11 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 	dir := t.TempDir()
 	store := workouts.NewStore(dir)
 
-	fitData, err := os.ReadFile(filepath.Join("..", "..", "cmd", "grom", "1.fit"))
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-ride.fit"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsed, err := tracks.Parse(fitData, "1.fit")
+	parsed, err := tracks.Parse(fitData, "1-ride.fit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 		Distance:        0,
 		SpeedMaxKmh:     floatPtr(10),
 	}, &workouts.TrackInput{
-		Filename: "1.fit",
+		Filename: "1-ride.fit",
 		Data:     fitData,
 		Parsed:   parsed,
 	})

@@ -9,15 +9,15 @@ import (
 )
 
 func fitSamplePath(name string) string {
-	return filepath.Join("..", "..", "cmd", "grom", name)
+	return filepath.Join("..", "..", "testdata", name)
 }
 
 func TestParseFITBikeSessionMetrics(t *testing.T) {
-	data, err := os.ReadFile(fitSamplePath("1.fit"))
+	data, err := os.ReadFile(fitSamplePath("1-ride.fit"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsed, err := tracks.Parse(data, "1.fit")
+	parsed, err := tracks.Parse(data, "1-ride.fit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,11 +41,11 @@ func TestParseFITBikeSessionMetrics(t *testing.T) {
 }
 
 func TestParseFITWalkingSteps(t *testing.T) {
-	data, err := os.ReadFile(fitSamplePath("2.fit"))
+	data, err := os.ReadFile(fitSamplePath("2-walk.fit"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsed, err := tracks.Parse(data, "2.fit")
+	parsed, err := tracks.Parse(data, "2-walk.fit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,11 +55,11 @@ func TestParseFITWalkingSteps(t *testing.T) {
 }
 
 func TestParseFITPilatesCalories(t *testing.T) {
-	data, err := os.ReadFile(fitSamplePath("4.fit"))
+	data, err := os.ReadFile(fitSamplePath("4-pilates.fit"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsed, err := tracks.Parse(data, "4.fit")
+	parsed, err := tracks.Parse(data, "4-pilates.fit")
 	if err != nil {
 		t.Fatal(err)
 	}
