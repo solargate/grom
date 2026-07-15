@@ -24,6 +24,8 @@ const (
 	trackLineWeight          = 4.0
 )
 
+var trackLineColor = color.RGBA{R: 25, G: 118, B: 210, A: 255} // Material Blue 700 #1976D2
+
 func RenderPreview(points []tracks.LatLng) ([]byte, error) {
 	if len(points) < 2 {
 		return nil, nil
@@ -46,7 +48,7 @@ func RenderPreview(points []tracks.LatLng) ([]byte, error) {
 		ctx.SetBoundingBox(*bbox)
 	}
 
-	path := sm.NewPath(positions, color.RGBA{R: 0, G: 100, B: 255, A: 255}, trackLineWeight)
+	path := sm.NewPath(positions, trackLineColor, trackLineWeight)
 	ctx.AddObject(path)
 
 	img, err := ctx.Render()
@@ -71,7 +73,7 @@ func renderFallback(positions []s2.LatLng) (image.Image, error) {
 	ctx.SetBackground(color.RGBA{R: 240, G: 240, B: 240, A: 255})
 	ctx.SetCache(nil)
 
-	path := sm.NewPath(positions, color.RGBA{R: 0, G: 100, B: 255, A: 255}, trackLineWeight)
+	path := sm.NewPath(positions, trackLineColor, trackLineWeight)
 	ctx.AddObject(path)
 
 	return ctx.Render()

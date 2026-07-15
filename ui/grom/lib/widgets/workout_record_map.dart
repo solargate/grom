@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:grom/app_theme.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -72,7 +73,6 @@ class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final center = widget.initialCenter ??
         (widget.trackPoints.isNotEmpty
             ? widget.trackPoints.last
@@ -109,7 +109,7 @@ class _WorkoutRecordMapState extends State<WorkoutRecordMap> {
               Polyline(
                 points: widget.trackPoints,
                 strokeWidth: 5,
-                color: colorScheme.primary,
+                color: kWorkoutTrackColor,
                 strokeCap: StrokeCap.round,
                 strokeJoin: StrokeJoin.round,
               ),
