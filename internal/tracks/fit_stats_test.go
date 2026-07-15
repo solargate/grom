@@ -40,6 +40,19 @@ func TestParseFITBikeSessionMetrics(t *testing.T) {
 	}
 }
 
+func TestParseFITSixRideCadenceFromRecords(t *testing.T) {
+	data, err := os.ReadFile(fitSamplePath("6-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := tracks.Parse(data, "6-ride.fit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFloatClose(t, parsed.Stats.CadenceMax.Value, 109, 0)
+	assertFloatClose(t, parsed.Stats.CadenceAvg.Value, 70.5, 0)
+}
+
 func TestParseFITWalkingSteps(t *testing.T) {
 	data, err := os.ReadFile(fitSamplePath("2-walk.fit"))
 	if err != nil {

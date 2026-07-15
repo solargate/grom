@@ -93,6 +93,14 @@ func (s *FloatStat) setCalculated(v float64) {
 	s.Source = SourceCalculated
 }
 
+func (s *FloatStat) setCalculatedOverride(v float64) {
+	if !validFloat(v) {
+		return
+	}
+	s.Value = &v
+	s.Source = SourceCalculated
+}
+
 func (s *StringStat) setExplicit(v string) {
 	if v == "" {
 		return

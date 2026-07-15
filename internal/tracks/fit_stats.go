@@ -23,6 +23,7 @@ func extractFITStats(activity *filedef.Activity) Stats {
 	samples := fitSamplePoints(activity.Records)
 	calc := calculateStatsFromSamples(samples)
 	mergeCalculatedStats(&stats, &calc)
+	applyCalculatedCadence(&stats, &calc)
 
 	return stats
 }
@@ -74,10 +75,10 @@ func extractFITSessionStats(session *mesgdef.Session, stats *Stats) {
 		stats.GradeAvg.setExplicit(roundFloat(math.Abs(grade)))
 	}
 
-	if session.MaxCadence != basetype.Uint8Invalid {
+	if session.MaxCadence != basetype.Uint8Invalid && session.MaxCadence > 0 {
 		stats.CadenceMax.setExplicit(float64(session.MaxCadence))
 	}
-	if session.AvgCadence != basetype.Uint8Invalid {
+	if session.AvgCadence != basetype.Uint8Invalid && session.AvgCadence > 0 {
 		stats.CadenceAvg.setExplicit(float64(session.AvgCadence))
 	}
 
@@ -186,6 +187,15 @@ func fitSamplePoints(records []*mesgdef.Record) []SamplePoint {
 		points = append(points, pt)
 	}
 	return points
+}
+
+func applyCalculatedCadence(stats, calc *Stats) {
+	if v := floatValue(calc.CadenceMax); v >= 0 {
+		stats.CadenceMax.setCalculatedOverride(v)
+	}
+	if v := floatValue(calc.CadenceAvg); v >= 0 {
+		stats.CadenceAvg.setCalculatedOverride(v)
+	}
 }
 
 func mergeCalculatedStats(stats, calc *Stats) {
