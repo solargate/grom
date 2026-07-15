@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'about_page_url.dart' if (dart.library.html) 'about_page_url_web.dart';
@@ -41,6 +42,20 @@ class AboutPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.data?.version;
+                final label = version == null || version.isEmpty
+                    ? l10n.appTitle
+                    : '${l10n.appTitle} $version';
+                return Text(
+                  label,
+                  style: theme.textTheme.headlineSmall,
+                );
+              },
+            ),
+            const SizedBox(height: 32),
             Text(
               l10n.mapDataAttributionTitle,
               style: theme.textTheme.labelLarge?.copyWith(

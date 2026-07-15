@@ -8,6 +8,7 @@ import (
 	apiV1 "github.com/solargate/grom/api/v1"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/tlsutil"
+	"github.com/solargate/grom/internal/version"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("Grom 0.0.1")
+	fmt.Printf("Grom %s\n", version.Version)
 
 	configPath := flag.String("config", "", "Path to config file")
 	flag.Parse()

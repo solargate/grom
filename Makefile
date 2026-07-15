@@ -1,31 +1,36 @@
 .PHONY: all grom doc web cli android android-apk android-aab android-debug gencerts test test-go test-ui clean
 
+VERSION := $(shell tr -d '[:space:]' < VERSION)
+BUILD_NUMBER ?= 1
+LDFLAGS := -X github.com/solargate/grom/internal/version.Version=$(VERSION)
+FLUTTER_VERSION_FLAGS := --build-name=$(VERSION) --build-number=$(BUILD_NUMBER)
+
 all: grom
 
 grom: doc web cli
-	cd cmd/grom && go build -o grom
+	cd cmd/grom && go build -ldflags "$(LDFLAGS)" -o grom
 
 cli:
-	cd cmd/grom && go build -o grom
+	cd cmd/grom && go build -ldflags "$(LDFLAGS)" -o grom
 
 doc:
 	cd api && swag init -d v1
 
 web:
-	cd ui/grom && flutter build web
+	cd ui/grom && flutter build web $(FLUTTER_VERSION_FLAGS)
 	rm -rf internal/web/dist
 	cp -r ui/grom/build/web internal/web/dist
 
 android: android-apk
 
 android-apk:
-	cd ui/grom && flutter build apk --release
+	cd ui/grom && flutter build apk --release $(FLUTTER_VERSION_FLAGS)
 
 android-aab:
-	cd ui/grom && flutter build appbundle --release
+	cd ui/grom && flutter build appbundle --release $(FLUTTER_VERSION_FLAGS)
 
 android-debug:
-	cd ui/grom && flutter build apk --debug
+	cd ui/grom && flutter build apk --debug $(FLUTTER_VERSION_FLAGS)
 
 gencerts:
 	cd cmd/grom && go run . gencerts -ip $(IP) -domain $(DOMAIN)
