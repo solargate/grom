@@ -90,8 +90,8 @@ class _GromShellState extends State<GromShell> {
     super.dispose();
   }
 
-  Future<void> _loadInitialData() async {
-    String name = 'Grom';
+  Future<({String name, bool federationEnabled})> _fetchServerInfo() async {
+    var name = 'Grom';
     var federationEnabled = false;
     if (!isMobileClient || ServerStorage.cachedBaseUrl != null) {
       try {
@@ -102,6 +102,11 @@ class _GromShellState extends State<GromShell> {
         // Network or server errors: keep default title.
       }
     }
+    return (name: name, federationEnabled: federationEnabled);
+  }
+
+  Future<void> _loadInitialData() async {
+    final serverInfo = await _fetchServerInfo();
 
     final token = await AuthStorage.getToken();
 
@@ -141,8 +146,8 @@ class _GromShellState extends State<GromShell> {
 
     if (!mounted) return;
     setState(() {
-      _title = name;
-      _federationEnabled = federationEnabled;
+      _title = serverInfo.name;
+      _federationEnabled = serverInfo.federationEnabled;
       _nickname = nickname;
       _isShellReady = true;
     });
@@ -486,9 +491,12 @@ class _GromShellState extends State<GromShell> {
   }
 
   Future<void> _onLoggedIn(UserInfo user) async {
+    final serverInfo = await _fetchServerInfo();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     setState(() {
+      _title = serverInfo.name;
+      _federationEnabled = serverInfo.federationEnabled;
       _nickname = user.nickname;
       _selectedDestination = GromDestination.home;
     });
@@ -545,13 +553,6 @@ class _GromShellState extends State<GromShell> {
       case GromDestination.settings:
         return l10n.settings;
     }
-  }
-
-  String _appBarTitle() {
-    if (_nickname != null) {
-      return '$_title · $_nickname';
-    }
-    return _title;
   }
 
   Widget _buildSideMenu() {
@@ -659,9 +660,7 @@ class _GromShellState extends State<GromShell> {
         leading: _shouldShowHeaderBackButton
             ? BackButton(onPressed: _handleShellBack)
             : null,
-        title: Text(
-          _isViewingWorkout ? _viewingWorkout!.name : _appBarTitle(),
-        ),
+        title: Text(_contentHeaderTitle(l10n)),
         actions: [
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
         ],
