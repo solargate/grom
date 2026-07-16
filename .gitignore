@@ -8,4 +8,3 @@ cmd/grom/*
 !cmd/grom/config-examples
 
 internal/web/dist/*
-#!internal/web/dist/index.html
