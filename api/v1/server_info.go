@@ -14,7 +14,7 @@ import (
 // @Produce      json
 // @Success      200
 // @Router       /status [get]
-func checkStatus(ctx *gin.Context) {
+func (a *App) checkStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "OK",
 	})
@@ -27,7 +27,7 @@ func checkStatus(ctx *gin.Context) {
 // @Produce      json
 // @Success      200
 // @Router       /server_info [get]
-func getServerInfo(ctx *gin.Context) {
+func (a *App) getServerInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"name":               config.Cfg.Server.Name,
 		"federation_enabled": config.Cfg.Federation.Enabled,

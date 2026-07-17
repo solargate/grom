@@ -12,7 +12,7 @@ import (
 
 func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {
@@ -45,12 +45,12 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 		t.Fatalf("track size = %d, want %d", len(trackData), len(gpxData))
 	}
 
-	previewPath, err := store.MapPreviewPath("solarwind", "test2", "38472901")
+	previewData, err := store.MapPreview("solarwind", "test2", "38472901")
 	if err != nil {
-		t.Fatalf("MapPreviewPath() error = %v", err)
+		t.Fatalf("MapPreview() error = %v", err)
 	}
-	if _, err := os.Stat(previewPath); err != nil {
-		t.Fatalf("expected map preview file: %v", err)
+	if len(previewData) == 0 {
+		t.Fatal("expected map preview bytes")
 	}
 
 	items, err := store.List("solarwind")
@@ -70,7 +70,7 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 
 func TestWorkoutInboxStoreDelete(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {

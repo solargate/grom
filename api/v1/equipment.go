@@ -5,19 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
-
-var equipmentStore *equipment.Store
-
-func initEquipmentStore() {
-	if equipmentStore == nil {
-		equipmentStore = equipment.NewStore(config.Cfg.Data.ResolvedDir)
-	}
-}
 
 type EquipmentResponse struct {
 	ID        string   `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
@@ -88,16 +79,15 @@ func handleEquipmentError(ctx *gin.Context, err error) {
 // @Failure      401  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /equipment [get]
-func listEquipment(ctx *gin.Context) {
-	initEquipmentStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) listEquipment(ctx *gin.Context) {
+	
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	items, err := equipmentStore.List(nickname)
+	items, err := a.Equipment.List(nickname)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list equipment"})
 		return
@@ -123,10 +113,9 @@ func listEquipment(ctx *gin.Context) {
 // @Failure      401   {object}  ErrorResponse
 // @Failure      500   {object}  ErrorResponse
 // @Router       /equipment [post]
-func createEquipment(ctx *gin.Context) {
-	initEquipmentStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) createEquipment(ctx *gin.Context) {
+	
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -138,7 +127,7 @@ func createEquipment(ctx *gin.Context) {
 		return
 	}
 
-	created, err := equipmentStore.Create(nickname, &equipment.Equipment{
+	created, err := a.Equipment.Create(nickname, &equipment.Equipment{
 		Type:      req.Type,
 		Name:      req.Name,
 		BikeType:  req.BikeType,
@@ -171,10 +160,9 @@ func createEquipment(ctx *gin.Context) {
 // @Failure      404   {object}  ErrorResponse
 // @Failure      500   {object}  ErrorResponse
 // @Router       /equipment/{id} [put]
-func updateEquipment(ctx *gin.Context) {
-	initEquipmentStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) updateEquipment(ctx *gin.Context) {
+	
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -187,7 +175,7 @@ func updateEquipment(ctx *gin.Context) {
 		return
 	}
 
-	updated, err := equipmentStore.Update(nickname, &equipment.Equipment{
+	updated, err := a.Equipment.Update(nickname, &equipment.Equipment{
 		ID:        id,
 		Type:      req.Type,
 		Name:      req.Name,
@@ -218,34 +206,31 @@ func updateEquipment(ctx *gin.Context) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /equipment/{id} [delete]
-func deleteEquipment(ctx *gin.Context) {
-	initEquipmentStore()
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) deleteEquipment(ctx *gin.Context) {
+			nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
 	id := ctx.Param("id")
-	if _, err := equipmentStore.FindByID(nickname, id); err != nil {
+	if _, err := a.Equipment.FindByID(nickname, id); err != nil {
 		handleEquipmentError(ctx, err)
 		return
 	}
 
-	if err := workoutStore.RemoveEquipmentFromAll(nickname, id); err != nil {
+	if err := a.Workouts.RemoveEquipmentFromAll(nickname, id); err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update workouts"})
 		return
 	}
 
-	if err := userStore.RemoveEquipmentFromLastSets(userID, id); err != nil {
+	if err := a.Users.RemoveEquipmentFromLastSets(userID, id); err != nil {
 		if errors.Is(err, users.ErrUserNotFound) {
 			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 			return
@@ -254,7 +239,7 @@ func deleteEquipment(ctx *gin.Context) {
 		return
 	}
 
-	if err := equipmentStore.Delete(nickname, id); err != nil {
+	if err := a.Equipment.Delete(nickname, id); err != nil {
 		handleEquipmentError(ctx, err)
 		return
 	}
@@ -262,13 +247,12 @@ func deleteEquipment(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-func resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([]workouts.WorkoutEquipment, error) {
+func (a *App) resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([]workouts.WorkoutEquipment, error) {
 	if len(equipmentIDs) == 0 {
 		return nil, nil
 	}
 
-	initEquipmentStore()
-	items, err := equipmentStore.FindByIDs(nickname, equipmentIDs)
+	items, err := a.Equipment.FindByIDs(nickname, equipmentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -293,11 +277,6 @@ func resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([]workouts
 	return result, nil
 }
 
-func saveLastEquipmentForSport(userID, sportType string, equipmentIDs []string) {
-	if userStore == nil {
-		if err := initUserStore(); err != nil {
-			return
-		}
-	}
-	_ = userStore.SetLastEquipmentForSport(userID, sportType, equipmentIDs)
+func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs []string) {
+	_ = a.Users.SetLastEquipmentForSport(userID, sportType, equipmentIDs)
 }

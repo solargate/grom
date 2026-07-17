@@ -11,6 +11,6 @@ auth:
   jwt_secret: "REPLACE_WITH_STRONG_SECRET"
   jwt_ttl_hours: 24
 
-data:
+storage:
   location: /var/lib/grom/data
   temp_dir: tmp

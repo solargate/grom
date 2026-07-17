@@ -1,4 +1,4 @@
-package federation
+package file
 
 import (
 	"fmt"
@@ -7,33 +7,28 @@ import (
 	"sync"
 
 	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/federation"
 	"gopkg.in/yaml.v3"
 )
 
-type InboundFollower struct {
-	ActorURI string `yaml:"actor_uri" json:"actor_uri"`
-	Inbox    string `yaml:"inbox" json:"inbox"`
-	Handle   string `yaml:"handle" json:"handle"`
-}
-
 type followersFile struct {
-	Followers []InboundFollower `yaml:"followers"`
+	Followers []federation.InboundFollower `yaml:"followers"`
 }
 
-type FollowersStore struct {
+type FederationFollowersStore struct {
 	dataDir string
 	mu      sync.Mutex
 }
 
-func NewFollowersStore(dataDir string) *FollowersStore {
-	return &FollowersStore{dataDir: dataDir}
+func NewFederationFollowersStore(dataDir string) *FederationFollowersStore {
+	return &FederationFollowersStore{dataDir: dataDir}
 }
 
-func (s *FollowersStore) path(nickname string) string {
+func (s *FederationFollowersStore) path(nickname string) string {
 	return filepath.Join(data.UserDir(s.dataDir, nickname), "federation", "followers.yaml")
 }
 
-func (s *FollowersStore) Add(nickname string, follower InboundFollower) error {
+func (s *FederationFollowersStore) Add(nickname string, follower federation.InboundFollower) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -55,7 +50,7 @@ func (s *FollowersStore) Add(nickname string, follower InboundFollower) error {
 	return s.save(path, file)
 }
 
-func (s *FollowersStore) List(nickname string) ([]InboundFollower, error) {
+func (s *FederationFollowersStore) List(nickname string) ([]federation.InboundFollower, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,7 +69,7 @@ func (s *FollowersStore) List(nickname string) ([]InboundFollower, error) {
 	return file.Followers, nil
 }
 
-func (s *FollowersStore) ListInboxes(nickname string) ([]string, error) {
+func (s *FederationFollowersStore) ListInboxes(nickname string) ([]string, error) {
 	followers, err := s.List(nickname)
 	if err != nil {
 		return nil, err
@@ -88,7 +83,7 @@ func (s *FollowersStore) ListInboxes(nickname string) ([]string, error) {
 	return inboxes, nil
 }
 
-func (s *FollowersStore) Remove(nickname, actorURI string) error {
+func (s *FederationFollowersStore) Remove(nickname, actorURI string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -118,7 +113,7 @@ func (s *FollowersStore) Remove(nickname, actorURI string) error {
 	return s.save(path, file)
 }
 
-func (s *FollowersStore) save(path string, file followersFile) error {
+func (s *FederationFollowersStore) save(path string, file followersFile) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
@@ -132,3 +127,5 @@ func (s *FollowersStore) save(path string, file followersFile) error {
 	}
 	return os.Rename(tmp, path)
 }
+
+var _ federation.FollowersRepository = (*FederationFollowersStore)(nil)

@@ -18,15 +18,15 @@ import (
 )
 
 type InboxProcessor struct {
-	users          *users.Store
+	users          users.Repository
 	social         *social.Service
 	delivery       *Delivery
-	inboxStore     *WorkoutInboxStore
-	followersStore *FollowersStore
+	inboxStore     InboxRepository
+	followersStore FollowersRepository
 	autoAccept     bool
 }
 
-func NewInboxProcessor(userStore *users.Store, socialSvc *social.Service, delivery *Delivery, inboxStore *WorkoutInboxStore, followersStore *FollowersStore) *InboxProcessor {
+func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, delivery *Delivery, inboxStore InboxRepository, followersStore FollowersRepository) *InboxProcessor {
 	return &InboxProcessor{
 		users:          userStore,
 		social:         socialSvc,
@@ -105,7 +105,7 @@ func (p *InboxProcessor) cacheInboundFollowerAvatar(targetNickname, handle strin
 		return
 	}
 	parsed := social.ParsedHandle{
-		Nickname: ownerNicknameFromDir(ownerDirName(handle)),
+		Nickname: ownerNicknameFromDir(OwnerKeyFromHandle(handle)),
 		Domain:   domainFromHandle(handle),
 		Handle:   handle,
 	}
@@ -208,7 +208,7 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 	var actorDoc map[string]any
 	if p.delivery != nil && actorURI != "" {
 		parsed := social.ParsedHandle{
-			Nickname: ownerNicknameFromDir(ownerDirName(ownerHandle)),
+			Nickname: ownerNicknameFromDir(OwnerKeyFromHandle(ownerHandle)),
 			Domain:   domainFromHandle(ownerHandle),
 			Handle:   ownerHandle,
 		}

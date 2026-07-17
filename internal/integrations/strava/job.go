@@ -36,8 +36,8 @@ type JobStatus struct {
 
 type JobManager struct {
 	tempDir        string
-	workoutStore   *workouts.Store
-	equipmentStore *equipment.Store
+	workoutStore   *workouts.Service
+	equipmentStore equipment.Repository
 	onPublish      PublishWorkoutFunc
 
 	mu   sync.Mutex
@@ -52,7 +52,7 @@ type userJob struct {
 	Status   JobStatus
 }
 
-func NewJobManager(tempDir string, workoutStore *workouts.Store, equipmentStore *equipment.Store, onPublish PublishWorkoutFunc) *JobManager {
+func NewJobManager(tempDir string, workoutStore *workouts.Service, equipmentStore equipment.Repository, onPublish PublishWorkoutFunc) *JobManager {
 	return &JobManager{
 		tempDir:        tempDir,
 		workoutStore:   workoutStore,

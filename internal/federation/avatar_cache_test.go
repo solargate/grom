@@ -2,23 +2,23 @@ package federation
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/color"
 	"image/png"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/tracks"
 	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestWorkoutInboxStoreCachesRemoteAvatar(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	img := image.NewRGBA(image.Rect(0, 0, 256, 256))
 	for y := 0; y < 256; y++ {
@@ -50,6 +50,7 @@ func TestWorkoutInboxStoreCachesRemoteAvatar(t *testing.T) {
 		Track:           tracks.TrackFileGPX,
 	}
 	ownerHandle := "test2@192.168.1.251:8445"
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
 	actor := map[string]any{
 		"name": "Test Two",
 		"icon": map[string]any{
@@ -62,9 +63,9 @@ func TestWorkoutInboxStoreCachesRemoteAvatar(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ownerDir := filepath.Join(store.inboxDir("solarwind"), ownerDirName(ownerHandle))
-	if !hasFederatedAvatar(ownerDir) {
-		t.Fatal("expected cached federated avatar file")
+	ctx := context.Background()
+	if !hasFederatedAvatar(ctx, store.blobs, "solarwind", ownerKey) {
+		t.Fatal("expected cached federated avatar blob")
 	}
 
 	items, err := store.List("solarwind")
@@ -82,18 +83,18 @@ func TestWorkoutInboxStoreCachesRemoteAvatar(t *testing.T) {
 		t.Fatalf("avatar url = %q, want %q", items[0].Author.AvatarURL, wantURL)
 	}
 
-	path, err := store.AvatarPath("solarwind", ownerDirName(ownerHandle))
+	data, err := store.Avatar("solarwind", ownerKey)
 	if err != nil {
-		t.Fatalf("AvatarPath() error = %v", err)
+		t.Fatalf("Avatar() error = %v", err)
 	}
-	if path != federatedAvatarPath(ownerDir) {
-		t.Fatalf("avatar path = %q", path)
+	if len(data) == 0 {
+		t.Fatal("expected avatar bytes")
 	}
 }
 
 func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	makePNG := func(r, g, b uint8) []byte {
 		img := image.NewRGBA(image.Rect(0, 0, 256, 256))
@@ -121,6 +122,7 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 	store.SetHTTPClient(client)
 
 	ownerHandle := "test2@192.168.1.251:8445"
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
 	actor := func() map[string]any {
 		return map[string]any{
 			"name": "Test Two",
@@ -142,8 +144,7 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ownerDir := filepath.Join(store.inboxDir("solarwind"), ownerDirName(ownerHandle))
-	firstData, err := os.ReadFile(federatedAvatarPath(ownerDir))
+	firstData, err := store.Avatar("solarwind", ownerKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,14 +160,15 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secondData, err := os.ReadFile(federatedAvatarPath(ownerDir))
+	secondData, err := store.Avatar("solarwind", ownerKey)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if bytes.Equal(firstData, secondData) {
-		t.Fatal("expected avatar file to be refreshed")
+		t.Fatal("expected avatar blob to be refreshed")
 	}
 
+	ownerDir := store.ownerDir("solarwind", ownerHandle)
 	meta, err := readAuthorMeta(ownerDir)
 	if err != nil {
 		t.Fatal(err)
@@ -192,7 +194,7 @@ func TestWorkoutInboxStoreRefreshesAvatarOnNewActivity(t *testing.T) {
 
 func TestWorkoutInboxStoreEnsureAuthorForFollow(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	img := image.NewRGBA(image.Rect(0, 0, 256, 256))
 	for y := 0; y < 256; y++ {
@@ -214,6 +216,7 @@ func TestWorkoutInboxStoreEnsureAuthorForFollow(t *testing.T) {
 	store.SetHTTPClient(server.Client())
 
 	ownerHandle := "test2@192.168.1.251:8445"
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
 	remoteURL := server.URL + "/users/test2/avatar"
 	if err := store.EnsureAuthor("solarwind", ownerHandle, "test2", "Test Two", remoteURL, true); err != nil {
 		t.Fatal(err)
@@ -226,5 +229,10 @@ func TestWorkoutInboxStoreEnsureAuthorForFollow(t *testing.T) {
 	wantURL := FederatedAvatarAPIPath(ownerHandle, 1)
 	if avatarURL != wantURL {
 		t.Fatalf("avatar url = %q, want %q", avatarURL, wantURL)
+	}
+
+	ctx := context.Background()
+	if ok, _ := store.blobs.Exists(ctx, keys.FederatedInboxAvatar("solarwind", ownerKey)); !ok {
+		t.Fatal("expected avatar blob")
 	}
 }

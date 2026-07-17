@@ -1,39 +1,36 @@
-package social
+package file
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/solargate/grom/internal/social"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	ErrFollowNotFound      = errors.New("follow not found")
-	ErrAlreadyFollowing    = errors.New("already following this user")
-	ErrCannotFollowSelf    = errors.New("cannot follow yourself")
-	ErrFollowNotActive     = errors.New("follow is not active")
 )
 
 const followsFileName = "follows.yaml"
 
-type Store struct {
+type followsFile struct {
+	Follows []social.Follow `yaml:"follows"`
+}
+
+type SocialStore struct {
 	dataDir string
 	path    string
 	mu      sync.Mutex
-	follows []Follow
+	follows []social.Follow
 }
 
-func NewStore(dataDir string) (*Store, error) {
+func NewSocialStore(dataDir string) (*SocialStore, error) {
 	fedDir := filepath.Join(dataDir, "federation")
 	if err := os.MkdirAll(fedDir, 0700); err != nil {
 		return nil, fmt.Errorf("create federation dir: %w", err)
 	}
 
-	s := &Store{
+	s := &SocialStore{
 		dataDir: dataDir,
 		path:    filepath.Join(fedDir, followsFileName),
 	}
@@ -43,7 +40,7 @@ func NewStore(dataDir string) (*Store, error) {
 	return s, nil
 }
 
-func (s *Store) load() error {
+func (s *SocialStore) load() error {
 	data, err := os.ReadFile(s.path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -61,7 +58,7 @@ func (s *Store) load() error {
 	return nil
 }
 
-func (s *Store) save() error {
+func (s *SocialStore) save() error {
 	file := followsFile{Follows: s.follows}
 	data, err := yaml.Marshal(&file)
 	if err != nil {
@@ -75,7 +72,7 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
-func (s *Store) FindByID(id string) (*Follow, error) {
+func (s *SocialStore) FindByID(id string) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -85,14 +82,14 @@ func (s *Store) FindByID(id string) (*Follow, error) {
 			return &f, nil
 		}
 	}
-	return nil, ErrFollowNotFound
+	return nil, social.ErrFollowNotFound
 }
 
-func (s *Store) ListByFollower(followerID string) ([]Follow, error) {
+func (s *SocialStore) ListByFollower(followerID string) ([]social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := make([]Follow, 0)
+	result := make([]social.Follow, 0)
 	for i := range s.follows {
 		if s.follows[i].FollowerID == followerID {
 			result = append(result, s.follows[i])
@@ -101,54 +98,54 @@ func (s *Store) ListByFollower(followerID string) ([]Follow, error) {
 	return result, nil
 }
 
-func (s *Store) ListActiveFollowing(followerID string) ([]Follow, error) {
+func (s *SocialStore) ListActiveFollowing(followerID string) ([]social.Follow, error) {
 	all, err := s.ListByFollower(followerID)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]Follow, 0, len(all))
+	result := make([]social.Follow, 0, len(all))
 	for i := range all {
-		if all[i].Status == StatusActive {
+		if all[i].Status == social.StatusActive {
 			result = append(result, all[i])
 		}
 	}
 	return result, nil
 }
 
-func (s *Store) ListActiveByTarget(targetHandle string) ([]Follow, error) {
+func (s *SocialStore) ListActiveByTarget(targetHandle string) ([]social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := make([]Follow, 0)
+	result := make([]social.Follow, 0)
 	for i := range s.follows {
-		if s.follows[i].TargetHandle == targetHandle && s.follows[i].Status == StatusActive {
+		if s.follows[i].TargetHandle == targetHandle && s.follows[i].Status == social.StatusActive {
 			result = append(result, s.follows[i])
 		}
 	}
 	return result, nil
 }
 
-func (s *Store) FindExisting(followerID, targetHandle string) (*Follow, error) {
+func (s *SocialStore) FindExisting(followerID, targetHandle string) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for i := range s.follows {
 		f := s.follows[i]
-		if f.FollowerID == followerID && f.TargetHandle == targetHandle && f.Status != StatusRejected {
+		if f.FollowerID == followerID && f.TargetHandle == targetHandle && f.Status != social.StatusRejected {
 			return &f, nil
 		}
 	}
-	return nil, ErrFollowNotFound
+	return nil, social.ErrFollowNotFound
 }
 
-func (s *Store) Create(follow Follow) (*Follow, error) {
+func (s *SocialStore) Create(follow social.Follow) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for i := range s.follows {
 		f := s.follows[i]
-		if f.FollowerID == follow.FollowerID && f.TargetHandle == follow.TargetHandle && f.Status != StatusRejected {
-			return nil, ErrAlreadyFollowing
+		if f.FollowerID == follow.FollowerID && f.TargetHandle == follow.TargetHandle && f.Status != social.StatusRejected {
+			return nil, social.ErrAlreadyFollowing
 		}
 	}
 
@@ -164,7 +161,7 @@ func (s *Store) Create(follow Follow) (*Follow, error) {
 	return &result, nil
 }
 
-func (s *Store) UpdateStatus(id, status string) (*Follow, error) {
+func (s *SocialStore) UpdateStatus(id, status string) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -178,10 +175,10 @@ func (s *Store) UpdateStatus(id, status string) (*Follow, error) {
 			return &f, nil
 		}
 	}
-	return nil, ErrFollowNotFound
+	return nil, social.ErrFollowNotFound
 }
 
-func (s *Store) FindByFollowActivityID(activityID string) (*Follow, error) {
+func (s *SocialStore) FindByFollowActivityID(activityID string) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -191,10 +188,10 @@ func (s *Store) FindByFollowActivityID(activityID string) (*Follow, error) {
 			return &f, nil
 		}
 	}
-	return nil, ErrFollowNotFound
+	return nil, social.ErrFollowNotFound
 }
 
-func (s *Store) UpdateActivityID(id, activityID string) (*Follow, error) {
+func (s *SocialStore) UpdateActivityID(id, activityID string) (*social.Follow, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -208,10 +205,10 @@ func (s *Store) UpdateActivityID(id, activityID string) (*Follow, error) {
 			return &f, nil
 		}
 	}
-	return nil, ErrFollowNotFound
+	return nil, social.ErrFollowNotFound
 }
 
-func (s *Store) Delete(id string) error {
+func (s *SocialStore) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -221,5 +218,7 @@ func (s *Store) Delete(id string) error {
 			return s.save()
 		}
 	}
-	return ErrFollowNotFound
+	return social.ErrFollowNotFound
 }
+
+var _ social.Repository = (*SocialStore)(nil)

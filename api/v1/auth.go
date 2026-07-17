@@ -7,23 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
-	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/users"
 )
-
-var userStore *users.Store
-
-func initUserStore() error {
-	if userStore != nil {
-		return nil
-	}
-	store, err := users.NewStore(config.Cfg.Data.ResolvedDir)
-	if err != nil {
-		return err
-	}
-	userStore = store
-	return nil
-}
 
 type RegisterRequest struct {
 	Nickname string `json:"nickname" binding:"required" example:"solarwind"`
@@ -57,8 +42,8 @@ type ErrorResponse struct {
 	Error string `json:"error" example:"email already registered"`
 }
 
-func toUserResponse(user *users.User) UserResponse {
-	hasAvatar, avatarURL := localAvatarFieldsForUser(user.Nickname)
+func (a *App) toUserResponse(user *users.User) UserResponse {
+	hasAvatar, avatarURL := a.localAvatarFieldsForUser(user.Nickname)
 	return UserResponse{
 		ID:                   user.ID,
 		Nickname:             user.Nickname,
@@ -81,14 +66,14 @@ func toUserResponse(user *users.User) UserResponse {
 // @Failure      400   {object}  ErrorResponse
 // @Failure      409   {object}  ErrorResponse
 // @Router       /auth/register [post]
-func register(ctx *gin.Context) {
+func (a *App) register(ctx *gin.Context) {
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	user, err := userStore.Create(req.Nickname, req.Name, req.Email, req.Password)
+	user, err := a.Users.Create(req.Nickname, req.Name, req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, users.ErrInvalidNickname) {
 			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -102,7 +87,7 @@ func register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, toUserResponse(user))
+	ctx.JSON(http.StatusCreated, a.toUserResponse(user))
 }
 
 // login godoc
@@ -116,14 +101,14 @@ func register(ctx *gin.Context) {
 // @Failure      400   {object}  ErrorResponse
 // @Failure      401   {object}  ErrorResponse
 // @Router       /auth/login [post]
-func login(ctx *gin.Context) {
+func (a *App) login(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	user, err := userStore.FindByEmail(req.Email)
+	user, err := a.Users.FindByEmail(req.Email)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid email or password"})
 		return
@@ -143,7 +128,7 @@ func login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, LoginResponse{
 		Token:     token,
 		ExpiresAt: expiresAt.UTC().Format(time.RFC3339),
-		User:      toUserResponse(user),
+		User:      a.toUserResponse(user),
 	})
 }
 
@@ -156,7 +141,7 @@ func login(ctx *gin.Context) {
 // @Success      200  {object}  UserResponse
 // @Failure      401  {object}  ErrorResponse
 // @Router       /auth/me [get]
-func getMe(ctx *gin.Context) {
+func (a *App) getMe(ctx *gin.Context) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
 	if !ok || id == "" {
@@ -164,13 +149,13 @@ func getMe(ctx *gin.Context) {
 		return
 	}
 
-	user, err := userStore.FindByID(id)
+	user, err := a.Users.FindByID(id)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, toUserResponse(user))
+	ctx.JSON(http.StatusOK, a.toUserResponse(user))
 }
 
 type UpdateProfileRequest struct {
@@ -189,7 +174,7 @@ type UpdateProfileRequest struct {
 // @Failure      400   {object}  ErrorResponse
 // @Failure      401   {object}  ErrorResponse
 // @Router       /auth/me [patch]
-func updateMe(ctx *gin.Context) {
+func (a *App) updateMe(ctx *gin.Context) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
 	if !ok || id == "" {
@@ -203,7 +188,7 @@ func updateMe(ctx *gin.Context) {
 		return
 	}
 
-	user, err := userStore.UpdateProfile(id, req.Name)
+	user, err := a.Users.UpdateProfile(id, req.Name)
 	if err != nil {
 		if errors.Is(err, users.ErrUserNotFound) {
 			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
@@ -213,5 +198,5 @@ func updateMe(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, toUserResponse(user))
+	ctx.JSON(http.StatusOK, a.toUserResponse(user))
 }

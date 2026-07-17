@@ -2,6 +2,7 @@ package workouts
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -13,32 +14,31 @@ import (
 
 	"github.com/chai2010/webp"
 	"golang.org/x/image/draw"
+
+	"github.com/solargate/grom/internal/storage/blob"
+	"github.com/solargate/grom/internal/storage/keys"
 )
 
 const (
-	MediaSubdir        = "media"
-	PreviewPrefix      = "preview-"
-	PreviewMaxEdgePx   = 320
-	PreviewWebPQuality = 80
+	MediaSubdir         = "media"
+	PreviewPrefix       = "preview-"
+	PreviewMaxEdgePx    = 320
+	PreviewWebPQuality  = 80
 	MaxPhotosPerWorkout = 20
 	MaxPhotoBytes       = 10 << 20
 )
 
 var (
-	ErrInvalidPhoto      = errors.New("invalid photo")
-	ErrPhotoTooLarge     = errors.New("photo file too large")
-	ErrTooManyPhotos     = errors.New("too many photos")
-	ErrPhotoNotFound     = errors.New("photo not found")
-	ErrInvalidPhotoName  = errors.New("invalid photo filename")
+	ErrInvalidPhoto     = errors.New("invalid photo")
+	ErrPhotoTooLarge    = errors.New("photo file too large")
+	ErrTooManyPhotos    = errors.New("too many photos")
+	ErrPhotoNotFound    = errors.New("photo not found")
+	ErrInvalidPhotoName = errors.New("invalid photo filename")
 )
 
 type MediaFileInput struct {
 	Filename string
 	Data     []byte
-}
-
-func mediaDir(workoutDir string) string {
-	return filepath.Join(workoutDir, MediaSubdir)
 }
 
 func SanitizeMediaFilename(name string) (string, error) {
@@ -54,19 +54,30 @@ func SanitizeMediaFilename(name string) (string, error) {
 	return name, nil
 }
 
-func uniqueMediaFilename(dir, filename string) string {
-	if _, err := os.Stat(filepath.Join(dir, filename)); os.IsNotExist(err) {
-		return filename
+func uniqueMediaFilename(store blob.Store, nickname, dirName, filename string) (string, error) {
+	ctx := context.Background()
+	key := keys.WorkoutMediaOriginal(nickname, dirName, filename)
+	exists, err := store.Exists(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return filename, nil
 	}
 	ext := filepath.Ext(filename)
 	base := strings.TrimSuffix(filename, ext)
 	for i := 2; i < 1000; i++ {
 		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := os.Stat(filepath.Join(dir, candidate)); os.IsNotExist(err) {
-			return candidate
+		key = keys.WorkoutMediaOriginal(nickname, dirName, candidate)
+		exists, err = store.Exists(ctx, key)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return candidate, nil
 		}
 	}
-	return fmt.Sprintf("%s-%d%s", base, os.Getpid(), ext)
+	return fmt.Sprintf("%s-%d%s", base, os.Getpid(), ext), nil
 }
 
 func decodePhoto(raw []byte) (image.Image, error) {
@@ -109,11 +120,7 @@ func encodePreview(img image.Image) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func SaveOriginalAndPreview(workoutDir, filename string, raw []byte) (string, error) {
-	return SaveOriginalAndPreviewInDir(mediaDir(workoutDir), filename, raw)
-}
-
-func SaveOriginalAndPreviewInDir(dir, filename string, raw []byte) (string, error) {
+func (svc *Service) saveOriginalAndPreview(nickname, dirName, filename string, raw []byte) (string, error) {
 	safeName, err := SanitizeMediaFilename(filename)
 	if err != nil {
 		return "", err
@@ -125,22 +132,19 @@ func SaveOriginalAndPreviewInDir(dir, filename string, raw []byte) (string, erro
 		return "", ErrPhotoTooLarge
 	}
 
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	safeName, err = uniqueMediaFilename(svc.blobs, nickname, dirName, safeName)
+	if err != nil {
 		return "", err
 	}
-	safeName = uniqueMediaFilename(dir, safeName)
 
 	img, err := decodePhoto(raw)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrInvalidPhoto, err)
 	}
 
-	originalPath := filepath.Join(dir, safeName)
-	tmpOriginal := originalPath + ".tmp"
-	if err := os.WriteFile(tmpOriginal, raw, 0600); err != nil {
-		return "", err
-	}
-	if err := os.Rename(tmpOriginal, originalPath); err != nil {
+	ctx := context.Background()
+	originalKey := keys.WorkoutMediaOriginal(nickname, dirName, safeName)
+	if _, err := blob.PutBytes(ctx, svc.blobs, originalKey, raw, blob.PutOptions{ContentType: MediaContentType(safeName)}); err != nil {
 		return "", err
 	}
 
@@ -148,23 +152,15 @@ func SaveOriginalAndPreviewInDir(dir, filename string, raw []byte) (string, erro
 	if err != nil {
 		return "", err
 	}
-	previewPath := filepath.Join(dir, PreviewPrefix+safeName+".webp")
-	tmpPreview := previewPath + ".tmp"
-	if err := os.WriteFile(tmpPreview, previewData, 0600); err != nil {
-		return "", err
-	}
-	if err := os.Rename(tmpPreview, previewPath); err != nil {
+	previewKey := keys.WorkoutMediaPreview(nickname, dirName, safeName)
+	if _, err := blob.PutBytes(ctx, svc.blobs, previewKey, previewData, blob.PutOptions{ContentType: "image/webp"}); err != nil {
 		return "", err
 	}
 
 	return safeName, nil
 }
 
-func SaveWorkoutMedia(workoutDir string, files []MediaFileInput) ([]string, error) {
-	return SaveMediaFilesToDir(mediaDir(workoutDir), files)
-}
-
-func SaveMediaFilesToDir(dir string, files []MediaFileInput) ([]string, error) {
+func (svc *Service) saveWorkoutMedia(nickname, dirName string, files []MediaFileInput) ([]string, error) {
 	if len(files) == 0 {
 		return nil, nil
 	}
@@ -174,7 +170,7 @@ func SaveMediaFilesToDir(dir string, files []MediaFileInput) ([]string, error) {
 
 	saved := make([]string, 0, len(files))
 	for _, file := range files {
-		name, err := SaveOriginalAndPreviewInDir(dir, file.Filename, file.Data)
+		name, err := svc.saveOriginalAndPreview(nickname, dirName, file.Filename, file.Data)
 		if err != nil {
 			return saved, err
 		}
@@ -183,88 +179,28 @@ func SaveMediaFilesToDir(dir string, files []MediaFileInput) ([]string, error) {
 	return saved, nil
 }
 
-func ListMediaFilesInDir(dir string) ([]string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	files := make([]string, 0)
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if strings.HasPrefix(name, PreviewPrefix) {
-			continue
-		}
-		files = append(files, name)
-	}
-	return files, nil
-}
-
-func ListMediaFiles(workoutDir string) ([]string, error) {
-	return ListMediaFilesInDir(mediaDir(workoutDir))
-}
-
-func HasMediaInDir(dir string) bool {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return false
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if strings.HasPrefix(name, PreviewPrefix) {
-			continue
-		}
-		return true
-	}
-	return false
-}
-
-func HasMedia(workoutDir string) bool {
-	return HasMediaInDir(mediaDir(workoutDir))
-}
-
-func MediaOriginalPathInDir(dir, filename string) string {
-	return filepath.Join(dir, filename)
-}
-
-func MediaPreviewPathInDir(dir, filename string) string {
-	return filepath.Join(dir, PreviewPrefix+filename+".webp")
-}
-
-func MediaOriginalPath(workoutDir, filename string) string {
-	return MediaOriginalPathInDir(mediaDir(workoutDir), filename)
-}
-
-func MediaPreviewPath(workoutDir, filename string) string {
-	return MediaPreviewPathInDir(mediaDir(workoutDir), filename)
-}
-
-func (s *Store) AddMedia(nickname string, workout *Workout, files []MediaFileInput) (*Workout, error) {
+func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFileInput) (*Workout, error) {
 	if workout == nil || workout.ID == "" {
 		return nil, ErrInvalidWorkout
 	}
-	dir, err := s.findWorkoutDir(nickname, workout.ID)
+
+	stored, err := svc.repo.Get(nickname, workout.ID)
+	if err != nil {
+		return nil, err
+	}
+	*workout = *stored
+
+	dirName, err := svc.repo.WorkoutDirName(nickname, workout.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	existing, err := ListMediaFiles(dir)
-	if err != nil {
-		return nil, err
-	}
+	existing := workout.MediaFiles
 	if len(existing)+len(files) > MaxPhotosPerWorkout {
 		return nil, ErrTooManyPhotos
 	}
 
-	saved, err := SaveWorkoutMedia(dir, files)
+	saved, err := svc.saveWorkoutMedia(nickname, dirName, files)
 	if err != nil {
 		return nil, err
 	}
@@ -272,9 +208,7 @@ func (s *Store) AddMedia(nickname string, workout *Workout, files []MediaFileInp
 	workout.MediaFiles = append(existing, saved...)
 	workout.HasMedia = len(workout.MediaFiles) > 0
 
-	dirName := filepath.Base(dir)
-	filePath := filepath.Join(dir, dirName+".yaml")
-	if err := writeWorkoutYAML(filePath, workout); err != nil {
+	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
 		return nil, err
 	}
 
@@ -282,91 +216,70 @@ func (s *Store) AddMedia(nickname string, workout *Workout, files []MediaFileInp
 	return &result, nil
 }
 
-func (s *Store) WorkoutDir(nickname, workoutID string) (string, error) {
-	return s.findWorkoutDir(nickname, workoutID)
-}
-
-func (s *Store) MediaOriginalFile(nickname, workoutID, filename string) (string, error) {
-	dir, err := s.findWorkoutDir(nickname, workoutID)
+func (svc *Service) MediaOriginal(nickname, workoutID, filename string) ([]byte, string, error) {
+	if _, err := svc.repo.Get(nickname, workoutID); err != nil {
+		return nil, "", err
+	}
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 	safeName, err := SanitizeMediaFilename(filename)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	path := MediaOriginalPath(dir, safeName)
-	if _, err := os.Stat(path); err != nil {
+	data, err := blob.ReadAll(context.Background(), svc.blobs, keys.WorkoutMediaOriginal(nickname, dirName, safeName))
+	if err != nil {
 		if os.IsNotExist(err) {
-			return "", ErrPhotoNotFound
+			return nil, "", ErrPhotoNotFound
 		}
-		return "", err
+		return nil, "", err
 	}
-	return path, nil
+	return data, MediaContentType(safeName), nil
 }
 
-func (s *Store) MediaPreviewFile(nickname, workoutID, filename string) (string, error) {
-	dir, err := s.findWorkoutDir(nickname, workoutID)
+func (svc *Service) MediaPreview(nickname, workoutID, filename string) ([]byte, error) {
+	if _, err := svc.repo.Get(nickname, workoutID); err != nil {
+		return nil, err
+	}
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	safeName, err := SanitizeMediaFilename(filename)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	path := MediaPreviewPath(dir, safeName)
-	if _, err := os.Stat(path); err != nil {
+	data, err := blob.ReadAll(context.Background(), svc.blobs, keys.WorkoutMediaPreview(nickname, dirName, safeName))
+	if err != nil {
 		if os.IsNotExist(err) {
-			return "", ErrPhotoNotFound
+			return nil, ErrPhotoNotFound
 		}
-		return "", err
+		return nil, err
 	}
-	return path, nil
+	return data, nil
 }
 
-func (s *Store) ReadMediaPayload(nickname, workoutID string) ([]MediaFileInput, error) {
-	dir, err := s.findWorkoutDir(nickname, workoutID)
+func (svc *Service) ReadMediaPayload(nickname, workoutID string) ([]MediaFileInput, error) {
+	workout, err := svc.repo.Get(nickname, workoutID)
 	if err != nil {
 		return nil, err
 	}
-	workout, err := readWorkoutFromDir(dir)
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
 	if err != nil {
 		return nil, err
 	}
+
 	files := workout.MediaFiles
-	if len(files) == 0 {
-		files, err = ListMediaFiles(dir)
-		if err != nil {
-			return nil, err
-		}
-	}
 	result := make([]MediaFileInput, 0, len(files))
 	for _, name := range files {
-		path := MediaOriginalPath(dir, name)
-		data, err := os.ReadFile(path)
+		data, err := blob.ReadAll(context.Background(), svc.blobs, keys.WorkoutMediaOriginal(nickname, dirName, name))
 		if err != nil {
 			return nil, err
 		}
 		result = append(result, MediaFileInput{Filename: name, Data: data})
 	}
 	return result, nil
-}
-
-func populateWorkoutMedia(workout *Workout, workoutDir string) {
-	if workout == nil {
-		return
-	}
-	if len(workout.MediaFiles) == 0 {
-		if files, err := ListMediaFiles(workoutDir); err == nil && len(files) > 0 {
-			workout.MediaFiles = files
-		}
-	}
-	workout.HasMedia = len(workout.MediaFiles) > 0 || HasMedia(workoutDir)
-	if workout.HasMedia && len(workout.MediaFiles) == 0 {
-		if files, err := ListMediaFiles(workoutDir); err == nil {
-			workout.MediaFiles = files
-		}
-	}
 }
 
 func MediaContentType(filename string) string {
@@ -384,4 +297,94 @@ func MediaContentType(filename string) string {
 	default:
 		return "application/octet-stream"
 	}
+}
+
+func SaveFederatedMedia(blobs blob.Store, viewerNickname, ownerKey, workoutID string, files []MediaFileInput) ([]string, error) {
+	if len(files) == 0 {
+		return nil, nil
+	}
+	if len(files) > MaxPhotosPerWorkout {
+		return nil, ErrTooManyPhotos
+	}
+
+	saved := make([]string, 0, len(files))
+	for _, file := range files {
+		name, err := saveFederatedPhoto(blobs, viewerNickname, ownerKey, workoutID, file.Filename, file.Data)
+		if err != nil {
+			return saved, err
+		}
+		saved = append(saved, name)
+	}
+	return saved, nil
+}
+
+func saveFederatedPhoto(blobs blob.Store, viewerNickname, ownerKey, workoutID, filename string, raw []byte) (string, error) {
+	safeName, err := SanitizeMediaFilename(filename)
+	if err != nil {
+		return "", err
+	}
+	if len(raw) == 0 {
+		return "", ErrInvalidPhoto
+	}
+	if len(raw) > MaxPhotoBytes {
+		return "", ErrPhotoTooLarge
+	}
+
+	ctx := context.Background()
+	safeName, err = uniqueFederatedMediaFilename(blobs, viewerNickname, ownerKey, workoutID, safeName)
+	if err != nil {
+		return "", err
+	}
+
+	img, err := decodePhoto(raw)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrInvalidPhoto, err)
+	}
+
+	originalKey := keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, safeName)
+	if _, err := blob.PutBytes(ctx, blobs, originalKey, raw, blob.PutOptions{ContentType: MediaContentType(safeName)}); err != nil {
+		return "", err
+	}
+
+	previewData, err := encodePreview(img)
+	if err != nil {
+		return "", err
+	}
+	previewKey := keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, safeName)
+	if _, err := blob.PutBytes(ctx, blobs, previewKey, previewData, blob.PutOptions{ContentType: "image/webp"}); err != nil {
+		return "", err
+	}
+
+	return safeName, nil
+}
+
+func uniqueFederatedMediaFilename(blobs blob.Store, viewerNickname, ownerKey, workoutID, filename string) (string, error) {
+	ctx := context.Background()
+	key := keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, filename)
+	exists, err := blobs.Exists(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return filename, nil
+	}
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	for i := 2; i < 1000; i++ {
+		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
+		key = keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, candidate)
+		exists, err = blobs.Exists(ctx, key)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return candidate, nil
+		}
+	}
+	return fmt.Sprintf("%s-%d%s", base, os.Getpid(), ext), nil
+}
+
+// SaveWorkoutMedia saves photos using the service blob store (used by federation inbox wiring).
+func SaveWorkoutMedia(svc *Service, nickname, dirName string, files []MediaFileInput) ([]string, error) {
+	return svc.saveWorkoutMedia(nickname, dirName, files)
 }

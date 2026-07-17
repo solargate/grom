@@ -7,10 +7,10 @@ import (
 )
 
 type inboundFollowersAdapter struct {
-	store *FollowersStore
+	store FollowersRepository
 }
 
-func NewInboundFollowersAdapter(store *FollowersStore) social.InboundFollowersSource {
+func NewInboundFollowersAdapter(store FollowersRepository) social.InboundFollowersSource {
 	return inboundFollowersAdapter{store: store}
 }
 

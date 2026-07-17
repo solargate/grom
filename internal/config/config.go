@@ -20,6 +20,28 @@ const (
 	TLSModeAutocert TLSMode = "autocert"
 )
 
+type StorageDriver string
+
+const (
+	StorageDriverFile     StorageDriver = "file"
+	StorageDriverBBolt    StorageDriver = "bbolt"
+	StorageDriverPostgres StorageDriver = "postgres"
+)
+
+type StorageConfig struct {
+	Driver StorageDriver `mapstructure:"driver" yaml:"driver"`
+	Location        string `mapstructure:"location" yaml:"location"`
+	TempDir         string `mapstructure:"temp_dir" yaml:"temp_dir"`
+	ResolvedLocation string `mapstructure:"-" yaml:"-"`
+	ResolvedTempDir  string `mapstructure:"-" yaml:"-"`
+	BBolt struct {
+		Path string `mapstructure:"path" yaml:"path"`
+	} `mapstructure:"bbolt" yaml:"bbolt"`
+	Postgres struct {
+		DSN string `mapstructure:"dsn" yaml:"dsn"`
+	} `mapstructure:"postgres" yaml:"postgres"`
+}
+
 type Config struct {
 	Server struct {
 		Name string `mapstructure:"name" yaml:"name"`
@@ -50,12 +72,9 @@ type Config struct {
 		CACertFile            string `mapstructure:"ca_cert_file" yaml:"ca_cert_file"`
 		TLSInsecureSkipVerify bool   `mapstructure:"tls_insecure_skip_verify" yaml:"tls_insecure_skip_verify"`
 	} `mapstructure:"federation" yaml:"federation"`
-	Data struct {
-		Location        string `mapstructure:"location" yaml:"location"`
-		TempDir         string `mapstructure:"temp_dir" yaml:"temp_dir"`
-		ResolvedDir     string `mapstructure:"-" yaml:"-"`
-		ResolvedTempDir string `mapstructure:"-" yaml:"-"`
-	} `mapstructure:"data" yaml:"data"`
+	Storage StorageConfig `mapstructure:"storage" yaml:"storage"`
+	// Data is a legacy alias for Storage (location/temp_dir only).
+	Data StorageConfig `mapstructure:"data" yaml:"data"`
 }
 
 var Cfg Config
@@ -94,8 +113,14 @@ func FinalizeConfig(cfg *Config) error {
 	if cfg.Federation.DeliveryRetryMax <= 0 {
 		cfg.Federation.DeliveryRetryMax = 5
 	}
-	if cfg.Data.Location == "" {
-		cfg.Data.Location = "data"
+	if cfg.Storage.Location == "" && cfg.Data.Location != "" {
+		cfg.Storage.Location = cfg.Data.Location
+	}
+	if cfg.Storage.TempDir == "" && cfg.Data.TempDir != "" {
+		cfg.Storage.TempDir = cfg.Data.TempDir
+	}
+	if cfg.Storage.Location == "" {
+		cfg.Storage.Location = "data"
 	}
 	if cfg.Auth.JWTSecret == "" {
 		return fmt.Errorf("auth.jwt_secret must be set in config")
@@ -156,27 +181,33 @@ func FinalizeConfig(cfg *Config) error {
 		}
 	}
 
-	resolvedDir, err := data.ResolveDataDir(cfg.Data.Location)
+	resolvedDir, err := data.ResolveDataDir(cfg.Storage.Location)
 	if err != nil {
-		return fmt.Errorf("resolve data location: %w", err)
+		return fmt.Errorf("resolve storage location: %w", err)
 	}
 	if err := os.MkdirAll(resolvedDir, 0700); err != nil {
-		return fmt.Errorf("create data directory: %w", err)
+		return fmt.Errorf("create storage directory: %w", err)
 	}
-	cfg.Data.ResolvedDir = resolvedDir
+	cfg.Storage.ResolvedLocation = resolvedDir
 
-	tempDir := strings.TrimSpace(cfg.Data.TempDir)
+	tempDir := strings.TrimSpace(cfg.Storage.TempDir)
 	if tempDir == "" {
 		tempDir = "tmp"
 	}
 	resolvedTempDir, err := data.ResolveDataDir(tempDir)
 	if err != nil {
-		return fmt.Errorf("resolve data temp dir: %w", err)
+		return fmt.Errorf("resolve storage temp dir: %w", err)
 	}
 	if err := os.MkdirAll(resolvedTempDir, 0700); err != nil {
-		return fmt.Errorf("create data temp directory: %w", err)
+		return fmt.Errorf("create storage temp directory: %w", err)
 	}
-	cfg.Data.ResolvedTempDir = resolvedTempDir
+	cfg.Storage.ResolvedTempDir = resolvedTempDir
+
+	// Keep legacy Data fields in sync for any remaining references during migration.
+	cfg.Data.ResolvedLocation = cfg.Storage.ResolvedLocation
+	cfg.Data.ResolvedTempDir = cfg.Storage.ResolvedTempDir
+	cfg.Data.Location = cfg.Storage.Location
+	cfg.Data.TempDir = cfg.Storage.TempDir
 
 	if mode == TLSModeAutocert {
 		if cfg.Server.TLS.Autocert.CacheDir == "" {

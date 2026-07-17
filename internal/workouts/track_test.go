@@ -6,13 +6,15 @@ import (
 	"testing"
 	"time"
 
+	blobfs "github.com/solargate/grom/internal/storage/blob/fs"
+	"github.com/solargate/grom/internal/storage/file"
 	"github.com/solargate/grom/internal/tracks"
 	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	dir := t.TempDir()
-	store := workouts.NewStore(dir)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {
@@ -24,7 +26,7 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	}
 
 	startDate := time.Date(2026, 7, 6, 10, 0, 0, 0, time.UTC)
-	created, err := store.Create("athlete", &workouts.Workout{
+	created, err := svc.Create("athlete", &workouts.Workout{
 		Name:            "CSV metrics",
 		SportType:       "Run",
 		StartDate:       startDate,
@@ -35,7 +37,7 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	updated, err := store.AttachTrack("athlete", created, &workouts.TrackInput{
+	updated, err := svc.AttachTrack("athlete", created, &workouts.TrackInput{
 		Filename: "sample.gpx",
 		Data:     gpxData,
 		Parsed:   parsed,
@@ -59,7 +61,7 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 
 func TestStoreCreateWithTrack(t *testing.T) {
 	dir := t.TempDir()
-	store := workouts.NewStore(dir)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {
@@ -71,7 +73,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	}
 
 	startDate := time.Date(2026, 7, 6, 10, 0, 0, 0, time.UTC)
-	created, err := store.CreateWithTrack("athlete", &workouts.Workout{
+	created, err := svc.CreateWithTrack("athlete", &workouts.Workout{
 		Name:            "GPX workout",
 		SportType:       "Run",
 		StartDate:       startDate,
@@ -112,7 +114,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 		t.Fatalf("unexpected yaml: %s", yamlData)
 	}
 
-	trackData, trackName, _, err := store.TrackFile("athlete", created.ID)
+	trackData, trackName, _, err := svc.TrackFile("athlete", created.ID)
 	if err != nil {
 		t.Fatalf("TrackFile() error = %v", err)
 	}

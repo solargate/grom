@@ -6,47 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
-	"github.com/solargate/grom/internal/config"
-	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/social"
 )
-
-var socialService *social.Service
-
-func initSocialService() error {
-	if socialService != nil {
-		return nil
-	}
-	if userStore == nil {
-		if err := initUserStore(); err != nil {
-			return err
-		}
-	}
-	followStore, err := social.NewStore(config.Cfg.Data.ResolvedDir)
-	if err != nil {
-		return err
-	}
-	socialService = social.NewService(userStore, followStore)
-	if err := initFollowersStore(); err != nil {
-		return err
-	}
-	if config.Cfg.Federation.Enabled {
-		delivery, err := federation.NewDelivery(userStore, socialService)
-		if err != nil {
-			return err
-		}
-		socialService.SetDelivery(delivery)
-	}
-	return nil
-}
-
-func initFollowersStore() error {
-	if followersStore == nil {
-		followersStore = federation.NewFollowersStore(config.Cfg.Data.ResolvedDir)
-	}
-	socialService.SetInboundFollowers(federation.NewInboundFollowersAdapter(followersStore))
-	return nil
-}
 
 type FollowerResponse struct {
 	FollowerHandle    string `json:"follower_handle"`
@@ -57,9 +18,9 @@ type FollowerResponse struct {
 	FollowerAvatarURL string `json:"follower_avatar_url,omitempty"`
 }
 
-func toFollowerResponse(f social.Follower, viewerNickname string) FollowerResponse {
+func (a *App) toFollowerResponse(f social.Follower, viewerNickname string) FollowerResponse {
 	if f.FollowerIsLocal {
-		hasAvatar, avatarURL := localAvatarFieldsForUser(f.FollowerNickname)
+		hasAvatar, avatarURL := a.localAvatarFieldsForUser(f.FollowerNickname)
 		return FollowerResponse{
 			FollowerHandle:    f.FollowerHandle,
 			FollowerNickname:  f.FollowerNickname,
@@ -70,7 +31,7 @@ func toFollowerResponse(f social.Follower, viewerNickname string) FollowerRespon
 		}
 	}
 
-	hasAvatar, avatarURL := remoteFollowerAvatarFields(viewerNickname, &f)
+	hasAvatar, avatarURL := a.remoteFollowerAvatarFields(viewerNickname, &f)
 	return FollowerResponse{
 		FollowerHandle:    f.FollowerHandle,
 		FollowerNickname:  f.FollowerNickname,
@@ -81,7 +42,7 @@ func toFollowerResponse(f social.Follower, viewerNickname string) FollowerRespon
 	}
 }
 
-func currentUserID(ctx *gin.Context) (string, error) {
+func (a *App) currentUserID(ctx *gin.Context) (string, error) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
 	if !ok || id == "" {
@@ -105,9 +66,9 @@ type FollowResponse struct {
 	Status          string `json:"status"`
 }
 
-func toFollowResponse(f *social.Follow, viewerNickname string) FollowResponse {
+func (a *App) toFollowResponse(f *social.Follow, viewerNickname string) FollowResponse {
 	if f.TargetIsLocal {
-		hasAvatar, avatarURL := localAvatarFieldsForUser(f.TargetNickname)
+		hasAvatar, avatarURL := a.localAvatarFieldsForUser(f.TargetNickname)
 		return FollowResponse{
 			ID:              f.ID,
 			TargetHandle:    f.TargetHandle,
@@ -120,7 +81,7 @@ func toFollowResponse(f *social.Follow, viewerNickname string) FollowResponse {
 		}
 	}
 
-	hasAvatar, avatarURL := remoteFollowAvatarFields(viewerNickname, f)
+	hasAvatar, avatarURL := a.remoteFollowAvatarFields(viewerNickname, f)
 	return FollowResponse{
 		ID:              f.ID,
 		TargetHandle:    f.TargetHandle,
@@ -147,13 +108,9 @@ func toFollowResponse(f *social.Follow, viewerNickname string) FollowResponse {
 // @Failure      404   {object}  ErrorResponse
 // @Failure      409   {object}  ErrorResponse
 // @Router       /social/follow [post]
-func followUser(ctx *gin.Context) {
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
-	}
+func (a *App) followUser(ctx *gin.Context) {
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
@@ -165,20 +122,20 @@ func followUser(ctx *gin.Context) {
 		return
 	}
 
-	follow, err := socialService.Follow(userID, req.Handle)
+	follow, err := a.Social.Follow(userID, req.Handle)
 	if err != nil {
 		handleSocialError(ctx, err)
 		return
 	}
 
-	viewer, err := userStore.FindByID(userID)
+	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
 		return
 	}
-	cacheRemoteFollowAvatar(viewer.Nickname, follow)
+	a.cacheRemoteFollowAvatar(viewer.Nickname, follow)
 
-	ctx.JSON(http.StatusCreated, toFollowResponse(follow, viewer.Nickname))
+	ctx.JSON(http.StatusCreated, a.toFollowResponse(follow, viewer.Nickname))
 }
 
 // unfollowUser godoc
@@ -192,19 +149,15 @@ func followUser(ctx *gin.Context) {
 // @Failure      401  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Router       /social/follow/{id} [delete]
-func unfollowUser(ctx *gin.Context) {
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
-	}
+func (a *App) unfollowUser(ctx *gin.Context) {
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
-	if err := socialService.Unfollow(userID, ctx.Param("id")); err != nil {
+	if err := a.Social.Unfollow(userID, ctx.Param("id")); err != nil {
 		handleSocialError(ctx, err)
 		return
 	}
@@ -221,25 +174,21 @@ func unfollowUser(ctx *gin.Context) {
 // @Success      200  {array}  FollowResponse
 // @Failure      401  {object}  ErrorResponse
 // @Router       /social/following [get]
-func listFollowing(ctx *gin.Context) {
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
-	}
+func (a *App) listFollowing(ctx *gin.Context) {
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
-	follows, err := socialService.ListFollowing(userID)
+	follows, err := a.Social.ListFollowing(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
 		return
 	}
 
-	viewer, err := userStore.FindByID(userID)
+	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
 		return
@@ -247,7 +196,7 @@ func listFollowing(ctx *gin.Context) {
 
 	response := make([]FollowResponse, 0, len(follows))
 	for i := range follows {
-		response = append(response, toFollowResponse(&follows[i], viewer.Nickname))
+		response = append(response, a.toFollowResponse(&follows[i], viewer.Nickname))
 	}
 	ctx.JSON(http.StatusOK, response)
 }
@@ -261,25 +210,21 @@ func listFollowing(ctx *gin.Context) {
 // @Success      200  {array}  FollowerResponse
 // @Failure      401  {object}  ErrorResponse
 // @Router       /social/followers [get]
-func listFollowers(ctx *gin.Context) {
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
-	}
+func (a *App) listFollowers(ctx *gin.Context) {
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
-	followers, err := socialService.ListFollowers(userID)
+	followers, err := a.Social.ListFollowers(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list followers"})
 		return
 	}
 
-	viewer, err := userStore.FindByID(userID)
+	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
 		return
@@ -287,7 +232,7 @@ func listFollowers(ctx *gin.Context) {
 
 	response := make([]FollowerResponse, 0, len(followers))
 	for i := range followers {
-		response = append(response, toFollowerResponse(followers[i], viewer.Nickname))
+		response = append(response, a.toFollowerResponse(followers[i], viewer.Nickname))
 	}
 	ctx.JSON(http.StatusOK, response)
 }

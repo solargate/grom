@@ -18,6 +18,6 @@ auth:
   jwt_secret: "change-me-in-production-min-32-chars!!"
   jwt_ttl_hours: 24
 
-data:
+storage:
   location: data
   temp_dir: tmp

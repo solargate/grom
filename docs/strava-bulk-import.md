@@ -5,7 +5,7 @@ This document describes how Grom imports workouts from a [Strava bulk data expor
 ## Overview
 
 1. User uploads a Strava export ZIP on the **Integration → Strava** page.
-2. The archive is saved to `{data.temp_dir}/{nickname}/`.
+2. The archive is saved to `{storage.temp_dir}/{nickname}/`.
 3. The server opens the ZIP with Go's `archive/zip` and reads files directly (no full extraction).
 4. For each activity Grom creates a workout YAML, optionally attaches a track (`AttachTrack`), photos, and equipment.
 5. After completion the user's temporary import directory is removed.
@@ -13,11 +13,11 @@ This document describes how Grom imports workouts from a [Strava bulk data expor
 ## Configuration
 
 ```yaml
-data:
+storage:
   temp_dir: tmp
 ```
 
-Default: `tmp` (resolved relative to the grom binary, same as `data.location`).
+Default: `tmp` (resolved relative to the grom binary, same as `storage.location`).
 
 ## activities.csv column mapping
 

@@ -19,14 +19,6 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-var workoutStore *workouts.Store
-
-func initWorkoutStore() {
-	if workoutStore == nil {
-		workoutStore = workouts.NewStore(config.Cfg.Data.ResolvedDir)
-	}
-}
-
 type CreateWorkoutRequest struct {
 	Name                 string   `json:"name" binding:"required" example:"Morning run"`
 	Description          string   `json:"description" example:"Easy session"`
@@ -219,34 +211,26 @@ func parseOptionalFloatForm(raw string) (*float64, error) {
 	return &v, nil
 }
 
-func currentUserNickname(ctx *gin.Context) (string, error) {
-	if userStore == nil {
-		if err := initUserStore(); err != nil {
-			return "", err
-		}
-	}
+func (a *App) currentUserNickname(ctx *gin.Context) (string, error) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
 	if !ok || id == "" {
 		return "", errors.New("invalid token")
 	}
 
-	user, err := userStore.FindByID(id)
+	user, err := a.Users.FindByID(id)
 	if err != nil {
 		return "", err
 	}
 	return user.Nickname, nil
 }
 
-func workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]string, error) {
-	if err := initSocialService(); err != nil {
-		return nil, err
-	}
-	userID, err := currentUserID(ctx)
+func (a *App) workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]string, error) {
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	nicknames, err := socialService.ActiveFollowingNicknames(userID)
+	nicknames, err := a.Social.ActiveFollowingNicknames(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,17 +238,17 @@ func workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]string, err
 	return nicknames, nil
 }
 
-func resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (ownerNickname, workoutID string, err error) {
+func (a *App) resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (ownerNickname, workoutID string, err error) {
 	workoutID = ctx.Param("id")
 	ownerNickname = strings.TrimSpace(ctx.Query("owner"))
 	if ownerNickname == "" {
 		ownerNickname = viewerNickname
 	}
-	followed, err := workoutAccessOwners(ctx, viewerNickname)
+	followed, err := a.workoutAccessOwners(ctx, viewerNickname)
 	if err != nil {
 		return "", "", err
 	}
-	feedSvc := workouts.NewFeedService(workoutStore, config.Cfg.Federation.Domain)
+	feedSvc := workouts.NewFeedService(a.Workouts, a.Blobs, config.Cfg.Federation.Domain)
 	if !feedSvc.CanAccessWorkout(viewerNickname, followed, ownerNickname) {
 		return "", "", workouts.ErrWorkoutNotFound
 	}
@@ -328,10 +312,8 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Failure      401   {object}  ErrorResponse
 // @Failure      500   {object}  ErrorResponse
 // @Router       /workouts [post]
-func createWorkout(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) createWorkout(ctx *gin.Context) {
+		nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -339,7 +321,7 @@ func createWorkout(ctx *gin.Context) {
 
 	contentType := ctx.GetHeader("Content-Type")
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		createWorkoutMultipart(ctx, nickname)
+		a.createWorkoutMultipart(ctx, nickname)
 		return
 	}
 
@@ -355,23 +337,23 @@ func createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	equipmentItems, err := resolveWorkoutEquipment(nickname, req.EquipmentIDs)
+	equipmentItems, err := a.resolveWorkoutEquipment(nickname, req.EquipmentIDs)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
 		return
 	}
 
-	workout, err := workoutStore.Create(nickname, workoutFromCreateRequest(req, startDate, equipmentItems))
+	workout, err := a.Workouts.Create(nickname, workoutFromCreateRequest(req, startDate, equipmentItems))
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
 	}
 
-	if userID, err := currentUserID(ctx); err == nil {
-		saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+	if userID, err := a.currentUserID(ctx); err == nil {
+		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
 	}
 
-	publishCreatedWorkout(nickname, workout)
+	a.publishCreatedWorkout(nickname, workout)
 
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
 }
@@ -419,44 +401,44 @@ func readWorkoutPhotos(ctx *gin.Context) ([]workouts.MediaFileInput, error) {
 	return files, nil
 }
 
-func attachWorkoutPhotos(nickname string, workout *workouts.Workout, photos []workouts.MediaFileInput) (*workouts.Workout, error) {
+func (a *App) attachWorkoutPhotos(nickname string, workout *workouts.Workout, photos []workouts.MediaFileInput) (*workouts.Workout, error) {
 	if len(photos) == 0 {
 		return workout, nil
 	}
-	return workoutStore.AddMedia(nickname, workout, photos)
+	return a.Workouts.AddMedia(nickname, workout, photos)
 }
 
-func publishCreatedWorkout(nickname string, workout *workouts.Workout) {
-	if err := initFederation(); err != nil || federationDelivery == nil || followersStore == nil {
+func (a *App) publishCreatedWorkout(nickname string, workout *workouts.Workout) {
+	if a.federationDelivery == nil {
 		return
 	}
-	inboxes, err := followersStore.ListInboxes(nickname)
+	inboxes, err := a.Federation.Followers().ListInboxes(nickname)
 	if err != nil || len(inboxes) == 0 {
 		return
 	}
 	var trackData []byte
 	if workout.Track != "" {
-		trackData, _, _, _ = workoutStore.TrackFile(nickname, workout.ID)
+		trackData, _, _, _ = a.Workouts.TrackFile(nickname, workout.ID)
 	}
 	var mediaFiles []workouts.MediaFileInput
 	if workout.HasMedia {
-		mediaFiles, _ = workoutStore.ReadMediaPayload(nickname, workout.ID)
+		mediaFiles, _ = a.Workouts.ReadMediaPayload(nickname, workout.ID)
 	}
-	_ = federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData, mediaFiles)
+	_ = a.federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData, mediaFiles)
 }
 
-func publishDeletedWorkout(nickname, workoutID string) {
-	if err := initFederation(); err != nil || federationDelivery == nil || followersStore == nil {
+func (a *App) publishDeletedWorkout(nickname, workoutID string) {
+	if a.federationDelivery == nil {
 		return
 	}
-	inboxes, err := followersStore.ListInboxes(nickname)
+	inboxes, err := a.Federation.Followers().ListInboxes(nickname)
 	if err != nil || len(inboxes) == 0 {
 		return
 	}
-	_ = federationDelivery.DeliverWorkoutDelete(nickname, workoutID, inboxes)
+	_ = a.federationDelivery.DeliverWorkoutDelete(nickname, workoutID, inboxes)
 }
 
-func createWorkoutMultipart(ctx *gin.Context, nickname string) {
+func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	var form CreateWorkoutForm
 	if err := ctx.ShouldBind(&form); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -474,7 +456,7 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid equipment_ids format"})
 		return
 	}
-	equipmentItems, err := resolveWorkoutEquipment(nickname, equipmentIDs)
+	equipmentItems, err := a.resolveWorkoutEquipment(nickname, equipmentIDs)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
 		return
@@ -523,7 +505,7 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		}
 	}
 
-	created, err := workoutStore.CreateWithTrack(nickname, workout, trackInput)
+	created, err := a.Workouts.CreateWithTrack(nickname, workout, trackInput)
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
@@ -534,17 +516,17 @@ func createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		handleCreateWorkoutError(ctx, err)
 		return
 	}
-	created, err = attachWorkoutPhotos(nickname, created, photos)
+	created, err = a.attachWorkoutPhotos(nickname, created, photos)
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
 	}
 
-	if userID, err := currentUserID(ctx); err == nil {
-		saveLastEquipmentForSport(userID, form.SportType, equipmentIDs)
+	if userID, err := a.currentUserID(ctx); err == nil {
+		a.saveLastEquipmentForSport(userID, form.SportType, equipmentIDs)
 	}
 
-	publishCreatedWorkout(nickname, created)
+	a.publishCreatedWorkout(nickname, created)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(created))
 }
 
@@ -572,7 +554,7 @@ func parseEquipmentIDsForm(raw string) ([]string, error) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      401  {object}  ErrorResponse
 // @Router       /workouts/parse-track [post]
-func parseTrack(ctx *gin.Context) {
+func (a *App) parseTrack(ctx *gin.Context) {
 	file, err := ctx.FormFile("track")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "track file is required"})
@@ -609,16 +591,14 @@ func parseTrack(ctx *gin.Context) {
 // @Failure      403  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Router       /workouts/{id}/track [get]
-func getWorkoutTrack(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) getWorkoutTrack(ctx *gin.Context) {
+		nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
@@ -639,12 +619,11 @@ func getWorkoutTrack(ctx *gin.Context) {
 		return
 	}
 
-	data, storageName, workoutName, err := workoutStore.TrackFile(owner, workoutID)
+	data, storageName, workoutName, err := a.Workouts.TrackFile(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
-			_ = initFederation()
-			if workoutInboxStore != nil {
-				data, storageName, workoutName, err = workoutInboxStore.TrackFile(nickname, owner, workoutID)
+						if a.Federation.Inbox() != nil {
+				data, storageName, workoutName, err = a.Federation.Inbox().TrackFile(nickname, owner, workoutID)
 			}
 		}
 	}
@@ -704,16 +683,14 @@ func getWorkoutTrack(ctx *gin.Context) {
 // @Failure      401  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Router       /workouts/{id}/map-preview [get]
-func getWorkoutMapPreview(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
@@ -723,14 +700,9 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 		return
 	}
 
-	path, err := workoutStore.MapPreviewPath(owner, workoutID)
-	if err != nil {
-		if errors.Is(err, workouts.ErrWorkoutNotFound) {
-			_ = initFederation()
-			if workoutInboxStore != nil {
-				path, err = workoutInboxStore.MapPreviewPath(nickname, owner, workoutID)
-			}
-		}
+	data, err := a.Workouts.MapPreview(owner, workoutID)
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		data, err = a.Federation.Inbox().MapPreview(nickname, owner, workoutID)
 	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
@@ -743,19 +715,17 @@ func getWorkoutMapPreview(ctx *gin.Context) {
 
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
 	ctx.Header("Content-Type", "image/webp")
-	ctx.File(path)
+	ctx.Data(http.StatusOK, "image/webp", data)
 }
 
-func getWorkoutMediaPreview(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) getWorkoutMediaPreview(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
@@ -766,14 +736,9 @@ func getWorkoutMediaPreview(ctx *gin.Context) {
 	}
 
 	filename := ctx.Param("filename")
-	path, err := workoutStore.MediaPreviewFile(owner, workoutID, filename)
-	if err != nil {
-		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
-			_ = initFederation()
-			if workoutInboxStore != nil {
-				path, err = workoutInboxStore.MediaPreviewPath(nickname, owner, workoutID, filename)
-			}
-		}
+	data, err := a.Workouts.MediaPreview(owner, workoutID, filename)
+	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) {
+		data, err = a.Federation.Inbox().MediaPreview(nickname, owner, workoutID, filename)
 	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
@@ -786,19 +751,17 @@ func getWorkoutMediaPreview(ctx *gin.Context) {
 
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
 	ctx.Header("Content-Type", "image/webp")
-	ctx.File(path)
+	ctx.Data(http.StatusOK, "image/webp", data)
 }
 
-func getWorkoutMediaOriginal(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	owner, workoutID, err := resolveWorkoutOwner(ctx, nickname)
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
@@ -809,14 +772,9 @@ func getWorkoutMediaOriginal(ctx *gin.Context) {
 	}
 
 	filename := ctx.Param("filename")
-	path, err := workoutStore.MediaOriginalFile(owner, workoutID, filename)
-	if err != nil {
-		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
-			_ = initFederation()
-			if workoutInboxStore != nil {
-				path, err = workoutInboxStore.MediaOriginalPath(nickname, owner, workoutID, filename)
-			}
-		}
+	data, contentType, err := a.Workouts.MediaOriginal(owner, workoutID, filename)
+	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) {
+		data, contentType, err = a.Federation.Inbox().MediaOriginal(nickname, owner, workoutID, filename)
 	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound) {
@@ -828,8 +786,8 @@ func getWorkoutMediaOriginal(ctx *gin.Context) {
 	}
 
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
-	ctx.Header("Content-Type", workouts.MediaContentType(filename))
-	ctx.File(path)
+	ctx.Header("Content-Type", contentType)
+	ctx.Data(http.StatusOK, contentType, data)
 }
 
 // listWorkouts godoc
@@ -844,10 +802,8 @@ func getWorkoutMediaOriginal(ctx *gin.Context) {
 // @Failure      401  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /workouts [get]
-func listWorkouts(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) listWorkouts(ctx *gin.Context) {
+		nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -862,38 +818,26 @@ func listWorkouts(ctx *gin.Context) {
 		return
 	}
 
-	if userStore == nil {
-		if err := initUserStore(); err != nil {
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init user store"})
-			return
-		}
-	}
-
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
-	viewer, err := userStore.FindByID(userID)
+	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	feedSvc := newFeedService()
+	feedSvc := a.newFeedService()
 	var items []workouts.FeedWorkout
 
 	if scope == "own" {
 		items, err = feedSvc.ListOwn(nickname, viewer.Name)
 	} else {
-		if err := initSocialService(); err != nil {
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-			return
-		}
-		_ = initFederation()
-
-		follows, err := socialService.ListFollowing(userID)
+		
+		follows, err := a.Social.ListFollowing(userID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
 			return
@@ -907,7 +851,7 @@ func listWorkouts(ctx *gin.Context) {
 			if !follows[i].TargetIsLocal {
 				continue
 			}
-			hasAvatar, avatarURL := localAvatarFieldsForUser(follows[i].TargetNickname)
+			hasAvatar, avatarURL := a.localAvatarFieldsForUser(follows[i].TargetNickname)
 			followedAuthors = append(followedAuthors, workouts.FeedAuthor{
 				Nickname:  follows[i].TargetNickname,
 				Name:      follows[i].TargetName,
@@ -945,17 +889,15 @@ func listWorkouts(ctx *gin.Context) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /workouts/{id} [delete]
-func deleteWorkout(ctx *gin.Context) {
-	initWorkoutStore()
-
-	nickname, err := currentUserNickname(ctx)
+func (a *App) deleteWorkout(ctx *gin.Context) {
+		nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
 	workoutID := ctx.Param("id")
-	if err := workoutStore.Delete(nickname, workoutID); err != nil {
+	if err := a.Workouts.Delete(nickname, workoutID); err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 			return
@@ -964,6 +906,6 @@ func deleteWorkout(ctx *gin.Context) {
 		return
 	}
 
-	publishDeletedWorkout(nickname, workoutID)
+	a.publishDeletedWorkout(nickname, workoutID)
 	ctx.Status(http.StatusNoContent)
 }

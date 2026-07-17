@@ -1,17 +1,17 @@
 package federation
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/solargate/grom/internal/config"
-	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/storage/blob"
+	"github.com/solargate/grom/internal/storage/keys"
 )
 
 func publicDomain() string {
@@ -31,20 +31,14 @@ func workoutObjectURL(authorNickname, workoutID string) string {
 
 var keyMu sync.Mutex
 
-func actorKeyPath(nickname string) string {
-	return filepath.Join(data.UserDir(config.Cfg.Data.ResolvedDir, nickname), "federation", "actor_key.pem")
-}
-
-func LoadOrCreateActorKey(nickname string) (publicKeyPEM string, keyID string, err error) {
+func LoadOrCreateActorKey(blobs blob.Store, nickname string) (publicKeyPEM string, keyID string, err error) {
 	keyMu.Lock()
 	defer keyMu.Unlock()
 
-	path := actorKeyPath(nickname)
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return "", "", err
-	}
+	ctx := context.Background()
+	keyPath := keys.UserActorKey(nickname)
 
-	data, readErr := os.ReadFile(path)
+	data, readErr := blob.ReadAll(ctx, blobs, keyPath)
 	if readErr == nil {
 		block, _ := pem.Decode(data)
 		if block != nil {
@@ -66,7 +60,7 @@ func LoadOrCreateActorKey(nickname string) (publicKeyPEM string, keyID string, e
 	}
 	privDER := x509.MarshalPKCS1PrivateKey(key)
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privDER})
-	if err := os.WriteFile(path, privPEM, 0600); err != nil {
+	if _, err := blob.PutBytes(ctx, blobs, keyPath, privPEM, blob.PutOptions{}); err != nil {
 		return "", "", err
 	}
 

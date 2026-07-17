@@ -1,29 +1,28 @@
 package federation
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/solargate/grom/internal/avatars"
-	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/storage/blob"
+	"github.com/solargate/grom/internal/storage/keys"
 )
 
-func federatedAvatarPath(ownerDir string) string {
-	return filepath.Join(ownerDir, data.AvatarFileName)
-}
-
-func hasFederatedAvatar(ownerDir string) bool {
-	_, err := os.Stat(federatedAvatarPath(ownerDir))
-	return err == nil
+func hasFederatedAvatar(ctx context.Context, blobs blob.Store, viewerNickname, ownerKey string) bool {
+	if blobs == nil {
+		return false
+	}
+	exists, err := blobs.Exists(ctx, keys.FederatedInboxAvatar(viewerNickname, ownerKey))
+	return err == nil && exists
 }
 
 func FederatedAvatarAPIPath(handle string, version int) string {
-	path := fmt.Sprintf("/api/v1/federation/authors/%s/avatar", ownerDirName(handle))
+	path := fmt.Sprintf("/api/v1/federation/authors/%s/avatar", OwnerKeyFromHandle(handle))
 	if version > 0 {
 		return fmt.Sprintf("%s?v=%d", path, version)
 	}
@@ -40,8 +39,9 @@ func effectiveRemoteAvatarURL(meta AuthorMeta) string {
 	return ""
 }
 
-func authorAvatarFields(ownerDir, handle string, meta AuthorMeta) (hasAvatar bool, avatarURL string) {
-	if hasFederatedAvatar(ownerDir) {
+func authorAvatarFields(blobs blob.Store, viewerNickname, ownerKey, handle string, meta AuthorMeta) (hasAvatar bool, avatarURL string) {
+	ctx := context.Background()
+	if hasFederatedAvatar(ctx, blobs, viewerNickname, ownerKey) {
 		return true, FederatedAvatarAPIPath(handle, meta.AvatarVersion)
 	}
 	if effectiveRemoteAvatarURL(meta) != "" {
@@ -50,8 +50,8 @@ func authorAvatarFields(ownerDir, handle string, meta AuthorMeta) (hasAvatar boo
 	return false, ""
 }
 
-func cacheRemoteAvatar(client *http.Client, ownerDir, remoteURL string) error {
-	if client == nil || remoteURL == "" {
+func cacheRemoteAvatar(client *http.Client, blobs blob.Store, viewerNickname, ownerKey, remoteURL string) error {
+	if client == nil || remoteURL == "" || blobs == nil {
 		return nil
 	}
 
@@ -82,10 +82,12 @@ func cacheRemoteAvatar(client *http.Client, ownerDir, remoteURL string) error {
 		return avatars.ErrAvatarTooLarge
 	}
 
-	return avatars.SaveFile(federatedAvatarPath(ownerDir), raw)
+	avatarKey := keys.FederatedInboxAvatar(viewerNickname, ownerKey)
+	return avatars.SaveKey(blobs, avatarKey, raw)
 }
 
-func syncAuthorAvatar(client *http.Client, ownerDir, handle string, meta *AuthorMeta, remoteURL string, refresh bool) {
+func syncAuthorAvatar(client *http.Client, blobs blob.Store, viewerNickname, ownerKey, handle string, meta *AuthorMeta, remoteURL string, refresh bool) {
+	ctx := context.Background()
 	prevRemote := effectiveRemoteAvatarURL(*meta)
 	if remoteURL != "" {
 		meta.RemoteAvatarURL = remoteURL
@@ -93,7 +95,7 @@ func syncAuthorAvatar(client *http.Client, ownerDir, handle string, meta *Author
 
 	remote := effectiveRemoteAvatarURL(*meta)
 	if remote == "" {
-		if hasFederatedAvatar(ownerDir) {
+		if hasFederatedAvatar(ctx, blobs, viewerNickname, ownerKey) {
 			meta.AvatarURL = FederatedAvatarAPIPath(handle, meta.AvatarVersion)
 		} else {
 			meta.AvatarURL = ""
@@ -101,16 +103,16 @@ func syncAuthorAvatar(client *http.Client, ownerDir, handle string, meta *Author
 		return
 	}
 
-	needsFetch := !hasFederatedAvatar(ownerDir) || (remoteURL != "" && remoteURL != prevRemote) || refresh
+	needsFetch := !hasFederatedAvatar(ctx, blobs, viewerNickname, ownerKey) || (remoteURL != "" && remoteURL != prevRemote) || refresh
 	if client != nil && needsFetch {
-		if err := cacheRemoteAvatar(client, ownerDir, remote); err != nil {
+		if err := cacheRemoteAvatar(client, blobs, viewerNickname, ownerKey, remote); err != nil {
 			log.Printf("federated avatar cache failed for %s: %v", handle, err)
 		} else {
 			meta.AvatarVersion++
 		}
 	}
 
-	if hasFederatedAvatar(ownerDir) {
+	if hasFederatedAvatar(ctx, blobs, viewerNickname, ownerKey) {
 		meta.AvatarURL = FederatedAvatarAPIPath(handle, meta.AvatarVersion)
 	} else {
 		meta.AvatarURL = ""

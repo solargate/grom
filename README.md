@@ -34,7 +34,7 @@ Requirements:
 
 - Public DNS name in `federation.domain` (hostname only, no port)
 - Ports **80** and **443** reachable from the internet
-- Persistent storage for `data/` (ACME cache is stored under `data/acme-cache`)
+- Persistent storage for `storage.location` (ACME cache is stored under `{storage.location}/acme-cache`)
 
 ```bash
 go run . -config config.prod.tls.yaml
