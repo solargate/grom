@@ -29,16 +29,18 @@ func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 	}
 
 	if first.ID == second.ID {
-		t.Fatalf("expected different ids, both are %q", first.ID)
+		t.Fatalf("expected different ids for same user, both are %q", first.ID)
 	}
 
+	// Cross-user IDs are independently allocated; creation must succeed even
+	// when start dates match another user's workout.
 	otherUser, err := svc.Create("other", &workouts.Workout{
 		Name: "Other", SportType: "Run", StartDate: startDate1,
 	})
 	if err != nil {
 		t.Fatalf("Create other user: %v", err)
 	}
-
-	// IDs may collide across users; only per-user uniqueness is required.
-	_ = otherUser
+	if otherUser.ID == "" {
+		t.Fatal("expected generated id for other user")
+	}
 }

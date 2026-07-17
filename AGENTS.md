@@ -48,7 +48,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/server/` | HTTP/HTTPS listen (static TLS, autocert) |
 | `internal/web/` | `embed` of Flutter web assets |
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
-| `testdata/` | Sample GPX/FIT files for Go tests |
+| `testdata/` (`testdata/tracks/` for GPX/FIT) | Shared fixtures for Go and Flutter tests |
 | `docs/` | Human docs (e.g. Strava import) |
 
 ## Tech stack
@@ -109,7 +109,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 - File driver implementation: `internal/storage/file/`.
 - API changes: add/update swag comments on handlers, then run `make doc`.
 - JSON/form DTOs live next to handlers in `api/v1`; domain models live in `internal/<pkg>/model.go`.
-- Tests: colocated `*_test.go`; use `testdata/` for binary fixtures. Run `go test ./...` after backend changes.
+- Tests: colocated `*_test.go`; use `testdata/` (tracks under `testdata/tracks/`) for binary fixtures. Run `go test ./...` after backend changes.
 
 ### Flutter (`ui/grom`)
 

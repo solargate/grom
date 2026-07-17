@@ -55,4 +55,40 @@ void main() {
 
     expect(detector.hasRecentMovementForResume(sampleTime), isFalse);
   });
+
+  test('MovementDetector expires resume movement outside the time window', () {
+    final detector = MovementDetector();
+    final start = DateTime(2026, 3, 6, 12, 0, 0);
+
+    detector.onPosition(const LatLng(55.75, 37.62), start);
+    detector.onPosition(
+      const LatLng(55.752, 37.62),
+      start.add(const Duration(seconds: 1)),
+    );
+
+    expect(
+      detector
+          .hasRecentMovementForResume(start.add(const Duration(seconds: 7))),
+      isFalse,
+    );
+  });
+
+  test('MovementDetector reset removes stationary state', () {
+    final detector = MovementDetector();
+    final start = DateTime(2026, 3, 6, 12, 0, 0);
+
+    detector.onPosition(const LatLng(55.75, 37.62), start);
+    detector.reset();
+
+    expect(
+      detector.isStationaryForPause(start.add(const Duration(seconds: 10))),
+      isFalse,
+    );
+    expect(
+      detector.hasRecentMovementForResume(
+        start.add(const Duration(seconds: 10)),
+      ),
+      isFalse,
+    );
+  });
 }

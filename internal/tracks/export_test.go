@@ -16,7 +16,7 @@ import (
 )
 
 func TestExportGPXPassthrough(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}

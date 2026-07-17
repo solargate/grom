@@ -50,4 +50,54 @@ void main() {
 
     expect(restored.state, TrackRecordingState.autoPaused);
   });
+
+  test('idle sessions are not active', () {
+    final session = TrackRecordingSession(
+      state: TrackRecordingState.idle,
+      startTime: DateTime.utc(2026, 3, 6, 12, 30),
+      accumulatedDurationMs: 0,
+      points: [],
+    );
+
+    expect(session.isActive, isFalse);
+  });
+
+  test('paused session round-trips without an active segment', () {
+    final startTime = DateTime.utc(2026, 3, 6, 12, 30);
+    final session = TrackRecordingSession(
+      state: TrackRecordingState.paused,
+      startTime: startTime,
+      accumulatedDurationMs: 60000,
+      points: const [],
+    );
+
+    final restored = TrackRecordingSession.fromJson(session.toJson());
+
+    expect(restored.state, TrackRecordingState.paused);
+    expect(restored.segmentStartedAt, isNull);
+    expect(restored.isActive, isTrue);
+  });
+
+  test('point optional fields remain absent through a session round-trip', () {
+    final startTime = DateTime.utc(2026, 3, 6, 12, 30);
+    final session = TrackRecordingSession(
+      state: TrackRecordingState.recording,
+      startTime: startTime,
+      accumulatedDurationMs: 0,
+      points: [
+        RecordedTrackPoint(
+          latitude: 55.75,
+          longitude: 37.62,
+          timestamp: startTime,
+        ),
+      ],
+    );
+
+    final restored = TrackRecordingSession.fromJson(session.toJson());
+
+    expect(restored.points.single.altitude, isNull);
+    expect(restored.points.single.speedMps, isNull);
+    expect(restored.points.single.heading, isNull);
+    expect(restored.points.single.accuracy, isNull);
+  });
 }

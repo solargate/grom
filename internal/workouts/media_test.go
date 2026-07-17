@@ -42,6 +42,22 @@ func TestStoreAddMediaSanitizesFilename(t *testing.T) {
 	if len(updated.MediaFiles) != 1 || updated.MediaFiles[0] != "photo.png" {
 		t.Fatalf("unexpected media files: %#v", updated.MediaFiles)
 	}
+
+	store := file.NewWorkoutsStore(dir)
+	dirName, err := store.WorkoutDirName("runner", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blobs := blobfs.NewStore(dir)
+	origKey := keys.WorkoutMediaOriginal("runner", dirName, "photo.png")
+	if ok, _ := blobs.Exists(context.Background(), origKey); !ok {
+		t.Fatalf("original blob missing at %q", origKey)
+	}
+	// Path traversal must not create files outside workout media dir.
+	evilKey := keys.WorkoutMediaOriginal("runner", dirName, "../evil/photo.png")
+	if ok, _ := blobs.Exists(context.Background(), evilKey); ok {
+		t.Fatal("unexpected blob for unsanitized path")
+	}
 }
 
 func TestStoreAddMediaDuplicateNames(t *testing.T) {
@@ -79,8 +95,28 @@ func TestStoreAddMediaDuplicateNames(t *testing.T) {
 	if len(second.MediaFiles) != 2 {
 		t.Fatalf("expected 2 media files, got %#v", second.MediaFiles)
 	}
-	if second.MediaFiles[0] == second.MediaFiles[1] {
-		t.Fatalf("expected unique names, both %q", second.MediaFiles[0])
+	if second.MediaFiles[0] != "shot.png" {
+		t.Fatalf("first name = %q, want shot.png", second.MediaFiles[0])
+	}
+	if second.MediaFiles[1] != "shot (2).png" {
+		t.Fatalf("second name = %q, want shot (2).png", second.MediaFiles[1])
+	}
+
+	store := file.NewWorkoutsStore(dir)
+	dirName, err := store.WorkoutDirName("runner", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blobs := blobfs.NewStore(dir)
+	for _, name := range second.MediaFiles {
+		orig := keys.WorkoutMediaOriginal("runner", dirName, name)
+		prev := keys.WorkoutMediaPreview("runner", dirName, name)
+		if ok, _ := blobs.Exists(context.Background(), orig); !ok {
+			t.Fatalf("missing original %q", orig)
+		}
+		if ok, _ := blobs.Exists(context.Background(), prev); !ok {
+			t.Fatalf("missing preview %q", prev)
+		}
 	}
 }
 

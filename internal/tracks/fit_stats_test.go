@@ -9,7 +9,7 @@ import (
 )
 
 func fitSamplePath(name string) string {
-	return filepath.Join("..", "..", "testdata", name)
+	return filepath.Join("..", "..", "testdata", "tracks", name)
 }
 
 func TestParseFITBikeSessionMetrics(t *testing.T) {

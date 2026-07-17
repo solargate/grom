@@ -16,7 +16,7 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	dir := t.TempDir()
 	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
-	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,13 +57,28 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	if updated.Track != tracks.TrackFileGPX {
 		t.Fatalf("track = %q", updated.Track)
 	}
+
+	store := file.NewWorkoutsStore(dir)
+	reloaded, err := store.Get("athlete", created.ID)
+	if err != nil {
+		t.Fatalf("Get after AttachTrack: %v", err)
+	}
+	if reloaded.DurationSeconds != 2184 {
+		t.Fatalf("persisted duration = %d, want 2184", reloaded.DurationSeconds)
+	}
+	if reloaded.Distance != 10004.7 {
+		t.Fatalf("persisted distance = %v, want 10004.7", reloaded.Distance)
+	}
+	if reloaded.Track != tracks.TrackFileGPX {
+		t.Fatalf("persisted track = %q", reloaded.Track)
+	}
 }
 
 func TestStoreCreateWithTrack(t *testing.T) {
 	dir := t.TempDir()
 	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
-	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}

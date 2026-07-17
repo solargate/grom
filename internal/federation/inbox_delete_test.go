@@ -15,7 +15,7 @@ func TestInboxProcessorHandleDelete(t *testing.T) {
 	dir := t.TempDir()
 	store := newTestInboxStore(dir)
 
-	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
 		t.Fatal(err)
 	}

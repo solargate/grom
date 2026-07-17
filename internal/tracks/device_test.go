@@ -70,9 +70,9 @@ func TestExtractDeviceKeepsProductNameWithBrand(t *testing.T) {
 }
 
 func TestParseWahooElemntDevice(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-ride.fit"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
 	if err != nil {
-		t.Skipf("sample FIT not available: %v", err)
+		t.Fatalf("sample FIT not available: %v", err)
 	}
 
 	parsed, err := Parse(data, "1-ride.fit")

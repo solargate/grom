@@ -70,7 +70,7 @@ func TestStoreRejectsInvalidType(t *testing.T) {
 	}
 }
 
-func TestStoreFindByIDsPreservesOrder(t *testing.T) {
+func TestStoreFindByIDsReturnsMatchingItems(t *testing.T) {
 	store := newTestStore(t)
 
 	first, err := store.Create("athlete", &equipment.Equipment{Type: equipment.TypeShoes, Name: "Shoes"})
@@ -82,11 +82,20 @@ func TestStoreFindByIDsPreservesOrder(t *testing.T) {
 		t.Fatalf("Create second: %v", err)
 	}
 
+	// Request reverse of creation order; implementation returns storage order.
 	found, err := store.FindByIDs("athlete", []string{second.ID, first.ID})
 	if err != nil {
 		t.Fatalf("FindByIDs() error = %v", err)
 	}
 	if len(found) != 2 {
 		t.Fatalf("expected 2 items, got %d", len(found))
+	}
+	got := map[string]bool{found[0].ID: true, found[1].ID: true}
+	if !got[first.ID] || !got[second.ID] {
+		t.Fatalf("FindByIDs() = %v, want ids %q and %q", []string{found[0].ID, found[1].ID}, first.ID, second.ID)
+	}
+	// Storage order: first created, then second.
+	if found[0].ID != first.ID || found[1].ID != second.ID {
+		t.Fatalf("expected storage order [%q, %q], got [%q, %q]", first.ID, second.ID, found[0].ID, found[1].ID)
 	}
 }

@@ -14,7 +14,7 @@ func baseCfg() config.Config {
 	return cfg
 }
 
-func TestFinalizeConfig_DevNoTLS(t *testing.T) {
+func TestFinalizeConfig_TLSOffDefaultsHTTPPort(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "off"
 	cfg.Federation.Enabled = false
@@ -30,7 +30,7 @@ func TestFinalizeConfig_DevNoTLS(t *testing.T) {
 	}
 }
 
-func TestFinalizeConfig_DevStaticTLS(t *testing.T) {
+func TestFinalizeConfig_StaticTLS(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "static"
 	cfg.Server.TLS.Port = 8443
@@ -48,17 +48,7 @@ func TestFinalizeConfig_DevStaticTLS(t *testing.T) {
 	}
 }
 
-func TestFinalizeConfig_ProdNoTLS(t *testing.T) {
-	cfg := baseCfg()
-	cfg.Server.TLS.Mode = "off"
-	cfg.Federation.Enabled = false
-
-	if err := config.FinalizeConfig(&cfg); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestFinalizeConfig_ProdAutocert(t *testing.T) {
+func TestFinalizeConfig_Autocert(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "autocert"
 	cfg.Federation.Enabled = true

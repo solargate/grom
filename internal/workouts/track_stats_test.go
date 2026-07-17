@@ -17,7 +17,7 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 	dir := t.TempDir()
 	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
-	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-ride.fit"))
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
 	if err != nil {
 		t.Fatal(err)
 	}

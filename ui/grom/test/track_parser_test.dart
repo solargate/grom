@@ -1,16 +1,13 @@
-import 'dart:io' as io;
-
 import 'package:fit_sdk/fit_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:grom/services/track_parser.dart';
 
+import 'support/testdata.dart';
+
 void main() {
   test('parseTrackPoints reads GPX track points', () {
-    final samplePath = io.Directory.current.path.contains('ui/grom')
-        ? '../../testdata/1-sample.gpx'
-        : '../../../testdata/1-sample.gpx';
-    final bytes = io.File(samplePath).readAsBytesSync();
+    final bytes = testdataFile('tracks/1-sample.gpx').readAsBytesSync();
     final points = parseTrackPoints(bytes, '1-sample.gpx');
 
     expect(points.length, 3);
@@ -38,6 +35,13 @@ void main() {
     expect(simplified.length, 500);
     expect(simplified.first, points.first);
     expect(simplified.last, points.last);
+  });
+
+  test('parseTrackPoints rejects unsupported extensions', () {
+    expect(
+      () => parseTrackPoints([1, 2, 3], 'track.tcx'),
+      throwsA(isA<TrackParseException>()),
+    );
   });
 }
 

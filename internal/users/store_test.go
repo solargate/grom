@@ -68,3 +68,24 @@ func TestRemoveEquipmentFromLastSets(t *testing.T) {
 		t.Fatalf("unexpected Ride equipment: %#v", got)
 	}
 }
+
+func TestSetLastEquipmentForSportClearsEmpty(t *testing.T) {
+	store := newTestStore(t)
+	user, err := store.Create("athlete", "Athlete", "athlete@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetLastEquipmentForSport(user.ID, "Run", []string{"eq-1"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetLastEquipmentForSport(user.ID, "Run", nil); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.FindByID(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := loaded.LastEquipmentBySport["Run"]; ok {
+		t.Fatalf("expected Run key removed, got %#v", loaded.LastEquipmentBySport)
+	}
+}
