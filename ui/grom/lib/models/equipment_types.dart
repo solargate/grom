@@ -85,6 +85,7 @@ const bikeTypeIds = [
   'triathlon',
   'cyclocross',
   'fixie',
+  'folding',
   'bmx',
 ];
 

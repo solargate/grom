@@ -747,6 +747,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bikeTypeFixie => 'Фикс';
 
   @override
+  String get bikeTypeFolding => 'Складной';
+
+  @override
   String get bikeTypeBmx => 'BMX';
 
   @override

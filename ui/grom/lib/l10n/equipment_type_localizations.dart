@@ -40,6 +40,8 @@ String bikeTypeLabel(AppLocalizations l10n, String id) {
       return l10n.bikeTypeCyclocross;
     case 'fixie':
       return l10n.bikeTypeFixie;
+    case 'folding':
+      return l10n.bikeTypeFolding;
     case 'bmx':
       return l10n.bikeTypeBmx;
     default:

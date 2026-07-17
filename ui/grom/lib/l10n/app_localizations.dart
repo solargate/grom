@@ -1510,6 +1510,12 @@ abstract class AppLocalizations {
   /// **'Fixie'**
   String get bikeTypeFixie;
 
+  /// No description provided for @bikeTypeFolding.
+  ///
+  /// In en, this message translates to:
+  /// **'Folding'**
+  String get bikeTypeFolding;
+
   /// No description provided for @bikeTypeBmx.
   ///
   /// In en, this message translates to:

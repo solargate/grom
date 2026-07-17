@@ -748,6 +748,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bikeTypeFixie => 'Fixie';
 
   @override
+  String get bikeTypeFolding => 'Folding';
+
+  @override
   String get bikeTypeBmx => 'BMX';
 
   @override

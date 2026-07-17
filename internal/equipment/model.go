@@ -45,7 +45,7 @@ func IsValidBikeType(t string) bool {
 		return true
 	}
 	switch t {
-	case "mountain", "gravel", "road", "touring", "triathlon", "cyclocross", "fixie", "bmx":
+	case "mountain", "gravel", "road", "touring", "triathlon", "cyclocross", "fixie", "folding", "bmx":
 		return true
 	default:
 		return false
