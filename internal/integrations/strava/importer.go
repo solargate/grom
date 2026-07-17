@@ -23,13 +23,13 @@ type ImportResult struct {
 }
 
 type Importer struct {
-	workoutStore   *workouts.Store
-	equipmentStore *equipment.Store
+	workoutStore   *workouts.Service
+	equipmentStore equipment.Repository
 	archive        *Archive
 	onPublish      PublishWorkoutFunc
 }
 
-func NewImporter(workoutStore *workouts.Store, equipmentStore *equipment.Store, archive *Archive, onPublish PublishWorkoutFunc) *Importer {
+func NewImporter(workoutStore *workouts.Service, equipmentStore equipment.Repository, archive *Archive, onPublish PublishWorkoutFunc) *Importer {
 	return &Importer{
 		workoutStore:   workoutStore,
 		equipmentStore: equipmentStore,

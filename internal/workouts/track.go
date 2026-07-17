@@ -1,15 +1,14 @@
 package workouts
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/solargate/grom/internal/maprender"
+	"github.com/solargate/grom/internal/storage/blob"
+	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/tracks"
 )
 
@@ -21,12 +20,12 @@ type TrackInput struct {
 	Parsed   *tracks.Data
 }
 
-func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
+func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
 	if track == nil {
-		return s.Create(nickname, workout)
+		return svc.Create(nickname, workout)
 	}
 
-	if err := s.validateWorkout(workout); err != nil {
+	if err := validateWorkout(workout); err != nil {
 		return nil, err
 	}
 
@@ -51,22 +50,21 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 	MergeTrackStats(workout, parsed, MergeModeTrackCreate)
 
-	if err := s.validateWorkout(workout); err != nil {
+	if err := validateWorkout(workout); err != nil {
 		return nil, err
 	}
 
-	created, workoutDirPath, cleanup, err := s.prepareNewWorkoutDir(nickname, workout)
+	created, dirName, cleanup, err := svc.repo.BeginCreate(nickname, workout)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := writeTrackArtifacts(workoutDirPath, track.Data, parsed, workout); err != nil {
+	if err := svc.writeTrackArtifacts(nickname, dirName, track.Data, parsed, workout); err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	filePath := workoutFilePath(s.userDir(nickname), workout.StartDate, workout.ID)
-	if err := writeWorkoutYAML(filePath, workout); err != nil {
+	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
 		cleanup()
 		return nil, err
 	}
@@ -77,7 +75,7 @@ func (s *Store) CreateWithTrack(nickname string, workout *Workout, track *TrackI
 
 // AttachTrack saves a track file and map preview for an existing workout without
 // overwriting start_date, duration_seconds, or distance from the track.
-func (s *Store) AttachTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
+func (svc *Service) AttachTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
 	if workout == nil || workout.ID == "" {
 		return nil, ErrInvalidWorkout
 	}
@@ -90,7 +88,7 @@ func (s *Store) AttachTrack(nickname string, workout *Workout, track *TrackInput
 		return nil, err
 	}
 
-	workoutDirPath, err := s.findWorkoutDir(nickname, workout.ID)
+	dirName, err := svc.repo.WorkoutDirName(nickname, workout.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,15 +98,13 @@ func (s *Store) AttachTrack(nickname string, workout *Workout, track *TrackInput
 		workout.Device = device
 	}
 
-	if err := writeTrackArtifacts(workoutDirPath, track.Data, parsed, workout); err != nil {
+	if err := svc.writeTrackArtifacts(nickname, dirName, track.Data, parsed, workout); err != nil {
 		return nil, err
 	}
 
 	MergeTrackStats(workout, parsed, MergeModeTrackAttach)
 
-	dirName := filepath.Base(workoutDirPath)
-	filePath := filepath.Join(workoutDirPath, dirName+".yaml")
-	if err := writeWorkoutYAML(filePath, workout); err != nil {
+	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
 		return nil, err
 	}
 
@@ -133,43 +129,10 @@ func prepareTrackInput(track *TrackInput) (string, *tracks.Data, error) {
 	return trackName, parsed, nil
 }
 
-func (s *Store) prepareNewWorkoutDir(nickname string, workout *Workout) (*Workout, string, func(), error) {
-	userDir := s.userDir(nickname)
-	if err := os.MkdirAll(userDir, 0700); err != nil {
-		return nil, "", nil, fmt.Errorf("create user dir: %w", err)
-	}
-	wd := workoutsDir(userDir)
-	if err := os.MkdirAll(wd, 0700); err != nil {
-		return nil, "", nil, fmt.Errorf("create workouts dir: %w", err)
-	}
-
-	id, err := s.allocateWorkoutID(wd)
-	if err != nil {
-		return nil, "", nil, err
-	}
-	workout.ID = id
-	workout.Name = trimWorkoutName(workout.Name)
-	workout.Description = trimWorkoutDescription(workout.Description)
-
-	workoutDirPath := workoutDir(userDir, workout.StartDate, workout.ID)
-	if _, err := os.Stat(workoutDirPath); err == nil {
-		return nil, "", nil, ErrWorkoutExists
-	}
-	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
-		return nil, "", nil, fmt.Errorf("create workout dir: %w", err)
-	}
-
-	cleanup := func() {
-		_ = os.RemoveAll(workoutDirPath)
-	}
-
-	result := *workout
-	return &result, workoutDirPath, cleanup, nil
-}
-
-func writeTrackArtifacts(workoutDirPath string, trackData []byte, parsed *tracks.Data, workout *Workout) error {
-	trackPath := filepath.Join(workoutDirPath, workout.Track)
-	if err := os.WriteFile(trackPath, trackData, 0600); err != nil {
+func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []byte, parsed *tracks.Data, workout *Workout) error {
+	ctx := context.Background()
+	trackKey := keys.WorkoutTrack(nickname, dirName, workout.Track)
+	if _, err := blob.PutBytes(ctx, svc.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
 		return fmt.Errorf("write track: %w", err)
 	}
 
@@ -177,8 +140,8 @@ func writeTrackArtifacts(workoutDirPath string, trackData []byte, parsed *tracks
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			log.Printf("map preview render failed for workout %s: %v", workout.ID, err)
 		} else if len(preview) > 0 {
-			previewPath := filepath.Join(workoutDirPath, MapPreviewFileName)
-			if err := os.WriteFile(previewPath, preview, 0600); err != nil {
+			previewKey := keys.WorkoutMapPreview(nickname, dirName)
+			if _, err := blob.PutBytes(ctx, svc.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
 				log.Printf("map preview write failed for workout %s: %v", workout.ID, err)
 			} else {
 				workout.HasMapPreview = true
@@ -198,13 +161,8 @@ func deviceForTrack(trackName string, parsed *tracks.Data) string {
 	return DeviceGrom
 }
 
-func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, string, error) {
-	dir, err := s.findWorkoutDir(nickname, workoutID)
-	if err != nil {
-		return nil, "", "", err
-	}
-
-	workout, err := readWorkoutFromDir(dir)
+func (svc *Service) TrackFile(nickname, workoutID string) ([]byte, string, string, error) {
+	workout, err := svc.repo.Get(nickname, workoutID)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -212,103 +170,31 @@ func (s *Store) TrackFile(nickname, workoutID string) ([]byte, string, string, e
 		return nil, "", "", ErrWorkoutNotFound
 	}
 
-	path := filepath.Join(dir, workout.Track)
-	data, err := os.ReadFile(path)
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, "", "", ErrWorkoutNotFound
-		}
+		return nil, "", "", err
+	}
+
+	trackKey := keys.WorkoutTrack(nickname, dirName, workout.Track)
+	data, err := blob.ReadAll(context.Background(), svc.blobs, trackKey)
+	if err != nil {
 		return nil, "", "", fmt.Errorf("read track: %w", err)
 	}
 	return data, workout.Track, workout.Name, nil
 }
 
-func readWorkoutFromDir(dir string) (*Workout, error) {
-	dirName := filepath.Base(dir)
-	filePath := filepath.Join(dir, dirName+".yaml")
-	data, err := os.ReadFile(filePath)
+func (svc *Service) MapPreview(nickname, workoutID string) ([]byte, error) {
+	if _, err := svc.repo.Get(nickname, workoutID); err != nil {
+		return nil, err
+	}
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrWorkoutNotFound
-		}
-		return nil, fmt.Errorf("read workout: %w", err)
+		return nil, err
 	}
-
-	var workout Workout
-	if err := yaml.Unmarshal(data, &workout); err != nil {
-		return nil, fmt.Errorf("parse workout: %w", err)
-	}
-	return &workout, nil
-}
-
-func (s *Store) MapPreviewPath(nickname, workoutID string) (string, error) {
-	dir, err := s.findWorkoutDir(nickname, workoutID)
+	previewKey := keys.WorkoutMapPreview(nickname, dirName)
+	data, err := blob.ReadAll(context.Background(), svc.blobs, previewKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	path := filepath.Join(dir, MapPreviewFileName)
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return "", ErrWorkoutNotFound
-		}
-		return "", err
-	}
-	return path, nil
-}
-
-func (s *Store) findWorkoutDir(nickname, workoutID string) (string, error) {
-	wd := workoutsDir(s.userDir(nickname))
-	entries, err := os.ReadDir(wd)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", ErrWorkoutNotFound
-		}
-		return "", err
-	}
-
-	suffix := "-" + workoutID
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		if len(entry.Name()) > len(suffix) && entry.Name()[len(entry.Name())-len(suffix):] == suffix {
-			return filepath.Join(wd, entry.Name()), nil
-		}
-	}
-	return "", ErrWorkoutNotFound
-}
-
-func (s *Store) HasStravaActivityID(nickname, stravaActivityID string) (bool, error) {
-	stravaActivityID = strings.TrimSpace(stravaActivityID)
-	if stravaActivityID == "" {
-		return false, nil
-	}
-
-	wd := workoutsDir(s.userDir(nickname))
-	entries, err := os.ReadDir(wd)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		workout, err := readWorkoutFromDir(filepath.Join(wd, entry.Name()))
-		if err != nil {
-			continue
-		}
-		if workout.StravaActivityID == stravaActivityID {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func workoutHasMapPreview(dir string) bool {
-	info, err := os.Stat(filepath.Join(dir, MapPreviewFileName))
-	return err == nil && !info.IsDir()
+	return data, nil
 }

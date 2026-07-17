@@ -4,29 +4,23 @@ import (
 	"strings"
 
 	"github.com/solargate/grom/internal/avatars"
-	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/social"
 )
 
-func localAvatarFieldsForUser(nickname string) (hasAvatar bool, avatarURL string) {
-	return avatars.Fields(config.Cfg.Data.ResolvedDir, nickname)
+func (a *App) localAvatarFieldsForUser(nickname string) (hasAvatar bool, avatarURL string) {
+	return avatars.FieldsStore(a.Blobs, nickname)
 }
 
-func publicAvatarURL(nickname string) string {
-	domain := config.Cfg.Federation.Domain
-	return avatars.PublicURL(domain, nickname)
-}
-
-func remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (bool, string) {
+func (a *App) remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (bool, string) {
 	if follow == nil || follow.TargetIsLocal {
 		return false, ""
 	}
 
-	if err := initFederation(); err != nil || workoutInboxStore == nil {
+	if a.Federation.Inbox() == nil {
 		return follow.TargetAvatarURL != "", follow.TargetAvatarURL
 	}
 
-	hasAvatar, avatarURL := workoutInboxStore.AuthorAvatarFields(viewerNickname, follow.TargetHandle)
+	hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follow.TargetHandle)
 	if hasAvatar {
 		return true, avatarURL
 	}
@@ -36,7 +30,7 @@ func remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (boo
 		return false, ""
 	}
 
-	_ = workoutInboxStore.EnsureAuthor(
+	_ = a.Federation.Inbox().EnsureAuthor(
 		viewerNickname,
 		follow.TargetHandle,
 		follow.TargetNickname,
@@ -44,17 +38,17 @@ func remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (boo
 		remoteURL,
 		false,
 	)
-	return workoutInboxStore.AuthorAvatarFields(viewerNickname, follow.TargetHandle)
+	return a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follow.TargetHandle)
 }
 
-func cacheRemoteFollowAvatar(viewerNickname string, follow *social.Follow) {
+func (a *App) cacheRemoteFollowAvatar(viewerNickname string, follow *social.Follow) {
 	if follow == nil || follow.TargetIsLocal || follow.TargetAvatarURL == "" {
 		return
 	}
-	if err := initFederation(); err != nil || workoutInboxStore == nil {
+	if a.Federation.Inbox() == nil {
 		return
 	}
-	_ = workoutInboxStore.EnsureAuthor(
+	_ = a.Federation.Inbox().EnsureAuthor(
 		viewerNickname,
 		follow.TargetHandle,
 		follow.TargetNickname,
@@ -64,30 +58,30 @@ func cacheRemoteFollowAvatar(viewerNickname string, follow *social.Follow) {
 	)
 }
 
-func remoteFollowerAvatarFields(viewerNickname string, follower *social.Follower) (bool, string) {
+func (a *App) remoteFollowerAvatarFields(viewerNickname string, follower *social.Follower) (bool, string) {
 	if follower == nil || follower.FollowerIsLocal {
 		return follower.FollowerHasAvatar, follower.FollowerAvatarURL
 	}
 
-	if err := initFederation(); err != nil || workoutInboxStore == nil {
+	if a.Federation.Inbox() == nil {
 		return false, ""
 	}
 
-	hasAvatar, avatarURL := workoutInboxStore.AuthorAvatarFields(viewerNickname, follower.FollowerHandle)
+	hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follower.FollowerHandle)
 	if hasAvatar {
 		return true, avatarURL
 	}
 
-	if err := initSocialService(); err != nil || federationDelivery == nil {
+	if a.federationDelivery == nil {
 		return false, ""
 	}
 
-	parsed, err := socialService.ParseHandle(follower.FollowerHandle)
+	parsed, err := a.Social.ParseHandle(follower.FollowerHandle)
 	if err != nil || parsed.IsLocal {
 		return false, ""
 	}
 
-	remote, err := federationDelivery.ResolveRemote(parsed)
+	remote, err := a.federationDelivery.ResolveRemote(parsed)
 	if err != nil || remote.AvatarURL == "" {
 		return false, ""
 	}
@@ -97,7 +91,7 @@ func remoteFollowerAvatarFields(viewerNickname string, follower *social.Follower
 		name = follower.FollowerName
 	}
 
-	_ = workoutInboxStore.EnsureAuthor(
+	_ = a.Federation.Inbox().EnsureAuthor(
 		viewerNickname,
 		follower.FollowerHandle,
 		follower.FollowerNickname,
@@ -105,5 +99,5 @@ func remoteFollowerAvatarFields(viewerNickname string, follower *social.Follower
 		remote.AvatarURL,
 		false,
 	)
-	return workoutInboxStore.AuthorAvatarFields(viewerNickname, follower.FollowerHandle)
+	return a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follower.FollowerHandle)
 }

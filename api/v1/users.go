@@ -43,20 +43,15 @@ func toUserSearchResults(items []social.UserSearchResult) []UserSearchResult {
 // @Failure      401  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Router       /users/search [get]
-func searchUsers(ctx *gin.Context) {
-	if err := initSocialService(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to init social service"})
-		return
-	}
-
-	userID, err := currentUserID(ctx)
+func (a *App) searchUsers(ctx *gin.Context) {
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
 
 	query := ctx.Query("q")
-	results, err := socialService.SearchLocal(query, userID)
+	results, err := a.Social.SearchLocal(query, userID)
 	if err != nil {
 		handleSocialError(ctx, err)
 		return
@@ -68,7 +63,7 @@ func searchUsers(ctx *gin.Context) {
 	response := toUserSearchResults(results)
 	for i := range response {
 		if response[i].IsLocal {
-			response[i].HasAvatar, response[i].AvatarURL = localAvatarFieldsForUser(response[i].Nickname)
+			response[i].HasAvatar, response[i].AvatarURL = a.localAvatarFieldsForUser(response[i].Nickname)
 		}
 	}
 	ctx.JSON(http.StatusOK, response)

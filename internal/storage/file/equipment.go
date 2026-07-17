@@ -1,4 +1,4 @@
-package equipment
+package file
 
 import (
 	"fmt"
@@ -9,29 +9,34 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/equipment"
 	"gopkg.in/yaml.v3"
 )
 
 const equipmentFileName = "equipment.yaml"
 
-type Store struct {
+type equipmentFile struct {
+	Equipment []equipment.Equipment `yaml:"equipment"`
+}
+
+type EquipmentStore struct {
 	dataDir string
 	mu      sync.Mutex
 }
 
-func NewStore(dataDir string) *Store {
-	return &Store{dataDir: dataDir}
+func NewEquipmentStore(dataDir string) *EquipmentStore {
+	return &EquipmentStore{dataDir: dataDir}
 }
 
-func (s *Store) userDir(nickname string) string {
+func (s *EquipmentStore) userDir(nickname string) string {
 	return data.UserDir(s.dataDir, nickname)
 }
 
-func (s *Store) filePath(nickname string) string {
+func (s *EquipmentStore) filePath(nickname string) string {
 	return filepath.Join(s.userDir(nickname), equipmentFileName)
 }
 
-func (s *Store) load(nickname string) ([]Equipment, error) {
+func (s *EquipmentStore) load(nickname string) ([]equipment.Equipment, error) {
 	path := s.filePath(nickname)
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -48,7 +53,7 @@ func (s *Store) load(nickname string) ([]Equipment, error) {
 	return file.Equipment, nil
 }
 
-func (s *Store) save(nickname string, items []Equipment) error {
+func (s *EquipmentStore) save(nickname string, items []equipment.Equipment) error {
 	if err := os.MkdirAll(s.userDir(nickname), 0700); err != nil {
 		return fmt.Errorf("create user dir: %w", err)
 	}
@@ -67,13 +72,13 @@ func (s *Store) save(nickname string, items []Equipment) error {
 	return os.Rename(tmp, path)
 }
 
-func (s *Store) List(nickname string) ([]Equipment, error) {
+func (s *EquipmentStore) List(nickname string) ([]equipment.Equipment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.load(nickname)
 }
 
-func (s *Store) FindByID(nickname, id string) (*Equipment, error) {
+func (s *EquipmentStore) FindByID(nickname, id string) (*equipment.Equipment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -87,10 +92,10 @@ func (s *Store) FindByID(nickname, id string) (*Equipment, error) {
 			return &item, nil
 		}
 	}
-	return nil, ErrEquipmentNotFound
+	return nil, equipment.ErrEquipmentNotFound
 }
 
-func (s *Store) FindByIDs(nickname string, ids []string) ([]Equipment, error) {
+func (s *EquipmentStore) FindByIDs(nickname string, ids []string) ([]equipment.Equipment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -107,7 +112,7 @@ func (s *Store) FindByIDs(nickname string, ids []string) ([]Equipment, error) {
 		idSet[id] = struct{}{}
 	}
 
-	result := make([]Equipment, 0, len(ids))
+	result := make([]equipment.Equipment, 0, len(ids))
 	for i := range items {
 		if _, ok := idSet[items[i].ID]; ok {
 			result = append(result, items[i])
@@ -116,42 +121,42 @@ func (s *Store) FindByIDs(nickname string, ids []string) ([]Equipment, error) {
 	return result, nil
 }
 
-func (s *Store) validate(item *Equipment) error {
+func (s *EquipmentStore) validate(item *equipment.Equipment) error {
 	if item == nil {
-		return ErrInvalidEquipment
+		return equipment.ErrInvalidEquipment
 	}
-	if !IsValidType(item.Type) {
-		return fmt.Errorf("%w: invalid type", ErrInvalidEquipment)
+	if !equipment.IsValidType(item.Type) {
+		return fmt.Errorf("%w: invalid type", equipment.ErrInvalidEquipment)
 	}
 	if strings.TrimSpace(item.Name) == "" {
-		return fmt.Errorf("%w: name is required", ErrInvalidEquipment)
+		return fmt.Errorf("%w: name is required", equipment.ErrInvalidEquipment)
 	}
-	if item.Type == TypeBike && !IsValidBikeType(item.BikeType) {
-		return fmt.Errorf("%w: invalid bike type", ErrInvalidEquipment)
+	if item.Type == equipment.TypeBike && !equipment.IsValidBikeType(item.BikeType) {
+		return fmt.Errorf("%w: invalid bike type", equipment.ErrInvalidEquipment)
 	}
-	if item.Type == TypeWater && !IsValidWaterType(item.WaterType) {
-		return fmt.Errorf("%w: invalid water type", ErrInvalidEquipment)
+	if item.Type == equipment.TypeWater && !equipment.IsValidWaterType(item.WaterType) {
+		return fmt.Errorf("%w: invalid water type", equipment.ErrInvalidEquipment)
 	}
-	if item.Type != TypeBike {
+	if item.Type != equipment.TypeBike {
 		item.BikeType = ""
 	}
-	if item.Type != TypeWater {
+	if item.Type != equipment.TypeWater {
 		item.WaterType = ""
 	}
 	if item.WeightKg != nil && *item.WeightKg < 0 {
-		return fmt.Errorf("%w: weight must be non-negative", ErrInvalidEquipment)
+		return fmt.Errorf("%w: weight must be non-negative", equipment.ErrInvalidEquipment)
 	}
 	return nil
 }
 
-func normalize(item *Equipment) {
+func normalize(item *equipment.Equipment) {
 	item.Name = strings.TrimSpace(item.Name)
 	item.Brand = strings.TrimSpace(item.Brand)
 	item.Model = strings.TrimSpace(item.Model)
 	item.Notes = strings.TrimSpace(item.Notes)
 }
 
-func (s *Store) Create(nickname string, item *Equipment) (*Equipment, error) {
+func (s *EquipmentStore) Create(nickname string, item *equipment.Equipment) (*equipment.Equipment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -175,12 +180,12 @@ func (s *Store) Create(nickname string, item *Equipment) (*Equipment, error) {
 	return &result, nil
 }
 
-func (s *Store) Update(nickname string, item *Equipment) (*Equipment, error) {
+func (s *EquipmentStore) Update(nickname string, item *equipment.Equipment) (*equipment.Equipment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if item == nil || strings.TrimSpace(item.ID) == "" {
-		return nil, ErrInvalidEquipment
+		return nil, equipment.ErrInvalidEquipment
 	}
 	if err := s.validate(item); err != nil {
 		return nil, err
@@ -201,7 +206,7 @@ func (s *Store) Update(nickname string, item *Equipment) (*Equipment, error) {
 		}
 	}
 	if !found {
-		return nil, ErrEquipmentNotFound
+		return nil, equipment.ErrEquipmentNotFound
 	}
 
 	if err := s.save(nickname, items); err != nil {
@@ -212,7 +217,7 @@ func (s *Store) Update(nickname string, item *Equipment) (*Equipment, error) {
 	return &result, nil
 }
 
-func (s *Store) Delete(nickname, id string) error {
+func (s *EquipmentStore) Delete(nickname, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -222,7 +227,7 @@ func (s *Store) Delete(nickname, id string) error {
 	}
 
 	found := false
-	updated := make([]Equipment, 0, len(items))
+	updated := make([]equipment.Equipment, 0, len(items))
 	for i := range items {
 		if items[i].ID == id {
 			found = true
@@ -231,8 +236,10 @@ func (s *Store) Delete(nickname, id string) error {
 		updated = append(updated, items[i])
 	}
 	if !found {
-		return ErrEquipmentNotFound
+		return equipment.ErrEquipmentNotFound
 	}
 
 	return s.save(nickname, updated)
 }
+
+var _ equipment.Repository = (*EquipmentStore)(nil)

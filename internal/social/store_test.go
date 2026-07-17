@@ -1,25 +1,39 @@
-package social
+package social_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/solargate/grom/internal/social"
+	"github.com/solargate/grom/internal/storage/file"
 )
+
+const followsFileName = "follows.yaml"
+
+func newTestStore(t *testing.T) *file.SocialStore {
+	t.Helper()
+	store, err := file.NewSocialStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return store
+}
 
 func TestFollowStoreLocalFollow(t *testing.T) {
 	dir := t.TempDir()
-	store, err := NewStore(dir)
+	store, err := file.NewSocialStore(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	follow := Follow{
+	follow := social.Follow{
 		FollowerID:     "user-a",
 		TargetHandle:   "bob@localhost",
 		TargetNickname: "bob",
 		TargetName:     "Bob",
 		TargetIsLocal:  true,
-		Status:         StatusActive,
+		Status:         social.StatusActive,
 	}
 	created, err := store.Create(follow)
 	if err != nil {
@@ -46,17 +60,13 @@ func TestFollowStoreLocalFollow(t *testing.T) {
 }
 
 func TestFollowStoreFindByFollowActivityID(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := newTestStore(t)
 
-	created, err := store.Create(Follow{
+	created, err := store.Create(social.Follow{
 		FollowerID:     "user-a",
 		TargetHandle:   "bob@remote.test:8445",
 		TargetNickname: "bob",
-		Status:         StatusPending,
+		Status:         social.StatusPending,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -81,54 +91,46 @@ func TestFollowStoreFindByFollowActivityID(t *testing.T) {
 }
 
 func TestFollowStoreDuplicate(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := newTestStore(t)
 
-	follow := Follow{
+	follow := social.Follow{
 		FollowerID:     "user-a",
 		TargetHandle:   "bob@localhost",
 		TargetNickname: "bob",
-		Status:         StatusActive,
+		Status:         social.StatusActive,
 	}
 	if _, err := store.Create(follow); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.Create(follow); err != ErrAlreadyFollowing {
+	if _, err := store.Create(follow); err != social.ErrAlreadyFollowing {
 		t.Fatalf("expected ErrAlreadyFollowing, got %v", err)
 	}
 }
 
 func TestFollowStoreListActiveByTarget(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := newTestStore(t)
 
-	if _, err := store.Create(Follow{
+	if _, err := store.Create(social.Follow{
 		FollowerID:     "user-a",
 		TargetHandle:   "bob@localhost",
 		TargetNickname: "bob",
-		Status:         StatusActive,
+		Status:         social.StatusActive,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.Create(Follow{
+	if _, err := store.Create(social.Follow{
 		FollowerID:     "user-c",
 		TargetHandle:   "bob@localhost",
 		TargetNickname: "bob",
-		Status:         StatusPending,
+		Status:         social.StatusPending,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.Create(Follow{
+	if _, err := store.Create(social.Follow{
 		FollowerID:     "user-a",
 		TargetHandle:   "alice@localhost",
 		TargetNickname: "alice",
-		Status:         StatusActive,
+		Status:         social.StatusActive,
 	}); err != nil {
 		t.Fatal(err)
 	}

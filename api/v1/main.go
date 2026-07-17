@@ -4,8 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/solargate/grom/api/docs"
-	"github.com/solargate/grom/internal/auth"
-	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/server"
 	"github.com/solargate/grom/internal/web"
 
@@ -27,60 +25,15 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func RunRouter() {
-	if err := initUserStore(); err != nil {
+	app, err := NewApp()
+	if err != nil {
 		panic(err)
 	}
 
 	router := gin.Default()
 	router.MaxMultipartMemory = 128 << 20
 
-	if config.Cfg.Federation.Enabled {
-		RegisterFederationRoutes(router, userStore)
-	}
-
-	apiV1 := router.Group("/api/v1")
-	{
-		apiV1.GET("/status", checkStatus)
-		apiV1.GET("/server_info", getServerInfo)
-
-		authGroup := apiV1.Group("/auth")
-		authGroup.POST("/register", register)
-		authGroup.POST("/login", login)
-		authGroup.GET("/me", auth.AuthRequired(), getMe)
-		authGroup.PATCH("/me", auth.AuthRequired(), updateMe)
-		authGroup.PUT("/me/avatar", auth.AuthRequired(), uploadMyAvatar)
-		authGroup.DELETE("/me/avatar", auth.AuthRequired(), deleteMyAvatar)
-
-		apiV1.GET("/users/search", auth.AuthRequired(), searchUsers)
-		apiV1.GET("/users/:nickname/avatar", auth.AuthRequired(), getUserAvatar)
-		apiV1.GET("/federation/authors/:ownerKey/avatar", auth.AuthRequired(), getFederatedAuthorAvatar)
-
-		socialGroup := apiV1.Group("/social", auth.AuthRequired())
-		socialGroup.POST("/follow", followUser)
-		socialGroup.DELETE("/follow/:id", unfollowUser)
-		socialGroup.GET("/following", listFollowing)
-		socialGroup.GET("/followers", listFollowers)
-
-		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
-		workoutGroup.POST("", createWorkout)
-		workoutGroup.POST("/parse-track", parseTrack)
-		workoutGroup.GET("/:id/track", getWorkoutTrack)
-		workoutGroup.GET("/:id/map-preview", getWorkoutMapPreview)
-		workoutGroup.GET("/:id/media/:filename/preview", getWorkoutMediaPreview)
-		workoutGroup.GET("/:id/media/:filename", getWorkoutMediaOriginal)
-		workoutGroup.DELETE("/:id", deleteWorkout)
-		workoutGroup.GET("", listWorkouts)
-
-		equipmentGroup := apiV1.Group("/equipment", auth.AuthRequired())
-		equipmentGroup.GET("", listEquipment)
-		equipmentGroup.POST("", createEquipment)
-		equipmentGroup.PUT("/:id", updateEquipment)
-		equipmentGroup.DELETE("/:id", deleteEquipment)
-
-		integrationsGroup := apiV1.Group("/integrations", auth.AuthRequired())
-		integrationsGroup.POST("/strava/import", importStravaArchive)
-		integrationsGroup.GET("/strava/import/status", getStravaImportStatus)
-	}
+	app.RegisterRoutes(router)
 
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)
 	serveSwaggerUI := func(c *gin.Context) {

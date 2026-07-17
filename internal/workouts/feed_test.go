@@ -1,16 +1,20 @@
-package workouts
+package workouts_test
 
 import (
 	"testing"
 	"time"
+
+	blobfs "github.com/solargate/grom/internal/storage/blob/fs"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestFeedServiceMerge(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	svc := newTestService(dir)
+	blobs := blobfs.NewStore(dir)
 
 	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
-	_, err := store.Create("alice", &Workout{
+	_, err := svc.Create("alice", &workouts.Workout{
 		Name:      "Alice run",
 		SportType: "Run",
 		StartDate: start,
@@ -18,7 +22,7 @@ func TestFeedServiceMerge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.Create("bob", &Workout{
+	_, err = svc.Create("bob", &workouts.Workout{
 		Name:      "Bob ride",
 		SportType: "Ride",
 		StartDate: start.Add(-time.Hour),
@@ -27,8 +31,8 @@ func TestFeedServiceMerge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	feed := NewFeedService(store, "localhost")
-	items, err := feed.ListFeed("alice", "Alice", []FeedAuthor{
+	feed := workouts.NewFeedService(svc, blobs, "localhost")
+	items, err := feed.ListFeed("alice", "Alice", []workouts.FeedAuthor{
 		{Nickname: "bob", Name: "Bob", Handle: "bob@localhost", IsLocal: true},
 	})
 	if err != nil {
@@ -47,10 +51,11 @@ func TestFeedServiceMerge(t *testing.T) {
 
 func TestFeedServiceListOwn(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	svc := newTestService(dir)
+	blobs := blobfs.NewStore(dir)
 
 	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
-	_, err := store.Create("alice", &Workout{
+	_, err := svc.Create("alice", &workouts.Workout{
 		Name:      "Alice run",
 		SportType: "Run",
 		StartDate: start,
@@ -58,7 +63,7 @@ func TestFeedServiceListOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.Create("bob", &Workout{
+	_, err = svc.Create("bob", &workouts.Workout{
 		Name:      "Bob ride",
 		SportType: "Ride",
 		StartDate: start.Add(-time.Hour),
@@ -67,7 +72,7 @@ func TestFeedServiceListOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	feed := NewFeedService(store, "localhost")
+	feed := workouts.NewFeedService(svc, blobs, "localhost")
 	items, err := feed.ListOwn("alice", "Alice")
 	if err != nil {
 		t.Fatal(err)

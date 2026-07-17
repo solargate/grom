@@ -10,7 +10,7 @@ import (
 func baseCfg() config.Config {
 	cfg := config.Config{}
 	cfg.Auth.JWTSecret = "change-me-in-production-min-32-chars!!"
-	cfg.Data.Location = "data"
+	cfg.Storage.Location = "data"
 	return cfg
 }
 
@@ -73,7 +73,7 @@ func TestFinalizeConfig_ProdAutocert(t *testing.T) {
 	if len(cfg.Server.TLS.Autocert.Domains) != 1 || cfg.Server.TLS.Autocert.Domains[0] != "grom.example.com" {
 		t.Fatalf("domains = %v", cfg.Server.TLS.Autocert.Domains)
 	}
-	wantCache := filepath.Join(cfg.Data.ResolvedDir, "acme-cache")
+	wantCache := filepath.Join(cfg.Storage.ResolvedLocation, "acme-cache")
 	if cfg.Server.TLS.Autocert.CacheDir != wantCache {
 		t.Fatalf("cache_dir = %q, want %q", cfg.Server.TLS.Autocert.CacheDir, wantCache)
 	}
@@ -134,31 +134,52 @@ func TestResolveTLSMode_LegacyEnabled(t *testing.T) {
 	}
 }
 
-func TestFinalizeConfig_DataTempDir(t *testing.T) {
+func TestFinalizeConfig_StorageTempDir(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "off"
-	cfg.Data.TempDir = "custom-tmp"
+	cfg.Storage.TempDir = "custom-tmp"
 
 	if err := config.FinalizeConfig(&cfg); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Data.ResolvedTempDir == "" {
+	if cfg.Storage.ResolvedTempDir == "" {
 		t.Fatal("ResolvedTempDir should be set")
 	}
-	if !filepath.IsAbs(cfg.Data.ResolvedTempDir) {
-		t.Fatalf("ResolvedTempDir = %q, want absolute path", cfg.Data.ResolvedTempDir)
+	if !filepath.IsAbs(cfg.Storage.ResolvedTempDir) {
+		t.Fatalf("ResolvedTempDir = %q, want absolute path", cfg.Storage.ResolvedTempDir)
 	}
 }
 
-func TestFinalizeConfig_DataTempDirDefault(t *testing.T) {
+func TestFinalizeConfig_StorageTempDirDefault(t *testing.T) {
 	cfg := baseCfg()
 	cfg.Server.TLS.Mode = "off"
 
 	if err := config.FinalizeConfig(&cfg); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Data.ResolvedTempDir == "" {
+	if cfg.Storage.ResolvedTempDir == "" {
 		t.Fatal("ResolvedTempDir should default to tmp")
+	}
+}
+
+func TestFinalizeConfig_LegacyDataSection(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Auth.JWTSecret = "change-me-in-production-min-32-chars!!"
+	cfg.Server.TLS.Mode = "off"
+	cfg.Data.Location = "legacy-data"
+	cfg.Data.TempDir = "legacy-tmp"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Storage.Location != "legacy-data" {
+		t.Fatalf("Storage.Location = %q, want legacy-data", cfg.Storage.Location)
+	}
+	if cfg.Storage.TempDir != "legacy-tmp" {
+		t.Fatalf("Storage.TempDir = %q, want legacy-tmp", cfg.Storage.TempDir)
+	}
+	if cfg.Storage.ResolvedLocation == "" {
+		t.Fatal("ResolvedLocation should be set from legacy data section")
 	}
 }
 

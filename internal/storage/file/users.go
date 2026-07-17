@@ -1,7 +1,6 @@
-package users
+package file
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/data"
 	"gopkg.in/yaml.v3"
 )
@@ -19,26 +19,19 @@ import (
 const usersFileName = "users.yaml"
 const maxNicknameLen = 64
 
-var (
-	ErrEmailTaken      = errors.New("email already registered")
-	ErrNicknameTaken   = errors.New("nickname already taken")
-	ErrInvalidNickname = errors.New("invalid nickname")
-	ErrUserNotFound    = errors.New("user not found")
-)
+type usersFile struct {
+	Users []users.User `yaml:"users"`
+}
 
-type Store struct {
+type UsersStore struct {
 	dataDir string
 	path    string
 	mu      sync.Mutex
-	users   []User
+	users   []users.User
 }
 
-func (s *Store) DataDir() string {
-	return s.dataDir
-}
-
-func NewStore(dataDir string) (*Store, error) {
-	s := &Store{
+func NewUsersStore(dataDir string) (*UsersStore, error) {
+	s := &UsersStore{
 		dataDir: dataDir,
 		path:    filepath.Join(dataDir, usersFileName),
 	}
@@ -51,7 +44,7 @@ func NewStore(dataDir string) (*Store, error) {
 	return s, nil
 }
 
-func (s *Store) ensureUserDirs() error {
+func (s *UsersStore) ensureUserDirs() error {
 	for _, user := range s.users {
 		if err := ensureUserDir(s.dataDir, user.Nickname); err != nil {
 			return fmt.Errorf("ensure user dir for %q: %w", user.Nickname, err)
@@ -70,23 +63,23 @@ func ensureUserDir(dataDir, nickname string) error {
 
 func validateNickname(nickname string) error {
 	if nickname == "" {
-		return ErrInvalidNickname
+		return users.ErrInvalidNickname
 	}
 	if len(nickname) > maxNicknameLen {
-		return ErrInvalidNickname
+		return users.ErrInvalidNickname
 	}
 	if strings.Contains(nickname, "..") {
-		return ErrInvalidNickname
+		return users.ErrInvalidNickname
 	}
 	for _, r := range nickname {
 		if r == '/' || r == '\\' || r == 0 || unicode.IsControl(r) {
-			return ErrInvalidNickname
+			return users.ErrInvalidNickname
 		}
 	}
 	return nil
 }
 
-func (s *Store) load() error {
+func (s *UsersStore) load() error {
 	data, err := os.ReadFile(s.path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -96,7 +89,7 @@ func (s *Store) load() error {
 		return err
 	}
 
-	var file userFile
+	var file usersFile
 	if err := yaml.Unmarshal(data, &file); err != nil {
 		return fmt.Errorf("parse users file: %w", err)
 	}
@@ -104,8 +97,8 @@ func (s *Store) load() error {
 	return nil
 }
 
-func (s *Store) save() error {
-	file := userFile{Users: s.users}
+func (s *UsersStore) save() error {
+	file := usersFile{Users: s.users}
 	data, err := yaml.Marshal(&file)
 	if err != nil {
 		return err
@@ -118,7 +111,7 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
-func (s *Store) FindByEmail(email string) (*User, error) {
+func (s *UsersStore) FindByEmail(email string) (*users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -129,10 +122,10 @@ func (s *Store) FindByEmail(email string) (*User, error) {
 			return &user, nil
 		}
 	}
-	return nil, ErrUserNotFound
+	return nil, users.ErrUserNotFound
 }
 
-func (s *Store) FindByID(id string) (*User, error) {
+func (s *UsersStore) FindByID(id string) (*users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -142,10 +135,10 @@ func (s *Store) FindByID(id string) (*User, error) {
 			return &user, nil
 		}
 	}
-	return nil, ErrUserNotFound
+	return nil, users.ErrUserNotFound
 }
 
-func (s *Store) FindByNickname(nickname string) (*User, error) {
+func (s *UsersStore) FindByNickname(nickname string) (*users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -155,10 +148,10 @@ func (s *Store) FindByNickname(nickname string) (*User, error) {
 			return &user, nil
 		}
 	}
-	return nil, ErrUserNotFound
+	return nil, users.ErrUserNotFound
 }
 
-func (s *Store) Search(query, excludeUserID string, limit int) ([]User, error) {
+func (s *UsersStore) Search(query, excludeUserID string, limit int) ([]users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -170,7 +163,7 @@ func (s *Store) Search(query, excludeUserID string, limit int) ([]User, error) {
 		return nil, nil
 	}
 
-	result := make([]User, 0, limit)
+	result := make([]users.User, 0, limit)
 	for i := range s.users {
 		if s.users[i].ID == excludeUserID {
 			continue
@@ -187,15 +180,15 @@ func (s *Store) Search(query, excludeUserID string, limit int) ([]User, error) {
 	return result, nil
 }
 
-func (s *Store) ListAll() ([]User, error) {
+func (s *UsersStore) ListAll() ([]users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	result := make([]User, len(s.users))
+	result := make([]users.User, len(s.users))
 	copy(result, s.users)
 	return result, nil
 }
 
-func (s *Store) Create(nickname, name, email, password string) (*User, error) {
+func (s *UsersStore) Create(nickname, name, email, password string) (*users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -210,10 +203,10 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 	normalizedEmail := strings.ToLower(email)
 	for i := range s.users {
 		if strings.ToLower(s.users[i].Email) == normalizedEmail {
-			return nil, ErrEmailTaken
+			return nil, users.ErrEmailTaken
 		}
 		if strings.EqualFold(s.users[i].Nickname, nickname) {
-			return nil, ErrNicknameTaken
+			return nil, users.ErrNicknameTaken
 		}
 	}
 
@@ -226,7 +219,7 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 		return nil, err
 	}
 
-	user := User{
+	user := users.User{
 		ID:           uuid.NewString(),
 		Nickname:     nickname,
 		Name:         name,
@@ -244,7 +237,7 @@ func (s *Store) Create(nickname, name, email, password string) (*User, error) {
 	return &user, nil
 }
 
-func (s *Store) UpdateProfile(userID, name string) (*User, error) {
+func (s *UsersStore) UpdateProfile(userID, name string) (*users.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -260,10 +253,10 @@ func (s *Store) UpdateProfile(userID, name string) (*User, error) {
 		user := s.users[i]
 		return &user, nil
 	}
-	return nil, ErrUserNotFound
+	return nil, users.ErrUserNotFound
 }
 
-func (s *Store) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
+func (s *UsersStore) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -283,10 +276,10 @@ func (s *Store) SetLastEquipmentForSport(userID, sportType string, equipmentIDs 
 		}
 		return s.save()
 	}
-	return ErrUserNotFound
+	return users.ErrUserNotFound
 }
 
-func (s *Store) RemoveEquipmentFromLastSets(userID, equipmentID string) error {
+func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -318,5 +311,7 @@ func (s *Store) RemoveEquipmentFromLastSets(userID, equipmentID string) error {
 		}
 		return nil
 	}
-	return ErrUserNotFound
+	return users.ErrUserNotFound
 }
+
+var _ users.Repository = (*UsersStore)(nil)

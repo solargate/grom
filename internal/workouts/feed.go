@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/solargate/grom/internal/avatars"
+	"github.com/solargate/grom/internal/storage/blob"
 )
 
 type FeedAuthor struct {
@@ -23,20 +24,25 @@ type FeedWorkout struct {
 }
 
 type FeedService struct {
-	store     *Store
+	store     workoutLister
+	blobs     blob.Store
 	domain    string
 	federated FederatedWorkoutSource
+}
+
+type workoutLister interface {
+	List(nickname string) ([]Workout, error)
 }
 
 type FederatedWorkoutSource interface {
 	ListFederated(viewerNickname string) ([]FeedWorkout, error)
 }
 
-func NewFeedService(store *Store, domain string) *FeedService {
+func NewFeedService(store workoutLister, blobs blob.Store, domain string) *FeedService {
 	if domain == "" {
 		domain = "localhost"
 	}
-	return &FeedService{store: store, domain: domain}
+	return &FeedService{store: store, blobs: blobs, domain: domain}
 }
 
 func (f *FeedService) localHandle(nickname string) string {
@@ -52,7 +58,7 @@ func (f *FeedService) ListOwn(viewerNickname, viewerName string) ([]FeedWorkout,
 	if err != nil {
 		return nil, err
 	}
-	viewerHasAvatar, viewerAvatarURL := avatars.Fields(f.store.DataDir(), viewerNickname)
+	viewerHasAvatar, viewerAvatarURL := avatars.FieldsStore(f.blobs, viewerNickname)
 	viewerAuthor := FeedAuthor{
 		Nickname:  viewerNickname,
 		Name:      viewerName,
@@ -86,7 +92,7 @@ func (f *FeedService) ListFeed(viewerNickname, viewerName string, followedLocal 
 	if err != nil {
 		return nil, err
 	}
-	viewerHasAvatar, viewerAvatarURL := avatars.Fields(f.store.DataDir(), viewerNickname)
+	viewerHasAvatar, viewerAvatarURL := avatars.FieldsStore(f.blobs, viewerNickname)
 	viewerAuthor := FeedAuthor{
 		Nickname:  viewerNickname,
 		Name:      viewerName,

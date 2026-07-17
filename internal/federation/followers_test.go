@@ -1,14 +1,17 @@
-package federation
+package federation_test
 
 import (
 	"testing"
+
+	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/storage/file"
 )
 
 func TestFollowersStoreAddListRemove(t *testing.T) {
 	dir := t.TempDir()
-	store := NewFollowersStore(dir)
+	store := file.NewFederationFollowersStore(dir)
 
-	follower := InboundFollower{
+	follower := federation.InboundFollower{
 		ActorURI: "https://remote.test/users/alice",
 		Inbox:    "https://remote.test/users/alice/inbox",
 		Handle:   "alice@remote.test",
@@ -47,8 +50,8 @@ func TestFollowersStoreAddListRemove(t *testing.T) {
 
 func TestInboundFollowersAdapter(t *testing.T) {
 	dir := t.TempDir()
-	store := NewFollowersStore(dir)
-	if err := store.Add("bob", InboundFollower{
+	store := file.NewFederationFollowersStore(dir)
+	if err := store.Add("bob", federation.InboundFollower{
 		ActorURI: "https://remote.test/users/alice",
 		Inbox:    "https://remote.test/users/alice/inbox",
 		Handle:   "https://remote.test/users/alice",
@@ -56,7 +59,7 @@ func TestInboundFollowersAdapter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapter := NewInboundFollowersAdapter(store)
+	adapter := federation.NewInboundFollowersAdapter(store)
 	list, err := adapter.ListInboundFollowers("bob")
 	if err != nil {
 		t.Fatal(err)

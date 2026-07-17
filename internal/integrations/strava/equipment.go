@@ -18,14 +18,14 @@ type gearRecord struct {
 }
 
 type EquipmentResolver struct {
-	store    *equipment.Store
+	store    equipment.Repository
 	nickname string
 	byName   map[string]equipment.Equipment
 	bikes    map[string]gearRecord
 	shoes    map[string]gearRecord
 }
 
-func NewEquipmentResolver(store *equipment.Store, nickname string, archive *Archive) (*EquipmentResolver, error) {
+func NewEquipmentResolver(store equipment.Repository, nickname string, archive *Archive) (*EquipmentResolver, error) {
 	items, err := store.List(nickname)
 	if err != nil {
 		return nil, err

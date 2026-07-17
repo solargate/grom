@@ -7,13 +7,15 @@ import (
 	"testing"
 	"time"
 
+	blobfs "github.com/solargate/grom/internal/storage/blob/fs"
+	"github.com/solargate/grom/internal/storage/file"
 	"github.com/solargate/grom/internal/tracks"
 	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 	dir := t.TempDir()
-	store := workouts.NewStore(dir)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
 
 	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-ride.fit"))
 	if err != nil {
@@ -25,7 +27,7 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 	}
 
 	startDate := time.Date(2026, 7, 6, 10, 0, 0, 0, time.UTC)
-	created, err := store.CreateWithTrack("athlete", &workouts.Workout{
+	created, err := svc.CreateWithTrack("athlete", &workouts.Workout{
 		Name:            "Bike ride",
 		SportType:       "Ride",
 		StartDate:       startDate,

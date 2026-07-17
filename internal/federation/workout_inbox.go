@@ -1,6 +1,7 @@
 package federation
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -13,6 +14,8 @@ import (
 	"github.com/solargate/grom/internal/avatars"
 	"github.com/solargate/grom/internal/data"
 	"github.com/solargate/grom/internal/maprender"
+	"github.com/solargate/grom/internal/storage/blob"
+	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/tracks"
 	"github.com/solargate/grom/internal/workouts"
 	"gopkg.in/yaml.v3"
@@ -20,11 +23,12 @@ import (
 
 type WorkoutInboxStore struct {
 	dataDir string
+	blobs   blob.Store
 	client  *http.Client
 }
 
-func NewWorkoutInboxStore(dataDir string) *WorkoutInboxStore {
-	return &WorkoutInboxStore{dataDir: dataDir}
+func NewWorkoutInboxStore(dataDir string, blobs blob.Store) *WorkoutInboxStore {
+	return &WorkoutInboxStore{dataDir: dataDir, blobs: blobs}
 }
 
 func (s *WorkoutInboxStore) SetHTTPClient(client *http.Client) {
@@ -32,7 +36,7 @@ func (s *WorkoutInboxStore) SetHTTPClient(client *http.Client) {
 }
 
 func (s *WorkoutInboxStore) ownerDir(viewerNickname, handle string) string {
-	return filepath.Join(s.inboxDir(viewerNickname), ownerDirName(handle))
+	return filepath.Join(s.inboxDir(viewerNickname), OwnerKeyFromHandle(handle))
 }
 
 func (s *WorkoutInboxStore) EnsureAuthor(viewerNickname, handle, nickname, name, remoteAvatarURL string, refresh bool) error {
@@ -40,10 +44,12 @@ func (s *WorkoutInboxStore) EnsureAuthor(viewerNickname, handle, nickname, name,
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	return mergeAuthorMetaWithRefresh(dir, handle, nickname, authorActor(name, remoteAvatarURL), s.client, refresh)
+	ownerKey := OwnerKeyFromHandle(handle)
+	return mergeAuthorMetaWithRefresh(dir, handle, nickname, authorActor(name, remoteAvatarURL), s.client, refresh, s.blobs, viewerNickname, ownerKey)
 }
 
 func (s *WorkoutInboxStore) AuthorAvatarFields(viewerNickname, handle string) (bool, string) {
+	ownerKey := OwnerKeyFromHandle(handle)
 	ownerDir := s.ownerDir(viewerNickname, handle)
 	if _, err := os.Stat(ownerDir); err != nil {
 		return false, ""
@@ -52,47 +58,31 @@ func (s *WorkoutInboxStore) AuthorAvatarFields(viewerNickname, handle string) (b
 	if err != nil {
 		return false, ""
 	}
-	return authorAvatarFields(ownerDir, handle, meta)
+	return authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
 }
 
 func (s *WorkoutInboxStore) inboxDir(viewerNickname string) string {
 	return filepath.Join(data.UserDir(s.dataDir, viewerNickname), "federation", "inbox", "workouts")
 }
 
-func ownerDirName(handle string) string {
-	return strings.NewReplacer("@", "_", ":", "_", "/", "_").Replace(handle)
-}
-
-func federatedTrackPath(ownerDir, workoutID, trackName string) string {
-	return filepath.Join(ownerDir, workoutID+"_"+trackName)
-}
-
-func federatedMapPreviewPath(ownerDir, workoutID string) string {
-	return filepath.Join(ownerDir, workoutID+"_"+workouts.MapPreviewFileName)
-}
-
-func federatedMediaDir(ownerDir, workoutID string) string {
-	return filepath.Join(ownerDir, workoutID+"_"+workouts.MediaSubdir)
-}
-
-func (s *WorkoutInboxStore) findOwnerDir(viewerNickname, ownerNickname string) (string, error) {
+func (s *WorkoutInboxStore) findOwnerDir(viewerNickname, ownerNickname string) (string, string, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return "", workouts.ErrWorkoutNotFound
+			return "", "", workouts.ErrWorkoutNotFound
 		}
-		return "", err
+		return "", "", err
 	}
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
 		}
 		if strings.EqualFold(ownerNicknameFromDir(entry.Name()), ownerNickname) {
-			return filepath.Join(root, entry.Name()), nil
+			return filepath.Join(root, entry.Name()), entry.Name(), nil
 		}
 	}
-	return "", workouts.ErrWorkoutNotFound
+	return "", "", workouts.ErrWorkoutNotFound
 }
 
 func ownerNicknameFromDir(dirName string) string {
@@ -113,18 +103,17 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 		return err
 	}
 
-	nickname := ownerNicknameFromDir(ownerDirName(ownerHandle))
-	if err := mergeAuthorMeta(dir, ownerHandle, nickname, actor, s.client); err != nil {
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	nickname := ownerNicknameFromDir(ownerKey)
+	if err := mergeAuthorMeta(dir, ownerHandle, nickname, actor, s.client, s.blobs, viewerNickname, ownerKey); err != nil {
 		return err
 	}
 
+	ctx := context.Background()
+
 	if workout.Track != "" && len(trackData) > 0 {
-		trackPath := federatedTrackPath(dir, workout.ID, workout.Track)
-		tmp := trackPath + ".tmp"
-		if err := os.WriteFile(tmp, trackData, 0600); err != nil {
-			return err
-		}
-		if err := os.Rename(tmp, trackPath); err != nil {
+		trackKey := keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, workout.Track)
+		if _, err := blob.PutBytes(ctx, s.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
 			return err
 		}
 
@@ -132,12 +121,9 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 			if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 				log.Printf("federated map preview render failed for workout %s: %v", workout.ID, err)
 			} else if len(preview) > 0 {
-				previewPath := federatedMapPreviewPath(dir, workout.ID)
-				tmpPreview := previewPath + ".tmp"
-				if err := os.WriteFile(tmpPreview, preview, 0600); err != nil {
+				previewKey := keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)
+				if _, err := blob.PutBytes(ctx, s.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
 					log.Printf("federated map preview write failed for workout %s: %v", workout.ID, err)
-				} else if err := os.Rename(tmpPreview, previewPath); err != nil {
-					log.Printf("federated map preview rename failed for workout %s: %v", workout.ID, err)
 				} else {
 					workout.HasMapPreview = true
 				}
@@ -146,8 +132,7 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 	}
 
 	if len(mediaFiles) > 0 {
-		mediaDir := federatedMediaDir(dir, workout.ID)
-		savedNames, err := workouts.SaveMediaFilesToDir(mediaDir, mediaFiles)
+		savedNames, err := workouts.SaveFederatedMedia(s.blobs, viewerNickname, ownerKey, workout.ID, mediaFiles)
 		if err != nil {
 			return err
 		}
@@ -169,7 +154,8 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 
 func (s *WorkoutInboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error {
 	dir := s.ownerDir(viewerNickname, ownerHandle)
-	workout, err := s.readWorkout(dir, workoutID)
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	workout, err := s.readWorkout(viewerNickname, dir, ownerKey, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			return nil
@@ -180,24 +166,20 @@ func (s *WorkoutInboxStore) Delete(viewerNickname, ownerHandle, workoutID string
 	if err := os.Remove(filepath.Join(dir, workoutID+".yaml")); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("delete federated workout yaml: %w", err)
 	}
+
+	ctx := context.Background()
 	if workout.Track != "" {
-		trackPath := federatedTrackPath(dir, workoutID, workout.Track)
-		if err := os.Remove(trackPath); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("delete federated track: %w", err)
-		}
+		_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workoutID, workout.Track))
 	}
-	previewPath := federatedMapPreviewPath(dir, workoutID)
-	if err := os.Remove(previewPath); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("delete federated map preview: %w", err)
-	}
-	mediaDir := federatedMediaDir(dir, workoutID)
-	if err := os.RemoveAll(mediaDir); err != nil {
-		return fmt.Errorf("delete federated media dir: %w", err)
+	_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID))
+	for _, name := range workout.MediaFiles {
+		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, name))
+		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, name))
 	}
 	return nil
 }
 
-func (s *WorkoutInboxStore) readWorkout(ownerDir, workoutID string) (*workouts.Workout, error) {
+func (s *WorkoutInboxStore) readWorkout(viewerNickname, ownerDir, ownerKey, workoutID string) (*workouts.Workout, error) {
 	path := filepath.Join(ownerDir, workoutID+".yaml")
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -210,32 +192,27 @@ func (s *WorkoutInboxStore) readWorkout(ownerDir, workoutID string) (*workouts.W
 	if err := yaml.Unmarshal(data, &workout); err != nil {
 		return nil, fmt.Errorf("parse federated workout: %w", err)
 	}
-	if _, err := os.Stat(federatedMapPreviewPath(ownerDir, workoutID)); err == nil {
+	ctx := context.Background()
+	if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID)); err == nil && exists {
 		workout.HasMapPreview = true
-	}
-	if len(workout.MediaFiles) == 0 {
-		if files, err := workouts.ListMediaFilesInDir(federatedMediaDir(ownerDir, workoutID)); err == nil {
-			workout.MediaFiles = files
-		}
 	}
 	workout.HasMedia = len(workout.MediaFiles) > 0
 	return &workout, nil
 }
 
 func (s *WorkoutInboxStore) TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, string, error) {
-	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+	ownerDir, ownerKey, err := s.findOwnerDir(viewerNickname, ownerNickname)
 	if err != nil {
 		return nil, "", "", err
 	}
-	workout, err := s.readWorkout(ownerDir, workoutID)
+	workout, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID)
 	if err != nil {
 		return nil, "", "", err
 	}
 	if workout.Track == "" {
 		return nil, "", "", workouts.ErrWorkoutNotFound
 	}
-	path := federatedTrackPath(ownerDir, workoutID, workout.Track)
-	data, err := os.ReadFile(path)
+	data, err := blob.ReadAll(context.Background(), s.blobs, keys.FederatedInboxTrack(viewerNickname, ownerKey, workoutID, workout.Track))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, "", "", workouts.ErrWorkoutNotFound
@@ -245,66 +222,104 @@ func (s *WorkoutInboxStore) TrackFile(viewerNickname, ownerNickname, workoutID s
 	return data, workout.Track, workout.Name, nil
 }
 
-func (s *WorkoutInboxStore) MapPreviewPath(viewerNickname, ownerNickname, workoutID string) (string, error) {
-	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+func (s *WorkoutInboxStore) MapPreview(viewerNickname, ownerNickname, workoutID string) ([]byte, error) {
+	ownerDir, ownerKey, err := s.findOwnerDir(viewerNickname, ownerNickname)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if _, err := s.readWorkout(ownerDir, workoutID); err != nil {
-		return "", err
+	if _, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID); err != nil {
+		return nil, err
 	}
-	path := federatedMapPreviewPath(ownerDir, workoutID)
-	if _, err := os.Stat(path); err != nil {
+	data, err := blob.ReadAll(context.Background(), s.blobs, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID))
+	if err != nil {
 		if os.IsNotExist(err) {
-			return "", workouts.ErrWorkoutNotFound
+			return nil, workouts.ErrWorkoutNotFound
 		}
-		return "", err
+		return nil, err
 	}
-	return path, nil
+	return data, nil
 }
 
-func (s *WorkoutInboxStore) MediaOriginalPath(viewerNickname, ownerNickname, workoutID, filename string) (string, error) {
-	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+func (s *WorkoutInboxStore) MediaOriginal(viewerNickname, ownerNickname, workoutID, filename string) ([]byte, string, error) {
+	ownerDir, ownerKey, err := s.findOwnerDir(viewerNickname, ownerNickname)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	if _, err := s.readWorkout(ownerDir, workoutID); err != nil {
-		return "", err
+	if _, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID); err != nil {
+		return nil, "", err
 	}
 	safeName, err := workouts.SanitizeMediaFilename(filename)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	path := workouts.MediaOriginalPathInDir(federatedMediaDir(ownerDir, workoutID), safeName)
-	if _, err := os.Stat(path); err != nil {
+	data, err := blob.ReadAll(context.Background(), s.blobs, keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, safeName))
+	if err != nil {
 		if os.IsNotExist(err) {
-			return "", workouts.ErrPhotoNotFound
+			return nil, "", workouts.ErrPhotoNotFound
 		}
-		return "", err
+		return nil, "", err
 	}
-	return path, nil
+	return data, workouts.MediaContentType(safeName), nil
 }
 
-func (s *WorkoutInboxStore) MediaPreviewPath(viewerNickname, ownerNickname, workoutID, filename string) (string, error) {
-	ownerDir, err := s.findOwnerDir(viewerNickname, ownerNickname)
+func (s *WorkoutInboxStore) MediaPreview(viewerNickname, ownerNickname, workoutID, filename string) ([]byte, error) {
+	ownerDir, ownerKey, err := s.findOwnerDir(viewerNickname, ownerNickname)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if _, err := s.readWorkout(ownerDir, workoutID); err != nil {
-		return "", err
+	if _, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID); err != nil {
+		return nil, err
 	}
 	safeName, err := workouts.SanitizeMediaFilename(filename)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	path := workouts.MediaPreviewPathInDir(federatedMediaDir(ownerDir, workoutID), safeName)
-	if _, err := os.Stat(path); err != nil {
+	data, err := blob.ReadAll(context.Background(), s.blobs, keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, safeName))
+	if err != nil {
 		if os.IsNotExist(err) {
-			return "", workouts.ErrPhotoNotFound
+			return nil, workouts.ErrPhotoNotFound
 		}
-		return "", err
+		return nil, err
 	}
-	return path, nil
+	return data, nil
+}
+
+func (s *WorkoutInboxStore) Avatar(viewerNickname, ownerKey string) ([]byte, error) {
+	ctx := context.Background()
+	avatarKey := keys.FederatedInboxAvatar(viewerNickname, ownerKey)
+	if exists, err := s.blobs.Exists(ctx, avatarKey); err == nil && exists {
+		return blob.ReadAll(ctx, s.blobs, avatarKey)
+	}
+
+	ownerDir, err := s.ownerDirForKey(viewerNickname, ownerKey)
+	if err != nil {
+		return nil, err
+	}
+
+	meta, err := readAuthorMeta(ownerDir)
+	if err != nil {
+		return nil, err
+	}
+	remoteURL := effectiveRemoteAvatarURL(meta)
+	if remoteURL == "" {
+		return nil, avatars.ErrAvatarNotFound
+	}
+
+	if s.client == nil {
+		return nil, avatars.ErrAvatarNotFound
+	}
+	if err := cacheRemoteAvatar(s.client, s.blobs, viewerNickname, ownerKey, remoteURL); err != nil {
+		return nil, err
+	}
+
+	meta.AvatarVersion++
+	meta.AvatarURL = FederatedAvatarAPIPath(meta.Handle, meta.AvatarVersion)
+	if meta.RemoteAvatarURL == "" {
+		meta.RemoteAvatarURL = remoteURL
+	}
+	_ = writeAuthorMeta(ownerDir, meta)
+
+	return blob.ReadAll(ctx, s.blobs, avatarKey)
 }
 
 func (s *WorkoutInboxStore) ownerDirForKey(viewerNickname, ownerKey string) (string, error) {
@@ -326,43 +341,6 @@ func (s *WorkoutInboxStore) ownerDirForKey(viewerNickname, ownerKey string) (str
 	return ownerDir, nil
 }
 
-func (s *WorkoutInboxStore) AvatarPath(viewerNickname, ownerKey string) (string, error) {
-	ownerDir, err := s.ownerDirForKey(viewerNickname, ownerKey)
-	if err != nil {
-		return "", err
-	}
-
-	path := federatedAvatarPath(ownerDir)
-	if _, err := os.Stat(path); err == nil {
-		return path, nil
-	}
-
-	meta, err := readAuthorMeta(ownerDir)
-	if err != nil {
-		return "", err
-	}
-	remoteURL := effectiveRemoteAvatarURL(meta)
-	if remoteURL == "" {
-		return "", avatars.ErrAvatarNotFound
-	}
-
-	if s.client == nil {
-		return "", avatars.ErrAvatarNotFound
-	}
-	if err := cacheRemoteAvatar(s.client, ownerDir, remoteURL); err != nil {
-		return "", err
-	}
-
-	meta.AvatarVersion++
-	meta.AvatarURL = FederatedAvatarAPIPath(meta.Handle, meta.AvatarVersion)
-	if meta.RemoteAvatarURL == "" {
-		meta.RemoteAvatarURL = remoteURL
-	}
-	_ = writeAuthorMeta(ownerDir, meta)
-
-	return federatedAvatarPath(ownerDir), nil
-}
-
 func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
@@ -379,8 +357,9 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 			continue
 		}
 		ownerDir := filepath.Join(root, ownerEntry.Name())
-		handle := ownerHandleFromDir(ownerEntry.Name())
-		nickname := ownerNicknameFromDir(ownerEntry.Name())
+		ownerKey := ownerEntry.Name()
+		handle := ownerHandleFromDir(ownerKey)
+		nickname := ownerNicknameFromDir(ownerKey)
 		meta, err := readAuthorMeta(ownerDir)
 		if err != nil {
 			return nil, err
@@ -392,7 +371,7 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 			nickname = meta.Nickname
 		}
 		authorName := meta.Name
-		authorHasAvatar, authorAvatarURL := authorAvatarFields(ownerDir, handle, meta)
+		authorHasAvatar, authorAvatarURL := authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
 		files, err := os.ReadDir(ownerDir)
 		if err != nil {
 			return nil, err
@@ -405,7 +384,7 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 				continue
 			}
 			workoutID := strings.TrimSuffix(fileEntry.Name(), ".yaml")
-			workout, err := s.readWorkout(ownerDir, workoutID)
+			workout, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID)
 			if err != nil {
 				return nil, err
 			}

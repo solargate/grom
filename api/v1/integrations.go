@@ -5,32 +5,12 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/integrations/strava"
 )
 
 const maxStravaArchiveSize = 2 << 30 // 2 GiB
-
-var (
-	stravaJobManager     *strava.JobManager
-	stravaJobManagerOnce sync.Once
-)
-
-func initStravaJobManager() {
-	stravaJobManagerOnce.Do(func() {
-		initWorkoutStore()
-		initEquipmentStore()
-		stravaJobManager = strava.NewJobManager(
-			config.Cfg.Data.ResolvedTempDir,
-			workoutStore,
-			equipmentStore,
-			publishCreatedWorkout,
-		)
-	})
-}
 
 type StravaImportResultResponse struct {
 	Imported     int `json:"imported" example:"100"`
@@ -65,21 +45,21 @@ type StravaImportStatusResponse struct {
 // @Failure      409  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /integrations/strava/import [post]
-func importStravaArchive(ctx *gin.Context) {
-	initStravaJobManager()
+func (a *App) importStravaArchive(ctx *gin.Context) {
+	jobs := a.stravaJobManager()
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
-	nickname, err := currentUserNickname(ctx)
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	job, err := stravaJobManager.BeginUpload(userID, nickname)
+	job, err := jobs.BeginUpload(userID, nickname)
 	if err != nil {
 		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 		return
@@ -95,13 +75,13 @@ func importStravaArchive(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := stravaJobManager.SaveArchive(job, reader, expectedSize); err != nil {
+	if _, err := jobs.SaveArchive(job, reader, expectedSize); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	stravaJobManager.StartImport(userID)
-	ctx.JSON(http.StatusAccepted, toStravaImportStatus(stravaJobManager.Status(userID)))
+	jobs.StartImport(userID)
+	ctx.JSON(http.StatusAccepted, toStravaImportStatus(jobs.Status(userID)))
 }
 
 func stravaArchiveReader(ctx *gin.Context) (io.Reader, int64, error) {
@@ -146,16 +126,16 @@ func stravaArchiveReader(ctx *gin.Context) (io.Reader, int64, error) {
 // @Success      200  {object}  StravaImportStatusResponse
 // @Failure      401  {object}  ErrorResponse
 // @Router       /integrations/strava/import/status [get]
-func getStravaImportStatus(ctx *gin.Context) {
-	initStravaJobManager()
+func (a *App) getStravaImportStatus(ctx *gin.Context) {
+	jobs := a.stravaJobManager()
 
-	userID, err := currentUserID(ctx)
+	userID, err := a.currentUserID(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	status := stravaJobManager.Status(userID)
+	status := jobs.Status(userID)
 	ctx.JSON(http.StatusOK, toStravaImportStatus(status))
 }
 

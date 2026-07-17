@@ -20,11 +20,11 @@ import (
 
 type Delivery struct {
 	client    *http.Client
-	userStore *users.Store
+	userStore users.Repository
 	social    *social.Service
 }
 
-func NewDelivery(userStore *users.Store, socialSvc *social.Service) (*Delivery, error) {
+func NewDelivery(userStore users.Repository, socialSvc *social.Service) (*Delivery, error) {
 	client, err := server.FederationHTTPClient()
 	if err != nil {
 		return nil, err

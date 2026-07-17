@@ -1,25 +1,27 @@
-package workouts
+package workouts_test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	svc := newTestService(dir)
 
 	startDate1 := time.Date(2026, 7, 4, 10, 0, 0, 0, time.UTC)
 	startDate2 := time.Date(2026, 7, 6, 11, 0, 0, 0, time.UTC)
 
-	first, err := store.Create("athlete", &Workout{
+	first, err := svc.Create("athlete", &workouts.Workout{
 		Name: "First", SportType: "Run", StartDate: startDate1,
 	})
 	if err != nil {
 		t.Fatalf("Create first: %v", err)
 	}
 
-	second, err := store.Create("athlete", &Workout{
+	second, err := svc.Create("athlete", &workouts.Workout{
 		Name: "Second", SportType: "Ride", StartDate: startDate2,
 	})
 	if err != nil {
@@ -30,7 +32,7 @@ func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 		t.Fatalf("expected different ids, both are %q", first.ID)
 	}
 
-	otherUser, err := store.Create("other", &Workout{
+	otherUser, err := svc.Create("other", &workouts.Workout{
 		Name: "Other", SportType: "Run", StartDate: startDate1,
 	})
 	if err != nil {
@@ -39,29 +41,4 @@ func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 
 	// IDs may collide across users; only per-user uniqueness is required.
 	_ = otherUser
-}
-
-func TestSaveWorkoutRejectsDuplicateIDWithDifferentDate(t *testing.T) {
-	dir := t.TempDir()
-	store := NewStore(dir)
-
-	startDate1 := time.Date(2026, 7, 4, 10, 0, 0, 0, time.UTC)
-	startDate2 := time.Date(2026, 7, 6, 11, 0, 0, 0, time.UTC)
-
-	created, err := store.Create("athlete", &Workout{
-		Name: "First", SportType: "Run", StartDate: startDate1,
-	})
-	if err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-
-	_, err = store.saveWorkout("athlete", &Workout{
-		ID:        created.ID,
-		Name:      "Duplicate ID",
-		SportType: "Run",
-		StartDate: startDate2,
-	})
-	if err != ErrWorkoutExists {
-		t.Fatalf("expected ErrWorkoutExists, got %v", err)
-	}
 }

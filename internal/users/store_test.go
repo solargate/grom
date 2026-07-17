@@ -1,15 +1,22 @@
-package users
+package users_test
 
 import (
 	"testing"
+
+	"github.com/solargate/grom/internal/storage/file"
 )
 
-func TestSetLastEquipmentForSport(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
+func newTestStore(t *testing.T) *file.UsersStore {
+	t.Helper()
+	store, err := file.NewUsersStore(t.TempDir())
 	if err != nil {
-		t.Fatalf("NewStore() error = %v", err)
+		t.Fatalf("NewUsersStore() error = %v", err)
 	}
+	return store
+}
+
+func TestSetLastEquipmentForSport(t *testing.T) {
+	store := newTestStore(t)
 
 	user, err := store.Create("athlete", "Athlete", "athlete@example.com", "password123")
 	if err != nil {
@@ -32,11 +39,7 @@ func TestSetLastEquipmentForSport(t *testing.T) {
 }
 
 func TestRemoveEquipmentFromLastSets(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore() error = %v", err)
-	}
+	store := newTestStore(t)
 
 	user, err := store.Create("athlete", "Athlete", "athlete@example.com", "password123")
 	if err != nil {

@@ -1,16 +1,23 @@
-package equipment
+package equipment_test
 
 import (
 	"testing"
+
+	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/storage/file"
 )
 
+func newTestStore(t *testing.T) *file.EquipmentStore {
+	t.Helper()
+	return file.NewEquipmentStore(t.TempDir())
+}
+
 func TestStoreCreateListUpdateDelete(t *testing.T) {
-	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(t)
 
 	weight := 9.5
-	created, err := store.Create("athlete", &Equipment{
-		Type:     TypeBike,
+	created, err := store.Create("athlete", &equipment.Equipment{
+		Type:     equipment.TypeBike,
 		Name:     "Gravel bike",
 		BikeType: "gravel",
 		Brand:    "Canyon",
@@ -53,8 +60,8 @@ func TestStoreCreateListUpdateDelete(t *testing.T) {
 }
 
 func TestStoreRejectsInvalidType(t *testing.T) {
-	store := NewStore(t.TempDir())
-	_, err := store.Create("athlete", &Equipment{
+	store := newTestStore(t)
+	_, err := store.Create("athlete", &equipment.Equipment{
 		Type: "invalid",
 		Name: "Test",
 	})
@@ -64,14 +71,13 @@ func TestStoreRejectsInvalidType(t *testing.T) {
 }
 
 func TestStoreFindByIDsPreservesOrder(t *testing.T) {
-	dir := t.TempDir()
-	store := NewStore(dir)
+	store := newTestStore(t)
 
-	first, err := store.Create("athlete", &Equipment{Type: TypeShoes, Name: "Shoes"})
+	first, err := store.Create("athlete", &equipment.Equipment{Type: equipment.TypeShoes, Name: "Shoes"})
 	if err != nil {
 		t.Fatalf("Create first: %v", err)
 	}
-	second, err := store.Create("athlete", &Equipment{Type: TypeBike, Name: "Bike"})
+	second, err := store.Create("athlete", &equipment.Equipment{Type: equipment.TypeBike, Name: "Bike"})
 	if err != nil {
 		t.Fatalf("Create second: %v", err)
 	}

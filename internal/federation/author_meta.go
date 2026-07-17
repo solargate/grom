@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/solargate/grom/internal/storage/blob"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,15 +49,15 @@ func writeAuthorMeta(ownerDir string, meta AuthorMeta) error {
 	return os.Rename(tmp, path)
 }
 
-func mergeAuthorMeta(ownerDir, handle, nickname string, actor map[string]any, client *http.Client) error {
+func mergeAuthorMeta(ownerDir, handle, nickname string, actor map[string]any, client *http.Client, blobs blob.Store, viewerNickname, ownerKey string) error {
 	refresh := false
 	if actor != nil && ExtractIconURL(actor) != "" {
 		refresh = true
 	}
-	return mergeAuthorMetaWithRefresh(ownerDir, handle, nickname, actor, client, refresh)
+	return mergeAuthorMetaWithRefresh(ownerDir, handle, nickname, actor, client, refresh, blobs, viewerNickname, ownerKey)
 }
 
-func mergeAuthorMetaWithRefresh(ownerDir, handle, nickname string, actor map[string]any, client *http.Client, refresh bool) error {
+func mergeAuthorMetaWithRefresh(ownerDir, handle, nickname string, actor map[string]any, client *http.Client, refresh bool, blobs blob.Store, viewerNickname, ownerKey string) error {
 	meta, err := readAuthorMeta(ownerDir)
 	if err != nil {
 		return err
@@ -78,7 +79,7 @@ func mergeAuthorMetaWithRefresh(ownerDir, handle, nickname string, actor map[str
 		}
 	}
 
-	syncAuthorAvatar(client, ownerDir, meta.Handle, &meta, remoteURL, refresh)
+	syncAuthorAvatar(client, blobs, viewerNickname, ownerKey, meta.Handle, &meta, remoteURL, refresh)
 
 	if meta.Handle == "" && meta.Nickname == "" {
 		return nil

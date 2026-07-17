@@ -13,7 +13,7 @@ import (
 
 func TestInboxProcessorHandleDelete(t *testing.T) {
 	dir := t.TempDir()
-	store := NewWorkoutInboxStore(dir)
+	store := newTestInboxStore(dir)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1-sample.gpx"))
 	if err != nil {

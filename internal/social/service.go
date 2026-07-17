@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/solargate/grom/internal/avatars"
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/users"
 )
 
@@ -38,15 +39,16 @@ func (noopDelivery) DeliverFollow(*Follow) error { return nil }
 func (noopDelivery) DeliverUndo(*Follow) error   { return nil }
 
 type Service struct {
-	users            *users.Store
-	follows          *Store
+	users            users.Repository
+	follows          Repository
+	blobs            blob.Store
 	domain           string
 	enabled          bool
 	delivery         Delivery
 	inboundFollowers InboundFollowersSource
 }
 
-func NewService(userStore *users.Store, followStore *Store) *Service {
+func NewService(userStore users.Repository, followStore Repository, blobs blob.Store) *Service {
 	domain := config.Cfg.Federation.Domain
 	if domain == "" {
 		domain = "localhost"
@@ -54,6 +56,7 @@ func NewService(userStore *users.Store, followStore *Store) *Service {
 	return &Service{
 		users:    userStore,
 		follows:  followStore,
+		blobs:    blobs,
 		domain:   domain,
 		enabled:  config.Cfg.Federation.Enabled,
 		delivery: noopDelivery{},
@@ -345,7 +348,7 @@ func (s *Service) ListFollowers(userID string) ([]Follower, error) {
 		}
 		handle := s.LocalHandle(follower.Nickname)
 		seen[handle] = struct{}{}
-		hasAvatar, avatarURL := avatars.Fields(s.users.DataDir(), follower.Nickname)
+		hasAvatar, avatarURL := avatars.FieldsStore(s.blobs, follower.Nickname)
 		result = append(result, Follower{
 			FollowerHandle:    handle,
 			FollowerNickname:  follower.Nickname,
