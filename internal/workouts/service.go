@@ -3,18 +3,25 @@ package workouts
 import (
 	"context"
 
+	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/storage/keys"
 )
 
 // Service provides workout business operations over a metadata repository and blob store.
 type Service struct {
-	repo  Repository
-	blobs blob.Store
+	repo      Repository
+	blobs     blob.Store
+	equipment EquipmentCatalog
 }
 
 func NewService(repo Repository, blobs blob.Store) *Service {
 	return &Service{repo: repo, blobs: blobs}
+}
+
+// SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
+func (s *Service) SetEquipmentCatalog(catalog EquipmentCatalog) {
+	s.equipment = catalog
 }
 
 func (s *Service) List(nickname string) ([]Workout, error) {
@@ -22,10 +29,27 @@ func (s *Service) List(nickname string) ([]Workout, error) {
 	if err != nil {
 		return nil, err
 	}
+	byID := s.loadEquipmentByID(nickname, items)
 	for i := range items {
 		s.enrichWorkout(nickname, &items[i])
+		ApplyEquipmentCatalog(items[i].Equipment, byID)
 	}
 	return items, nil
+}
+
+func (s *Service) loadEquipmentByID(nickname string, items []Workout) map[string]equipment.Equipment {
+	if s.equipment == nil {
+		return nil
+	}
+	ids := collectEquipmentIDs(items)
+	if len(ids) == 0 {
+		return nil
+	}
+	catalogItems, err := s.equipment.FindByIDs(nickname, ids)
+	if err != nil {
+		return nil
+	}
+	return equipmentByID(catalogItems)
 }
 
 func (s *Service) Delete(nickname, workoutID string) error {

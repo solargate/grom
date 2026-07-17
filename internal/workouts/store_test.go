@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/storage/file"
 	"github.com/solargate/grom/internal/workouts"
 )
@@ -189,3 +190,56 @@ func TestStoreDelete(t *testing.T) {
 		t.Fatalf("expected workouts.ErrWorkoutNotFound on second delete, got %v", err)
 	}
 }
+
+func TestServiceListEnrichesEquipmentFromCatalog(t *testing.T) {
+	dir := t.TempDir()
+	eqStore := file.NewEquipmentStore(dir)
+	svc := newTestServiceWithEquipment(dir)
+
+	createdEq, err := eqStore.Create("athlete", &equipment.Equipment{
+		Type: equipment.TypeShoes,
+		Name: "Current name",
+	})
+	if err != nil {
+		t.Fatalf("Create equipment: %v", err)
+	}
+
+	if _, err := svc.Create("athlete", &workouts.Workout{
+		Name:      "Morning run",
+		SportType: "Run",
+		StartDate: time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC),
+		Equipment: []workouts.WorkoutEquipment{
+			{ID: createdEq.ID, Name: "Stale name", Type: equipment.TypeShoes},
+			{ID: "missing", Name: "Snapshot only", Type: equipment.TypeOther},
+		},
+	}); err != nil {
+		t.Fatalf("Create workout: %v", err)
+	}
+
+	if _, err := eqStore.Update("athlete", &equipment.Equipment{
+		ID:   createdEq.ID,
+		Type: equipment.TypeShoes,
+		Name: "Renamed shoes",
+	}); err != nil {
+		t.Fatalf("Update equipment: %v", err)
+	}
+
+	items, err := svc.List("athlete")
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 workout, got %d", len(items))
+	}
+	got := items[0].Equipment
+	if len(got) != 2 {
+		t.Fatalf("expected 2 equipment items, got %d", len(got))
+	}
+	if got[0].Name != "Renamed shoes" {
+		t.Fatalf("expected enriched name Renamed shoes, got %q", got[0].Name)
+	}
+	if got[1].Name != "Snapshot only" {
+		t.Fatalf("expected missing id to keep snapshot, got %q", got[1].Name)
+	}
+}
+

@@ -44,12 +44,15 @@ func Open(location string) (*Backend, error) {
 	inboxStore := federation.NewWorkoutInboxStore(location, blobStore)
 
 	workoutRepo := NewWorkoutsStore(location)
+	equipmentStore := NewEquipmentStore(location)
+	workoutSvc := workouts.NewService(workoutRepo, blobStore)
+	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	return &Backend{
 		location:  location,
 		users:     userStore,
-		workouts:  workouts.NewService(workoutRepo, blobStore),
-		equipment: NewEquipmentStore(location),
+		workouts:  workoutSvc,
+		equipment: equipmentStore,
 		social:    socialStore,
 		fed:       federation.NewStorage(followersStore, inboxStore),
 		blobs:     blobStore,
