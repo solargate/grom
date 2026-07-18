@@ -37,8 +37,8 @@ Column numbers are **1-based**. Strava localizes CSV headers; Grom always uses i
 | 13 | Название файла | `track` | GPX or `.fit.gz` in `activities/` |
 | 17 | Время в движении | `duration_seconds` | Seconds |
 | 18 | Дистанция | `distance` | Meters |
-| 19 | Макс. скорость | `speed_max_kmh` | km/h |
-| 20 | Средняя скорость | `speed_avg_kmh` | km/h |
+| 19 | Макс. скорость | `speed_max_kmh` | CSV is m/s; Grom multiplies by 3.6 → km/h |
+| 20 | Средняя скорость | `speed_avg_kmh` | CSV is m/s; Grom multiplies by 3.6 → km/h |
 | 21 | Набор высоты | `elevation_gain` | Meters |
 | 22 | Высота спуска | `elevation_loss` | Meters |
 | 23 | Высота низменности | `elevation_low` | Meters |

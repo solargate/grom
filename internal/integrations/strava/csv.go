@@ -84,8 +84,8 @@ func parseActivityRow(record []string, hint localeHint) (ActivityRow, error) {
 
 	relativeEffort, _ := parseFloat(fieldAt(record, ColRelativeEffort))
 	regularTrack, _ := parseBool(fieldAt(record, ColRegularTrack))
-	speedMax, _ := parseFloat(fieldAt(record, ColSpeedMaxKmh))
-	speedAvg, _ := parseFloat(fieldAt(record, ColSpeedAvgKmh))
+	speedMaxMps, _ := parseFloat(fieldAt(record, ColSpeedMaxMps))
+	speedAvgMps, _ := parseFloat(fieldAt(record, ColSpeedAvgMps))
 	elevGain, _ := parseFloat(fieldAt(record, ColElevationGain))
 	elevLoss, _ := parseFloat(fieldAt(record, ColElevationLoss))
 	elevLow, _ := parseFloat(fieldAt(record, ColElevationLow))
@@ -121,8 +121,8 @@ func parseActivityRow(record []string, hint localeHint) (ActivityRow, error) {
 		TrackFile:            strings.TrimSpace(fieldAt(record, ColTrackFile)),
 		DurationSeconds:      durationMoving,
 		Distance:             distance,
-		SpeedMaxKmh:          speedMax,
-		SpeedAvgKmh:          speedAvg,
+		SpeedMaxKmh:          mpsToKmh(speedMaxMps),
+		SpeedAvgKmh:          mpsToKmh(speedAvgMps),
 		ElevationGain:        elevGain,
 		ElevationLoss:        elevLoss,
 		ElevationLow:         elevLow,
@@ -193,6 +193,15 @@ func (row ActivityRow) ToWorkout(hint localeHint) (*workouts.Workout, error) {
 		RepsTotal:            row.RepsTotal,
 		StravaActivityID:     row.StravaActivityID,
 	}, nil
+}
+
+// mpsToKmh converts Strava CSV speeds (metres per second) to km/h.
+func mpsToKmh(mps *float64) *float64 {
+	if mps == nil {
+		return nil
+	}
+	kmh := *mps * 3.6
+	return &kmh
 }
 
 func parseMediaPaths(raw string) []string {

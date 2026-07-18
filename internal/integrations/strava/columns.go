@@ -14,8 +14,8 @@ const (
 	ColTrackFile           = 13
 	ColDurationMoving      = 17
 	ColDistanceMeters      = 18
-	ColSpeedMaxKmh         = 19
-	ColSpeedAvgKmh         = 20
+	ColSpeedMaxMps         = 19 // Strava exports m/s; convert to km/h on import
+	ColSpeedAvgMps         = 20
 	ColElevationGain       = 21
 	ColElevationLoss       = 22
 	ColElevationLow        = 23
