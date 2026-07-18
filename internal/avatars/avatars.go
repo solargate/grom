@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/chai2010/webp"
+	"github.com/deepteams/webp"
 	"github.com/solargate/grom/internal/data"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/storage/keys"
@@ -182,7 +182,7 @@ func prepareAvatarBytes(raw []byte) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := webp.Encode(&buf, img, &webp.Options{Quality: 85}); err != nil {
+	if err := webp.Encode(&buf, img, &webp.EncoderOptions{Quality: 85}); err != nil {
 		return nil, fmt.Errorf("encode avatar: %w", err)
 	}
 	return buf.Bytes(), nil

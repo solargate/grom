@@ -3,7 +3,7 @@ module github.com/solargate/grom
 go 1.26.0
 
 require (
-	github.com/chai2010/webp v1.4.0
+	github.com/deepteams/webp v1.2.7
 	github.com/flopp/go-staticmaps v0.0.0-20260318105611-d3eb636a6468
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

@@ -5,7 +5,7 @@ import (
 	"image"
 	"testing"
 
-	"github.com/chai2010/webp"
+	"github.com/deepteams/webp"
 	"github.com/solargate/grom/internal/tracks"
 )
 

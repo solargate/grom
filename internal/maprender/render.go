@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/chai2010/webp"
+	"github.com/deepteams/webp"
 	sm "github.com/flopp/go-staticmaps"
 	"github.com/golang/geo/s2"
 	"github.com/solargate/grom/internal/tracks"
@@ -16,7 +16,7 @@ const (
 	PreviewWidth  = 640
 	PreviewHeight = 360
 	userAgent     = "Grom/1.0 (https://github.com/solargate/grom)"
-	PreviewWebPQuality = 80
+	PreviewWebPQuality = 85
 
 	// Values > 1 add padding around the track; 1.0 matches track extent.
 	boundsFillFraction       = 1.0
@@ -60,7 +60,7 @@ func RenderPreview(points []tracks.LatLng) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := webp.Encode(&buf, img, &webp.Options{Quality: PreviewWebPQuality}); err != nil {
+	if err := webp.Encode(&buf, img, &webp.EncoderOptions{Quality: PreviewWebPQuality}); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

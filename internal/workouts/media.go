@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chai2010/webp"
+	"github.com/deepteams/webp"
 	"golang.org/x/image/draw"
 
 	"github.com/solargate/grom/internal/storage/blob"
@@ -114,7 +114,7 @@ func encodePreview(img image.Image) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := webp.Encode(&buf, resized, &webp.Options{Quality: PreviewWebPQuality}); err != nil {
+	if err := webp.Encode(&buf, resized, &webp.EncoderOptions{Quality: PreviewWebPQuality}); err != nil {
 		return nil, fmt.Errorf("encode preview: %w", err)
 	}
 	return buf.Bytes(), nil

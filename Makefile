@@ -20,6 +20,7 @@ web:
 	cd ui/grom && flutter build web $(FLUTTER_VERSION_FLAGS)
 	rm -rf internal/web/dist
 	cp -r ui/grom/build/web internal/web/dist
+	touch internal/web/dist/.gitkeep
 
 android: android-apk
 
