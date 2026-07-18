@@ -146,7 +146,7 @@ jobs:
           ls -la dist/
 
       - name: Upload server packages
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: server-packages
           path: dist/
@@ -189,7 +189,7 @@ jobs:
           ls -la dist/
 
       - name: Upload APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: android-apk
           path: dist/grom-*.apk
@@ -203,13 +203,13 @@ jobs:
       contents: write
     steps:
       - name: Download server packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: server-packages
           path: artifacts
 
       - name: Download APK
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: android-apk
           path: artifacts
@@ -218,7 +218,7 @@ jobs:
         run: ls -la artifacts/
 
       - name: Create draft GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ needs.validate.outputs.version }}
