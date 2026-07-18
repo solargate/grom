@@ -203,13 +203,13 @@ jobs:
       contents: write
     steps:
       - name: Download server packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: server-packages
           path: artifacts
 
       - name: Download APK
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: android-apk
           path: artifacts
