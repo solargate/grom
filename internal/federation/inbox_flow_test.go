@@ -339,13 +339,20 @@ func TestInboxProcessorHandleFollowAcceptCreate(t *testing.T) {
 		"type":  "Create",
 		"actor": "https://remote.test/users/bob",
 		"object": map[string]any{
-			"id":              "https://remote.test/users/bob/workouts/11111111",
-			"type":            "Note",
-			"name":            "Remote run",
-			"sportType":       "Run",
-			"startDate":       "2026-07-08T10:00:00Z",
-			"durationSeconds": 1200,
-			"distance":        3000.0,
+			"id":                   "https://remote.test/users/bob/workouts/11111111",
+			"type":                 "Note",
+			"name":                 "Remote run",
+			"sportType":            "Run",
+			"startDate":            "2026-07-08T10:00:00Z",
+			"durationSeconds":      1200,
+			"durationTotalSeconds": 1300,
+			"distance":             3000.0,
+			"tempAvgKmm":           "6:00",
+			"elevationGain":        45.0,
+			"speedAvgKmh":          9.0,
+			"heartRateAvg":         140.0,
+			"stepsTotal":           4000,
+			"calories":             300.0,
 		},
 	}
 	createJSON, _ := json.Marshal(createObj)
@@ -358,6 +365,28 @@ func TestInboxProcessorHandleFollowAcceptCreate(t *testing.T) {
 	}
 	if len(items) != 1 {
 		t.Fatalf("expected 1 federated workout after Create, got %d", len(items))
+	}
+	got := items[0].Workout
+	if got.DurationTotalSeconds != 1300 {
+		t.Fatalf("DurationTotalSeconds = %d", got.DurationTotalSeconds)
+	}
+	if got.TempAvgKmm == nil || *got.TempAvgKmm != "6:00" {
+		t.Fatalf("TempAvgKmm = %v", got.TempAvgKmm)
+	}
+	if got.ElevationGain == nil || *got.ElevationGain != 45 {
+		t.Fatalf("ElevationGain = %v", got.ElevationGain)
+	}
+	if got.SpeedAvgKmh == nil || *got.SpeedAvgKmh != 9 {
+		t.Fatalf("SpeedAvgKmh = %v", got.SpeedAvgKmh)
+	}
+	if got.HeartRateAvg == nil || *got.HeartRateAvg != 140 {
+		t.Fatalf("HeartRateAvg = %v", got.HeartRateAvg)
+	}
+	if got.StepsTotal == nil || *got.StepsTotal != 4000 {
+		t.Fatalf("StepsTotal = %v", got.StepsTotal)
+	}
+	if got.Calories == nil || *got.Calories != 300 {
+		t.Fatalf("Calories = %v", got.Calories)
 	}
 
 	undoBody := `{"type":"Undo","object":{"type":"Follow","actor":"https://remote.test/users/bob"}}`

@@ -134,10 +134,51 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutStartTime => 'Время начала';
 
   @override
-  String get workoutDuration => 'Длительность';
+  String get workoutDuration => 'Время';
 
   @override
   String get workoutDistance => 'Расстояние';
+
+  @override
+  String get workoutPace => 'Темп';
+
+  @override
+  String get workoutElevationGain => 'Набор высоты';
+
+  @override
+  String get workoutSpeedAvg => 'Средняя скорость';
+
+  @override
+  String get workoutTotalTime => 'Общее время';
+
+  @override
+  String get workoutHeartRateAvg => 'Средний пульс';
+
+  @override
+  String get workoutSteps => 'Шаги';
+
+  @override
+  String get workoutCalories => 'Калории';
+
+  @override
+  String elevationMeters(String value) {
+    return '$value м';
+  }
+
+  @override
+  String heartRateBpm(String value) {
+    return '$value';
+  }
+
+  @override
+  String stepsCount(String value) {
+    return '$value';
+  }
+
+  @override
+  String caloriesKcal(String value) {
+    return '$value';
+  }
 
   @override
   String get save => 'Сохранить';

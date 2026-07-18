@@ -87,21 +87,28 @@ type WorkoutAuthorResponse struct {
 }
 
 type WorkoutResponse struct {
-	ID              string                 `json:"id" example:"38472901"`
-	Owner           string                 `json:"owner,omitempty" example:"solarwind"`
-	Name            string                 `json:"name" example:"Morning run"`
-	Description     string                 `json:"description,omitempty" example:"Easy session"`
-	SportType       string                 `json:"sport_type" example:"Run"`
-	StartDate       string                 `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
-	Device          string                 `json:"device,omitempty" example:"Grom"`
-	DurationSeconds int                    `json:"duration_seconds" example:"3600"`
-	Distance        float64                `json:"distance" example:"5200"`
-	Track           string                 `json:"track,omitempty" example:"track.gpx"`
-	Equipment       []WorkoutEquipmentItem `json:"equipment,omitempty"`
-	HasMapPreview   bool                   `json:"has_map_preview" example:"true"`
-	HasMedia        bool                   `json:"has_media" example:"true"`
-	MediaFiles      []string               `json:"media_files,omitempty"`
-	Author          *WorkoutAuthorResponse `json:"author,omitempty"`
+	ID                   string                 `json:"id" example:"38472901"`
+	Owner                string                 `json:"owner,omitempty" example:"solarwind"`
+	Name                 string                 `json:"name" example:"Morning run"`
+	Description          string                 `json:"description,omitempty" example:"Easy session"`
+	SportType            string                 `json:"sport_type" example:"Run"`
+	StartDate            string                 `json:"start_date" example:"2026-07-05T14:30:00+03:00"`
+	Device               string                 `json:"device,omitempty" example:"Grom"`
+	DurationSeconds      int                    `json:"duration_seconds" example:"3600"`
+	DurationTotalSeconds int                    `json:"duration_total_seconds,omitempty" example:"3900"`
+	Distance             float64                `json:"distance" example:"5200"`
+	TempAvgKmm           *string                `json:"temp_avg_kmm,omitempty" example:"12:22"`
+	SpeedAvgKmh          *float64               `json:"speed_avg_kmh,omitempty" example:"17.5"`
+	ElevationGain        *float64               `json:"elevation_gain,omitempty" example:"77"`
+	HeartRateAvg         *float64               `json:"heart_rate_avg,omitempty" example:"130"`
+	StepsTotal           *int                   `json:"steps_total,omitempty" example:"2583"`
+	Calories             *float64               `json:"calories,omitempty" example:"415"`
+	Track                string                 `json:"track,omitempty" example:"track.gpx"`
+	Equipment            []WorkoutEquipmentItem `json:"equipment,omitempty"`
+	HasMapPreview        bool                   `json:"has_map_preview" example:"true"`
+	HasMedia             bool                   `json:"has_media" example:"true"`
+	MediaFiles           []string               `json:"media_files,omitempty"`
+	Author               *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
 type WorkoutEquipmentItem struct {
@@ -120,19 +127,26 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		})
 	}
 	return WorkoutResponse{
-		ID:              workout.ID,
-		Name:            workout.Name,
-		Description:     workout.Description,
-		SportType:       workout.SportType,
-		StartDate:       workout.StartDate.Format(time.RFC3339),
-		Device:          workout.Device,
-		DurationSeconds: workout.DurationSeconds,
-		Distance:        workout.Distance,
-		Track:           workout.Track,
-		Equipment:       equipment,
-		HasMapPreview:   workout.HasMapPreview,
-		HasMedia:        workout.HasMedia,
-		MediaFiles:      workout.MediaFiles,
+		ID:                   workout.ID,
+		Name:                 workout.Name,
+		Description:          workout.Description,
+		SportType:            workout.SportType,
+		StartDate:            workout.StartDate.Format(time.RFC3339),
+		Device:               workout.Device,
+		DurationSeconds:      workout.DurationSeconds,
+		DurationTotalSeconds: workout.DurationTotalSeconds,
+		Distance:             workout.Distance,
+		TempAvgKmm:           workout.TempAvgKmm,
+		SpeedAvgKmh:          workout.SpeedAvgKmh,
+		ElevationGain:        workout.ElevationGain,
+		HeartRateAvg:         workout.HeartRateAvg,
+		StepsTotal:           workout.StepsTotal,
+		Calories:             workout.Calories,
+		Track:                workout.Track,
+		Equipment:            equipment,
+		HasMapPreview:        workout.HasMapPreview,
+		HasMedia:             workout.HasMedia,
+		MediaFiles:           workout.MediaFiles,
 	}
 }
 

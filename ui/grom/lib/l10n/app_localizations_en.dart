@@ -134,10 +134,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutStartTime => 'Start time';
 
   @override
-  String get workoutDuration => 'Duration';
+  String get workoutDuration => 'Time';
 
   @override
   String get workoutDistance => 'Distance';
+
+  @override
+  String get workoutPace => 'Pace';
+
+  @override
+  String get workoutElevationGain => 'Elevation gain';
+
+  @override
+  String get workoutSpeedAvg => 'Avg. speed';
+
+  @override
+  String get workoutTotalTime => 'Total time';
+
+  @override
+  String get workoutHeartRateAvg => 'Avg. heart rate';
+
+  @override
+  String get workoutSteps => 'Steps';
+
+  @override
+  String get workoutCalories => 'Calories';
+
+  @override
+  String elevationMeters(String value) {
+    return '$value m';
+  }
+
+  @override
+  String heartRateBpm(String value) {
+    return '$value';
+  }
+
+  @override
+  String stepsCount(String value) {
+    return '$value';
+  }
+
+  @override
+  String caloriesKcal(String value) {
+    return '$value';
+  }
 
   @override
   String get save => 'Save';

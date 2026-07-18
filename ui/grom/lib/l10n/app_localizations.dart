@@ -343,7 +343,7 @@ abstract class AppLocalizations {
   /// No description provided for @workoutDuration.
   ///
   /// In en, this message translates to:
-  /// **'Duration'**
+  /// **'Time'**
   String get workoutDuration;
 
   /// No description provided for @workoutDistance.
@@ -351,6 +351,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Distance'**
   String get workoutDistance;
+
+  /// No description provided for @workoutPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get workoutPace;
+
+  /// No description provided for @workoutElevationGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation gain'**
+  String get workoutElevationGain;
+
+  /// No description provided for @workoutSpeedAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. speed'**
+  String get workoutSpeedAvg;
+
+  /// No description provided for @workoutTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total time'**
+  String get workoutTotalTime;
+
+  /// No description provided for @workoutHeartRateAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. heart rate'**
+  String get workoutHeartRateAvg;
+
+  /// No description provided for @workoutSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get workoutSteps;
+
+  /// No description provided for @workoutCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get workoutCalories;
+
+  /// No description provided for @elevationMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} m'**
+  String elevationMeters(String value);
+
+  /// No description provided for @heartRateBpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}'**
+  String heartRateBpm(String value);
+
+  /// No description provided for @stepsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}'**
+  String stepsCount(String value);
+
+  /// No description provided for @caloriesKcal.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}'**
+  String caloriesKcal(String value);
 
   /// No description provided for @save.
   ///

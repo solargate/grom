@@ -1918,6 +1918,10 @@ const docTemplate = `{
                 "author": {
                     "$ref": "#/definitions/v1.WorkoutAuthorResponse"
                 },
+                "calories": {
+                    "type": "number",
+                    "example": 415
+                },
                 "description": {
                     "type": "string",
                     "example": "Easy session"
@@ -1934,6 +1938,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3600
                 },
+                "duration_total_seconds": {
+                    "type": "integer",
+                    "example": 3900
+                },
+                "elevation_gain": {
+                    "type": "number",
+                    "example": 77
+                },
                 "equipment": {
                     "type": "array",
                     "items": {
@@ -1947,6 +1959,10 @@ const docTemplate = `{
                 "has_media": {
                     "type": "boolean",
                     "example": true
+                },
+                "heart_rate_avg": {
+                    "type": "number",
+                    "example": 130
                 },
                 "id": {
                     "type": "string",
@@ -1966,6 +1982,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "solarwind"
                 },
+                "speed_avg_kmh": {
+                    "type": "number",
+                    "example": 17.5
+                },
                 "sport_type": {
                     "type": "string",
                     "example": "Run"
@@ -1973,6 +1993,14 @@ const docTemplate = `{
                 "start_date": {
                     "type": "string",
                     "example": "2026-07-05T14:30:00+03:00"
+                },
+                "steps_total": {
+                    "type": "integer",
+                    "example": 2583
+                },
+                "temp_avg_kmm": {
+                    "type": "string",
+                    "example": "12:22"
                 },
                 "track": {
                     "type": "string",

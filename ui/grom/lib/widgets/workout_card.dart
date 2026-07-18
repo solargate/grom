@@ -67,6 +67,7 @@ class WorkoutCard extends StatelessWidget {
             author: workout.author,
             federationEnabled: federationEnabled,
             descriptionMaxLines: 2,
+            statsMaxRows: 1,
           ),
         ),
         if (workout.hasMapPreview)

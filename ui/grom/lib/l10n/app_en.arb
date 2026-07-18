@@ -54,8 +54,47 @@
   "workoutType": "Workout type",
   "workoutDate": "Date",
   "workoutStartTime": "Start time",
-  "workoutDuration": "Duration",
+  "workoutDuration": "Time",
   "workoutDistance": "Distance",
+  "workoutPace": "Pace",
+  "workoutElevationGain": "Elevation gain",
+  "workoutSpeedAvg": "Avg. speed",
+  "workoutTotalTime": "Total time",
+  "workoutHeartRateAvg": "Avg. heart rate",
+  "workoutSteps": "Steps",
+  "workoutCalories": "Calories",
+  "elevationMeters": "{value} m",
+  "@elevationMeters": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "heartRateBpm": "{value}",
+  "@heartRateBpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "stepsCount": "{value}",
+  "@stepsCount": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "caloriesKcal": "{value}",
+  "@caloriesKcal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "save": "Save",
   "cancel": "Cancel",
   "selectWorkoutType": "Select workout type",

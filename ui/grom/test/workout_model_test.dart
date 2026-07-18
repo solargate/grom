@@ -33,6 +33,32 @@ void main() {
     expect(workout.equipment.single.id, 'shoe-1');
   });
 
+  test('Workout.fromJson reads optional stats fields', () {
+    final workout = Workout.fromJson({
+      'id': 'workout-2',
+      'name': 'Track run',
+      'sport_type': 'Run',
+      'start_date': '2026-07-17T06:30:00Z',
+      'duration_seconds': 3600,
+      'duration_total_seconds': 3900,
+      'distance': 10000,
+      'temp_avg_kmm': '6:00',
+      'speed_avg_kmh': 10,
+      'elevation_gain': 80,
+      'heart_rate_avg': 145,
+      'steps_total': 9000,
+      'calories': 500,
+    });
+
+    expect(workout.durationTotalSeconds, 3900);
+    expect(workout.tempAvgKmm, '6:00');
+    expect(workout.speedAvgKmh, 10);
+    expect(workout.elevationGain, 80);
+    expect(workout.heartRateAvg, 145);
+    expect(workout.stepsTotal, 9000);
+    expect(workout.calories, 500);
+  });
+
   test('CreateWorkoutDraft.toJson converts kilometres and serializes UTC', () {
     final draft = CreateWorkoutDraft(
       name: 'Evening ride',

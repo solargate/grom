@@ -54,8 +54,47 @@
   "workoutType": "Тип тренировки",
   "workoutDate": "Дата",
   "workoutStartTime": "Время начала",
-  "workoutDuration": "Длительность",
+  "workoutDuration": "Время",
   "workoutDistance": "Расстояние",
+  "workoutPace": "Темп",
+  "workoutElevationGain": "Набор высоты",
+  "workoutSpeedAvg": "Средняя скорость",
+  "workoutTotalTime": "Общее время",
+  "workoutHeartRateAvg": "Средний пульс",
+  "workoutSteps": "Шаги",
+  "workoutCalories": "Калории",
+  "elevationMeters": "{value} м",
+  "@elevationMeters": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "heartRateBpm": "{value}",
+  "@heartRateBpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "stepsCount": "{value}",
+  "@stepsCount": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "caloriesKcal": "{value}",
+  "@caloriesKcal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "save": "Сохранить",
   "cancel": "Отмена",
   "selectWorkoutType": "Выберите тип тренировки",

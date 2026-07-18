@@ -219,6 +219,27 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		"distance":        workout.Distance,
 		"track":           workout.Track,
 	}
+	if workout.DurationTotalSeconds > 0 {
+		object["durationTotalSeconds"] = workout.DurationTotalSeconds
+	}
+	if workout.TempAvgKmm != nil && *workout.TempAvgKmm != "" {
+		object["tempAvgKmm"] = *workout.TempAvgKmm
+	}
+	if workout.ElevationGain != nil && *workout.ElevationGain > 0 {
+		object["elevationGain"] = *workout.ElevationGain
+	}
+	if workout.SpeedAvgKmh != nil && *workout.SpeedAvgKmh > 0 {
+		object["speedAvgKmh"] = *workout.SpeedAvgKmh
+	}
+	if workout.HeartRateAvg != nil && *workout.HeartRateAvg > 0 {
+		object["heartRateAvg"] = *workout.HeartRateAvg
+	}
+	if workout.StepsTotal != nil && *workout.StepsTotal > 0 {
+		object["stepsTotal"] = *workout.StepsTotal
+	}
+	if workout.Calories != nil && *workout.Calories > 0 {
+		object["calories"] = *workout.Calories
+	}
 	if workout.Track != "" && len(trackData) > 0 {
 		object["trackData"] = base64.StdEncoding.EncodeToString(trackData)
 	}

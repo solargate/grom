@@ -29,6 +29,13 @@ class Workout {
     required this.startDate,
     required this.durationSeconds,
     required this.distance,
+    this.durationTotalSeconds,
+    this.tempAvgKmm,
+    this.speedAvgKmh,
+    this.elevationGain,
+    this.heartRateAvg,
+    this.stepsTotal,
+    this.calories,
     this.owner = '',
     this.device = '',
     this.track = '',
@@ -47,6 +54,13 @@ class Workout {
   final DateTime startDate;
   final int durationSeconds;
   final double distance;
+  final int? durationTotalSeconds;
+  final String? tempAvgKmm;
+  final double? speedAvgKmh;
+  final double? elevationGain;
+  final double? heartRateAvg;
+  final int? stepsTotal;
+  final double? calories;
   final String device;
   final String track;
   final bool hasMapPreview;
@@ -83,6 +97,13 @@ class Workout {
       startDate: DateTime.parse(json['start_date'] as String),
       durationSeconds: json['duration_seconds'] as int? ?? 0,
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
+      durationTotalSeconds: json['duration_total_seconds'] as int?,
+      tempAvgKmm: json['temp_avg_kmm'] as String?,
+      speedAvgKmh: (json['speed_avg_kmh'] as num?)?.toDouble(),
+      elevationGain: (json['elevation_gain'] as num?)?.toDouble(),
+      heartRateAvg: (json['heart_rate_avg'] as num?)?.toDouble(),
+      stepsTotal: json['steps_total'] as int?,
+      calories: (json['calories'] as num?)?.toDouble(),
       device: json['device'] as String? ?? '',
       track: json['track'] as String? ?? '',
       hasMapPreview: json['has_map_preview'] as bool? ?? false,

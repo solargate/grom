@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:grom/l10n/app_localizations.dart';
-import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/equipment_types.dart';
 import 'package:grom/models/social.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/models/workout.dart';
+import 'package:grom/models/workout_stats.dart';
+import 'package:grom/platform/is_mobile_client.dart';
 
 import 'user_avatar.dart';
 import 'workout_field_separator.dart';
@@ -21,6 +22,7 @@ class WorkoutHeaderSection extends StatelessWidget {
     this.author,
     this.federationEnabled = false,
     this.descriptionMaxLines,
+    this.statsMaxRows,
   });
 
   final Workout workout;
@@ -28,6 +30,9 @@ class WorkoutHeaderSection extends StatelessWidget {
   final WorkoutAuthor? author;
   final bool federationEnabled;
   final int? descriptionMaxLines;
+
+  /// When set, only the first N rows of stats (3 per row) are shown.
+  final int? statsMaxRows;
 
   String _authorLine(WorkoutAuthor author) {
     final displayName =
@@ -47,15 +52,59 @@ class WorkoutHeaderSection extends StatelessWidget {
     final dateText = DateFormat.yMMMd(l10n.localeName).add_Hm().format(
           workout.startDate.toLocal(),
         );
-    final durationText = formatDuration(l10n, workout.durationSeconds);
-    final distanceText = formatDistanceKm(l10n, workout.distance);
     final metadataParts = <String>[
       sportTypeLabel(l10n, workout.sportType),
       dateText,
       if (workout.device.isNotEmpty) workout.device,
     ];
+    final stats = buildWorkoutStats(l10n, workout);
+    final statsRows = chunkWorkoutStats(stats, maxRows: statsMaxRows);
+    final flushStatsToAvatar = isMobileClient && author != null;
 
-    return Row(
+    final metaColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (author != null) ...[
+          Text(
+            _authorLine(author!),
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+        ],
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: joinWorkoutTextFields(context, metadataParts),
+        ),
+        if (workout.equipment.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          _EquipmentLine(equipment: workout.equipment),
+        ],
+        const SizedBox(height: 8),
+        Text(
+          workout.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (workout.description.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            workout.description,
+            maxLines: descriptionMaxLines,
+            overflow: descriptionMaxLines != null
+                ? TextOverflow.ellipsis
+                : null,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
+        if (!flushStatsToAvatar && statsRows.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _StatsGrid(rows: statsRows),
+        ],
+      ],
+    );
+
+    final headerRow = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (author != null) ...[
@@ -85,53 +134,20 @@ class WorkoutHeaderSection extends StatelessWidget {
           ),
           const SizedBox(width: 12),
         ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (author != null) ...[
-                Text(
-                  _authorLine(author!),
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 4),
-              ],
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: joinWorkoutTextFields(context, metadataParts),
-              ),
-              if (workout.equipment.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                _EquipmentLine(equipment: workout.equipment),
-              ],
-              const SizedBox(height: 8),
-              Text(
-                workout.name,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (workout.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  workout.description,
-                  maxLines: descriptionMaxLines,
-                  overflow: descriptionMaxLines != null
-                      ? TextOverflow.ellipsis
-                      : null,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-              const SizedBox(height: 12),
-              _StatsRow(
-                distanceLabel: l10n.workoutDistance,
-                distanceValue: distanceText,
-                durationLabel: l10n.workoutDuration,
-                durationValue: durationText,
-              ),
-            ],
-          ),
-        ),
+        Expanded(child: metaColumn),
+      ],
+    );
+
+    if (!flushStatsToAvatar || statsRows.isEmpty) {
+      return headerRow;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        headerRow,
+        const SizedBox(height: 12),
+        _StatsGrid(rows: statsRows),
       ],
     );
   }
@@ -176,18 +192,10 @@ class _EquipmentLine extends StatelessWidget {
   }
 }
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.distanceLabel,
-    required this.distanceValue,
-    required this.durationLabel,
-    required this.durationValue,
-  });
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.rows});
 
-  final String distanceLabel;
-  final String distanceValue;
-  final String durationLabel;
-  final String durationValue;
+  final List<List<WorkoutStatItem>> rows;
 
   @override
   Widget build(BuildContext context) {
@@ -198,27 +206,42 @@ class _StatsRow extends StatelessWidget {
     final valueStyle = theme.textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w600,
     );
+    final columnCount = rows.fold<int>(
+      0,
+      (max, row) => row.length > max ? row.length : max,
+    );
+    if (columnCount == 0) {
+      return const SizedBox.shrink();
+    }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _StatBlock(
-          label: distanceLabel,
-          value: distanceValue,
-          labelStyle: labelStyle,
-          valueStyle: valueStyle,
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: WorkoutFieldSeparator(),
-        ),
-        _StatBlock(
-          label: durationLabel,
-          value: durationValue,
-          labelStyle: labelStyle,
-          valueStyle: valueStyle,
-        ),
-      ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Table(
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.top,
+        children: [
+          for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
+            TableRow(
+              children: [
+                for (var col = 0; col < columnCount; col++)
+                  col < rows[rowIndex].length
+                      ? Padding(
+                          padding: EdgeInsets.only(
+                            top: rowIndex == 0 ? 0 : 10,
+                            left: col == 0 ? 0 : 24,
+                          ),
+                          child: _StatBlock(
+                            label: rows[rowIndex][col].label,
+                            value: rows[rowIndex][col].value,
+                            labelStyle: labelStyle,
+                            valueStyle: valueStyle,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

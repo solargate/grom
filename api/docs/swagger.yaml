@@ -440,6 +440,9 @@ definitions:
     properties:
       author:
         $ref: '#/definitions/v1.WorkoutAuthorResponse'
+      calories:
+        example: 415
+        type: number
       description:
         example: Easy session
         type: string
@@ -452,6 +455,12 @@ definitions:
       duration_seconds:
         example: 3600
         type: integer
+      duration_total_seconds:
+        example: 3900
+        type: integer
+      elevation_gain:
+        example: 77
+        type: number
       equipment:
         items:
           $ref: '#/definitions/v1.WorkoutEquipmentItem'
@@ -462,6 +471,9 @@ definitions:
       has_media:
         example: true
         type: boolean
+      heart_rate_avg:
+        example: 130
+        type: number
       id:
         example: "38472901"
         type: string
@@ -475,11 +487,20 @@ definitions:
       owner:
         example: solarwind
         type: string
+      speed_avg_kmh:
+        example: 17.5
+        type: number
       sport_type:
         example: Run
         type: string
       start_date:
         example: "2026-07-05T14:30:00+03:00"
+        type: string
+      steps_total:
+        example: 2583
+        type: integer
+      temp_avg_kmm:
+        example: "12:22"
         type: string
       track:
         example: track.gpx

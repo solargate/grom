@@ -168,19 +168,38 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 	}
 
 	workout := workouts.Workout{
-		ID:              workoutIDFromObject(object),
-		Name:            stringValue(object, "name"),
-		Description:     stringValue(object, "content"),
-		SportType:       stringValue(object, "sportType"),
-		Device:          stringValue(object, "device"),
-		DurationSeconds: intValue(object, "durationSeconds"),
-		Distance:        floatValue(object, "distance"),
-		Track:           stringValue(object, "track"),
+		ID:                   workoutIDFromObject(object),
+		Name:                 stringValue(object, "name"),
+		Description:          stringValue(object, "content"),
+		SportType:            stringValue(object, "sportType"),
+		Device:               stringValue(object, "device"),
+		DurationSeconds:      intValue(object, "durationSeconds"),
+		DurationTotalSeconds: intValue(object, "durationTotalSeconds"),
+		Distance:             floatValue(object, "distance"),
+		Track:                stringValue(object, "track"),
 	}
 	if start := stringValue(object, "startDate"); start != "" {
 		if t, err := time.Parse(time.RFC3339, start); err == nil {
 			workout.StartDate = t
 		}
+	}
+	if pace := stringValue(object, "tempAvgKmm"); pace != "" {
+		workout.TempAvgKmm = &pace
+	}
+	if v, ok := optionalPositiveFloat(object, "elevationGain"); ok {
+		workout.ElevationGain = &v
+	}
+	if v, ok := optionalPositiveFloat(object, "speedAvgKmh"); ok {
+		workout.SpeedAvgKmh = &v
+	}
+	if v, ok := optionalPositiveFloat(object, "heartRateAvg"); ok {
+		workout.HeartRateAvg = &v
+	}
+	if v, ok := optionalPositiveInt(object, "stepsTotal"); ok {
+		workout.StepsTotal = &v
+	}
+	if v, ok := optionalPositiveFloat(object, "calories"); ok {
+		workout.Calories = &v
 	}
 	if workout.ID == "" || workout.Name == "" {
 		return nil
@@ -342,6 +361,46 @@ func intValue(m map[string]any, key string) int {
 func floatValue(m map[string]any, key string) float64 {
 	v, _ := m[key].(float64)
 	return v
+}
+
+func optionalPositiveFloat(m map[string]any, key string) (float64, bool) {
+	raw, ok := m[key]
+	if !ok || raw == nil {
+		return 0, false
+	}
+	var v float64
+	switch n := raw.(type) {
+	case float64:
+		v = n
+	case int:
+		v = float64(n)
+	default:
+		return 0, false
+	}
+	if v <= 0 {
+		return 0, false
+	}
+	return v, true
+}
+
+func optionalPositiveInt(m map[string]any, key string) (int, bool) {
+	raw, ok := m[key]
+	if !ok || raw == nil {
+		return 0, false
+	}
+	var v int
+	switch n := raw.(type) {
+	case float64:
+		v = int(n)
+	case int:
+		v = n
+	default:
+		return 0, false
+	}
+	if v <= 0 {
+		return 0, false
+	}
+	return v, true
 }
 
 func (d *Delivery) postActivity(inbox string, activity map[string]any) error {
