@@ -13,7 +13,7 @@ Grom supports four deployment profiles via `server.tls.mode`:
 | Prod, HTTP only | `config.prod.notls.yaml` | `off` | disabled |
 | Prod, Let's Encrypt | `config.prod.tls.yaml` | `autocert` | enabled |
 
-Example configs live in `cmd/grom/`.
+Example configs live in `cmd/grom/config-examples/`. For every field with comments, see `config.full.yaml`.
 
 ### Dev with static TLS
 
