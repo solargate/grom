@@ -32,6 +32,8 @@ String sportTypeLocalization(AppLocalizations l10n, String id) {
       return l10n.sportTypeStandUpPaddling;
     case 'Kayaking':
       return l10n.sportTypeKayaking;
+    case 'Packraft':
+      return l10n.sportTypePackraft;
     case 'Surfing':
       return l10n.sportTypeSurfing;
     case 'Kitesurf':

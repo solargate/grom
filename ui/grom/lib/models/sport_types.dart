@@ -40,6 +40,7 @@ const sportTypeCatalog = <SportTypeInfo>[
   SportTypeInfo(id: 'Canoeing', category: SportCategory.water, icon: Icons.kayaking),
   SportTypeInfo(id: 'SUP', category: SportCategory.water, icon: Icons.surfing),
   SportTypeInfo(id: 'Kayaking', category: SportCategory.water, icon: Icons.kayaking),
+  SportTypeInfo(id: 'Packraft', category: SportCategory.water, icon: Icons.kayaking),
   SportTypeInfo(id: 'Surfing', category: SportCategory.water, icon: Icons.surfing),
   SportTypeInfo(id: 'Kitesurf', category: SportCategory.water, icon: Icons.air),
   SportTypeInfo(id: 'Swim', category: SportCategory.water, icon: Icons.pool),

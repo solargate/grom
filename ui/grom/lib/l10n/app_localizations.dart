@@ -712,6 +712,12 @@ abstract class AppLocalizations {
   /// **'Kayak'**
   String get sportTypeKayaking;
 
+  /// No description provided for @sportTypePackraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Packraft'**
+  String get sportTypePackraft;
+
   /// No description provided for @sportTypeSurfing.
   ///
   /// In en, this message translates to:

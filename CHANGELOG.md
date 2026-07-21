@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Water sport type Packraft
 - CI workflow on `master` and pull requests: Go vet/test/build, Flutter analyze/test, and swagger doc drift check
 
 ## [0.1.0] - 2026-07-18

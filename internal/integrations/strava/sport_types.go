@@ -25,6 +25,7 @@ var sportTypeAliases = map[string]string{
 	"trail run": "TrailRun",
 	"canoeing": "Canoeing",
 	"kayaking": "Kayaking",
+	"packraft": "Packraft",
 	"stand up paddling": "SUP",
 	"stand-up paddling": "SUP",
 	"surfing": "Surfing",
@@ -83,6 +84,7 @@ var sportTypeAliases = map[string]string{
 	"трейлран": "TrailRun",
 	"канoeing": "Canoeing",
 	"каякинг": "Kayaking",
+	"пакрафт": "Packraft",
 	"гребля на сапе": "SUP",
 	"серфинг": "Surfing",
 	"кайтсерфинг": "Kitesurf",
@@ -123,6 +125,8 @@ var nameSportKeywords = []struct {
 	keyword string
 	sport   string
 }{
+	{"пакрафт", "Packraft"},
+	{"packraft", "Packraft"},
 	{"пилатес", "Pilates"},
 	{"pilates", "Pilates"},
 	{"йога", "Yoga"},

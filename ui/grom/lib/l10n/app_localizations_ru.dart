@@ -340,6 +340,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sportTypeKayaking => 'Каяк';
 
   @override
+  String get sportTypePackraft => 'Пакрафт';
+
+  @override
   String get sportTypeSurfing => 'Сёрфинг';
 
   @override

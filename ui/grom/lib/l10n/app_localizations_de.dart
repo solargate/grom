@@ -341,6 +341,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sportTypeKayaking => 'Kajak';
 
   @override
+  String get sportTypePackraft => 'Packraft';
+
+  @override
   String get sportTypeSurfing => 'Surfen';
 
   @override

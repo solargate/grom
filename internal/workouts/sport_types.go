@@ -18,6 +18,7 @@ var validSportTypes = map[string]struct{}{
 	"Canoeing":          {},
 	"SUP":               {},
 	"Kayaking":          {},
+	"Packraft":          {},
 	"Surfing":           {},
 	"Kitesurf":          {},
 	"Swim":              {},
