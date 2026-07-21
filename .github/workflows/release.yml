@@ -202,6 +202,33 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Extract release notes from CHANGELOG
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          awk -v ver="${VERSION}" '
+            /^## \[/ {
+              if (in_section) exit
+              if ($0 ~ "^## \\[" ver "\\]") in_section = 1
+              next
+            }
+            /^\[[^]]+\]: / { if (in_section) exit }
+            in_section { print }
+          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
+
+          if [[ ! -s release-notes.md ]]; then
+            echo "::error::No CHANGELOG section found for version ${VERSION}"
+            exit 1
+          fi
+
+          echo "--- Release notes ---"
+          cat release-notes.md
+
       - name: Download server packages
         uses: actions/download-artifact@v7
         with:
@@ -223,7 +250,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ needs.validate.outputs.version }}
           draft: true
-          body: ''
+          body_path: release-notes.md
           files: artifacts/*
           fail_on_unmatched_files: true
         env:

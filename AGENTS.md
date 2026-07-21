@@ -9,6 +9,7 @@ Guidance for AI coding agents working in this repository.
 - **License:** GPL-3.0
 - **Module:** `github.com/solargate/grom`
 - **Version:** single source of truth in `VERSION` (injected into Go via ldflags and Flutter via `--build-name`)
+- **Changelog:** Keep a Changelog format in `CHANGELOG.md`; release CI copies the matching version section into the GitHub draft release body
 
 ## High-level architecture
 
@@ -29,6 +30,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 
 | Path | Role |
 |------|------|
+| `CHANGELOG.md` | User-facing release notes (`[Unreleased]` + version sections) |
 | `cmd/grom/` | Main binary; example configs in `config-examples/` |
 | `api/v1/` | Gin handlers, route registration, DTO/response types |
 | `api/docs/` | `swag`-generated OpenAPI (`make doc`) |
@@ -125,6 +127,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 - Match existing style: short, imperative commit subjects focused on why.
 - Do not commit generated noise, local data, TLS material, or `.cursor/`.
 - `internal/web/dist/*` is produced by the build; prefer regenerating via Makefile rather than hand-editing.
+- User-visible changes: add a bullet under `CHANGELOG.md` → `[Unreleased]` (Added / Changed / Fixed / Security; call out **Breaking** for config, API, or storage). Skip pure refactors, tests, and CI noise.
 
 ## Domain notes agents should respect
 
@@ -142,6 +145,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 - Read nearby packages before changing interfaces (`Repository`, `Backend`, `blob.Store`).
 - Preserve error-sentinel patterns and HTTP mapping in `api/v1`.
 - Update config examples and README when behavior of TLS/federation/storage changes.
+- Update `CHANGELOG.md` `[Unreleased]` for user-visible changes.
 - Add or extend tests for non-trivial logic (track stats, federation inbox, storage).
 - Keep API and Flutter models aligned when changing JSON field names.
 
@@ -165,4 +169,4 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 | Track parsing/stats | `internal/tracks/` |
 | Flutter screen/API | `ui/grom/lib/pages/`, `api_request.dart` |
 | Config / TLS listen | `internal/config/`, `internal/server/` |
-| Version bump | edit `VERSION`, rebuild with Makefile |
+| Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |
