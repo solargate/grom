@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/solargate/grom/internal/config"
@@ -63,9 +64,88 @@ func TestFinalizeConfig_Autocert(t *testing.T) {
 	if len(cfg.Server.TLS.Autocert.Domains) != 1 || cfg.Server.TLS.Autocert.Domains[0] != "grom.example.com" {
 		t.Fatalf("domains = %v", cfg.Server.TLS.Autocert.Domains)
 	}
+	if cfg.Server.TLS.Autocert.CacheDir != "" {
+		t.Fatalf("CacheDir = %q, want empty (YAML value preserved)", cfg.Server.TLS.Autocert.CacheDir)
+	}
 	wantCache := filepath.Join(cfg.Storage.ResolvedLocation, "acme-cache")
-	if cfg.Server.TLS.Autocert.CacheDir != wantCache {
-		t.Fatalf("cache_dir = %q, want %q", cfg.Server.TLS.Autocert.CacheDir, wantCache)
+	if cfg.Server.TLS.Autocert.ResolvedCacheDir != wantCache {
+		t.Fatalf("ResolvedCacheDir = %q, want %q", cfg.Server.TLS.Autocert.ResolvedCacheDir, wantCache)
+	}
+}
+
+func TestFinalizeConfig_AutocertExplicitCacheDir(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "autocert"
+	cfg.Federation.Enabled = true
+	cfg.Federation.Domain = "grom.example.com"
+	cfg.Server.TLS.Autocert.CacheDir = "custom-acme"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Server.TLS.Autocert.CacheDir != "custom-acme" {
+		t.Fatalf("CacheDir = %q, want custom-acme", cfg.Server.TLS.Autocert.CacheDir)
+	}
+	if !filepath.IsAbs(cfg.Server.TLS.Autocert.ResolvedCacheDir) {
+		t.Fatalf("ResolvedCacheDir = %q, want absolute", cfg.Server.TLS.Autocert.ResolvedCacheDir)
+	}
+	if filepath.Base(cfg.Server.TLS.Autocert.ResolvedCacheDir) != "custom-acme" {
+		t.Fatalf("ResolvedCacheDir = %q, want base custom-acme", cfg.Server.TLS.Autocert.ResolvedCacheDir)
+	}
+}
+
+func TestFinalizeConfig_ResolvesTLSAndCAPaths(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "static"
+	cfg.Server.TLS.CertFile = "tls/server.crt"
+	cfg.Server.TLS.KeyFile = "tls/server.key"
+	cfg.Federation.Enabled = true
+	cfg.Federation.Domain = "192.168.1.251:8443"
+	cfg.Federation.CACertFile = "tls/ca.crt"
+	cfg.Federation.TLSInsecureSkipVerify = true
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if !filepath.IsAbs(cfg.Server.TLS.ResolvedCertFile) {
+		t.Fatalf("ResolvedCertFile = %q, want absolute", cfg.Server.TLS.ResolvedCertFile)
+	}
+	if !filepath.IsAbs(cfg.Server.TLS.ResolvedKeyFile) {
+		t.Fatalf("ResolvedKeyFile = %q, want absolute", cfg.Server.TLS.ResolvedKeyFile)
+	}
+	if !filepath.IsAbs(cfg.Federation.ResolvedCACertFile) {
+		t.Fatalf("ResolvedCACertFile = %q, want absolute", cfg.Federation.ResolvedCACertFile)
+	}
+	if !strings.HasSuffix(cfg.Server.TLS.ResolvedCertFile, filepath.Join("tls", "server.crt")) {
+		t.Fatalf("ResolvedCertFile = %q, want suffix tls/server.crt", cfg.Server.TLS.ResolvedCertFile)
+	}
+	if !strings.HasSuffix(cfg.Federation.ResolvedCACertFile, filepath.Join("tls", "ca.crt")) {
+		t.Fatalf("ResolvedCACertFile = %q, want suffix tls/ca.crt", cfg.Federation.ResolvedCACertFile)
+	}
+}
+
+func TestFinalizeConfig_AbsoluteTLSPathsUnchanged(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "static"
+	absCert := filepath.Join(t.TempDir(), "server.crt")
+	absKey := filepath.Join(t.TempDir(), "server.key")
+	absCA := filepath.Join(t.TempDir(), "ca.crt")
+	cfg.Server.TLS.CertFile = absCert
+	cfg.Server.TLS.KeyFile = absKey
+	cfg.Federation.CACertFile = absCA
+	cfg.Federation.Enabled = false
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Server.TLS.ResolvedCertFile != absCert {
+		t.Fatalf("ResolvedCertFile = %q, want %q", cfg.Server.TLS.ResolvedCertFile, absCert)
+	}
+	if cfg.Server.TLS.ResolvedKeyFile != absKey {
+		t.Fatalf("ResolvedKeyFile = %q, want %q", cfg.Server.TLS.ResolvedKeyFile, absKey)
+	}
+	if cfg.Federation.ResolvedCACertFile != absCA {
+		t.Fatalf("ResolvedCACertFile = %q, want %q", cfg.Federation.ResolvedCACertFile, absCA)
 	}
 }
 

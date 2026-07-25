@@ -35,6 +35,8 @@ Other common knobs:
 | `storage.location` / `storage.temp_dir` | Data and temp directories (filesystem driver only today) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 
+Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
+
 ### TLS profiles
 
 | Profile | Config file | `tls.mode` | Federation |

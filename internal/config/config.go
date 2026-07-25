@@ -47,15 +47,18 @@ type Config struct {
 		Name string `mapstructure:"name" yaml:"name"`
 		Port int    `mapstructure:"port" yaml:"port"`
 		TLS  struct {
-			Mode     string `mapstructure:"mode" yaml:"mode"`
-			Enabled  bool   `mapstructure:"enabled" yaml:"enabled"` // legacy: true => static
-			Port     int    `mapstructure:"port" yaml:"port"`
-			CertFile string `mapstructure:"cert_file" yaml:"cert_file"`
-			KeyFile  string `mapstructure:"key_file" yaml:"key_file"`
+			Mode             string `mapstructure:"mode" yaml:"mode"`
+			Enabled          bool   `mapstructure:"enabled" yaml:"enabled"` // legacy: true => static
+			Port             int    `mapstructure:"port" yaml:"port"`
+			CertFile         string `mapstructure:"cert_file" yaml:"cert_file"`
+			KeyFile          string `mapstructure:"key_file" yaml:"key_file"`
+			ResolvedCertFile string `mapstructure:"-" yaml:"-"`
+			ResolvedKeyFile  string `mapstructure:"-" yaml:"-"`
 			Autocert struct {
-				Email    string   `mapstructure:"email" yaml:"email"`
-				CacheDir string   `mapstructure:"cache_dir" yaml:"cache_dir"`
-				Domains  []string `mapstructure:"domains" yaml:"domains"`
+				Email            string   `mapstructure:"email" yaml:"email"`
+				CacheDir         string   `mapstructure:"cache_dir" yaml:"cache_dir"`
+				ResolvedCacheDir string   `mapstructure:"-" yaml:"-"`
+				Domains          []string `mapstructure:"domains" yaml:"domains"`
 			} `mapstructure:"autocert" yaml:"autocert"`
 		} `mapstructure:"tls" yaml:"tls"`
 	} `mapstructure:"server" yaml:"server"`
@@ -70,6 +73,7 @@ type Config struct {
 		DeliveryWorkers       int    `mapstructure:"delivery_workers" yaml:"delivery_workers"`
 		DeliveryRetryMax      int    `mapstructure:"delivery_retry_max" yaml:"delivery_retry_max"`
 		CACertFile            string `mapstructure:"ca_cert_file" yaml:"ca_cert_file"`
+		ResolvedCACertFile    string `mapstructure:"-" yaml:"-"`
 		TLSInsecureSkipVerify bool   `mapstructure:"tls_insecure_skip_verify" yaml:"tls_insecure_skip_verify"`
 	} `mapstructure:"federation" yaml:"federation"`
 	Storage StorageConfig `mapstructure:"storage" yaml:"storage"`
@@ -209,13 +213,40 @@ func FinalizeConfig(cfg *Config) error {
 	cfg.Data.Location = cfg.Storage.Location
 	cfg.Data.TempDir = cfg.Storage.TempDir
 
-	if mode == TLSModeAutocert {
-		if cfg.Server.TLS.Autocert.CacheDir == "" {
-			cfg.Server.TLS.Autocert.CacheDir = filepath.Join(resolvedDir, "acme-cache")
+	if mode == TLSModeStatic {
+		resolvedCert, err := data.ResolveDataDir(cfg.Server.TLS.CertFile)
+		if err != nil {
+			return fmt.Errorf("resolve server.tls.cert_file: %w", err)
 		}
-		if err := os.MkdirAll(cfg.Server.TLS.Autocert.CacheDir, 0700); err != nil {
+		resolvedKey, err := data.ResolveDataDir(cfg.Server.TLS.KeyFile)
+		if err != nil {
+			return fmt.Errorf("resolve server.tls.key_file: %w", err)
+		}
+		cfg.Server.TLS.ResolvedCertFile = resolvedCert
+		cfg.Server.TLS.ResolvedKeyFile = resolvedKey
+	}
+
+	if ca := strings.TrimSpace(cfg.Federation.CACertFile); ca != "" {
+		resolvedCA, err := data.ResolveDataDir(ca)
+		if err != nil {
+			return fmt.Errorf("resolve federation.ca_cert_file: %w", err)
+		}
+		cfg.Federation.ResolvedCACertFile = resolvedCA
+	}
+
+	if mode == TLSModeAutocert {
+		cacheDir := strings.TrimSpace(cfg.Server.TLS.Autocert.CacheDir)
+		if cacheDir == "" {
+			cacheDir = filepath.Join(cfg.Storage.Location, "acme-cache")
+		}
+		resolvedCacheDir, err := data.ResolveDataDir(cacheDir)
+		if err != nil {
+			return fmt.Errorf("resolve server.tls.autocert.cache_dir: %w", err)
+		}
+		if err := os.MkdirAll(resolvedCacheDir, 0700); err != nil {
 			return fmt.Errorf("create acme cache directory: %w", err)
 		}
+		cfg.Server.TLS.Autocert.ResolvedCacheDir = resolvedCacheDir
 	}
 
 	return nil

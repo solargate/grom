@@ -14,12 +14,12 @@ func runAutocertTLS(router *gin.Engine) error {
 	ac := config.Cfg.Server.TLS.Autocert
 	m := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(ac.CacheDir),
+		Cache:      autocert.DirCache(ac.ResolvedCacheDir),
 		HostPolicy: autocert.HostWhitelist(ac.Domains...),
 		Email:      ac.Email,
 	}
 
-	log.Printf("autocert: domains=%v cache=%s", ac.Domains, ac.CacheDir)
+	log.Printf("autocert: domains=%v cache=%s", ac.Domains, ac.ResolvedCacheDir)
 
 	go func() {
 		handler := m.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

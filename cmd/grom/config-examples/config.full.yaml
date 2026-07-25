@@ -17,13 +17,16 @@ server:
     # Optional. HTTPS listen port. Unused when mode is off. Defaults: 8443 (static), 443 (autocert).
     port: 8443
     # Optional. Path to TLS certificate. Required when mode is static.
+    # Relative paths are resolved against the grom binary directory.
     cert_file: ""
     # Optional. Path to TLS private key. Required when mode is static.
+    # Relative paths are resolved against the grom binary directory.
     key_file: ""
     autocert:
       # Optional. Contact email for Let's Encrypt. Used only when mode is autocert.
       email: ""
       # Optional. ACME certificate cache directory. Default: {storage.location}/acme-cache.
+      # Relative paths are resolved against the grom binary directory.
       cache_dir: ""
       # Optional. Domains for which to obtain certificates. Default: [federation.domain host].
       domains: []
@@ -41,6 +44,7 @@ federation:
   # Optional. Max delivery attempts per activity before giving up. Default: 5.
   delivery_retry_max: 5
   # Optional. Path to a CA certificate to trust for outbound federation HTTPS (useful with self-signed peers).
+  # Relative paths are resolved against the grom binary directory.
   ca_cert_file: ""
   # Optional. Skip TLS verification for outbound federation HTTPS. Dev only; never use in production. Default: false.
   tls_insecure_skip_verify: false
@@ -55,8 +59,10 @@ storage:
   # Optional. Storage backend driver: file | bbolt | postgres. Default: file (only file is implemented).
   driver: file
   # Optional. Root directory for application data. Default: data.
+  # Relative paths are resolved against the grom binary directory.
   location: data
   # Optional. Directory for temporary uploads and imports. Default: tmp.
+  # Relative paths are resolved against the grom binary directory.
   temp_dir: tmp
   bbolt:
     # Optional. Path to the BBolt database file. Used only when driver is bbolt.

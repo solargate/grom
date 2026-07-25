@@ -28,8 +28,8 @@ func Run(router *gin.Engine) error {
 }
 
 func runStaticTLS(router *gin.Engine) error {
-	certFile := config.Cfg.Server.TLS.CertFile
-	keyFile := config.Cfg.Server.TLS.KeyFile
+	certFile := config.Cfg.Server.TLS.ResolvedCertFile
+	keyFile := config.Cfg.Server.TLS.ResolvedKeyFile
 
 	tlsPort := config.Cfg.Server.TLS.Port
 	srv := &http.Server{
@@ -54,8 +54,8 @@ func FederationHTTPClient() (*http.Client, error) {
 			transport.TLSClientConfig = &tls.Config{}
 		}
 		transport.TLSClientConfig.InsecureSkipVerify = true
-	} else if config.Cfg.Federation.CACertFile != "" {
-		data, err := os.ReadFile(config.Cfg.Federation.CACertFile)
+	} else if config.Cfg.Federation.ResolvedCACertFile != "" {
+		data, err := os.ReadFile(config.Cfg.Federation.ResolvedCACertFile)
 		if err != nil {
 			return nil, fmt.Errorf("read federation ca cert: %w", err)
 		}
