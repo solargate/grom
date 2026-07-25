@@ -54,7 +54,7 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 		return nil, err
 	}
 
-	created, dirName, cleanup, err := svc.repo.BeginCreate(nickname, workout)
+	_, dirName, cleanup, err := svc.repo.BeginCreate(nickname, workout)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 		return nil, err
 	}
 
-	result := *created
+	result := *workout
 	return &result, nil
 }
 

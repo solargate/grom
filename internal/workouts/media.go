@@ -212,6 +212,7 @@ func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFil
 		return nil, err
 	}
 
+	svc.enrichWorkout(nickname, workout)
 	result := *workout
 	return &result, nil
 }

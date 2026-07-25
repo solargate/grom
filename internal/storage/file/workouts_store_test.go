@@ -1,10 +1,15 @@
 package file
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/solargate/grom/internal/workouts"
+	"gopkg.in/yaml.v3"
 )
 
 func TestWorkoutsStoreRejectsDuplicateIDWithDifferentDate(t *testing.T) {
@@ -46,5 +51,158 @@ func TestWorkoutsStoreCreateFailsIfWorkoutDirExists(t *testing.T) {
 	})
 	if err != workouts.ErrWorkoutExists {
 		t.Fatalf("expected ErrWorkoutExists, got %v", err)
+	}
+}
+
+func TestWorkoutsStoreCreateGetListDelete(t *testing.T) {
+	store := NewWorkoutsStore(t.TempDir())
+
+	created, err := store.Create("alice", &workouts.Workout{
+		Name:      "Morning",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-08T10:00:00Z"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.ID == "" || created.Device != workouts.DeviceGrom {
+		t.Fatalf("unexpected create: %#v", created)
+	}
+
+	got, err := store.Get("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name != "Morning" {
+		t.Fatalf("get name = %q", got.Name)
+	}
+
+	dirName, err := store.WorkoutDirName("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dirName == "" || !strings.Contains(dirName, created.ID) {
+		t.Fatalf("dirName = %q", dirName)
+	}
+
+	later, err := store.Create("alice", &workouts.Workout{
+		Name:      "Evening",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-09T18:00:00Z"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, err := store.List("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 || list[0].ID != later.ID {
+		t.Fatalf("list sort: %#v", list)
+	}
+
+	if err := store.Delete("alice", created.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Get("alice", created.ID); !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		t.Fatalf("get after delete: %v", err)
+	}
+	if err := store.Delete("alice", created.ID); !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		t.Fatalf("second delete: %v", err)
+	}
+}
+
+func TestWorkoutsStoreBeginCreateCleanupAndWriteMetadata(t *testing.T) {
+	dir := t.TempDir()
+	store := NewWorkoutsStore(dir)
+
+	created, dirName, cleanup, err := store.BeginCreate("alice", &workouts.Workout{
+		Name:      "Draft",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-08T10:00:00Z"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	workoutPath := filepath.Join(dir, "users", "alice", "workouts", dirName)
+	if _, err := os.Stat(workoutPath); err != nil {
+		t.Fatalf("expected workout dir: %v", err)
+	}
+	cleanup()
+	if _, err := os.Stat(workoutPath); !os.IsNotExist(err) {
+		t.Fatalf("cleanup should remove dir, err=%v", err)
+	}
+
+	created, dirName, cleanup, err = store.BeginCreate("alice", &workouts.Workout{
+		Name:      "Tracked",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-08T11:00:00Z"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	created.Track = "track.gpx"
+	created.StravaActivityID = "strava-42"
+	if err := store.WriteMetadata("alice", created); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Get("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Track != "track.gpx" {
+		t.Fatalf("track = %q", got.Track)
+	}
+
+	ok, err := store.HasStravaActivityID("alice", "strava-42")
+	if err != nil || !ok {
+		t.Fatalf("HasStravaActivityID = %v err=%v", ok, err)
+	}
+	ok, err = store.HasStravaActivityID("alice", "")
+	if err != nil || ok {
+		t.Fatalf("empty strava id should be false: %v %v", ok, err)
+	}
+	_ = dirName
+}
+
+func TestWorkoutsStoreRecoversIDFromDirName(t *testing.T) {
+	dir := t.TempDir()
+	store := NewWorkoutsStore(dir)
+	start := mustTime(t, "2026-07-08T10:00:00Z")
+	id := "11223344"
+	base := workoutBaseName(start, id)
+	workoutDirPath := filepath.Join(dir, "users", "alice", "workouts", base)
+	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
+		t.Fatal(err)
+	}
+	payload := workouts.Workout{
+		Name:      "Legacy",
+		SportType: "Run",
+		StartDate: start,
+	}
+	data, err := yaml.Marshal(&payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(workoutDirPath, base+".yaml"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := store.Get("alice", id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != id {
+		t.Fatalf("recovered id = %q, want %q", got.ID, id)
+	}
+}
+
+func TestWorkoutsStoreListMissingDir(t *testing.T) {
+	store := NewWorkoutsStore(t.TempDir())
+	list, err := store.List("nobody")
+	if err != nil || list != nil {
+		t.Fatalf("List missing = %#v err=%v", list, err)
 	}
 }

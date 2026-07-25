@@ -92,7 +92,11 @@ class LoginResult {
 }
 
 class ApiRequest {
-  Uri _uri(String path) {
+  ApiRequest({http.Client? client}) : _client = client ?? http.Client();
+
+  final http.Client _client;
+
+  Uri resolveUri(String path) {
     final base = ServerStorage.cachedBaseUrl;
     if (base == null || base.isEmpty) {
       return Uri.parse(path);
@@ -100,8 +104,10 @@ class ApiRequest {
     return Uri.parse(base).resolve(path.startsWith('/') ? path.substring(1) : path);
   }
 
+  Uri _uri(String path) => resolveUri(path);
+
   Future<ServerInfo> getServerInfo() async {
-    final response = await http.get(_uri('/api/v1/server_info'));
+    final response = await _client.get(_uri('/api/v1/server_info'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return ServerInfo.fromJson(json);
@@ -115,7 +121,7 @@ class ApiRequest {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/api/v1/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -138,7 +144,7 @@ class ApiRequest {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/api/v1/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -160,7 +166,7 @@ class ApiRequest {
   }
 
   Future<UserInfo> getMe(String token) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/auth/me'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -177,7 +183,7 @@ class ApiRequest {
     required String token,
     required String name,
   }) async {
-    final response = await http.patch(
+    final response = await _client.patch(
       _uri('/api/v1/auth/me'),
       headers: {
         'Content-Type': 'application/json',
@@ -211,7 +217,7 @@ class ApiRequest {
       ),
     );
 
-    final streamed = await request.send();
+    final streamed = await _client.send(request);
     final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode == 200) {
@@ -225,7 +231,7 @@ class ApiRequest {
   Future<UserInfo> deleteAvatar({
     required String token,
   }) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       _uri('/api/v1/auth/me/avatar'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -266,7 +272,7 @@ class ApiRequest {
     required String token,
     required Map<String, dynamic> body,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/api/v1/workouts'),
       headers: {
         'Content-Type': 'application/json',
@@ -319,7 +325,7 @@ class ApiRequest {
       }
     }
 
-    final streamed = await request.send();
+    final streamed = await _client.send(request);
     final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode == 201) {
@@ -348,7 +354,7 @@ class ApiRequest {
       ),
     );
 
-    final streamed = await request.send();
+    final streamed = await _client.send(request);
     final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode == 200) {
@@ -419,7 +425,7 @@ class ApiRequest {
     if (query.isNotEmpty) {
       uri = uri.replace(queryParameters: query);
     }
-    final response = await http.get(
+    final response = await _client.get(
       uri,
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -460,7 +466,7 @@ class ApiRequest {
     final uri = _uri('/api/v1/workouts').replace(
       queryParameters: scope == 'feed' ? null : {'scope': scope},
     );
-    final response = await http.get(
+    final response = await _client.get(
       uri,
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -479,7 +485,7 @@ class ApiRequest {
     required String token,
     required String query,
   }) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/users/search?q=${Uri.encodeQueryComponent(query)}'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -498,7 +504,7 @@ class ApiRequest {
     required String token,
     required String handle,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/api/v1/social/follow'),
       headers: {
         'Content-Type': 'application/json',
@@ -519,7 +525,7 @@ class ApiRequest {
     required String token,
     required String followId,
   }) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       _uri('/api/v1/social/follow/$followId'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -532,7 +538,7 @@ class ApiRequest {
   }
 
   Future<List<FollowInfo>> listFollowing(String token) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/social/following'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -548,7 +554,7 @@ class ApiRequest {
   }
 
   Future<List<FollowerInfo>> listFollowers(String token) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/social/followers'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -564,7 +570,7 @@ class ApiRequest {
   }
 
   Future<List<Equipment>> listEquipment(String token) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/equipment'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -583,7 +589,7 @@ class ApiRequest {
     required String token,
     required EquipmentDraft body,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/api/v1/equipment'),
       headers: {
         'Content-Type': 'application/json',
@@ -605,7 +611,7 @@ class ApiRequest {
     required String id,
     required EquipmentDraft body,
   }) async {
-    final response = await http.put(
+    final response = await _client.put(
       _uri('/api/v1/equipment/$id'),
       headers: {
         'Content-Type': 'application/json',
@@ -626,7 +632,7 @@ class ApiRequest {
     required String token,
     required String id,
   }) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       _uri('/api/v1/equipment/$id'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -642,7 +648,7 @@ class ApiRequest {
     required String token,
     required String workoutId,
   }) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       _uri('/api/v1/workouts/$workoutId'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -733,7 +739,7 @@ class ApiRequest {
       onProgress(0);
     }
 
-    final streamed = await request.send();
+    final streamed = await _client.send(request);
 
     if (onProgress != null) {
       onProgress(1);
@@ -749,7 +755,7 @@ class ApiRequest {
   }
 
   Future<Map<String, dynamic>> getStravaImportStatus(String token) async {
-    final response = await http.get(
+    final response = await _client.get(
       _uri('/api/v1/integrations/strava/import/status'),
       headers: {'Authorization': 'Bearer $token'},
     );

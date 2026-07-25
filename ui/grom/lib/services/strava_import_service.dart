@@ -75,6 +75,46 @@ class StravaImportState {
       failed: failed ?? this.failed,
     );
   }
+
+  factory StravaImportState.fromStatus(Map<String, dynamic> status) {
+    final active = status['active'] as bool? ?? false;
+    final phase = status['phase'] as String? ?? 'idle';
+    final uploadProgress =
+        (status['upload_progress'] as num?)?.toDouble() ?? 0;
+    final importProgress =
+        (status['import_progress'] as num?)?.toDouble() ?? 0;
+    final importCurrent = status['import_current'] as int? ?? 0;
+    final importTotal = status['import_total'] as int? ?? 0;
+    final message = status['message'] as String? ?? '';
+
+    var resultImported = 0;
+    var resultSkipped = 0;
+    var resultParseSkipped = 0;
+    var resultErrors = 0;
+    final result = status['result'];
+    if (result is Map<String, dynamic>) {
+      resultImported = result['imported'] as int? ?? 0;
+      resultSkipped = result['skipped'] as int? ?? 0;
+      resultParseSkipped = result['parse_skipped'] as int? ?? 0;
+      resultErrors = result['errors'] as int? ?? 0;
+    }
+
+    return StravaImportState(
+      active: active,
+      phase: phase,
+      uploadProgress: uploadProgress,
+      importProgress: importProgress,
+      importCurrent: importCurrent,
+      importTotal: importTotal,
+      message: message,
+      resultImported: resultImported,
+      resultSkipped: resultSkipped,
+      resultParseSkipped: resultParseSkipped,
+      resultErrors: resultErrors,
+      completed: phase == 'completed',
+      failed: phase == 'failed',
+    );
+  }
 }
 
 class StravaImportService extends ChangeNotifier {
@@ -167,52 +207,13 @@ class StravaImportService extends ChangeNotifier {
   }
 
   void _applyStatus(Map<String, dynamic> status) {
-    final active = status['active'] as bool? ?? false;
-    final phase = status['phase'] as String? ?? 'idle';
-    final uploadProgress =
-        (status['upload_progress'] as num?)?.toDouble() ?? 0;
-    final importProgress =
-        (status['import_progress'] as num?)?.toDouble() ?? 0;
-    final importCurrent = status['import_current'] as int? ?? 0;
-    final importTotal = status['import_total'] as int? ?? 0;
-    final message = status['message'] as String? ?? '';
-
-    var resultImported = 0;
-    var resultSkipped = 0;
-    var resultParseSkipped = 0;
-    var resultErrors = 0;
-    final result = status['result'];
-    if (result is Map<String, dynamic>) {
-      resultImported = result['imported'] as int? ?? 0;
-      resultSkipped = result['skipped'] as int? ?? 0;
-      resultParseSkipped = result['parse_skipped'] as int? ?? 0;
-      resultErrors = result['errors'] as int? ?? 0;
-    }
-
-    final completed = phase == 'completed';
-    final failed = phase == 'failed';
-
-    _state = StravaImportState(
-      active: active,
-      phase: phase,
-      uploadProgress: uploadProgress,
-      importProgress: importProgress,
-      importCurrent: importCurrent,
-      importTotal: importTotal,
-      message: message,
-      resultImported: resultImported,
-      resultSkipped: resultSkipped,
-      resultParseSkipped: resultParseSkipped,
-      resultErrors: resultErrors,
-      completed: completed,
-      failed: failed,
-    );
+    _state = StravaImportState.fromStatus(status);
     notifyListeners();
 
-    if (!active || completed || failed) {
+    if (!_state.active || _state.completed || _state.failed) {
       _pollTimer?.cancel();
       _pollTimer = null;
-      if (completed || failed) {
+      if (_state.completed || _state.failed) {
         Future<void>.delayed(const Duration(seconds: 4), () {
           if (_state.completed || _state.failed) {
             _state = const StravaImportState();
