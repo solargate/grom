@@ -319,6 +319,36 @@ func SaveFederatedMedia(blobs blob.Store, viewerNickname, ownerKey, workoutID st
 	return saved, nil
 }
 
+// ReplaceFederatedMedia writes the complete media set for a federated workout.
+// Existing files not present in files are deleted. Filenames are overwritten in place
+// (no unique-rename), so repeated Updates do not accumulate duplicates.
+func ReplaceFederatedMedia(blobs blob.Store, viewerNickname, ownerKey, workoutID string, previous []string, files []MediaFileInput) ([]string, error) {
+	if len(files) > MaxPhotosPerWorkout {
+		return nil, ErrTooManyPhotos
+	}
+
+	saved := make([]string, 0, len(files))
+	keep := make(map[string]struct{}, len(files))
+	for _, file := range files {
+		name, err := saveFederatedPhotoExact(blobs, viewerNickname, ownerKey, workoutID, file.Filename, file.Data)
+		if err != nil {
+			return saved, err
+		}
+		saved = append(saved, name)
+		keep[name] = struct{}{}
+	}
+
+	ctx := context.Background()
+	for _, name := range previous {
+		if _, ok := keep[name]; ok {
+			continue
+		}
+		_ = blobs.Delete(ctx, keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, name))
+		_ = blobs.Delete(ctx, keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, name))
+	}
+	return saved, nil
+}
+
 func saveFederatedPhoto(blobs blob.Store, viewerNickname, ownerKey, workoutID, filename string, raw []byte) (string, error) {
 	safeName, err := SanitizeMediaFilename(filename)
 	if err != nil {
@@ -331,11 +361,30 @@ func saveFederatedPhoto(blobs blob.Store, viewerNickname, ownerKey, workoutID, f
 		return "", ErrPhotoTooLarge
 	}
 
-	ctx := context.Background()
 	safeName, err = uniqueFederatedMediaFilename(blobs, viewerNickname, ownerKey, workoutID, safeName)
 	if err != nil {
 		return "", err
 	}
+
+	return writeFederatedPhoto(blobs, viewerNickname, ownerKey, workoutID, safeName, raw)
+}
+
+func saveFederatedPhotoExact(blobs blob.Store, viewerNickname, ownerKey, workoutID, filename string, raw []byte) (string, error) {
+	safeName, err := SanitizeMediaFilename(filename)
+	if err != nil {
+		return "", err
+	}
+	if len(raw) == 0 {
+		return "", ErrInvalidPhoto
+	}
+	if len(raw) > MaxPhotoBytes {
+		return "", ErrPhotoTooLarge
+	}
+	return writeFederatedPhoto(blobs, viewerNickname, ownerKey, workoutID, safeName, raw)
+}
+
+func writeFederatedPhoto(blobs blob.Store, viewerNickname, ownerKey, workoutID, safeName string, raw []byte) (string, error) {
+	ctx := context.Background()
 
 	img, err := decodePhoto(raw)
 	if err != nil {

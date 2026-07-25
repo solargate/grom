@@ -24,6 +24,9 @@ type InboxRepository interface {
 	EnsureAuthor(viewerNickname, handle, nickname, name, remoteAvatarURL string, refresh bool) error
 	AuthorAvatarFields(viewerNickname, handle string) (bool, string)
 	Save(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput, actor map[string]any) error
+	// Replace writes a full federated workout snapshot (metadata + optional track + media set).
+	// Empty mediaFiles clears previously stored media. Empty track clears previously stored track artifacts.
+	Replace(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput, actor map[string]any) error
 	Delete(viewerNickname, ownerHandle, workoutID string) error
 	TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, string, error)
 	MapPreview(viewerNickname, ownerNickname, workoutID string) ([]byte, error)

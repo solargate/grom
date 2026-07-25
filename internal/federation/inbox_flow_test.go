@@ -389,6 +389,46 @@ func TestInboxProcessorHandleFollowAcceptCreate(t *testing.T) {
 		t.Fatalf("Calories = %v", got.Calories)
 	}
 
+	updateObj := map[string]any{
+		"type":  "Update",
+		"actor": "https://remote.test/users/bob",
+		"object": map[string]any{
+			"id":              "https://remote.test/users/bob/workouts/11111111",
+			"type":            "Workout",
+			"name":            "Remote run edited",
+			"content":         "New description",
+			"sportType":       "Run",
+			"startDate":       "2026-07-08T11:00:00Z",
+			"durationSeconds": 1500,
+			"distance":        3500.0,
+			"mediaItems":      []any{},
+		},
+	}
+	updateJSON, _ := json.Marshal(updateObj)
+	if err := processor.Handle("alice", strings.NewReader(string(updateJSON))); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	items, err = store.List("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 federated workout after Update, got %d", len(items))
+	}
+	got = items[0].Workout
+	if got.Name != "Remote run edited" {
+		t.Fatalf("updated name = %q", got.Name)
+	}
+	if got.Description != "New description" {
+		t.Fatalf("updated description = %q", got.Description)
+	}
+	if got.DurationSeconds != 1500 || got.Distance != 3500 {
+		t.Fatalf("updated metrics: duration=%d distance=%v", got.DurationSeconds, got.Distance)
+	}
+	if !got.StartDate.Equal(time.Date(2026, 7, 8, 11, 0, 0, 0, time.UTC)) {
+		t.Fatalf("updated start = %v", got.StartDate)
+	}
+
 	undoBody := `{"type":"Undo","object":{"type":"Follow","actor":"https://remote.test/users/bob"}}`
 	if err := processor.Handle("alice", strings.NewReader(undoBody)); err != nil {
 		t.Fatalf("Undo: %v", err)

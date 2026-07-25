@@ -423,6 +423,14 @@ func (a *App) attachWorkoutPhotos(nickname string, workout *workouts.Workout, ph
 }
 
 func (a *App) publishCreatedWorkout(nickname string, workout *workouts.Workout) {
+	a.publishWorkoutActivity(nickname, workout, false)
+}
+
+func (a *App) publishUpdatedWorkout(nickname string, workout *workouts.Workout) {
+	a.publishWorkoutActivity(nickname, workout, true)
+}
+
+func (a *App) publishWorkoutActivity(nickname string, workout *workouts.Workout, update bool) {
 	if a.federationDelivery == nil {
 		return
 	}
@@ -435,8 +443,12 @@ func (a *App) publishCreatedWorkout(nickname string, workout *workouts.Workout) 
 		trackData, _, _, _ = a.Workouts.TrackFile(nickname, workout.ID)
 	}
 	var mediaFiles []workouts.MediaFileInput
-	if workout.HasMedia {
+	if workout.HasMedia || len(workout.MediaFiles) > 0 {
 		mediaFiles, _ = a.Workouts.ReadMediaPayload(nickname, workout.ID)
+	}
+	if update {
+		_ = a.federationDelivery.DeliverWorkoutUpdate(nickname, workout, inboxes, trackData, mediaFiles)
+		return
 	}
 	_ = a.federationDelivery.DeliverWorkout(nickname, workout, inboxes, trackData, mediaFiles)
 }
@@ -922,4 +934,74 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 
 	a.publishDeletedWorkout(nickname, workoutID)
 	ctx.Status(http.StatusNoContent)
+}
+
+// updateWorkout godoc
+// @Summary      Update workout
+// @Description  Update metadata of the authenticated user's workout and notify federation followers
+// @Tags         workouts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id    path  string  true  "Workout ID"
+// @Param        body  body  CreateWorkoutRequest  true  "Workout data"
+// @Success      200   {object}  WorkoutResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      401   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Failure      500   {object}  ErrorResponse
+// @Router       /workouts/{id} [put]
+func (a *App) updateWorkout(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	var req CreateWorkoutRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	startDate, err := time.Parse(time.RFC3339, req.StartDate)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid start_date format, expected RFC3339"})
+		return
+	}
+
+	equipmentItems, err := a.resolveWorkoutEquipment(nickname, req.EquipmentIDs)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		return
+	}
+
+	updated, err := a.Workouts.Update(nickname, workoutID, workoutFromCreateRequest(req, startDate, equipmentItems))
+	if err != nil {
+		handleUpdateWorkoutError(ctx, err)
+		return
+	}
+
+	if userID, err := a.currentUserID(ctx); err == nil {
+		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+	}
+
+	a.publishUpdatedWorkout(nickname, updated)
+	resp := toWorkoutResponse(updated)
+	resp.Owner = nickname
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func handleUpdateWorkoutError(ctx *gin.Context, err error) {
+	switch {
+	case errors.Is(err, workouts.ErrWorkoutNotFound):
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+	case errors.Is(err, workouts.ErrInvalidSportType), errors.Is(err, workouts.ErrInvalidWorkout):
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+	case errors.Is(err, workouts.ErrWorkoutExists):
+		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
+	default:
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update workout"})
+	}
 }

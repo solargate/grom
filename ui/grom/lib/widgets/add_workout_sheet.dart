@@ -19,37 +19,45 @@ import 'manual_workout_form.dart';
 import 'record_workout_tab.dart';
 import 'equipment_picker_field.dart';
 
-Future<bool?> showAddWorkoutSheet(
+Future<Workout?> showAddWorkoutSheet(
   BuildContext context, {
   SharedTrackPayload? initialTrack,
+  Workout? workout,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   if (width >= 600) {
-    return showDialog<bool>(
+    return showDialog<Workout>(
       context: context,
       builder: (context) => Dialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
-          child: AddWorkoutSheet(initialTrack: initialTrack),
+          child: AddWorkoutSheet(
+            initialTrack: initialTrack,
+            workout: workout,
+          ),
         ),
       ),
     );
   }
 
-  return showModalBottomSheet<bool>(
+  return showModalBottomSheet<Workout>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     isDismissible: false,
     enableDrag: false,
-    builder: (context) => AddWorkoutSheet(initialTrack: initialTrack),
+    builder: (context) => AddWorkoutSheet(
+      initialTrack: initialTrack,
+      workout: workout,
+    ),
   );
 }
 
 class AddWorkoutSheet extends StatefulWidget {
-  const AddWorkoutSheet({super.key, this.initialTrack});
+  const AddWorkoutSheet({super.key, this.initialTrack, this.workout});
 
   final SharedTrackPayload? initialTrack;
+  final Workout? workout;
 
   @override
   State<AddWorkoutSheet> createState() => _AddWorkoutSheetState();
@@ -84,14 +92,35 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   List<({String filename, Uint8List bytes})> _selectedPhotos = [];
   bool _isPickingPhotos = false;
 
-  bool get _showRecordTab => isMobileClient;
+  bool get _showRecordTab => isMobileClient && !_isEditing;
+
+  bool get _isEditing => widget.workout != null;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _date = DateTime(now.year, now.month, now.day);
-    _time = TimeOfDay.fromDateTime(now);
+    final existing = widget.workout;
+    if (existing != null) {
+      _nameController.text = existing.name;
+      _descriptionController.text = existing.description;
+      _sportTypeId = existing.sportType;
+      final local = existing.startDate.toLocal();
+      _date = DateTime(local.year, local.month, local.day);
+      _time = TimeOfDay(hour: local.hour, minute: local.minute);
+      _durationSeconds = existing.durationSeconds;
+      _durationTotalSeconds = existing.durationTotalSeconds;
+      _distanceKm = existing.distanceKm;
+      _speedAvgKmh = existing.speedAvgKmh;
+      _selectedEquipmentIds =
+          existing.equipment.map((item) => item.id).toList();
+      if (existing.track.isNotEmpty) {
+        _trackFilename = existing.track;
+      }
+    } else {
+      final now = DateTime.now();
+      _date = DateTime(now.year, now.month, now.day);
+      _time = TimeOfDay.fromDateTime(now);
+    }
     if (_showRecordTab) {
       _tabController = TabController(length: 2, vsync: this);
       _recorder.addListener(_onRecorderChanged);
@@ -99,7 +128,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     _loadEquipmentData();
 
     final initialTrack = widget.initialTrack;
-    if (initialTrack != null) {
+    if (initialTrack != null && !_isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
@@ -123,7 +152,14 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       setState(() {
         _userEquipment = equipment;
         _lastEquipmentBySport = me.lastEquipmentBySport;
-        _applyLastEquipmentForSport(_sportTypeId);
+        if (!_isEditing) {
+          _applyLastEquipmentForSport(_sportTypeId);
+        } else {
+          final existingIds = equipment.map((item) => item.id).toSet();
+          _selectedEquipmentIds = _selectedEquipmentIds
+              .where((id) => existingIds.contains(id))
+              .toList();
+        }
       });
     } catch (_) {
       // Keep form usable without equipment presets.
@@ -201,7 +237,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       return;
     }
     if (!mounted) return;
-    Navigator.pop(context, false);
+    Navigator.pop(context);
   }
 
   Future<void> _pickDate() async {
@@ -524,36 +560,45 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         equipmentIds: _selectedEquipmentIds,
       );
 
-      final fields = {
-        'name': draft.name,
-        if (draft.description.isNotEmpty) 'description': draft.description,
-        'sport_type': draft.sportType,
-        'start_date': draft.startDate.toUtc().toIso8601String(),
-        'duration_seconds': draft.durationSeconds.toString(),
-        if (draft.durationTotalSeconds != null)
-          'duration_total_seconds': draft.durationTotalSeconds.toString(),
-        'distance': (draft.distanceKm * 1000).toString(),
-        if (draft.speedMaxKmh != null)
-          'speed_max_kmh': draft.speedMaxKmh!.toStringAsFixed(2),
-        if (draft.speedAvgKmh != null)
-          'speed_avg_kmh': draft.speedAvgKmh!.toStringAsFixed(2),
-        if (draft.equipmentIds.isNotEmpty)
-          'equipment_ids': jsonEncode(draft.equipmentIds),
-      };
-
-      final hasTrack = _trackBytes != null && _trackFilename != null;
-      final hasPhotos = _selectedPhotos.isNotEmpty;
-
-      if (hasTrack || hasPhotos) {
-        await _api.createWorkoutMultipart(
+      final Workout saved;
+      if (_isEditing) {
+        saved = await _api.updateWorkout(
           token: token,
-          fields: fields,
-          trackBytes: hasTrack ? _trackBytes : null,
-          trackFilename: hasTrack ? _trackFilename : null,
-          photos: hasPhotos ? _selectedPhotos : null,
+          workoutId: widget.workout!.id,
+          body: draft.toJson(),
         );
       } else {
-        await _api.createWorkout(token: token, body: draft.toJson());
+        final fields = {
+          'name': draft.name,
+          if (draft.description.isNotEmpty) 'description': draft.description,
+          'sport_type': draft.sportType,
+          'start_date': draft.startDate.toUtc().toIso8601String(),
+          'duration_seconds': draft.durationSeconds.toString(),
+          if (draft.durationTotalSeconds != null)
+            'duration_total_seconds': draft.durationTotalSeconds.toString(),
+          'distance': (draft.distanceKm * 1000).toString(),
+          if (draft.speedMaxKmh != null)
+            'speed_max_kmh': draft.speedMaxKmh!.toStringAsFixed(2),
+          if (draft.speedAvgKmh != null)
+            'speed_avg_kmh': draft.speedAvgKmh!.toStringAsFixed(2),
+          if (draft.equipmentIds.isNotEmpty)
+            'equipment_ids': jsonEncode(draft.equipmentIds),
+        };
+
+        final hasTrack = _trackBytes != null && _trackFilename != null;
+        final hasPhotos = _selectedPhotos.isNotEmpty;
+
+        if (hasTrack || hasPhotos) {
+          saved = await _api.createWorkoutMultipart(
+            token: token,
+            fields: fields,
+            trackBytes: hasTrack ? _trackBytes : null,
+            trackFilename: hasTrack ? _trackFilename : null,
+            photos: hasPhotos ? _selectedPhotos : null,
+          );
+        } else {
+          saved = await _api.createWorkout(token: token, body: draft.toJson());
+        }
       }
 
       if (!mounted) return;
@@ -561,7 +606,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.workoutSaved)),
       );
-      Navigator.pop(context, true);
+      Navigator.pop(context, saved);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -583,6 +628,9 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   Widget _buildManualTab({required bool showTitle}) {
     return ManualWorkoutForm(
       formKey: _formKey,
+      title: _isEditing
+          ? AppLocalizations.of(context)!.editWorkoutTitle
+          : AppLocalizations.of(context)!.addWorkout,
       nameController: _nameController,
       descriptionController: _descriptionController,
       sportTypeId: _sportTypeId,
@@ -599,6 +647,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       isParsingTrack: _isParsingTrack,
       isPickingPhotos: _isPickingPhotos,
       showTitle: showTitle,
+      trackReadOnly: _isEditing,
+      hidePhotos: _isEditing,
       onPickSportType: _pickSportType,
       onPickDate: _pickDate,
       onPickTime: _pickTime,
@@ -639,7 +689,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    l10n.addWorkout,
+                    _isEditing ? l10n.editWorkoutTitle : l10n.addWorkout,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   TabBar(

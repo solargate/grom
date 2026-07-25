@@ -117,3 +117,58 @@ func TestDeliverWorkoutIncludesStats(t *testing.T) {
 		t.Fatalf("calories = %v", object["calories"])
 	}
 }
+
+func TestDeliverWorkoutUpdate(t *testing.T) {
+	var received []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var activity map[string]any
+		if err := json.Unmarshal(body, &activity); err != nil {
+			t.Fatal(err)
+		}
+		received = append(received, activity)
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	workout := &workouts.Workout{
+		ID:              "38472901",
+		Name:            "Updated run",
+		Description:     "Edited",
+		SportType:       "Run",
+		StartDate:       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+		DurationSeconds: 3600,
+		Distance:        10000,
+	}
+
+	delivery := &Delivery{client: server.Client()}
+	if err := delivery.DeliverWorkoutUpdate("bob", workout, []string{server.URL}, nil, nil); err != nil {
+		t.Fatalf("DeliverWorkoutUpdate() error = %v", err)
+	}
+	if len(received) != 1 {
+		t.Fatalf("expected 1 activity, got %d", len(received))
+	}
+	if received[0]["type"] != "Update" {
+		t.Fatalf("type = %v", received[0]["type"])
+	}
+	object, ok := received[0]["object"].(map[string]any)
+	if !ok {
+		t.Fatalf("object type = %T", received[0]["object"])
+	}
+	if object["name"] != "Updated run" {
+		t.Fatalf("name = %v", object["name"])
+	}
+	if object["id"] != workoutObjectURL("bob", "38472901") {
+		t.Fatalf("object id = %v", object["id"])
+	}
+	mediaItems, ok := object["mediaItems"].([]any)
+	if !ok {
+		t.Fatalf("mediaItems type = %T", object["mediaItems"])
+	}
+	if len(mediaItems) != 0 {
+		t.Fatalf("expected empty mediaItems, got %#v", mediaItems)
+	}
+}

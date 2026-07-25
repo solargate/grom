@@ -591,6 +591,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editWorkout => 'Bearbeiten';
 
   @override
+  String get editWorkoutTitle => 'Training bearbeiten';
+
+  @override
   String get deleteWorkout => 'Löschen';
 
   @override

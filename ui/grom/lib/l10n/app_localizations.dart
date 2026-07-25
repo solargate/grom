@@ -1180,6 +1180,12 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get editWorkout;
 
+  /// No description provided for @editWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit workout'**
+  String get editWorkoutTitle;
+
   /// No description provided for @deleteWorkout.
   ///
   /// In en, this message translates to:

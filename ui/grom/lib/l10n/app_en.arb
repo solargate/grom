@@ -278,6 +278,7 @@
   "restoreRecordingConfirm": "Resume",
   "restoreRecordingDiscard": "Discard",
   "editWorkout": "Edit",
+  "editWorkoutTitle": "Edit workout",
   "deleteWorkout": "Delete",
   "deleteWorkoutConfirm": "The workout will be permanently deleted and cannot be restored.",
   "workoutDeleted": "Workout deleted",
