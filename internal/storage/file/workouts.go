@@ -118,6 +118,48 @@ func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout
 	return writeWorkoutYAML(filePath, workout)
 }
 
+func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*workouts.Workout, error) {
+	if workout == nil || workout.ID == "" {
+		return nil, workouts.ErrInvalidWorkout
+	}
+
+	oldDir, err := s.findWorkoutDir(nickname, workout.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workout.Name = workouts.TrimWorkoutName(workout.Name)
+	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
+
+	userDir := s.userDir(nickname)
+	newDir := workoutDir(userDir, workout.StartDate, workout.ID)
+	oldBase := filepath.Base(oldDir)
+	newBase := filepath.Base(newDir)
+
+	if oldBase != newBase {
+		if _, err := os.Stat(newDir); err == nil {
+			return nil, workouts.ErrWorkoutExists
+		}
+		if err := os.Rename(oldDir, newDir); err != nil {
+			return nil, fmt.Errorf("rename workout dir: %w", err)
+		}
+		oldYAML := filepath.Join(newDir, oldBase+".yaml")
+		newYAML := filepath.Join(newDir, newBase+".yaml")
+		if err := os.Rename(oldYAML, newYAML); err != nil {
+			// Best-effort rollback of directory rename.
+			_ = os.Rename(newDir, oldDir)
+			return nil, fmt.Errorf("rename workout yaml: %w", err)
+		}
+	}
+
+	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
+	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		return nil, err
+	}
+	result := *workout
+	return &result, nil
+}
+
 func (s *WorkoutsStore) Get(nickname, workoutID string) (*workouts.Workout, error) {
 	dir, err := s.findWorkoutDir(nickname, workoutID)
 	if err != nil {

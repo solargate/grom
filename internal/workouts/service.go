@@ -71,6 +71,42 @@ func (s *Service) Create(nickname string, workout *Workout) (*Workout, error) {
 	return s.repo.Create(nickname, workout)
 }
 
+// Update applies editable metadata fields onto an existing workout.
+// Track, media, device, strava id, and track-derived stats not present on patch are preserved.
+func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Workout, error) {
+	if patch == nil {
+		return nil, ErrInvalidWorkout
+	}
+	existing, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	existing.Name = patch.Name
+	existing.Description = patch.Description
+	existing.SportType = patch.SportType
+	existing.StartDate = patch.StartDate
+	existing.DurationSeconds = patch.DurationSeconds
+	existing.DurationTotalSeconds = patch.DurationTotalSeconds
+	existing.Distance = patch.Distance
+	existing.SpeedMaxKmh = patch.SpeedMaxKmh
+	existing.SpeedAvgKmh = patch.SpeedAvgKmh
+	existing.Equipment = patch.Equipment
+
+	if err := validateWorkout(existing); err != nil {
+		return nil, err
+	}
+
+	updated, err := s.repo.Update(nickname, existing)
+	if err != nil {
+		return nil, err
+	}
+	s.enrichWorkout(nickname, updated)
+	byID := s.loadEquipmentByID(nickname, []Workout{*updated})
+	ApplyEquipmentCatalog(updated.Equipment, byID)
+	return updated, nil
+}
+
 func (s *Service) enrichWorkout(nickname string, w *Workout) {
 	dirName, err := s.repo.WorkoutDirName(nickname, w.ID)
 	if err != nil {

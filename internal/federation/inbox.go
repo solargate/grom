@@ -51,6 +51,8 @@ func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
 		return p.handleAccept(nickname, activity)
 	case "Create":
 		return p.handleCreate(nickname, activity)
+	case "Update":
+		return p.handleUpdate(nickname, activity)
 	case "Delete":
 		return p.handleDelete(nickname, activity)
 	case "Undo":
@@ -154,6 +156,14 @@ func (p *InboxProcessor) handleAccept(viewerNickname string, activity map[string
 }
 
 func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string]any) error {
+	return p.handleWorkoutActivity(viewerNickname, activity, false)
+}
+
+func (p *InboxProcessor) handleUpdate(viewerNickname string, activity map[string]any) error {
+	return p.handleWorkoutActivity(viewerNickname, activity, true)
+}
+
+func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity map[string]any, replace bool) error {
 	if p.inboxStore == nil {
 		return nil
 	}
@@ -167,6 +177,33 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		return nil
 	}
 
+	workout, trackData, mediaFiles, err := parseFederatedWorkoutObject(object)
+	if err != nil {
+		return err
+	}
+	if workout == nil {
+		return nil
+	}
+
+	var actorDoc map[string]any
+	if p.delivery != nil && actorURI != "" {
+		parsed := social.ParsedHandle{
+			Nickname: ownerNicknameFromDir(OwnerKeyFromHandle(ownerHandle)),
+			Domain:   domainFromHandle(ownerHandle),
+			Handle:   ownerHandle,
+		}
+		if fetched, err := fetchActor(p.delivery.client, parsed); err == nil {
+			actorDoc = fetched
+		}
+	}
+
+	if replace {
+		return p.inboxStore.Replace(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc)
+	}
+	return p.inboxStore.Save(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc)
+}
+
+func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []byte, []workouts.MediaFileInput, error) {
 	workout := workouts.Workout{
 		ID:                   workoutIDFromObject(object),
 		Name:                 stringValue(object, "name"),
@@ -202,7 +239,7 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		workout.Calories = &v
 	}
 	if workout.ID == "" || workout.Name == "" {
-		return nil
+		return nil, nil, nil, nil
 	}
 
 	var trackData []byte
@@ -210,10 +247,10 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 		if encoded := stringValue(object, "trackData"); encoded != "" {
 			decoded, err := base64.StdEncoding.DecodeString(encoded)
 			if err != nil {
-				return fmt.Errorf("decode track data: %w", err)
+				return nil, nil, nil, fmt.Errorf("decode track data: %w", err)
 			}
 			if len(decoded) > tracks.MaxTrackSizeBytes {
-				return fmt.Errorf("track data too large")
+				return nil, nil, nil, fmt.Errorf("track data too large")
 			}
 			trackData = decoded
 		}
@@ -221,22 +258,9 @@ func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string
 
 	mediaFiles, err := decodeMediaItems(object)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
-
-	var actorDoc map[string]any
-	if p.delivery != nil && actorURI != "" {
-		parsed := social.ParsedHandle{
-			Nickname: ownerNicknameFromDir(OwnerKeyFromHandle(ownerHandle)),
-			Domain:   domainFromHandle(ownerHandle),
-			Handle:   ownerHandle,
-		}
-		if fetched, err := fetchActor(p.delivery.client, parsed); err == nil {
-			actorDoc = fetched
-		}
-	}
-
-	return p.inboxStore.Save(viewerNickname, ownerHandle, &workout, trackData, mediaFiles, actorDoc)
+	return &workout, trackData, mediaFiles, nil
 }
 
 func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string]any) error {

@@ -4,6 +4,7 @@ type Repository interface {
 	Create(nickname string, workout *Workout) (*Workout, error)
 	BeginCreate(nickname string, workout *Workout) (*Workout, string, func(), error)
 	WriteMetadata(nickname string, workout *Workout) error
+	Update(nickname string, workout *Workout) (*Workout, error)
 	Get(nickname, workoutID string) (*Workout, error)
 	List(nickname string) ([]Workout, error)
 	Delete(nickname, workoutID string) error

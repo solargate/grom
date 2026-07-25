@@ -112,22 +112,8 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 	ctx := context.Background()
 
 	if workout.Track != "" && len(trackData) > 0 {
-		trackKey := keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, workout.Track)
-		if _, err := blob.PutBytes(ctx, s.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
+		if err := s.writeFederatedTrack(ctx, viewerNickname, ownerKey, workout, trackData); err != nil {
 			return err
-		}
-
-		if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
-			if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
-				log.Printf("federated map preview render failed for workout %s: %v", workout.ID, err)
-			} else if len(preview) > 0 {
-				previewKey := keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)
-				if _, err := blob.PutBytes(ctx, s.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
-					log.Printf("federated map preview write failed for workout %s: %v", workout.ID, err)
-				} else {
-					workout.HasMapPreview = true
-				}
-			}
 		}
 	}
 
@@ -140,6 +126,82 @@ func (s *WorkoutInboxStore) Save(viewerNickname, ownerHandle string, workout *wo
 		workout.HasMedia = len(savedNames) > 0
 	}
 
+	return s.writeFederatedWorkoutYAML(dir, workout)
+}
+
+// Replace stores a full federated workout snapshot. Track and media are replaced from the
+// provided payload: empty track clears track artifacts; mediaFiles is the complete new set.
+func (s *WorkoutInboxStore) Replace(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput, actor map[string]any) error {
+	dir := s.ownerDir(viewerNickname, ownerHandle)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	nickname := ownerNicknameFromDir(ownerKey)
+	if err := mergeAuthorMeta(dir, ownerHandle, nickname, actor, s.client, s.blobs, viewerNickname, ownerKey); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	previous, _ := s.readWorkout(viewerNickname, dir, ownerKey, workout.ID)
+
+	if workout.Track != "" && len(trackData) > 0 {
+		if previous != nil && previous.Track != "" && previous.Track != workout.Track {
+			_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, previous.Track))
+		}
+		if err := s.writeFederatedTrack(ctx, viewerNickname, ownerKey, workout, trackData); err != nil {
+			return err
+		}
+	} else if workout.Track == "" {
+		if previous != nil && previous.Track != "" {
+			_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, previous.Track))
+		}
+		_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID))
+		workout.HasMapPreview = false
+	} else if previous != nil {
+		// Keep existing track blobs; preserve preview flag from stored artifacts.
+		if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)); err == nil && exists {
+			workout.HasMapPreview = true
+		}
+	}
+
+	var previousMedia []string
+	if previous != nil {
+		previousMedia = previous.MediaFiles
+	}
+	savedNames, err := workouts.ReplaceFederatedMedia(s.blobs, viewerNickname, ownerKey, workout.ID, previousMedia, mediaFiles)
+	if err != nil {
+		return err
+	}
+	workout.MediaFiles = savedNames
+	workout.HasMedia = len(savedNames) > 0
+
+	return s.writeFederatedWorkoutYAML(dir, workout)
+}
+
+func (s *WorkoutInboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ownerKey string, workout *workouts.Workout, trackData []byte) error {
+	trackKey := keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, workout.Track)
+	if _, err := blob.PutBytes(ctx, s.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
+		return err
+	}
+
+	if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
+		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
+			log.Printf("federated map preview render failed for workout %s: %v", workout.ID, err)
+		} else if len(preview) > 0 {
+			previewKey := keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)
+			if _, err := blob.PutBytes(ctx, s.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
+				log.Printf("federated map preview write failed for workout %s: %v", workout.ID, err)
+			} else {
+				workout.HasMapPreview = true
+			}
+		}
+	}
+	return nil
+}
+
+func (s *WorkoutInboxStore) writeFederatedWorkoutYAML(dir string, workout *workouts.Workout) error {
 	path := filepath.Join(dir, workout.ID+".yaml")
 	data, err := yaml.Marshal(workout)
 	if err != nil {

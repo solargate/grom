@@ -202,11 +202,7 @@ func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any
 	return actor, nil
 }
 
-func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
-	if len(followerInboxes) == 0 {
-		return nil
-	}
-	author := actorURL(authorNickname)
+func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput) map[string]any {
 	object := map[string]any{
 		"id":              workoutObjectURL(authorNickname, workout.ID),
 		"type":            "Workout",
@@ -218,6 +214,7 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		"durationSeconds": workout.DurationSeconds,
 		"distance":        workout.Distance,
 		"track":           workout.Track,
+		"mediaItems":      []map[string]any{},
 	}
 	if workout.DurationTotalSeconds > 0 {
 		object["durationTotalSeconds"] = workout.DurationTotalSeconds
@@ -254,12 +251,20 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		}
 		object["mediaItems"] = items
 	}
+	return object
+}
+
+func (d *Delivery) deliverWorkoutActivity(activityType, authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
+	if len(followerInboxes) == 0 {
+		return nil
+	}
+	author := actorURL(authorNickname)
 	activity := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"id":       fmt.Sprintf("%s/activities/%s", author, uuid.NewString()),
-		"type":     "Create",
+		"type":     activityType,
 		"actor":    author,
-		"object":   object,
+		"object":   buildWorkoutObject(authorNickname, workout, trackData, mediaFiles),
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
 	for _, inbox := range followerInboxes {
@@ -268,6 +273,14 @@ func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Worko
 		}
 	}
 	return nil
+}
+
+func (d *Delivery) DeliverWorkout(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
+	return d.deliverWorkoutActivity("Create", authorNickname, workout, followerInboxes, trackData, mediaFiles)
+}
+
+func (d *Delivery) DeliverWorkoutUpdate(authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
+	return d.deliverWorkoutActivity("Update", authorNickname, workout, followerInboxes, trackData, mediaFiles)
 }
 
 func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, followerInboxes []string) error {

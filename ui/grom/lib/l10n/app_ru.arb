@@ -278,6 +278,7 @@
   "restoreRecordingConfirm": "Восстановить",
   "restoreRecordingDiscard": "Удалить",
   "editWorkout": "Изменить",
+  "editWorkoutTitle": "Изменить тренировку",
   "deleteWorkout": "Удалить",
   "deleteWorkoutConfirm": "Тренировка будет удалена окончательно, без возможности восстановления.",
   "workoutDeleted": "Тренировка удалена",

@@ -585,6 +585,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editWorkout => 'Изменить';
 
   @override
+  String get editWorkoutTitle => 'Изменить тренировку';
+
+  @override
   String get deleteWorkout => 'Удалить';
 
   @override

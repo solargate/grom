@@ -278,6 +278,7 @@
   "restoreRecordingConfirm": "Fortsetzen",
   "restoreRecordingDiscard": "Verwerfen",
   "editWorkout": "Bearbeiten",
+  "editWorkoutTitle": "Training bearbeiten",
   "deleteWorkout": "Löschen",
   "deleteWorkoutConfirm": "Die Trainingseinheit wird endgültig gelöscht und kann nicht wiederhergestellt werden.",
   "workoutDeleted": "Trainingseinheit gelöscht",

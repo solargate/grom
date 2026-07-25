@@ -324,12 +324,42 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 		t.Fatalf("unexpected metrics: %#v", created)
 	}
 
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+id, map[string]any{
+		"name":             "Evening run",
+		"description":      "Updated",
+		"sport_type":       "Run",
+		"start_date":       "2026-07-09T18:00:00Z",
+		"duration_seconds": 4000,
+		"distance":         6000,
+	}, token)
+	expectStatus(t, w, http.StatusOK)
+	updated := decodeObject(t, w)
+	if updated["name"] != "Evening run" || updated["description"] != "Updated" {
+		t.Fatalf("unexpected update body: %#v", updated)
+	}
+	if updated["duration_seconds"].(float64) != 4000 || updated["distance"].(float64) != 6000 {
+		t.Fatalf("unexpected updated metrics: %#v", updated)
+	}
+	if updated["owner"] != "alice" {
+		t.Fatalf("expected owner alice, got %#v", updated["owner"])
+	}
+	if updated["start_date"] != "2026-07-09T18:00:00Z" {
+		t.Fatalf("unexpected start_date: %#v", updated["start_date"])
+	}
+
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own", nil, token)
 	expectStatus(t, w, http.StatusOK)
 	list := decodeList(t, w)
-	if len(list) != 1 || list[0]["id"] != id {
-		t.Fatalf("unexpected list: %#v", list)
+	if len(list) != 1 || list[0]["id"] != id || list[0]["name"] != "Evening run" {
+		t.Fatalf("unexpected list after update: %#v", list)
 	}
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/missingid", map[string]any{
+		"name":       "Nope",
+		"sport_type": "Run",
+		"start_date": "2026-07-09T18:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusNotFound)
 
 	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+id, nil, token)
 	expectStatus(t, w, http.StatusNoContent)

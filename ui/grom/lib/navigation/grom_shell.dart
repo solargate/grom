@@ -223,7 +223,7 @@ class _GromShellState extends State<GromShell> {
       }
 
       final saved = await showAddWorkoutSheet(context, initialTrack: payload);
-      if (saved == true && mounted) {
+      if (saved != null && mounted) {
         setState(() => _workoutRefreshToken++);
       }
     } finally {
@@ -333,8 +333,42 @@ class _GromShellState extends State<GromShell> {
       case WorkoutDetailMenuAction.delete:
         await _confirmDeleteWorkout(workout);
       case WorkoutDetailMenuAction.edit:
-        break;
+        await _editWorkout(workout);
     }
+  }
+
+  Future<void> _editWorkout(Workout workout) async {
+    final updated = await showAddWorkoutSheet(context, workout: workout);
+    if (updated == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _viewingWorkout = Workout(
+        id: updated.id,
+        name: updated.name,
+        description: updated.description,
+        sportType: updated.sportType,
+        startDate: updated.startDate,
+        durationSeconds: updated.durationSeconds,
+        distance: updated.distance,
+        durationTotalSeconds: updated.durationTotalSeconds,
+        tempAvgKmm: updated.tempAvgKmm,
+        speedAvgKmh: updated.speedAvgKmh,
+        elevationGain: updated.elevationGain,
+        heartRateAvg: updated.heartRateAvg,
+        stepsTotal: updated.stepsTotal,
+        calories: updated.calories,
+        owner: workout.owner.isNotEmpty ? workout.owner : updated.owner,
+        device: updated.device,
+        track: updated.track,
+        hasMapPreview: updated.hasMapPreview,
+        hasMedia: updated.hasMedia,
+        mediaFiles: updated.mediaFiles,
+        author: workout.author ?? updated.author,
+        equipment: updated.equipment,
+      );
+      _workoutRefreshToken++;
+    });
   }
 
   Future<void> _confirmDeleteWorkout(Workout workout) async {
@@ -643,7 +677,7 @@ class _GromShellState extends State<GromShell> {
     return FloatingActionButton(
       onPressed: () async {
         final saved = await showAddWorkoutSheet(context);
-        if (saved == true && mounted) {
+        if (saved != null && mounted) {
           setState(() => _workoutRefreshToken++);
         }
       },

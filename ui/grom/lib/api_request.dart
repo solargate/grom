@@ -289,6 +289,28 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<Workout> updateWorkout({
+    required String token,
+    required String workoutId,
+    required Map<String, dynamic> body,
+  }) async {
+    final response = await _client.put(
+      _uri('/api/v1/workouts/$workoutId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Workout> createWorkoutMultipart({
     required String token,
     required Map<String, String> fields,

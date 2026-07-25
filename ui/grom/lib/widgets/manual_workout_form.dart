@@ -13,6 +13,7 @@ class ManualWorkoutForm extends StatelessWidget {
   const ManualWorkoutForm({
     super.key,
     required this.formKey,
+    required this.title,
     required this.nameController,
     required this.descriptionController,
     required this.sportTypeId,
@@ -29,6 +30,8 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.isParsingTrack,
     required this.isPickingPhotos,
     required this.showTitle,
+    this.trackReadOnly = false,
+    this.hidePhotos = false,
     required this.onPickSportType,
     required this.onPickDate,
     required this.onPickTime,
@@ -45,6 +48,7 @@ class ManualWorkoutForm extends StatelessWidget {
   });
 
   final GlobalKey<FormState> formKey;
+  final String title;
   final TextEditingController nameController;
   final TextEditingController descriptionController;
   final String sportTypeId;
@@ -61,6 +65,8 @@ class ManualWorkoutForm extends StatelessWidget {
   final bool isParsingTrack;
   final bool isPickingPhotos;
   final bool showTitle;
+  final bool trackReadOnly;
+  final bool hidePhotos;
   final VoidCallback onPickSportType;
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
@@ -101,7 +107,7 @@ class ManualWorkoutForm extends StatelessWidget {
           children: [
             if (showTitle) ...[
               Text(
-                l10n.addWorkout,
+                title,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 20),
@@ -214,23 +220,29 @@ class ManualWorkoutForm extends StatelessWidget {
               onRemove: onRemoveEquipment,
             ),
             const SizedBox(height: 16),
-            _WorkoutPhotosField(
-              photos: selectedPhotos,
-              isSubmitting: isSubmitting,
-              isPickingPhotos: isPickingPhotos,
-              onPickPhotos: onPickPhotos,
-              onRemovePhoto: onRemovePhoto,
-            ),
-            const SizedBox(height: 16),
-            _TrackPickerField(
-              trackFilename: trackFilename,
-              isSubmitting: isSubmitting,
-              isPickingFile: isPickingFile,
-              isParsingTrack: isParsingTrack,
-              onPickTrack: onPickTrack,
-              onRemoveTrack: onRemoveTrack,
-            ),
-            const SizedBox(height: 24),
+            if (!hidePhotos) ...[
+              _WorkoutPhotosField(
+                photos: selectedPhotos,
+                isSubmitting: isSubmitting,
+                isPickingPhotos: isPickingPhotos,
+                onPickPhotos: onPickPhotos,
+                onRemovePhoto: onRemovePhoto,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (!trackReadOnly || trackFilename != null) ...[
+              _TrackPickerField(
+                trackFilename: trackFilename,
+                isSubmitting: isSubmitting,
+                isPickingFile: isPickingFile,
+                isParsingTrack: isParsingTrack,
+                readOnly: trackReadOnly,
+                onPickTrack: onPickTrack,
+                onRemoveTrack: onRemoveTrack,
+              ),
+              const SizedBox(height: 24),
+            ] else
+              const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -348,6 +360,7 @@ class _TrackPickerField extends StatelessWidget {
     required this.isSubmitting,
     required this.isPickingFile,
     required this.isParsingTrack,
+    this.readOnly = false,
     required this.onPickTrack,
     required this.onRemoveTrack,
   });
@@ -356,6 +369,7 @@ class _TrackPickerField extends StatelessWidget {
   final bool isSubmitting;
   final bool isPickingFile;
   final bool isParsingTrack;
+  final bool readOnly;
   final VoidCallback onPickTrack;
   final VoidCallback onRemoveTrack;
 
@@ -383,7 +397,7 @@ class _TrackPickerField extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            else
+            else if (!readOnly)
               IconButton(
                 tooltip: l10n.removeTrack,
                 onPressed: isSubmitting ? null : onRemoveTrack,
@@ -392,6 +406,10 @@ class _TrackPickerField extends StatelessWidget {
           ],
         ),
       );
+    }
+
+    if (readOnly) {
+      return const SizedBox.shrink();
     }
 
     return FilledButton.tonalIcon(

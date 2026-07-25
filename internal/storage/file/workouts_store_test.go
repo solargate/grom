@@ -112,6 +112,62 @@ func TestWorkoutsStoreCreateGetListDelete(t *testing.T) {
 	}
 }
 
+func TestWorkoutsStoreUpdateRenamesDirOnStartDateChange(t *testing.T) {
+	dir := t.TempDir()
+	store := NewWorkoutsStore(dir)
+
+	created, err := store.Create("alice", &workouts.Workout{
+		Name:      "Morning",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-08T10:00:00Z"),
+		Distance:  5000,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldDirName, err := store.WorkoutDirName("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	marker := filepath.Join(dir, "users", "alice", "workouts", oldDirName, "track.gpx")
+	if err := os.WriteFile(marker, []byte("gpx"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	created.Name = "Evening"
+	created.StartDate = mustTime(t, "2026-07-09T18:00:00Z")
+	updated, err := store.Update("alice", created)
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if updated.Name != "Evening" {
+		t.Fatalf("name = %q", updated.Name)
+	}
+
+	newDirName, err := store.WorkoutDirName("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newDirName == oldDirName {
+		t.Fatalf("expected renamed dir, still %q", newDirName)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "users", "alice", "workouts", newDirName, "track.gpx")); err != nil {
+		t.Fatalf("track should move with dir: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "users", "alice", "workouts", oldDirName)); !os.IsNotExist(err) {
+		t.Fatalf("old dir should be gone, err=%v", err)
+	}
+
+	got, err := store.Get("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name != "Evening" || !got.StartDate.Equal(mustTime(t, "2026-07-09T18:00:00Z")) {
+		t.Fatalf("get after update: %#v", got)
+	}
+}
+
 func TestWorkoutsStoreBeginCreateCleanupAndWriteMetadata(t *testing.T) {
 	dir := t.TempDir()
 	store := NewWorkoutsStore(dir)
