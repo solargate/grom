@@ -14,7 +14,7 @@ Guidance for AI coding agents working in this repository.
 ## High-level architecture
 
 ```
-cmd/grom          → CLI entrypoint (server + gencerts subcommand)
+cmd/grom          → CLI entrypoint (Cobra: root starts server; gencerts subcommand)
 api/v1            → HTTP handlers (Gin), wiring, Swagger annotations
 api/docs          → Generated swagger artifacts (do not edit by hand)
 internal/*        → Domain logic, storage, federation, tracks, auth, config
@@ -86,9 +86,9 @@ make clean
 Run server (from `cmd/grom` or with absolute config path):
 
 ```bash
-cd cmd/grom && go run . -config config-examples/config.dev.notls.yaml
+cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
 # or after build:
-./grom -config config.yaml
+./grom --config config.yaml
 ```
 
 TLS / federation profiles are documented in `README.md`. Federation **requires** `server.tls.mode` of `static` or `autocert` (not `off`).

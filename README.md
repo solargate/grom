@@ -23,7 +23,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 
 ## Configuration
 
-Grom is configured with a YAML file. By default it looks for `config.yaml` in the same directory as the server (the current working directory). Pass `-config` to use another path. Example profiles live in `cmd/grom/config-examples/`. For every field with comments, see `config.full.yaml`.
+Grom is configured with a YAML file. By default it looks for `config.yaml` in the same directory as the server (the current working directory). Pass `--config` (or `-c`) to use another path. Example profiles live in `cmd/grom/config-examples/`. For every field with comments, see `config.full.yaml`. Use `grom --help` / `grom --version` for CLI usage.
 
 **Required:** `auth.jwt_secret` — a long random secret used to sign JWT access tokens.
 
@@ -48,8 +48,8 @@ Other common knobs:
 
 ```bash
 cd cmd/grom
-go run . gencerts -ip 192.168.1.251 -domain 192.168.1.251
-go run . -config config.dev.tls.yaml
+go run . gencerts --ip 192.168.1.251 --domain 192.168.1.251
+go run . --config config.dev.tls.yaml
 ```
 
 For federation between local instances, set `federation.tls_insecure_skip_verify: true` and optionally `federation.ca_cert_file` to trust your dev CA.
@@ -57,7 +57,7 @@ For federation between local instances, set `federation.tls_insecure_skip_verify
 **Production with autocert** — needs a public DNS name in `federation.domain` (hostname only), ports **80** and **443** reachable from the internet, and persistent `storage.location` (ACME cache under `{storage.location}/acme-cache`):
 
 ```bash
-go run . -config config.prod.tls.yaml
+go run . --config config.prod.tls.yaml
 ```
 
 Notes:
@@ -73,7 +73,7 @@ make test    # Go and Flutter tests
 ```
 
 ```bash
-cd cmd/grom && go run . -config config-examples/config.dev.notls.yaml
+cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
 # or after build, with config.yaml next to the binary:
 ./grom
 ```

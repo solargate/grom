@@ -5,6 +5,7 @@ cmd/grom/data/
 
 cmd/grom/*
 !cmd/grom/main.go
+!cmd/grom/cmd
 !cmd/grom/config-examples
 
 internal/web/dist/*

@@ -34,7 +34,7 @@ android-debug:
 	cd ui/grom && flutter build apk --debug $(FLUTTER_VERSION_FLAGS)
 
 gencerts:
-	cd cmd/grom && go run . gencerts -ip $(IP) -domain $(DOMAIN)
+	cd cmd/grom && go run . gencerts --ip $(IP) --domain $(DOMAIN)
 
 test: test-go test-ui
 

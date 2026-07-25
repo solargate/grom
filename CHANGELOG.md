@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Water sport type Packraft
 - CI workflow on `master` and pull requests: Go vet/test/build, Flutter analyze/test, and swagger doc drift check
 
+### Changed
+
+- Server CLI moved to Cobra: root starts the server (`--config` / `-c`), `gencerts` is a subcommand; `--help` and `--version` are available
+
 ## [0.1.0] - 2026-07-18
 
 First public release.
