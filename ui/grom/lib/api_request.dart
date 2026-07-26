@@ -107,7 +107,7 @@ class ApiRequest {
   Uri _uri(String path) => resolveUri(path);
 
   Future<ServerInfo> getServerInfo() async {
-    final response = await _client.get(_uri('/api/v1/server_info'));
+    final response = await _client.get(_uri('/api/v1/server-info'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return ServerInfo.fromJson(json);

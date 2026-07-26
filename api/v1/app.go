@@ -110,7 +110,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.GET("/status", a.checkStatus)
-		apiV1.GET("/server_info", a.getServerInfo)
+		apiV1.GET("/server-info", a.getServerInfo)
 
 		authGroup := apiV1.Group("/auth")
 		authGroup.POST("/register", a.register)

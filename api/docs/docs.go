@@ -628,14 +628,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/server_info": {
+        "/server-info": {
             "get": {
                 "description": "Get server info",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "server_info"
+                    "server-info"
                 ],
                 "summary": "Server info",
                 "responses": {
@@ -826,7 +826,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server_info"
+                    "server-info"
                 ],
                 "summary": "Server status",
                 "responses": {

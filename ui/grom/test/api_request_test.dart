@@ -108,7 +108,7 @@ void main() {
   test('getServerInfo parses JSON and falls back on errors', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final okClient = MockClient((request) async {
-      expect(request.url.path, '/api/v1/server_info');
+      expect(request.url.path, '/api/v1/server-info');
       return http.Response(
         jsonEncode({'name': 'Lab', 'federation_enabled': true}),
         200,

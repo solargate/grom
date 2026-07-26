@@ -10,7 +10,7 @@ import (
 // statusCheck godoc
 // @Summary      Server status
 // @Description  Get server status
-// @Tags         server_info
+// @Tags         server-info
 // @Produce      json
 // @Success      200
 // @Router       /status [get]
@@ -23,10 +23,10 @@ func (a *App) checkStatus(ctx *gin.Context) {
 // getServerInfo godoc
 // @Summary      Server info
 // @Description  Get server info
-// @Tags         server_info
+// @Tags         server-info
 // @Produce      json
 // @Success      200
-// @Router       /server_info [get]
+// @Router       /server-info [get]
 func (a *App) getServerInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"name":               config.Cfg.Server.Name,

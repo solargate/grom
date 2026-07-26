@@ -905,7 +905,7 @@ paths:
       summary: Get Strava import status
       tags:
       - integrations
-  /server_info:
+  /server-info:
     get:
       description: Get server info
       produces:
@@ -915,7 +915,7 @@ paths:
           description: OK
       summary: Server info
       tags:
-      - server_info
+      - server-info
   /social/follow:
     post:
       consumes:
@@ -1035,7 +1035,7 @@ paths:
           description: OK
       summary: Server status
       tags:
-      - server_info
+      - server-info
   /users/{nickname}/avatar:
     get:
       description: Return avatar image for a local user

@@ -21,7 +21,7 @@ func TestServerInfoAndStatus(t *testing.T) {
 		t.Fatalf("unexpected status: %#v", status)
 	}
 
-	w = ta.doJSON(t, http.MethodGet, "/api/v1/server_info", nil, "")
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/server-info", nil, "")
 	expectStatus(t, w, http.StatusOK)
 	info := decodeObject(t, w)
 	if info["federation_enabled"] != false {
@@ -185,7 +185,7 @@ func TestFederationRoutes(t *testing.T) {
 	ta := setupFederationTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
 
-	w := ta.doJSON(t, http.MethodGet, "/api/v1/server_info", nil, "")
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/server-info", nil, "")
 	expectStatus(t, w, http.StatusOK)
 	info := decodeObject(t, w)
 	if info["federation_enabled"] != true {
