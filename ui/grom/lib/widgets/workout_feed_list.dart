@@ -34,36 +34,75 @@ class WorkoutFeedList extends StatefulWidget {
 }
 
 class WorkoutFeedListState extends State<WorkoutFeedList> {
+  static const _pageLimit = 20;
+
   final ApiRequest _api = ApiRequest();
 
   List<Workout> _workouts = [];
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  String? _nextCursor;
   String? _error;
   String? _authToken;
 
   @override
   void initState() {
     super.initState();
-    _loadWorkouts();
+    widget.scrollController.addListener(_onScroll);
+    _loadWorkouts(reset: true);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant WorkoutFeedList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_onScroll);
+      widget.scrollController.addListener(_onScroll);
+    }
     if (widget.refreshToken != oldWidget.refreshToken ||
         widget.nickname != oldWidget.nickname ||
         widget.scope != oldWidget.scope) {
-      _loadWorkouts();
+      _loadWorkouts(reset: true);
     }
   }
 
-  Future<void> reload() => _loadWorkouts();
+  Future<void> reload() => _loadWorkouts(reset: true);
 
-  Future<void> _loadWorkouts() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  void _onScroll() {
+    if (!_hasMore || _isLoadingMore || _isLoading) {
+      return;
+    }
+    final position = widget.scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 400) {
+      _loadWorkouts(reset: false);
+    }
+  }
+
+  Future<void> _loadWorkouts({required bool reset}) async {
+    if (reset) {
+      setState(() {
+        _isLoading = true;
+        _isLoadingMore = false;
+        _error = null;
+        _nextCursor = null;
+        _hasMore = false;
+      });
+    } else {
+      if (!_hasMore || _isLoadingMore || _nextCursor == null) {
+        return;
+      }
+      setState(() {
+        _isLoadingMore = true;
+        _error = null;
+      });
+    }
 
     try {
       final token = await AuthStorage.getToken();
@@ -71,12 +110,24 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
         throw ApiException('Not authenticated');
       }
 
-      final workouts = await _api.listWorkouts(token, scope: widget.scope);
+      final page = await _api.listWorkouts(
+        token,
+        scope: widget.scope,
+        limit: _pageLimit,
+        cursor: reset ? null : _nextCursor,
+      );
       if (!mounted) return;
       setState(() {
-        _workouts = workouts;
+        if (reset) {
+          _workouts = page.items;
+        } else {
+          _workouts = [..._workouts, ...page.items];
+        }
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore && page.nextCursor != null;
         _authToken = token;
         _isLoading = false;
+        _isLoadingMore = false;
       });
       widget.onAuthTokenLoaded?.call(token);
     } on ApiException catch (e) {
@@ -84,6 +135,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
       setState(() {
         _error = e.message;
         _isLoading = false;
+        _isLoadingMore = false;
       });
     } catch (_) {
       if (!mounted) return;
@@ -91,6 +143,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
       setState(() {
         _error = l10n.failedToLoadWorkouts;
         _isLoading = false;
+        _isLoadingMore = false;
       });
     }
   }
@@ -113,7 +166,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: _loadWorkouts,
+                onPressed: () => _loadWorkouts(reset: true),
                 child: Text(l10n.retry),
               ),
             ],
@@ -136,11 +189,18 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
     }
 
     final compact = isMobileClient;
+    final itemCount = _workouts.length + (_isLoadingMore ? 1 : 0);
     final listView = ListView.builder(
       controller: widget.scrollController,
       padding: compact ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _workouts.length,
+      itemCount: itemCount,
       itemBuilder: (context, index) {
+        if (index >= _workouts.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
         final workout = _workouts[index];
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -165,7 +225,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
     );
 
     return RefreshIndicator(
-      onRefresh: _loadWorkouts,
+      onRefresh: () => _loadWorkouts(reset: true),
       child: compact
           ? ScrollConfiguration(
               behavior: ScrollConfiguration.of(context)

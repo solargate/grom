@@ -86,6 +86,13 @@ type WorkoutAuthorResponse struct {
 	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/bob/avatar"`
 }
 
+// WorkoutListResponse is a cursor-paginated workout list.
+type WorkoutListResponse struct {
+	Items      []WorkoutResponse `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+	HasMore    bool              `json:"has_more"`
+}
+
 type WorkoutResponse struct {
 	ID                   string                 `json:"id" example:"38472901"`
 	Owner                string                 `json:"owner,omitempty" example:"solarwind"`
@@ -899,18 +906,20 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 
 // listWorkouts godoc
 // @Summary      List workouts
-// @Description  Return workouts for the authenticated user sorted by start date descending. Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts.
+// @Description  Return a cursor page of workouts for the authenticated user sorted by start date descending (id descending tie-breaker). Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts. Default limit is 20 (max 100).
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth
-// @Param        scope  query  string  false  "feed (default) or own"
-// @Success      200  {array}   WorkoutResponse
+// @Param        scope   query  string  false  "feed (default) or own"
+// @Param        limit   query  int     false  "page size (default 20, max 100)"
+// @Param        cursor  query  string  false  "opaque cursor from previous page next_cursor"
+// @Success      200  {object}  WorkoutListResponse
 // @Failure      400  {object}  ErrorResponse
 // @Failure      401  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /workouts [get]
 func (a *App) listWorkouts(ctx *gin.Context) {
-		nickname, err := a.currentUserNickname(ctx)
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -923,6 +932,25 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	if scope != "feed" && scope != "own" {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid scope"})
 		return
+	}
+
+	limit := workouts.DefaultPageLimit
+	if raw := strings.TrimSpace(ctx.Query("limit")); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 {
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid limit"})
+			return
+		}
+		limit = workouts.ClampLimit(parsed)
+	}
+
+	var cursor *workouts.Cursor
+	if raw := strings.TrimSpace(ctx.Query("cursor")); raw != "" {
+		cursor, err = workouts.DecodeCursor(raw)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid cursor"})
+			return
+		}
 	}
 
 	userID, err := a.currentUserID(ctx)
@@ -938,13 +966,13 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	}
 
 	feedSvc := a.newFeedService()
-	var items []workouts.FeedWorkout
+	var page workouts.Page
 
 	if scope == "own" {
-		items, err = feedSvc.ListOwn(nickname, viewer.Name)
+		page, err = feedSvc.ListOwnPage(nickname, viewer.Name, cursor, limit)
 	} else {
-		
-		follows, err := a.Social.ListFollowing(userID)
+		var follows []social.Follow
+		follows, err = a.Social.ListFollowing(userID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
 			return
@@ -969,16 +997,20 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 			})
 		}
 
-		items, err = feedSvc.ListFeed(nickname, viewer.Name, followedAuthors)
+		page, err = feedSvc.ListFeedPage(nickname, viewer.Name, followedAuthors, cursor, limit)
 	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list workouts"})
 		return
 	}
 
-	response := make([]WorkoutResponse, 0, len(items))
-	for i := range items {
-		response = append(response, toFeedWorkoutResponse(&items[i]))
+	response := WorkoutListResponse{
+		Items:      make([]WorkoutResponse, 0, len(page.Items)),
+		NextCursor: page.NextCursor,
+		HasMore:    page.HasMore,
+	}
+	for i := range page.Items {
+		response.Items = append(response.Items, toFeedWorkoutResponse(&page.Items[i]))
 	}
 
 	ctx.JSON(http.StatusOK, response)

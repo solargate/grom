@@ -503,23 +503,30 @@ class ApiRequest {
     return match?.group(1);
   }
 
-  Future<List<Workout>> listWorkouts(
+  Future<WorkoutListPage> listWorkouts(
     String token, {
     String scope = 'feed',
+    int limit = 20,
+    String? cursor,
   }) async {
-    final uri = _uri('/api/v1/workouts').replace(
-      queryParameters: scope == 'feed' ? null : {'scope': scope},
-    );
+    final params = <String, String>{
+      'limit': '$limit',
+    };
+    if (scope != 'feed') {
+      params['scope'] = scope;
+    }
+    if (cursor != null && cursor.isNotEmpty) {
+      params['cursor'] = cursor;
+    }
+    final uri = _uri('/api/v1/workouts').replace(queryParameters: params);
     final response = await _client.get(
       uri,
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) => Workout.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutListPage.fromJson(json);
     }
 
     throw _parseError(response);

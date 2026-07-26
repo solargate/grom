@@ -105,7 +105,7 @@ void main() {
     );
   });
 
-  test('getWorkout requests owner query and parses body', () async {
+	test('getWorkout requests owner query and parses body', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {
       expect(request.method, 'GET');
@@ -143,6 +143,44 @@ void main() {
     expect(workout.id, 'wid');
     expect(workout.owner, 'alice');
     expect(workout.name, 'Morning run');
+  });
+
+  test('listWorkouts parses cursor page envelope', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/workouts');
+      expect(request.url.queryParameters['limit'], '20');
+      expect(request.url.queryParameters['scope'], 'own');
+      expect(request.url.queryParameters['cursor'], 'abc');
+      return http.Response(
+        jsonEncode({
+          'items': [
+            {
+              'id': 'wid',
+              'name': 'Morning run',
+              'sport_type': 'Run',
+              'start_date': '2026-07-08T10:00:00Z',
+              'duration_seconds': 1800,
+              'distance': 5000,
+            },
+          ],
+          'next_cursor': 'next',
+          'has_more': true,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final page = await ApiRequest(client: client).listWorkouts(
+      'tok',
+      scope: 'own',
+      cursor: 'abc',
+    );
+    expect(page.items, hasLength(1));
+    expect(page.items.first.id, 'wid');
+    expect(page.nextCursor, 'next');
+    expect(page.hasMore, isTrue);
   });
 
   test('getServerInfo parses JSON and falls back on errors', () async {

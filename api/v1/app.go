@@ -161,3 +161,7 @@ type federatedFeedAdapter struct {
 func (a federatedFeedAdapter) ListFederated(viewerNickname string) ([]workouts.FeedWorkout, error) {
 	return a.store.List(viewerNickname)
 }
+
+func (a federatedFeedAdapter) ListFederatedPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error) {
+	return a.store.ListPage(viewerNickname, cursor, limit)
+}

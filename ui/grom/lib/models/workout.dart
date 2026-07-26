@@ -170,3 +170,33 @@ class CreateWorkoutDraft {
     };
   }
 }
+
+class WorkoutListPage {
+  WorkoutListPage({
+    required this.items,
+    this.nextCursor,
+    this.hasMore = false,
+  });
+
+  final List<Workout> items;
+  final String? nextCursor;
+  final bool hasMore;
+
+  factory WorkoutListPage.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'];
+    final items = <Workout>[];
+    if (rawItems is List) {
+      for (final item in rawItems) {
+        if (item is Map<String, dynamic>) {
+          items.add(Workout.fromJson(item));
+        }
+      }
+    }
+    final cursor = json['next_cursor'];
+    return WorkoutListPage(
+      items: items,
+      nextCursor: cursor is String && cursor.isNotEmpty ? cursor : null,
+      hasMore: json['has_more'] as bool? ?? false,
+    );
+  }
+}

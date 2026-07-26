@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/solargate/grom/internal/data"
+	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/workouts"
 	"gopkg.in/yaml.v3"
 )
@@ -34,9 +35,7 @@ func (s *WorkoutsStore) userDir(nickname string) string {
 }
 
 func workoutBaseName(startDate time.Time, id string) string {
-	iso := startDate.UTC().Format("2006-01-02T15:04:05Z")
-	iso = strings.ReplaceAll(iso, ":", "")
-	return iso + "-" + id
+	return keys.WorkoutDirName(startDate, id)
 }
 
 func workoutFileName(startDate time.Time, id string) string {
@@ -252,6 +251,10 @@ func readWorkoutFromDir(dir string) (*workouts.Workout, error) {
 }
 
 func (s *WorkoutsStore) List(nickname string) ([]workouts.Workout, error) {
+	return s.listAll(nickname)
+}
+
+func (s *WorkoutsStore) listAll(nickname string) ([]workouts.Workout, error) {
 	wd := workoutsDir(s.userDir(nickname))
 	entries, err := os.ReadDir(wd)
 	if err != nil {
@@ -266,32 +269,68 @@ func (s *WorkoutsStore) List(nickname string) ([]workouts.Workout, error) {
 		if !entry.IsDir() {
 			continue
 		}
-
-		dirName := entry.Name()
-		dirPath := filepath.Join(wd, dirName)
-		filePath := filepath.Join(dirPath, dirName+".yaml")
-		data, err := os.ReadFile(filePath)
+		workout, err := readWorkoutFromDir(filepath.Join(wd, entry.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("read workout %q: %w", dirName, err)
+			return nil, fmt.Errorf("read workout %q: %w", entry.Name(), err)
 		}
-
-		var workout workouts.Workout
-		if err := yaml.Unmarshal(data, &workout); err != nil {
-			return nil, fmt.Errorf("parse workout %q: %w", dirName, err)
-		}
-		if workout.ID == "" {
-			if idx := strings.Index(dirName, "Z-"); idx >= 0 && idx+2 < len(dirName) {
-				workout.ID = dirName[idx+2:]
-			}
-		}
-		result = append(result, workout)
+		result = append(result, *workout)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].StartDate.After(result[j].StartDate)
+		return workouts.FeedNewer(result[i].StartDate, result[i].ID, result[j].StartDate, result[j].ID)
+	})
+	return result, nil
+}
+
+func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit int) ([]workouts.Workout, bool, error) {
+	if limit <= 0 {
+		limit = workouts.DefaultPageLimit
+	}
+
+	wd := workoutsDir(s.userDir(nickname))
+	entries, err := os.ReadDir(wd)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+		return nil, false, fmt.Errorf("read workouts dir: %w", err)
+	}
+
+	dirNames := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			dirNames = append(dirNames, entry.Name())
+		}
+	}
+	sort.Slice(dirNames, func(i, j int) bool {
+		return dirNames[i] > dirNames[j]
 	})
 
-	return result, nil
+	var cursorKey string
+	if cursor != nil {
+		cursorKey = keys.WorkoutDirName(cursor.StartDate, cursor.ID)
+	}
+
+	result := make([]workouts.Workout, 0, limit)
+	hasMore := false
+	for _, dirName := range dirNames {
+		if cursorKey != "" && dirName >= cursorKey {
+			continue
+		}
+		if len(result) >= limit {
+			hasMore = true
+			break
+		}
+		workout, err := readWorkoutFromDir(filepath.Join(wd, dirName))
+		if err != nil {
+			return nil, false, fmt.Errorf("read workout %q: %w", dirName, err)
+		}
+		if cursor != nil && !workouts.AfterCursor(workout.StartDate, workout.ID, cursor) {
+			continue
+		}
+		result = append(result, *workout)
+	}
+	return result, hasMore, nil
 }
 
 func (s *WorkoutsStore) RemoveEquipmentFromAll(nickname, equipmentID string) error {

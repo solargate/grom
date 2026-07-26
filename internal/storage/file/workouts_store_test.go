@@ -281,3 +281,45 @@ func TestWorkoutsStoreListMissingDir(t *testing.T) {
 		t.Fatalf("List missing = %#v err=%v", list, err)
 	}
 }
+
+func TestWorkoutsStoreListPage(t *testing.T) {
+	store := NewWorkoutsStore(t.TempDir())
+	start := time.Date(2026, 7, 8, 15, 0, 0, 0, time.UTC)
+	ids := make([]string, 0, 5)
+	for i := 0; i < 5; i++ {
+		created, err := store.Create("alice", &workouts.Workout{
+			Name: "W", SportType: "Run", StartDate: start.Add(-time.Duration(i) * time.Hour),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, created.ID)
+	}
+
+	page1, more, err := store.ListPage("alice", nil, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page1) != 2 || !more {
+		t.Fatalf("page1 len=%d more=%v", len(page1), more)
+	}
+	if page1[0].ID != ids[0] || page1[1].ID != ids[1] {
+		t.Fatalf("unexpected page1 order: %#v want first %v", page1, ids[:2])
+	}
+
+	cursor := &workouts.Cursor{StartDate: page1[1].StartDate, ID: page1[1].ID}
+	page2, more, err := store.ListPage("alice", cursor, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page2) != 2 || !more {
+		t.Fatalf("page2 len=%d more=%v", len(page2), more)
+	}
+	page3, more, err := store.ListPage("alice", &workouts.Cursor{StartDate: page2[1].StartDate, ID: page2[1].ID}, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page3) != 1 || more {
+		t.Fatalf("page3 len=%d more=%v", len(page3), more)
+	}
+}
