@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-26
+
 ### Added
 
 - `GET /api/v1/workouts/{id}` to fetch a single workout (`?owner=` same as track/media)
@@ -54,5 +56,6 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/solargate/grom/releases/tag/0.2.0
 [0.1.0]: https://github.com/solargate/grom/releases/tag/0.1.0
