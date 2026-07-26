@@ -23,6 +23,7 @@ class WorkoutHeaderSection extends StatelessWidget {
     this.federationEnabled = false,
     this.descriptionMaxLines,
     this.statsMaxRows,
+    this.showEquipment = false,
   });
 
   final Workout workout;
@@ -33,6 +34,9 @@ class WorkoutHeaderSection extends StatelessWidget {
 
   /// When set, only the first N rows of stats (3 per row) are shown.
   final int? statsMaxRows;
+
+  /// When true, equipment is shown below the stats table (detail view).
+  final bool showEquipment;
 
   String _authorLine(WorkoutAuthor author) {
     final displayName =
@@ -60,6 +64,11 @@ class WorkoutHeaderSection extends StatelessWidget {
     final stats = buildWorkoutStats(l10n, workout);
     final statsRows = chunkWorkoutStats(stats, maxRows: statsMaxRows);
     final flushStatsToAvatar = isMobileClient && author != null;
+    final showEquipmentLine =
+        showEquipment && workout.equipment.isNotEmpty;
+    final equipmentLine = showEquipmentLine
+        ? _EquipmentLine(equipment: workout.equipment)
+        : null;
 
     final metaColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,10 +84,6 @@ class WorkoutHeaderSection extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: joinWorkoutTextFields(context, metadataParts),
         ),
-        if (workout.equipment.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          _EquipmentLine(equipment: workout.equipment),
-        ],
         const SizedBox(height: 8),
         Text(
           workout.name,
@@ -100,6 +105,10 @@ class WorkoutHeaderSection extends StatelessWidget {
         if (!flushStatsToAvatar && statsRows.isNotEmpty) ...[
           const SizedBox(height: 12),
           _StatsGrid(rows: statsRows),
+        ],
+        if (!flushStatsToAvatar && equipmentLine != null) ...[
+          SizedBox(height: statsRows.isNotEmpty ? 8 : 12),
+          equipmentLine,
         ],
       ],
     );
@@ -138,7 +147,9 @@ class WorkoutHeaderSection extends StatelessWidget {
       ],
     );
 
-    if (!flushStatsToAvatar || statsRows.isEmpty) {
+    final flushBelow = flushStatsToAvatar &&
+        (statsRows.isNotEmpty || equipmentLine != null);
+    if (!flushBelow) {
       return headerRow;
     }
 
@@ -146,8 +157,14 @@ class WorkoutHeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         headerRow,
-        const SizedBox(height: 12),
-        _StatsGrid(rows: statsRows),
+        if (statsRows.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _StatsGrid(rows: statsRows),
+        ],
+        if (equipmentLine != null) ...[
+          SizedBox(height: statsRows.isNotEmpty ? 8 : 12),
+          equipmentLine,
+        ],
       ],
     );
   }

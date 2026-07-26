@@ -237,6 +237,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             authToken: widget.authToken,
                             author: author,
                             federationEnabled: widget.federationEnabled,
+                            showEquipment: true,
                           ),
                         ),
                         if (_hasGpsMap)

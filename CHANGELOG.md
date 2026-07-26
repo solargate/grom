@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Workout list cards no longer show equipment; detail view shows it below the stats table
+
 ## [0.2.0] - 2026-07-26
 
 ### Added
