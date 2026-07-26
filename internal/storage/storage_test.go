@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/solargate/grom/internal/config"
@@ -40,3 +41,21 @@ func TestOpenUnsupportedDriver(t *testing.T) {
 		t.Fatal("expected error for unsupported driver")
 	}
 }
+
+func TestOpenBBoltBackendViaStorage(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverBBolt,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+	backend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer backend.Close()
+	if err := backend.Ping(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+

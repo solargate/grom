@@ -42,7 +42,8 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/social/` | Follow graph + delivery hooks |
 | `internal/federation/` | ActivityPub inbox/outbox, delivery, keys, avatar cache |
 | `internal/tracks/` | GPX/FIT parse, stats, export, simplify |
-| `internal/storage/` | `Backend` interface; `file` driver (only implemented) |
+| `internal/storage/` | `Backend` interface; `file` and `bbolt` drivers (postgres not implemented) |
+| `internal/storage/migrate/` | Metadata copy between `file` ↔ `bbolt` |
 | `internal/storage/blob/` | Blob keys + FS blob store |
 | `internal/integrations/strava/` | Strava ZIP bulk import jobs |
 | `internal/avatars/` | Avatar processing |
@@ -59,7 +60,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 
 - Go 1.26+, Gin, Viper, JWT (`golang-jwt/jwt/v5`), swag/gin-swagger
 - Track formats: `tkrajina/gpxgo`, `muktihari/fit`
-- Storage today: filesystem (`storage.driver: file`). Config also names `bbolt` / `postgres` but they are **not implemented** — do not pretend they work.
+- Storage today: filesystem (`storage.driver: file`) or hybrid bbolt (`storage.driver: bbolt` — JSON metadata in Bolt, blobs on FS). Config also names `postgres` but it is **not implemented** — do not pretend it works.
 
 **Frontend**
 
@@ -151,7 +152,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 
 **Don't**
 
-- Implement or claim support for `bbolt`/`postgres` unless actually wiring a new driver behind `storage.Open`.
+- Implement or claim support for `postgres` unless actually wiring a new driver behind `storage.Open`.
 - Enable federation paths that assume HTTPS while leaving `tls.mode: off`.
 - Hand-edit `api/docs/*` — regenerate with `make doc`.
 - Bypass auth middleware on protected `/api/v1` routes.

@@ -128,4 +128,11 @@ func (s *FederationFollowersStore) save(path string, file followersFile) error {
 	return os.Rename(tmp, path)
 }
 
+// Import replaces the followers list for a nickname (migration).
+func (s *FederationFollowersStore) Import(nickname string, followers []federation.InboundFollower) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.save(s.path(nickname), followersFile{Followers: followers})
+}
+
 var _ federation.FollowersRepository = (*FederationFollowersStore)(nil)

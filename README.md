@@ -32,7 +32,8 @@ Other common knobs:
 | Area | What to set |
 |------|-------------|
 | `server.port` / `server.tls` | Listen ports and TLS mode (`off`, `static`, or `autocert`) |
-| `storage.location` / `storage.temp_dir` | Data and temp directories (filesystem driver only today) |
+| `storage.driver` / `location` / `temp_dir` | `file` (default) or `bbolt`; data root and temp dirs |
+| `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
@@ -67,6 +68,24 @@ Notes:
 - Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
 
+### Storage drivers
+
+| Driver | Metadata | Blobs (tracks, photos, avatars, keys) |
+|--------|----------|----------------------------------------|
+| `file` (default) | YAML under `storage.location` | Same tree |
+| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | Same filesystem layout under `storage.location` |
+
+`postgres` is reserved in config but not implemented.
+
+Migrate metadata between drivers (stop the server first; blobs are shared and not copied):
+
+```bash
+grom migrate-storage --config config.yaml --from file --to bbolt --verify
+# then set storage.driver: bbolt and restart
+grom migrate-storage --config config.yaml --from bbolt --to file --verify
+```
+
+Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
 ## Build and run
 
 ```bash

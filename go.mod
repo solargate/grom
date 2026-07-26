@@ -10,12 +10,13 @@ require (
 	github.com/golang/geo v0.0.0-20260302211937-87f5a40ea07a
 	github.com/google/uuid v1.6.0
 	github.com/muktihari/fit v0.28.1
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	github.com/tkrajina/gpxgo v1.4.0
+	go.etcd.io/bbolt v1.5.0
 	golang.org/x/crypto v0.53.0
 	golang.org/x/image v0.28.0
 	gopkg.in/yaml.v3 v3.0.1

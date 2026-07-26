@@ -56,9 +56,11 @@ auth:
   jwt_ttl_hours: 24
 
 storage:
-  # Optional. Storage backend driver: file | bbolt | postgres. Default: file (only file is implemented).
+  # Optional. Storage backend driver: file | bbolt | postgres. Default: file.
+  # Implemented: file (YAML metadata), bbolt (JSON metadata in a Bolt DB; blobs stay on the filesystem).
+  # postgres is not implemented.
   driver: file
-  # Optional. Root directory for application data. Default: data.
+  # Optional. Root directory for application data (and blob files). Default: data.
   # Relative paths are resolved against the grom binary directory.
   location: data
   # Optional. Directory for temporary uploads and imports. Default: tmp.
@@ -66,7 +68,8 @@ storage:
   temp_dir: tmp
   bbolt:
     # Optional. Path to the BBolt database file. Used only when driver is bbolt.
+    # Default when empty: {storage.location}/grom.db
     path: ""
   postgres:
-    # Optional. PostgreSQL DSN. Used only when driver is postgres.
+    # Optional. PostgreSQL DSN. Used only when driver is postgres (not implemented).
     dsn: ""

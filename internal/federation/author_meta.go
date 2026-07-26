@@ -62,6 +62,18 @@ func mergeAuthorMetaWithRefresh(ownerDir, handle, nickname string, actor map[str
 	if err != nil {
 		return err
 	}
+	UpdateAuthorMeta(&meta, handle, nickname, actor, client, refresh, blobs, viewerNickname, ownerKey)
+	if meta.Handle == "" && meta.Nickname == "" {
+		return nil
+	}
+	return writeAuthorMeta(ownerDir, meta)
+}
+
+// UpdateAuthorMeta merges actor fields and syncs avatar cache into meta in memory.
+func UpdateAuthorMeta(meta *AuthorMeta, handle, nickname string, actor map[string]any, client *http.Client, refresh bool, blobs blob.Store, viewerNickname, ownerKey string) {
+	if meta == nil {
+		return
+	}
 	if meta.Handle == "" {
 		meta.Handle = handle
 	}
@@ -79,12 +91,12 @@ func mergeAuthorMetaWithRefresh(ownerDir, handle, nickname string, actor map[str
 		}
 	}
 
-	syncAuthorAvatar(client, blobs, viewerNickname, ownerKey, meta.Handle, &meta, remoteURL, refresh)
+	syncAuthorAvatar(client, blobs, viewerNickname, ownerKey, meta.Handle, meta, remoteURL, refresh)
+}
 
-	if meta.Handle == "" && meta.Nickname == "" {
-		return nil
-	}
-	return writeAuthorMeta(ownerDir, meta)
+// AuthorAvatarFields returns avatar presence and API URL for a federated author.
+func AuthorAvatarFields(blobs blob.Store, viewerNickname, ownerKey, handle string, meta AuthorMeta) (bool, string) {
+	return authorAvatarFields(blobs, viewerNickname, ownerKey, handle, meta)
 }
 
 func authorActor(name, remoteAvatarURL string) map[string]any {

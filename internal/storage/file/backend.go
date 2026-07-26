@@ -14,13 +14,14 @@ import (
 )
 
 type Backend struct {
-	location  string
-	users     users.Repository
-	workouts  *workouts.Service
-	equipment equipment.Repository
-	social    social.Repository
-	fed       federation.Storage
-	blobs     blob.Store
+	location    string
+	users       users.Repository
+	workoutRepo *WorkoutsStore
+	workouts    *workouts.Service
+	equipment   equipment.Repository
+	social      social.Repository
+	fed         federation.Storage
+	blobs       blob.Store
 }
 
 func Open(location string) (*Backend, error) {
@@ -49,18 +50,20 @@ func Open(location string) (*Backend, error) {
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	return &Backend{
-		location:  location,
-		users:     userStore,
-		workouts:  workoutSvc,
-		equipment: equipmentStore,
-		social:    socialStore,
-		fed:       federation.NewStorage(followersStore, inboxStore),
-		blobs:     blobStore,
+		location:    location,
+		users:       userStore,
+		workoutRepo: workoutRepo,
+		workouts:    workoutSvc,
+		equipment:   equipmentStore,
+		social:      socialStore,
+		fed:         federation.NewStorage(followersStore, inboxStore),
+		blobs:       blobStore,
 	}, nil
 }
 
 func (b *Backend) Users() users.Repository         { return b.users }
 func (b *Backend) Workouts() *workouts.Service     { return b.workouts }
+func (b *Backend) WorkoutsRepo() *WorkoutsStore    { return b.workoutRepo }
 func (b *Backend) Equipment() equipment.Repository { return b.equipment }
 func (b *Backend) Social() social.Repository       { return b.social }
 func (b *Backend) Federation() federation.Storage  { return b.fed }

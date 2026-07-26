@@ -221,4 +221,28 @@ func (s *SocialStore) Delete(id string) error {
 	return social.ErrFollowNotFound
 }
 
+// Import writes a follow as-is (used by storage migration).
+func (s *SocialStore) Import(follow social.Follow) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := range s.follows {
+		if s.follows[i].ID == follow.ID {
+			s.follows[i] = follow
+			return s.save()
+		}
+	}
+	s.follows = append(s.follows, follow)
+	return s.save()
+}
+
+// ListAll returns every follow record (used by storage migration).
+func (s *SocialStore) ListAll() ([]social.Follow, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := make([]social.Follow, len(s.follows))
+	copy(result, s.follows)
+	return result, nil
+}
+
 var _ social.Repository = (*SocialStore)(nil)
