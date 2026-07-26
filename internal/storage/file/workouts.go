@@ -65,7 +65,7 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 		return nil, fmt.Errorf("create workouts dir: %w", err)
 	}
 
-	id, err := s.allocateWorkoutID(wd)
+	id, err := s.allocateWorkoutID()
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 		return nil, "", nil, fmt.Errorf("create workouts dir: %w", err)
 	}
 
-	id, err := s.allocateWorkoutID(wd)
+	id, err := s.allocateWorkoutID()
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -186,7 +186,11 @@ func (s *WorkoutsStore) saveNewWorkout(nickname string, workout *workouts.Workou
 		return nil, fmt.Errorf("create workouts dir: %w", err)
 	}
 
-	if s.workoutIDExists(wd, workout.ID) {
+	exists, err := s.workoutIDExists(workout.ID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
 		return nil, workouts.ErrWorkoutExists
 	}
 
@@ -416,28 +420,49 @@ func newWorkoutID() (string, error) {
 	return string(b), nil
 }
 
-func (s *WorkoutsStore) workoutIDExists(workoutsRoot, id string) bool {
-	suffix := "-" + id
-	entries, err := os.ReadDir(workoutsRoot)
+func (s *WorkoutsStore) workoutIDExists(id string) (bool, error) {
+	usersRoot := filepath.Join(s.dataDir, data.UsersSubdir)
+	users, err := os.ReadDir(usersRoot)
 	if err != nil {
-		return false
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
 	}
-	for _, entry := range entries {
-		if entry.IsDir() && strings.HasSuffix(entry.Name(), suffix) {
-			return true
+
+	suffix := "-" + id
+	for _, userEntry := range users {
+		if !userEntry.IsDir() {
+			continue
+		}
+		entries, err := os.ReadDir(workoutsDir(filepath.Join(usersRoot, userEntry.Name())))
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return false, err
+		}
+		for _, entry := range entries {
+			if entry.IsDir() && strings.HasSuffix(entry.Name(), suffix) {
+				return true, nil
+			}
 		}
 	}
-	return false
+	return false, nil
 }
 
-func (s *WorkoutsStore) allocateWorkoutID(workoutsRoot string) (string, error) {
+func (s *WorkoutsStore) allocateWorkoutID() (string, error) {
 	const maxAttempts = 10
 	for range maxAttempts {
 		id, err := newWorkoutID()
 		if err != nil {
 			return "", err
 		}
-		if !s.workoutIDExists(workoutsRoot, id) {
+		exists, err := s.workoutIDExists(id)
+		if err != nil {
+			return "", fmt.Errorf("check workout id: %w", err)
+		}
+		if !exists {
 			return id, nil
 		}
 	}

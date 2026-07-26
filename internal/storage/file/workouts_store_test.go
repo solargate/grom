@@ -34,6 +34,25 @@ func TestWorkoutsStoreRejectsDuplicateIDWithDifferentDate(t *testing.T) {
 	}
 }
 
+func TestWorkoutsStoreRejectsDuplicateIDAcrossUsers(t *testing.T) {
+	store := NewWorkoutsStore(t.TempDir())
+	startDate := time.Date(2026, 7, 4, 10, 0, 0, 0, time.UTC)
+
+	created, err := store.saveNewWorkout("alice", &workouts.Workout{
+		ID: "12345678", Name: "Alice run", SportType: "Run", StartDate: startDate,
+	})
+	if err != nil {
+		t.Fatalf("saveNewWorkout alice: %v", err)
+	}
+
+	_, err = store.saveNewWorkout("bob", &workouts.Workout{
+		ID: created.ID, Name: "Bob run", SportType: "Run", StartDate: startDate,
+	})
+	if err != workouts.ErrWorkoutExists {
+		t.Fatalf("expected ErrWorkoutExists across users, got %v", err)
+	}
+}
+
 func TestWorkoutsStoreCreateFailsIfWorkoutDirExists(t *testing.T) {
 	dir := t.TempDir()
 	store := NewWorkoutsStore(dir)

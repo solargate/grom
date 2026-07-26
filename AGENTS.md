@@ -131,7 +131,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 
 ## Domain notes agents should respect
 
-1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`).
+1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`); newly allocated IDs are unique across all local users on the instance.
 2. **Tracks:** parse/enrich via `internal/tracks`; attach through workout service, not by writing files from handlers alone.
 3. **Social feed** merges local workouts with federated inbox content (`workouts.FeedService` + federation adapters).
 4. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.

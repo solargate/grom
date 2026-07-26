@@ -7,7 +7,7 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
+func TestAllocateWorkoutIDUniqueGlobally(t *testing.T) {
 	dir := t.TempDir()
 	svc := newTestService(dir)
 
@@ -32,8 +32,6 @@ func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 		t.Fatalf("expected different ids for same user, both are %q", first.ID)
 	}
 
-	// Cross-user IDs are independently allocated; creation must succeed even
-	// when start dates match another user's workout.
 	otherUser, err := svc.Create("other", &workouts.Workout{
 		Name: "Other", SportType: "Run", StartDate: startDate1,
 	})
@@ -42,5 +40,8 @@ func TestAllocateWorkoutIDUniquePerUser(t *testing.T) {
 	}
 	if otherUser.ID == "" {
 		t.Fatal("expected generated id for other user")
+	}
+	if otherUser.ID == first.ID || otherUser.ID == second.ID {
+		t.Fatalf("expected globally unique id, got collision %q with athlete workouts", otherUser.ID)
 	}
 }
