@@ -36,5 +36,5 @@ func init() {
 	rootCmd.SetVersionTemplate("Grom {{.Version}}\n")
 	rootCmd.SetOut(os.Stdout)
 	rootCmd.SetErr(os.Stderr)
-	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to config file (default: ./config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "Path to config file (default: ./config.yaml)")
 }
