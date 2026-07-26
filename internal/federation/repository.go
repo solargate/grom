@@ -35,6 +35,7 @@ type InboxRepository interface {
 	Avatar(viewerNickname, ownerKey string) ([]byte, error)
 	Get(viewerNickname, ownerNickname, workoutID string) (*workouts.FeedWorkout, error)
 	List(viewerNickname string) ([]workouts.FeedWorkout, error)
+	ListPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error)
 }
 
 type Storage interface {

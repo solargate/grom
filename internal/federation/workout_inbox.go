@@ -502,7 +502,32 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 	}
 
 	sort.Slice(items, func(i, j int) bool {
-		return items[i].StartDate.After(items[j].StartDate)
+		return workouts.FeedNewer(items[i].StartDate, items[i].ID, items[j].StartDate, items[j].ID)
 	})
 	return items, nil
+}
+
+func (s *WorkoutInboxStore) ListPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error) {
+	if limit <= 0 {
+		limit = workouts.DefaultPageLimit
+	}
+	all, err := s.List(viewerNickname)
+	if err != nil {
+		return nil, false, err
+	}
+	filtered := make([]workouts.FeedWorkout, 0, limit)
+	for i := range all {
+		if !workouts.AfterCursor(all[i].StartDate, all[i].ID, cursor) {
+			continue
+		}
+		filtered = append(filtered, all[i])
+		if len(filtered) > limit {
+			break
+		}
+	}
+	hasMore := len(filtered) > limit
+	if hasMore {
+		filtered = filtered[:limit]
+	}
+	return filtered, hasMore, nil
 }

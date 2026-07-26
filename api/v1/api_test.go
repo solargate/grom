@@ -235,6 +235,23 @@ func decodeList(t *testing.T, w *httptest.ResponseRecorder) []map[string]any {
 	return out
 }
 
+func decodeWorkoutPage(t *testing.T, w *httptest.ResponseRecorder) (items []map[string]any, nextCursor string, hasMore bool) {
+	t.Helper()
+	obj := decodeObject(t, w)
+	rawItems, _ := obj["items"].([]any)
+	items = make([]map[string]any, 0, len(rawItems))
+	for _, item := range rawItems {
+		m, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("page item is not object: %#v", item)
+		}
+		items = append(items, m)
+	}
+	nextCursor, _ = obj["next_cursor"].(string)
+	hasMore, _ = obj["has_more"].(bool)
+	return items, nextCursor, hasMore
+}
+
 func expectStatus(t *testing.T, w *httptest.ResponseRecorder, want int) {
 	t.Helper()
 	if w.Code != want {
@@ -349,7 +366,7 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own", nil, token)
 	expectStatus(t, w, http.StatusOK)
-	list := decodeList(t, w)
+	list, _, _ := decodeWorkoutPage(t, w)
 	if len(list) != 1 || list[0]["id"] != id || list[0]["name"] != "Evening run" {
 		t.Fatalf("unexpected list after update: %#v", list)
 	}
@@ -366,7 +383,7 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own", nil, token)
 	expectStatus(t, w, http.StatusOK)
-	if list = decodeList(t, w); len(list) != 0 {
+	if list, _, _ = decodeWorkoutPage(t, w); len(list) != 0 {
 		t.Fatalf("expected empty list after delete, got %#v", list)
 	}
 }
@@ -465,7 +482,7 @@ func TestEquipmentDeleteCascades(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own", nil, token)
 	expectStatus(t, w, http.StatusOK)
-	list := decodeList(t, w)
+	list, _, _ := decodeWorkoutPage(t, w)
 	if len(list) != 1 {
 		t.Fatalf("expected workout to remain, got %#v", list)
 	}
@@ -634,6 +651,49 @@ func TestAvatarUploadAPI(t *testing.T) {
 			"avatar": {{filename: "bad.png", data: bad}},
 		},
 	)
+	expectStatus(t, w, http.StatusBadRequest)
+}
+
+func TestListWorkoutsPagination(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	start := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 5; i++ {
+		w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+			"name":       "Run",
+			"sport_type": "Run",
+			"start_date": start.Add(-time.Duration(i) * time.Hour).Format(time.RFC3339),
+		}, token)
+		expectStatus(t, w, http.StatusCreated)
+	}
+
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=2", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items, cursor, hasMore := decodeWorkoutPage(t, w)
+	if len(items) != 2 || !hasMore || cursor == "" {
+		t.Fatalf("page1 items=%d hasMore=%v cursor=%q", len(items), hasMore, cursor)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=2&cursor="+cursor, nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items2, cursor2, hasMore2 := decodeWorkoutPage(t, w)
+	if len(items2) != 2 || !hasMore2 || cursor2 == "" {
+		t.Fatalf("page2 items=%d hasMore=%v cursor=%q", len(items2), hasMore2, cursor2)
+	}
+	if items2[0]["id"] == items[0]["id"] || items2[0]["id"] == items[1]["id"] {
+		t.Fatalf("pages overlap: %#v %#v", items, items2)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=2&cursor="+cursor2, nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items3, _, hasMore3 := decodeWorkoutPage(t, w)
+	if len(items3) != 1 || hasMore3 {
+		t.Fatalf("page3 items=%d hasMore=%v", len(items3), hasMore3)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&cursor=not-a-valid-cursor", nil, token)
 	expectStatus(t, w, http.StatusBadRequest)
 }
 

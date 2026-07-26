@@ -29,12 +29,27 @@ func (s *Service) List(nickname string) ([]Workout, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.enrichList(nickname, items)
+	return items, nil
+}
+
+// ListPage returns a cursor page of workouts for nickname (enriched).
+func (s *Service) ListPage(nickname string, cursor *Cursor, limit int) ([]Workout, bool, error) {
+	limit = ClampLimit(limit)
+	items, hasMore, err := s.repo.ListPage(nickname, cursor, limit)
+	if err != nil {
+		return nil, false, err
+	}
+	s.enrichList(nickname, items)
+	return items, hasMore, nil
+}
+
+func (s *Service) enrichList(nickname string, items []Workout) {
 	byID := s.loadEquipmentByID(nickname, items)
 	for i := range items {
 		s.enrichWorkout(nickname, &items[i])
 		ApplyEquipmentCatalog(items[i].Equipment, byID)
 	}
-	return items, nil
 }
 
 func (s *Service) Get(nickname, workoutID string) (*Workout, error) {
@@ -119,10 +134,8 @@ func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Wo
 }
 
 func (s *Service) enrichWorkout(nickname string, w *Workout) {
-	dirName, err := s.repo.WorkoutDirName(nickname, w.ID)
-	if err != nil {
-		return
-	}
+	// Derive dir name from metadata — avoids O(N) directory scans per list item.
+	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
 	ctx := context.Background()
 	if ok, _ := s.blobs.Exists(ctx, keys.WorkoutMapPreview(nickname, dirName)); ok {
 		w.HasMapPreview = true

@@ -436,6 +436,17 @@ definitions:
         example: bike
         type: string
     type: object
+  v1.WorkoutListResponse:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/v1.WorkoutResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   v1.WorkoutResponse:
     properties:
       author:
@@ -1102,13 +1113,22 @@ paths:
       - users
   /workouts:
     get:
-      description: Return workouts for the authenticated user sorted by start date
-        descending. Use scope=feed for the full feed (default) or scope=own for only
-        the viewer's workouts.
+      description: Return a cursor page of workouts for the authenticated user sorted
+        by start date descending (id descending tie-breaker). Use scope=feed for the
+        full feed (default) or scope=own for only the viewer's workouts. Default limit
+        is 20 (max 100).
       parameters:
       - description: feed (default) or own
         in: query
         name: scope
+        type: string
+      - description: page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: opaque cursor from previous page next_cursor
+        in: query
+        name: cursor
         type: string
       produces:
       - application/json
@@ -1116,9 +1136,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/v1.WorkoutResponse'
-            type: array
+            $ref: '#/definitions/v1.WorkoutListResponse'
         "400":
           description: Bad Request
           schema:
