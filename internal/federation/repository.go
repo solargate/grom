@@ -33,6 +33,7 @@ type InboxRepository interface {
 	MediaOriginal(viewerNickname, ownerNickname, workoutID, filename string) ([]byte, string, error)
 	MediaPreview(viewerNickname, ownerNickname, workoutID, filename string) ([]byte, error)
 	Avatar(viewerNickname, ownerKey string) ([]byte, error)
+	Get(viewerNickname, ownerNickname, workoutID string) (*workouts.FeedWorkout, error)
 	List(viewerNickname string) ([]workouts.FeedWorkout, error)
 }
 

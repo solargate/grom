@@ -105,6 +105,46 @@ void main() {
     );
   });
 
+  test('getWorkout requests owner query and parses body', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/workouts/wid');
+      expect(request.url.queryParameters['owner'], 'alice');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode({
+          'id': 'wid',
+          'owner': 'alice',
+          'name': 'Morning run',
+          'sport_type': 'Run',
+          'start_date': '2026-07-08T10:00:00Z',
+          'duration_seconds': 1800,
+          'distance': 5000,
+          'has_map_preview': false,
+          'has_media': false,
+          'author': {
+            'nickname': 'alice',
+            'name': 'Alice',
+            'handle': 'alice@grom.example',
+            'is_local': true,
+            'has_avatar': false,
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final workout = await ApiRequest(client: client).getWorkout(
+      token: 'tok',
+      workoutId: 'wid',
+      owner: 'alice',
+    );
+    expect(workout.id, 'wid');
+    expect(workout.owner, 'alice');
+    expect(workout.name, 'Morning run');
+  });
+
   test('getServerInfo parses JSON and falls back on errors', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final okClient = MockClient((request) async {

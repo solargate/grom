@@ -311,6 +311,28 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<Workout> getWorkout({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Workout> createWorkoutMultipart({
     required String token,
     required Map<String, String> fields,

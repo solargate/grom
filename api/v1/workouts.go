@@ -744,6 +744,87 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "image/webp", data)
 }
 
+// getWorkout godoc
+// @Summary      Get workout
+// @Description  Return a single workout by ID. Use owner query for followed users' workouts (same as track/media).
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id} [get]
+func (a *App) getWorkout(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		return
+	}
+
+	workout, err := a.Workouts.Get(owner, workoutID)
+	if err == nil {
+		ctx.JSON(http.StatusOK, a.toLocalWorkoutResponse(owner, workout))
+		return
+	}
+	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load workout"})
+		return
+	}
+
+	if a.Federation.Inbox() == nil {
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+		return
+	}
+	item, err := a.Federation.Inbox().Get(nickname, owner, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load workout"})
+		return
+	}
+	ctx.JSON(http.StatusOK, toFeedWorkoutResponse(item))
+}
+
+func (a *App) toLocalWorkoutResponse(ownerNickname string, workout *workouts.Workout) WorkoutResponse {
+	name := ownerNickname
+	if user, err := a.Users.FindByNickname(ownerNickname); err == nil && user != nil {
+		name = user.Name
+	}
+	domain := config.Cfg.Federation.Domain
+	if domain == "" {
+		domain = "localhost"
+	}
+	hasAvatar, avatarURL := a.localAvatarFieldsForUser(ownerNickname)
+	item := workouts.FeedWorkout{
+		Workout: *workout,
+		Owner:   ownerNickname,
+		Author: workouts.FeedAuthor{
+			Nickname:  ownerNickname,
+			Name:      name,
+			Handle:    ownerNickname + "@" + domain,
+			IsLocal:   true,
+			HasAvatar: hasAvatar,
+			AvatarURL: avatarURL,
+		},
+	}
+	return toFeedWorkoutResponse(&item)
+}
+
 func (a *App) getWorkoutMediaPreview(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {

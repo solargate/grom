@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `GET /api/v1/workouts/{id}` to fetch a single workout (`?owner=` same as track/media)
 - Edit own workouts from the detail menu (metadata and equipment), with ActivityPub `Update` delivery to followers
 - Water sport type Packraft
 - CI workflow on `master` and pull requests: Go vet/test/build, Flutter analyze/test, and swagger doc drift check

@@ -66,6 +66,14 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	if items[0].Owner != "test2" {
 		t.Fatalf("owner = %q", items[0].Owner)
 	}
+
+	got, err := store.Get("solarwind", "test2", "38472901")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if got.ID != "38472901" || got.Owner != "test2" || got.Author.IsLocal {
+		t.Fatalf("unexpected Get item: %#v", got)
+	}
 }
 
 func TestWorkoutInboxStoreDelete(t *testing.T) {

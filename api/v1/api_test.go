@@ -552,6 +552,52 @@ func TestWorkoutTrackACL(t *testing.T) {
 	expectStatus(t, w, http.StatusForbidden)
 }
 
+func TestGetWorkout(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	ta.register(t, "bob", "bob@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+	bobToken, _ := ta.login(t, "bob@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name":            "Solo run",
+		"sport_type":      "Run",
+		"start_date":      "2026-07-08T10:00:00Z",
+		"duration_seconds": 1800,
+		"distance":        5000,
+	}, aliceToken)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	id, _ := created["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id, nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	got := decodeObject(t, w)
+	if got["id"] != id || got["name"] != "Solo run" || got["owner"] != "alice" {
+		t.Fatalf("unexpected own workout: %#v", got)
+	}
+	author, _ := got["author"].(map[string]any)
+	if author == nil || author["nickname"] != "alice" || author["is_local"] != true {
+		t.Fatalf("unexpected author: %#v", got["author"])
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"?owner=alice", nil, bobToken)
+	expectStatus(t, w, http.StatusNotFound)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"?owner=alice", nil, bobToken)
+	expectStatus(t, w, http.StatusOK)
+	got = decodeObject(t, w)
+	if got["id"] != id || got["owner"] != "alice" || got["name"] != "Solo run" {
+		t.Fatalf("unexpected followed workout: %#v", got)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/missingid", nil, aliceToken)
+	expectStatus(t, w, http.StatusNotFound)
+}
+
 func TestAvatarUploadAPI(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

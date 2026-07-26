@@ -37,6 +37,17 @@ func (s *Service) List(nickname string) ([]Workout, error) {
 	return items, nil
 }
 
+func (s *Service) Get(nickname, workoutID string) (*Workout, error) {
+	workout, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, err
+	}
+	s.enrichWorkout(nickname, workout)
+	byID := s.loadEquipmentByID(nickname, []Workout{*workout})
+	ApplyEquipmentCatalog(workout.Equipment, byID)
+	return workout, nil
+}
+
 func (s *Service) loadEquipmentByID(nickname string, items []Workout) map[string]equipment.Equipment {
 	if s.equipment == nil {
 		return nil

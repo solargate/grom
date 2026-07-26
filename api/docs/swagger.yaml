@@ -1231,6 +1231,43 @@ paths:
       summary: Delete workout
       tags:
       - workouts
+    get:
+      description: Return a single workout by ID. Use owner query for followed users'
+        workouts (same as track/media).
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout
+      tags:
+      - workouts
     put:
       consumes:
       - application/json

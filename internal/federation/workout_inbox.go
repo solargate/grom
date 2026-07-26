@@ -403,6 +403,42 @@ func (s *WorkoutInboxStore) ownerDirForKey(viewerNickname, ownerKey string) (str
 	return ownerDir, nil
 }
 
+func (s *WorkoutInboxStore) Get(viewerNickname, ownerNickname, workoutID string) (*workouts.FeedWorkout, error) {
+	ownerDir, ownerKey, err := s.findOwnerDir(viewerNickname, ownerNickname)
+	if err != nil {
+		return nil, err
+	}
+	workout, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID)
+	if err != nil {
+		return nil, err
+	}
+	handle := ownerHandleFromDir(ownerKey)
+	nickname := ownerNicknameFromDir(ownerKey)
+	meta, err := readAuthorMeta(ownerDir)
+	if err != nil {
+		return nil, err
+	}
+	if meta.Handle != "" {
+		handle = meta.Handle
+	}
+	if meta.Nickname != "" {
+		nickname = meta.Nickname
+	}
+	authorHasAvatar, authorAvatarURL := authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
+	return &workouts.FeedWorkout{
+		Workout: *workout,
+		Owner:   nickname,
+		Author: workouts.FeedAuthor{
+			Nickname:  nickname,
+			Name:      meta.Name,
+			Handle:    handle,
+			IsLocal:   false,
+			HasAvatar: authorHasAvatar,
+			AvatarURL: authorAvatarURL,
+		},
+	}, nil
+}
+
 func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
