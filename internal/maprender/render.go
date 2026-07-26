@@ -21,10 +21,10 @@ const (
 	// Values > 1 add padding around the track; 1.0 matches track extent.
 	boundsFillFraction       = 1.0
 	minBoundsHalfSpanDegrees = 0.0012
-	trackLineWeight          = 4.0
+	trackLineWeight          = 5.0
 )
 
-var trackLineColor = color.RGBA{R: 25, G: 118, B: 210, A: 255} // Material Blue 700 #1976D2
+var trackLineColor = color.RGBA{R: 244, G: 94, B: 30, A: 255} // #F45E1E
 
 func RenderPreview(points []tracks.LatLng) ([]byte, error) {
 	if len(points) < 2 {
