@@ -217,19 +217,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
 
-    final viewingWorkout = widget.viewingWorkout;
-    if (viewingWorkout != null && _authToken != null) {
-      return WorkoutDetailView(
-        workout: viewingWorkout,
-        authToken: _authToken!,
-        federationEnabled: widget.federationEnabled,
-        isMapExpanded: widget.isMapExpanded,
-        onMapExpandedChanged: widget.onMapExpandedChanged,
-        photoViewerIndex: widget.photoViewerIndex,
-        onPhotoViewerIndexChanged: widget.onPhotoViewerIndexChanged,
-      );
-    }
-
     final l10n = AppLocalizations.of(context)!;
     final tabController = _tabController;
 
@@ -237,9 +224,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final viewingWorkout = widget.viewingWorkout;
+    final showWorkoutDetail = viewingWorkout != null && _authToken != null;
     final feedPhotoWorkout = widget.feedPhotoViewerWorkout;
     final photoViewerIndex = widget.photoViewerIndex;
-    final showFeedPhotoViewer = feedPhotoWorkout != null &&
+    final showFeedPhotoViewer = !showWorkoutDetail &&
+        feedPhotoWorkout != null &&
         photoViewerIndex != null &&
         feedPhotoWorkout.mediaFiles.isNotEmpty &&
         _authToken != null;
@@ -283,36 +273,62 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     ];
 
+    // Keep the feed list mounted while viewing a workout so scroll position
+    // and loaded pages survive back navigation.
     return Stack(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Material(
-              color: Theme.of(context).colorScheme.surface,
-              child: TabBar(
-                controller: tabController,
-                onTap: _onTabTapped,
-                tabs: tabs,
+        Positioned.fill(
+          child: Offstage(
+            offstage: showWorkoutDetail,
+            child: TickerMode(
+              enabled: !showWorkoutDetail,
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Material(
+                        color: Theme.of(context).colorScheme.surface,
+                        child: TabBar(
+                          controller: tabController,
+                          onTap: _onTabTapped,
+                          tabs: tabs,
+                        ),
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: tabController,
+                          children: tabViews,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (showFeedPhotoViewer)
+                    Positioned.fill(
+                      child: WorkoutPhotoViewer(
+                        workout: feedPhotoWorkout,
+                        authToken: _authToken!,
+                        initialIndex: photoViewerIndex.clamp(
+                          0,
+                          feedPhotoWorkout.mediaFiles.length - 1,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            Expanded(
-              child: TabBarView(
-                controller: tabController,
-                children: tabViews,
-              ),
-            ),
-          ],
+          ),
         ),
-        if (showFeedPhotoViewer)
+        if (showWorkoutDetail)
           Positioned.fill(
-            child: WorkoutPhotoViewer(
-              workout: feedPhotoWorkout,
+            child: WorkoutDetailView(
+              workout: viewingWorkout,
               authToken: _authToken!,
-              initialIndex: photoViewerIndex.clamp(
-                0,
-                feedPhotoWorkout.mediaFiles.length - 1,
-              ),
+              federationEnabled: widget.federationEnabled,
+              isMapExpanded: widget.isMapExpanded,
+              onMapExpandedChanged: widget.onMapExpandedChanged,
+              photoViewerIndex: widget.photoViewerIndex,
+              onPhotoViewerIndexChanged: widget.onPhotoViewerIndexChanged,
             ),
           ),
       ],
