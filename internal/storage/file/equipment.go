@@ -242,4 +242,23 @@ func (s *EquipmentStore) Delete(nickname, id string) error {
 	return s.save(nickname, updated)
 }
 
+// Import writes an equipment item as-is (used by storage migration).
+func (s *EquipmentStore) Import(nickname string, item equipment.Equipment) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	items, err := s.load(nickname)
+	if err != nil {
+		return err
+	}
+	for i := range items {
+		if items[i].ID == item.ID {
+			items[i] = item
+			return s.save(nickname, items)
+		}
+	}
+	items = append(items, item)
+	return s.save(nickname, items)
+}
+
 var _ equipment.Repository = (*EquipmentStore)(nil)

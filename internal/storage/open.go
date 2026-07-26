@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/storage/bbolt"
 	"github.com/solargate/grom/internal/storage/file"
 )
 
@@ -18,8 +19,14 @@ func Open(cfg config.StorageConfig) (Backend, error) {
 	switch config.StorageDriver(driver) {
 	case config.StorageDriverFile:
 		return file.Open(cfg.ResolvedLocation)
+	case config.StorageDriverBBolt:
+		dbPath := cfg.ResolvedBBoltPath
+		if dbPath == "" {
+			dbPath = cfg.BBolt.Path
+		}
+		return bbolt.Open(dbPath, cfg.ResolvedLocation)
 	default:
-		return nil, fmt.Errorf("unsupported storage driver %q (supported: file)", driver)
+		return nil, fmt.Errorf("unsupported storage driver %q (supported: file, bbolt)", driver)
 	}
 }
 

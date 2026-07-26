@@ -29,11 +29,12 @@ const (
 )
 
 type StorageConfig struct {
-	Driver StorageDriver `mapstructure:"driver" yaml:"driver"`
-	Location        string `mapstructure:"location" yaml:"location"`
-	TempDir         string `mapstructure:"temp_dir" yaml:"temp_dir"`
-	ResolvedLocation string `mapstructure:"-" yaml:"-"`
-	ResolvedTempDir  string `mapstructure:"-" yaml:"-"`
+	Driver           StorageDriver `mapstructure:"driver" yaml:"driver"`
+	Location         string        `mapstructure:"location" yaml:"location"`
+	TempDir          string        `mapstructure:"temp_dir" yaml:"temp_dir"`
+	ResolvedLocation string        `mapstructure:"-" yaml:"-"`
+	ResolvedTempDir  string        `mapstructure:"-" yaml:"-"`
+	ResolvedBBoltPath string       `mapstructure:"-" yaml:"-"`
 	BBolt struct {
 		Path string `mapstructure:"path" yaml:"path"`
 	} `mapstructure:"bbolt" yaml:"bbolt"`
@@ -193,6 +194,20 @@ func FinalizeConfig(cfg *Config) error {
 		return fmt.Errorf("create storage directory: %w", err)
 	}
 	cfg.Storage.ResolvedLocation = resolvedDir
+
+	bboltPath := strings.TrimSpace(cfg.Storage.BBolt.Path)
+	if bboltPath == "" {
+		cfg.Storage.ResolvedBBoltPath = filepath.Join(resolvedDir, "grom.db")
+	} else {
+		resolvedBBolt, err := data.ResolveDataDir(bboltPath)
+		if err != nil {
+			return fmt.Errorf("resolve storage.bbolt.path: %w", err)
+		}
+		if err := os.MkdirAll(filepath.Dir(resolvedBBolt), 0700); err != nil {
+			return fmt.Errorf("create bbolt parent directory: %w", err)
+		}
+		cfg.Storage.ResolvedBBoltPath = resolvedBBolt
+	}
 
 	tempDir := strings.TrimSpace(cfg.Storage.TempDir)
 	if tempDir == "" {

@@ -314,4 +314,32 @@ func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) err
 	return users.ErrUserNotFound
 }
 
+// Import writes a user record as-is (used by storage migration).
+func (s *UsersStore) Import(user users.User) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if err := validateNickname(user.Nickname); err != nil {
+		return err
+	}
+	if err := ensureUserDir(s.dataDir, user.Nickname); err != nil {
+		return err
+	}
+	normalizedEmail := strings.ToLower(strings.TrimSpace(user.Email))
+	for i := range s.users {
+		if s.users[i].ID == user.ID {
+			s.users[i] = user
+			return s.save()
+		}
+		if strings.ToLower(s.users[i].Email) == normalizedEmail && s.users[i].ID != user.ID {
+			return users.ErrEmailTaken
+		}
+		if strings.EqualFold(s.users[i].Nickname, user.Nickname) && s.users[i].ID != user.ID {
+			return users.ErrNicknameTaken
+		}
+	}
+	s.users = append(s.users, user)
+	return s.save()
+}
+
 var _ users.Repository = (*UsersStore)(nil)

@@ -508,4 +508,20 @@ func (s *WorkoutsStore) allocateWorkoutID() (string, error) {
 	return "", fmt.Errorf("failed to allocate unique workout id after %d attempts", maxAttempts)
 }
 
+// Import writes workout metadata as-is without allocating a new ID (migration).
+func (s *WorkoutsStore) Import(nickname string, workout *workouts.Workout) error {
+	if workout == nil || workout.ID == "" {
+		return workouts.ErrInvalidWorkout
+	}
+	userDir := s.userDir(nickname)
+	if err := os.MkdirAll(workoutsDir(userDir), 0700); err != nil {
+		return fmt.Errorf("create workouts dir: %w", err)
+	}
+	workoutDirPath := workoutDir(userDir, workout.StartDate, workout.ID)
+	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
+		return fmt.Errorf("create workout dir: %w", err)
+	}
+	return writeWorkoutYAML(workoutFilePath(userDir, workout.StartDate, workout.ID), workout)
+}
+
 var _ workouts.Repository = (*WorkoutsStore)(nil)
