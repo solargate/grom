@@ -149,8 +149,8 @@ class GromSideMenu extends StatelessWidget {
             label: Text(l10n.profile),
           ),
           NavigationDrawerDestination(
-            icon: const Icon(Icons.sports_outlined),
-            selectedIcon: const Icon(Icons.sports),
+            icon: const Icon(Icons.inventory_2_outlined),
+            selectedIcon: const Icon(Icons.inventory_2),
             label: Text(l10n.equipment),
           ),
           NavigationDrawerDestination(

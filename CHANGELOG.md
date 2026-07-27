@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Equipment navigation menu icon: inventory (`inventory_2`) instead of sports whistle
 - Workout list cards no longer show equipment; detail view shows it below the stats table
 - Workout track overlay on interactive maps and static map previews uses orange (`#F45E1E`) instead of blue
 
