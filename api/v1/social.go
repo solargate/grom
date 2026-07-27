@@ -130,7 +130,7 @@ func (a *App) followUser(ctx *gin.Context) {
 
 	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		respondInternal(ctx, "user not found", err)
 		return
 	}
 	a.cacheRemoteFollowAvatar(viewer.Nickname, follow)
@@ -184,13 +184,13 @@ func (a *App) listFollowing(ctx *gin.Context) {
 
 	follows, err := a.Social.ListFollowing(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
+		respondInternal(ctx, "failed to list following", err)
 		return
 	}
 
 	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		respondInternal(ctx, "user not found", err)
 		return
 	}
 
@@ -220,13 +220,13 @@ func (a *App) listFollowers(ctx *gin.Context) {
 
 	followers, err := a.Social.ListFollowers(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list followers"})
+		respondInternal(ctx, "failed to list followers", err)
 		return
 	}
 
 	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		respondInternal(ctx, "user not found", err)
 		return
 	}
 
@@ -252,6 +252,6 @@ func handleSocialError(ctx *gin.Context, err error) {
 	case errors.Is(err, social.ErrRemoteNotReady):
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 	default:
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "social operation failed"})
+		respondInternal(ctx, "social operation failed", err)
 	}
 }

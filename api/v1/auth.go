@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -80,13 +81,19 @@ func (a *App) register(ctx *gin.Context) {
 			return
 		}
 		if errors.Is(err, users.ErrEmailTaken) || errors.Is(err, users.ErrNicknameTaken) {
+			reason := "email_taken"
+			if errors.Is(err, users.ErrNicknameTaken) {
+				reason = "nickname_taken"
+			}
+			slog.Info("register_conflict", "reason", reason, "nickname", req.Nickname)
 			ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create user"})
+		respondInternal(ctx, "failed to create user", err)
 		return
 	}
 
+	slog.Info("user_registered", "user_id", user.ID, "nickname", user.Nickname)
 	ctx.JSON(http.StatusCreated, a.toUserResponse(user))
 }
 
@@ -110,18 +117,20 @@ func (a *App) login(ctx *gin.Context) {
 
 	user, err := a.Users.FindByEmail(req.Email)
 	if err != nil {
+		slog.Warn("login_failed", "reason", "unknown_email", "email", req.Email)
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid email or password"})
 		return
 	}
 
 	if !auth.CheckPassword(user.PasswordHash, req.Password) {
+		slog.Warn("login_failed", "reason", "bad_password", "email", req.Email, "user_id", user.ID)
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid email or password"})
 		return
 	}
 
 	token, expiresAt, err := auth.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate token"})
+		respondInternal(ctx, "failed to generate token", err)
 		return
 	}
 
@@ -194,7 +203,7 @@ func (a *App) updateMe(ctx *gin.Context) {
 			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update profile"})
+		respondInternal(ctx, "failed to update profile", err)
 		return
 	}
 

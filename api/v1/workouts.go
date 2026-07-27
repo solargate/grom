@@ -309,7 +309,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 	case errors.Is(err, workouts.ErrWorkoutExists):
 		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 	default:
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create workout"})
+		respondInternal(ctx, "failed to create workout", err)
 	}
 }
 
@@ -361,7 +361,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 
 	equipmentItems, err := a.resolveWorkoutEquipment(nickname, req.EquipmentIDs)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		respondInternal(ctx, "failed to resolve equipment", err)
 		return
 	}
 
@@ -449,16 +449,40 @@ func (a *App) publishWorkoutActivity(nickname string, workout *workouts.Workout,
 		return
 	}
 	inboxes, err := a.Federation.Followers().ListInboxes(nickname)
-	if err != nil || len(inboxes) == 0 {
+	if err != nil {
+		slog.Error("federation list inboxes failed",
+			"user", nickname,
+			"workout_id", workout.ID,
+			"err", err,
+		)
+		return
+	}
+	if len(inboxes) == 0 {
 		return
 	}
 	var trackData []byte
 	if workout.Track != "" {
-		trackData, _, _, _ = a.Workouts.TrackFile(nickname, workout.ID)
+		var trackErr error
+		trackData, _, _, trackErr = a.Workouts.TrackFile(nickname, workout.ID)
+		if trackErr != nil {
+			slog.Warn("federation track read failed",
+				"user", nickname,
+				"workout_id", workout.ID,
+				"err", trackErr,
+			)
+		}
 	}
 	var mediaFiles []workouts.MediaFileInput
 	if workout.HasMedia || len(workout.MediaFiles) > 0 {
-		mediaFiles, _ = a.Workouts.ReadMediaPayload(nickname, workout.ID)
+		var mediaErr error
+		mediaFiles, mediaErr = a.Workouts.ReadMediaPayload(nickname, workout.ID)
+		if mediaErr != nil {
+			slog.Warn("federation media read failed",
+				"user", nickname,
+				"workout_id", workout.ID,
+				"err", mediaErr,
+			)
+		}
 	}
 	if update {
 		_ = a.federationDelivery.DeliverWorkoutUpdate(nickname, workout, inboxes, trackData, mediaFiles)
@@ -472,7 +496,15 @@ func (a *App) publishDeletedWorkout(nickname, workoutID string) {
 		return
 	}
 	inboxes, err := a.Federation.Followers().ListInboxes(nickname)
-	if err != nil || len(inboxes) == 0 {
+	if err != nil {
+		slog.Error("federation list inboxes failed",
+			"user", nickname,
+			"workout_id", workoutID,
+			"err", err,
+		)
+		return
+	}
+	if len(inboxes) == 0 {
 		return
 	}
 	_ = a.federationDelivery.DeliverWorkoutDelete(nickname, workoutID, inboxes)
@@ -498,7 +530,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 	equipmentItems, err := a.resolveWorkoutEquipment(nickname, equipmentIDs)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		respondInternal(ctx, "failed to resolve equipment", err)
 		return
 	}
 
@@ -651,7 +683,7 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		respondInternal(ctx, "failed to resolve workout", err)
 		return
 	}
 
@@ -679,7 +711,7 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "track not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load track"})
+		respondInternal(ctx, "failed to load track", err)
 		return
 	}
 
@@ -696,7 +728,7 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 				ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 				return
 			}
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to export track"})
+			respondInternal(ctx, "failed to export track", err)
 			return
 		}
 		downloadFilename = workouts.TrackDownloadFilename(workoutName, ".gpx")
@@ -743,7 +775,7 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		respondInternal(ctx, "failed to resolve workout", err)
 		return
 	}
 
@@ -756,7 +788,7 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "map preview not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load map preview"})
+		respondInternal(ctx, "failed to load map preview", err)
 		return
 	}
 
@@ -791,7 +823,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		respondInternal(ctx, "failed to resolve workout", err)
 		return
 	}
 
@@ -801,7 +833,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 		return
 	}
 	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load workout"})
+		respondInternal(ctx, "failed to load workout", err)
 		return
 	}
 
@@ -815,7 +847,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load workout"})
+		respondInternal(ctx, "failed to load workout", err)
 		return
 	}
 	ctx.JSON(http.StatusOK, toFeedWorkoutResponse(item))
@@ -859,7 +891,7 @@ func (a *App) getWorkoutMediaPreview(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		respondInternal(ctx, "failed to resolve workout", err)
 		return
 	}
 
@@ -873,7 +905,7 @@ func (a *App) getWorkoutMediaPreview(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load photo preview"})
+		respondInternal(ctx, "failed to load photo preview", err)
 		return
 	}
 
@@ -895,7 +927,7 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve workout"})
+		respondInternal(ctx, "failed to resolve workout", err)
 		return
 	}
 
@@ -909,7 +941,7 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load photo"})
+		respondInternal(ctx, "failed to load photo", err)
 		return
 	}
 
@@ -975,7 +1007,7 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 
 	viewer, err := a.Users.FindByID(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user not found"})
+		respondInternal(ctx, "user not found", err)
 		return
 	}
 
@@ -988,7 +1020,7 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 		var follows []social.Follow
 		follows, err = a.Social.ListFollowing(userID)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list following"})
+			respondInternal(ctx, "failed to list following", err)
 			return
 		}
 
@@ -1014,7 +1046,7 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 		page, err = feedSvc.ListFeedPage(nickname, viewer.Name, followedAuthors, cursor, limit)
 	}
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list workouts"})
+		respondInternal(ctx, "failed to list workouts", err)
 		return
 	}
 
@@ -1055,7 +1087,7 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to delete workout"})
+		respondInternal(ctx, "failed to delete workout", err)
 		return
 	}
 
@@ -1101,7 +1133,7 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 
 	equipmentItems, err := a.resolveWorkoutEquipment(nickname, req.EquipmentIDs)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to resolve equipment"})
+		respondInternal(ctx, "failed to resolve equipment", err)
 		return
 	}
 
@@ -1135,6 +1167,6 @@ func handleUpdateWorkoutError(ctx *gin.Context, err error) {
 	case errors.Is(err, workouts.ErrWorkoutExists):
 		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 	default:
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update workout"})
+		respondInternal(ctx, "failed to update workout", err)
 	}
 }

@@ -48,7 +48,7 @@ func (a *App) uploadMyAvatar(ctx *gin.Context) {
 			errors.Is(err, avatars.ErrAvatarNotSquare):
 			ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		default:
-			ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to save avatar"})
+			respondInternal(ctx, "failed to save avatar", err)
 		}
 		return
 	}
@@ -84,7 +84,7 @@ func (a *App) deleteMyAvatar(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "avatar not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to delete avatar"})
+		respondInternal(ctx, "failed to delete avatar", err)
 		return
 	}
 
@@ -159,7 +159,7 @@ func (a *App) getFederatedAuthorAvatar(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "avatar not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to load avatar"})
+		respondInternal(ctx, "failed to load avatar", err)
 		return
 	}
 

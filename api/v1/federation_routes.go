@@ -77,6 +77,7 @@ func (a *App) actorHandler() gin.HandlerFunc {
 		}
 		pubKey, keyID, err := fed.LoadOrCreateActorKey(a.Blobs, user.Nickname)
 		if err != nil {
+			logInternalError(ctx, "failed to load actor key", err)
 			ctx.Status(http.StatusInternalServerError)
 			return
 		}

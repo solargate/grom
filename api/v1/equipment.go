@@ -65,7 +65,7 @@ func handleEquipmentError(ctx *gin.Context, err error) {
 	case errors.Is(err, equipment.ErrEquipmentNotFound):
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
 	default:
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to process equipment"})
+		respondInternal(ctx, "failed to process equipment", err)
 	}
 }
 
@@ -89,7 +89,7 @@ func (a *App) listEquipment(ctx *gin.Context) {
 
 	items, err := a.Equipment.List(nickname)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to list equipment"})
+		respondInternal(ctx, "failed to list equipment", err)
 		return
 	}
 
@@ -226,7 +226,7 @@ func (a *App) deleteEquipment(ctx *gin.Context) {
 	}
 
 	if err := a.Workouts.RemoveEquipmentFromAll(nickname, id); err != nil {
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update workouts"})
+		respondInternal(ctx, "failed to update workouts", err)
 		return
 	}
 
@@ -235,7 +235,7 @@ func (a *App) deleteEquipment(ctx *gin.Context) {
 			ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to update user preferences"})
+		respondInternal(ctx, "failed to update user preferences", err)
 		return
 	}
 

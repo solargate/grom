@@ -2,6 +2,8 @@ package v1
 
 import (
 	"log/slog"
+	"net/http"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	sloggin "github.com/samber/slog-gin"
@@ -54,7 +56,19 @@ func RunRouter() {
 			),
 		},
 	}))
-	router.Use(gin.Recovery())
+	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered any) {
+		attrs := []any{
+			"panic", recovered,
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"stack", string(debug.Stack()),
+		}
+		if rid := sloggin.GetRequestID(c); rid != "" {
+			attrs = append(attrs, "request_id", rid)
+		}
+		slog.Error("http panic recovered", attrs...)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}))
 	router.MaxMultipartMemory = 128 << 20
 
 	app.RegisterRoutes(router)
