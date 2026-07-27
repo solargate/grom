@@ -1,14 +1,30 @@
 # Install and run
 
-Build and run the Grom server from source. For configuration details (TLS, storage, federation), see [Configuration](configuration.md).
+Install Grom from a GitHub release or build from source. For configuration details (TLS, storage, federation), see [Configuration](configuration.md).
 
-## Requirements
+## Download from GitHub Releases
+
+Pre-built packages are published with each [GitHub release](https://github.com/solargate/grom/releases):
+
+| Asset | Contents |
+|-------|----------|
+| `grom-<version>-linux-amd64.tar.gz` | Server binary + `config-examples/` |
+| `grom-<version>-darwin-arm64.zip` | Server binary + `config-examples/` (Apple Silicon) |
+| `grom-<version>-darwin-amd64.zip` | Server binary + `config-examples/` (Intel Mac) |
+| `grom-<version>-windows-amd64.zip` | Server binary + `config-examples/` |
+| `grom-<version>.apk` | Android client |
+
+Unpack the archive for your OS, copy a config from `config-examples/` (set `auth.jwt_secret`), then run the `grom` binary — see [Run](#run) below.
+
+## Build from source
+
+### Requirements
 
 - Go 1.26+
 - Flutter SDK `>=3.4.0 <4.0.0` (for the embedded web UI and Android builds)
 - Make
 
-## Build
+### Build
 
 From the repository root:
 
@@ -23,9 +39,17 @@ Other useful targets: `make doc` (regenerate OpenAPI), `make android-apk`, `make
 
 ## Run
 
-Example configs live in `cmd/grom/config-examples/`. The server looks for `config.yaml` in the current working directory unless you pass `--config` / `-c`.
+Example configs ship in release archives and in `cmd/grom/config-examples/` in the repo. The server looks for `config.yaml` in the current working directory unless you pass `--config` / `-c`.
 
-**Dev, HTTP only** (no TLS, federation off):
+**From a release package** (HTTP-only example):
+
+```bash
+cp config-examples/config.dev.notls.yaml config.yaml
+# edit config.yaml — set auth.jwt_secret
+./grom --config config.yaml
+```
+
+**From source, HTTP only** (no TLS, federation off):
 
 ```bash
 cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
