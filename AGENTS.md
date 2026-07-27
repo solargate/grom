@@ -53,7 +53,19 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/web/` | `embed` of Flutter web assets |
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
 | `testdata/` (`testdata/tracks/` for GPX/FIT) | Shared fixtures for Go and Flutter tests |
-| `docs/` | Human docs (e.g. Strava import) |
+| `docs/` | Human documentation (English); index in `docs/README.md` — not the same as `api/docs/` |
+
+## Human documentation
+
+- **Language:** English.
+- **Layout:** Root `README.md` is a short front door (what/why, hero screenshots, quick start, links). Details live under `docs/`:
+  - `docs/user/` — end-user / client tour (web + Android)
+  - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
+  - `docs/strava-bulk-import.md` — Strava ZIP reference (column mapping, behavior)
+  - `docs/screenshots/` — images for README and user docs
+- **Index:** `docs/README.md` (“I want to…”). Do not duplicate that TOC here.
+- **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` if you add/rename pages.
+- **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make doc`). Runtime Swagger UI is `/api/docs`.
 
 ## Tech stack
 
@@ -93,7 +105,7 @@ cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
 ./grom --config config.yaml
 ```
 
-TLS / federation profiles are documented in `README.md`. Federation **requires** `server.tls.mode` of `static` or `autocert` (not `off`).
+TLS / federation / storage are documented in `docs/admin/configuration.md` (install in `docs/admin/install.md`). Federation **requires** `server.tls.mode` of `static` or `autocert` (not `off`).
 
 ## Configuration rules
 
@@ -147,7 +159,8 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 
 - Read nearby packages before changing interfaces (`Repository`, `Backend`, `blob.Store`).
 - Preserve error-sentinel patterns and HTTP mapping in `api/v1`.
-- Update config examples and README when behavior of TLS/federation/storage changes.
+- Update config examples and `docs/admin/` when TLS/federation/storage/install behavior changes; keep root `README.md` short (link out, update quick start only if needed).
+- Update `docs/user/` when client-facing flows or screens change in a way operators/users need to know.
 - Update `CHANGELOG.md` `[Unreleased]` for user-visible changes.
 - Add or extend tests for non-trivial logic (track stats, federation inbox, storage).
 - Keep API and Flutter models aligned when changing JSON field names.
@@ -171,6 +184,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 | Federation behavior | `internal/federation/`, `api/v1/federation_routes.go` |
 | Track parsing/stats | `internal/tracks/` |
 | Flutter screen/API | `ui/grom/lib/pages/`, `api_request.dart` |
-| Config / TLS listen | `internal/config/`, `internal/server/` |
+| Config / TLS listen | `internal/config/`, `internal/server/`; human docs in `docs/admin/configuration.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
+| Human docs | `docs/README.md` (index), `docs/user/`, `docs/admin/`; keep `README.md` short |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |

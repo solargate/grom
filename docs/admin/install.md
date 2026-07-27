@@ -64,7 +64,9 @@ cd cmd/grom
 ./grom
 ```
 
-Open the web UI at the listen address from your config (see [Configuration](configuration.md)). Register a user in the UI, then sign in.
+Open the **web UI** in a browser at the server’s base URL (same Flutter client as Android — for example `http://localhost:8080/` with `config.dev.notls.yaml`). Register a user, then sign in. See [User overview](../user/overview.md).
+
+**API docs (Swagger UI):** `http://<host>:<port>/api/docs/` (for example `http://localhost:8080/api/docs/`). Generated OpenAPI sources also live under `api/docs/` in the repository.
 
 CLI help:
 
@@ -78,3 +80,4 @@ grom --version
 - Choose a TLS profile and storage driver — [Configuration](configuration.md)
 - Generate self-signed certs for local HTTPS — `grom gencerts` (see TLS section in configuration)
 - Product tour for the client — [User overview](../user/overview.md)
+- API reference in the browser — `/api/docs/` on the running server

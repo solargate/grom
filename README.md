@@ -10,8 +10,6 @@ Self-hosted workout tracker with an optional ActivityPub federation layer. Recor
 
 The server is a single Go binary; the Flutter client ships as an embedded web UI and as an Android app.
 
-![Grom workout feed on Android](docs/screenshots/workout-list.jpg)
-
 ## Features
 
 - **Workouts** — create and edit activities with stats, notes, media, and map previews
@@ -20,8 +18,14 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Social feed** — follow users and see their workouts in one timeline
 - **Federation** — optional ActivityPub so instances can follow each other across the network
 - **Strava import** — bulk-import a Strava data export ZIP
-- **Clients** — web UI served by the same process; Android APK via the build
+- **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
 - **Locales** — English, Russian, and German in the Flutter UI
+
+<p align="center">
+  <img src="docs/screenshots/workout-list.jpg" width="250" alt="Workout list" />
+  <img src="docs/screenshots/workout-record.jpg" width="250" alt="Live recording" />
+  <img src="docs/screenshots/equipment.jpg" width="250" alt="Equipment" />
+</p>
 
 ## Quick start
 
@@ -32,12 +36,15 @@ cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
 
 Set `auth.jwt_secret` in your config (required). Example profiles: `cmd/grom/config-examples/`.
 
+Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api/docs/` for Swagger API docs (default dev port).
+
 ## Documentation
 
 - **[Docs index](docs/README.md)** — user and admin guides
 - [User overview](docs/user/overview.md) — client screens (workouts, recording, equipment)
 - [Install and run](docs/admin/install.md) — build and start the server
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging
+- API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))
 
 ## License
 

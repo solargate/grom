@@ -1,8 +1,8 @@
 # User overview
 
-Grom’s Flutter client runs as a **web UI** (served by the same server process) and as an **Android** app. UI strings are available in English, Russian, and German.
+Grom’s Flutter client runs as a **web UI** and as an **Android** app. The web UI is served by the same `grom` process: open the server’s base URL in a browser (for example `http://localhost:8080/` with the default dev config). The screens and flows match the Android app; live GPS recording is Android-only. UI strings are available in English, Russian, and German.
 
-This page is a short tour of the main screens. Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin).
+This page is a short tour of the main screens (screenshots below are from Android). Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin). For the HTTP API, see Swagger at `/api/docs/` on a running server.
 
 ## Workouts
 
