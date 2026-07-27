@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Strava import result reports `media_missing`: photo files referenced in `activities.csv` but absent from the ZIP archive
+- Branded app icons and web favicon from the Grom logo (Android, iOS, web)
 
 ### Changed
 
