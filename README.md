@@ -17,88 +17,34 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Equipment** — track bikes, shoes, and other gear linked to workouts
 - **Social feed** — follow users and see their workouts in one timeline
 - **Federation** — optional ActivityPub so instances can follow each other across the network
-- **Strava import** — bulk-import a Strava data export ZIP (activities, tracks, photos, equipment)
-- **Clients** — web UI served by the same process; Android APK available via the build
+- **Strava import** — bulk-import a Strava data export ZIP
+- **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
 - **Locales** — English, Russian, and German in the Flutter UI
 
-## Configuration
+<p align="center">
+  <img src="docs/screenshots/workout-list.jpg" width="250" alt="Workout list" />
+  <img src="docs/screenshots/workout-record.jpg" width="250" alt="Live recording" />
+  <img src="docs/screenshots/equipment.jpg" width="250" alt="Equipment" />
+</p>
 
-Grom is configured with a YAML file. By default it looks for `config.yaml` in the same directory as the server (the current working directory). Pass `--config` (or `-c`) to use another path. Example profiles live in `cmd/grom/config-examples/`. For every field with comments, see `config.full.yaml`. Use `grom --help` / `grom --version` for CLI usage.
-
-**Required:** `auth.jwt_secret` — a long random secret used to sign JWT access tokens.
-
-Other common knobs:
-
-| Area | What to set |
-|------|-------------|
-| `server.port` / `server.tls` | Listen ports and TLS mode (`off`, `static`, or `autocert`) |
-| `storage.driver` / `location` / `temp_dir` | `file` (default) or `bbolt`; data root and temp dirs |
-| `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
-| `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
-| `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
-
-Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
-
-### TLS profiles
-
-| Profile | Config file | `tls.mode` | Federation |
-|---------|-------------|------------|------------|
-| Dev, HTTP only | `config.dev.notls.yaml` | `off` | disabled |
-| Dev, self-signed TLS | `config.dev.tls.yaml` | `static` | enabled |
-| Prod, HTTP only | `config.prod.notls.yaml` | `off` | disabled |
-| Prod, Let's Encrypt | `config.prod.tls.yaml` | `autocert` | enabled |
-
-**Dev with static TLS** — generate certificates, then run:
-
-```bash
-cd cmd/grom
-go run . gencerts --ip 192.168.1.251 --domain 192.168.1.251
-go run . --config config.dev.tls.yaml
-```
-
-For federation between local instances, set `federation.tls_insecure_skip_verify: true` and optionally `federation.ca_cert_file` to trust your dev CA.
-
-**Production with autocert** — needs a public DNS name in `federation.domain` (hostname only), ports **80** and **443** reachable from the internet. ACME certificates are cached under `acme-cache` next to the grom binary by default (override with `server.tls.autocert.cache_dir`; use an absolute path if the binary lives under a system directory like `/usr/bin`):
-
-```bash
-go run . --config config.prod.tls.yaml
-```
-
-Notes:
-
-- Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
-- Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
-
-### Storage drivers
-
-| Driver | Metadata | Blobs (tracks, photos, avatars, keys) |
-|--------|----------|----------------------------------------|
-| `file` (default) | YAML under `storage.location` | Same tree |
-| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | Same filesystem layout under `storage.location` |
-
-`postgres` is reserved in config but not implemented.
-
-Migrate metadata between drivers (stop the server first; blobs are shared and not copied):
-
-```bash
-grom migrate-storage --config config.yaml --from file --to bbolt --verify
-# then set storage.driver: bbolt and restart
-grom migrate-storage --config config.yaml --from bbolt --to file --verify
-```
-
-Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
-## Build and run
+## Quick start
 
 ```bash
 make grom    # swagger + Flutter web + Go binary → cmd/grom/grom
-make test    # Go and Flutter tests
+cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
 ```
 
-```bash
-cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
-# or after build, with config.yaml next to the binary:
-./grom
-```
+Set `auth.jwt_secret` in your config (required). Example profiles: `cmd/grom/config-examples/`.
+
+Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api/docs/` for Swagger API docs (default dev port).
+
+## Documentation
+
+- **[Docs index](docs/README.md)** — user and admin guides
+- [User overview](docs/user/overview.md) — client screens (workouts, recording, equipment)
+- [Install and run](docs/admin/install.md) — build and start the server
+- [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging
+- API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))
 
 ## License
 
