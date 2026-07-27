@@ -253,6 +253,57 @@ func TestFinalizeConfig_LegacyDataSection(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_LoggingDefaults(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Auth.JWTSecret = "change-me-in-production-min-32-chars!!"
+	cfg.Server.TLS.Mode = "off"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Logging.Level != "info" {
+		t.Fatalf("Logging.Level = %q, want info", cfg.Logging.Level)
+	}
+	if cfg.Logging.Format != "json" {
+		t.Fatalf("Logging.Format = %q, want json", cfg.Logging.Format)
+	}
+}
+
+func TestFinalizeConfig_LoggingNormalized(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Auth.JWTSecret = "change-me-in-production-min-32-chars!!"
+	cfg.Server.TLS.Mode = "off"
+	cfg.Logging.Level = "WARNING"
+	cfg.Logging.Format = "TEXT"
+
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Logging.Level != "warn" {
+		t.Fatalf("Logging.Level = %q, want warn", cfg.Logging.Level)
+	}
+	if cfg.Logging.Format != "text" {
+		t.Fatalf("Logging.Format = %q, want text", cfg.Logging.Format)
+	}
+}
+
+func TestFinalizeConfig_LoggingInvalid(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Auth.JWTSecret = "change-me-in-production-min-32-chars!!"
+	cfg.Server.TLS.Mode = "off"
+	cfg.Logging.Level = "trace"
+
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected error for invalid logging.level")
+	}
+
+	cfg.Logging.Level = "info"
+	cfg.Logging.Format = "yaml"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected error for invalid logging.format")
+	}
+}
+
 func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)

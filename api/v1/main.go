@@ -1,9 +1,14 @@
 package v1
 
 import (
+	"log/slog"
+
 	"github.com/gin-gonic/gin"
+	sloggin "github.com/samber/slog-gin"
 
 	_ "github.com/solargate/grom/api/docs"
+	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/logging"
 	"github.com/solargate/grom/internal/server"
 	"github.com/solargate/grom/internal/web"
 
@@ -27,10 +32,29 @@ import (
 func RunRouter() {
 	app, err := NewApp()
 	if err != nil {
+		slog.Error("failed to initialize application", "err", err)
 		panic(err)
 	}
 
-	router := gin.Default()
+	defaultLevel := slog.LevelInfo
+	if lvl, err := logging.ParseLevel(config.Cfg.Logging.Level); err == nil && lvl <= slog.LevelDebug {
+		defaultLevel = slog.LevelDebug
+	}
+
+	router := gin.New()
+	router.Use(sloggin.NewWithConfig(slog.Default(), sloggin.Config{
+		DefaultLevel:     defaultLevel,
+		ClientErrorLevel: slog.LevelWarn,
+		ServerErrorLevel: slog.LevelError,
+		WithRequestID:    true,
+		Filters: []sloggin.Filter{
+			sloggin.IgnorePathSuffix(
+				".js", ".css", ".map", ".ico", ".png", ".jpg", ".jpeg", ".gif", ".webp",
+				".woff", ".woff2", ".ttf", ".svg",
+			),
+		},
+	}))
+	router.Use(gin.Recovery())
 	router.MaxMultipartMemory = 128 << 20
 
 	app.RegisterRoutes(router)
@@ -53,7 +77,13 @@ func RunRouter() {
 
 	web.RegisterRoutes(router)
 
+	slog.Info("HTTP server listening",
+		"tls_mode", config.Cfg.Server.TLS.Mode,
+		"http_port", config.Cfg.Server.Port,
+		"https_port", config.Cfg.Server.TLS.Port,
+	)
 	if err := server.Run(router); err != nil {
+		slog.Error("HTTP server stopped", "err", err)
 		panic(err)
 	}
 }

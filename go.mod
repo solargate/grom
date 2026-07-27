@@ -10,6 +10,7 @@ require (
 	github.com/golang/geo v0.0.0-20260302211937-87f5a40ea07a
 	github.com/google/uuid v1.6.0
 	github.com/muktihari/fit v0.28.1
+	github.com/samber/slog-gin v1.21.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/swaggo/files v1.0.1
@@ -70,6 +71,8 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.7.0 // indirect
+	go.opentelemetry.io/otel v1.29.0 // indirect
+	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.28.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect

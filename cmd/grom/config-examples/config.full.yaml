@@ -73,3 +73,9 @@ storage:
   postgres:
     # Optional. PostgreSQL DSN. Used only when driver is postgres (not implemented).
     dsn: ""
+
+logging:
+  # Optional. Minimum log level: debug | info | warn | error. Default: info.
+  level: info
+  # Optional. Log format: json (machine-readable, recommended for production) or text (human-readable, useful in development). Default: json.
+  format: json

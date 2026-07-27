@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"log/slog"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -71,6 +72,10 @@ func NewApp() (*App, error) {
 			delivery,
 			app.Federation.Inbox(),
 			app.Federation.Followers(),
+		)
+		slog.Info("federation enabled",
+			"domain", config.Cfg.Federation.Domain,
+			"auto_accept_follows", config.Cfg.Federation.AutoAcceptFollows,
 		)
 	}
 

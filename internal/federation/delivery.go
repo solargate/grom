@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -74,13 +75,17 @@ func (d *Delivery) DeliverFollow(follow *social.Follow) error {
 
 	resp, err := d.client.Do(req)
 	if err != nil {
+		slog.Error("federation follow delivery failed", "inbox", inbox, "err", err)
 		return err
 	}
 	defer resp.Body.Close()
 	io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("follow delivery failed: %s", resp.Status)
+		err := fmt.Errorf("follow delivery failed: %s", resp.Status)
+		slog.Error("federation follow delivery failed", "inbox", inbox, "status", resp.StatusCode, "err", err)
+		return err
 	}
+	slog.Info("federation follow delivered", "inbox", inbox)
 	return nil
 }
 
@@ -120,13 +125,17 @@ func (d *Delivery) DeliverUndo(follow *social.Follow) error {
 
 	resp, err := d.client.Do(req)
 	if err != nil {
+		slog.Error("federation undo delivery failed", "inbox", inbox, "err", err)
 		return err
 	}
 	defer resp.Body.Close()
 	io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("undo delivery failed: %s", resp.Status)
+		err := fmt.Errorf("undo delivery failed: %s", resp.Status)
+		slog.Error("federation undo delivery failed", "inbox", inbox, "status", resp.StatusCode, "err", err)
+		return err
 	}
+	slog.Info("federation undo delivered", "inbox", inbox)
 	return nil
 }
 
@@ -269,9 +278,22 @@ func (d *Delivery) deliverWorkoutActivity(activityType, authorNickname string, w
 	}
 	for _, inbox := range followerInboxes {
 		if err := d.postActivity(inbox, activity); err != nil {
+			slog.Error("federation workout activity delivery failed",
+				"activity_type", activityType,
+				"author", authorNickname,
+				"workout_id", workout.ID,
+				"inbox", inbox,
+				"err", err,
+			)
 			return err
 		}
 	}
+	slog.Info("federation workout activity delivered",
+		"activity_type", activityType,
+		"author", authorNickname,
+		"workout_id", workout.ID,
+		"inboxes", len(followerInboxes),
+	)
 	return nil
 }
 
@@ -298,8 +320,19 @@ func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, follow
 	}
 	for _, inbox := range followerInboxes {
 		if err := d.postActivity(inbox, activity); err != nil {
+			slog.Error("federation workout delete delivery failed",
+				"author", authorNickname,
+				"workout_id", workoutID,
+				"inbox", inbox,
+				"err", err,
+			)
 			return err
 		}
 	}
+	slog.Info("federation workout delete delivered",
+		"author", authorNickname,
+		"workout_id", workoutID,
+		"inboxes", len(followerInboxes),
+	)
 	return nil
 }

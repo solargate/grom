@@ -1,7 +1,7 @@
 package server
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -19,7 +19,7 @@ func runAutocertTLS(router *gin.Engine) error {
 		Email:      ac.Email,
 	}
 
-	log.Printf("autocert: domains=%v cache=%s", ac.Domains, ac.ResolvedCacheDir)
+	slog.Info("autocert enabled", "domains", ac.Domains, "cache_dir", ac.ResolvedCacheDir)
 
 	go func() {
 		handler := m.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func runAutocertTLS(router *gin.Engine) error {
 			http.Redirect(w, r, target, http.StatusMovedPermanently)
 		}))
 		if err := http.ListenAndServe(":80", handler); err != nil {
-			log.Printf("autocert HTTP listener: %v", err)
+			slog.Error("autocert HTTP listener failed", "err", err)
 		}
 	}()
 

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -80,6 +81,15 @@ type Config struct {
 	Storage StorageConfig `mapstructure:"storage" yaml:"storage"`
 	// Data is a legacy alias for Storage (location/temp_dir only).
 	Data StorageConfig `mapstructure:"data" yaml:"data"`
+	Logging LoggingConfig `mapstructure:"logging" yaml:"logging"`
+}
+
+// LoggingConfig controls structured server logging (slog).
+type LoggingConfig struct {
+	// Level is debug, info, warn, or error. Default: info.
+	Level string `mapstructure:"level" yaml:"level"`
+	// Format is text or json. Default: json.
+	Format string `mapstructure:"format" yaml:"format"`
 }
 
 var Cfg Config
@@ -109,6 +119,9 @@ func GetConfig(configPath string) {
 }
 
 func FinalizeConfig(cfg *Config) error {
+	if err := finalizeLogging(&cfg.Logging); err != nil {
+		return err
+	}
 	if cfg.Auth.JWTTTLHours <= 0 {
 		cfg.Auth.JWTTTLHours = 24
 	}
@@ -182,7 +195,7 @@ func FinalizeConfig(cfg *Config) error {
 			cfg.Server.TLS.Autocert.Domains = []string{host}
 		}
 		if cfg.Federation.TLSInsecureSkipVerify {
-			log.Printf("warning: federation.tls_insecure_skip_verify is enabled with tls.mode autocert")
+			slog.Warn("federation.tls_insecure_skip_verify is enabled with tls.mode autocert")
 		}
 	}
 
@@ -264,6 +277,33 @@ func FinalizeConfig(cfg *Config) error {
 		cfg.Server.TLS.Autocert.ResolvedCacheDir = resolvedCacheDir
 	}
 
+	return nil
+}
+
+func finalizeLogging(cfg *LoggingConfig) error {
+	level := strings.ToLower(strings.TrimSpace(cfg.Level))
+	if level == "" {
+		level = "info"
+	}
+	switch level {
+	case "debug", "info", "warn", "error":
+		cfg.Level = level
+	case "warning":
+		cfg.Level = "warn"
+	default:
+		return fmt.Errorf("logging.level must be one of debug, info, warn, error (got %q)", cfg.Level)
+	}
+
+	format := strings.ToLower(strings.TrimSpace(cfg.Format))
+	if format == "" {
+		format = "json"
+	}
+	switch format {
+	case "text", "json":
+		cfg.Format = format
+	default:
+		return fmt.Errorf("logging.format must be text or json (got %q)", cfg.Format)
+	}
 	return nil
 }
 

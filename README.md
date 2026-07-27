@@ -35,6 +35,7 @@ Other common knobs:
 | `storage.driver` / `location` / `temp_dir` | `file` (default) or `bbolt`; data root and temp dirs |
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
+| `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
 
