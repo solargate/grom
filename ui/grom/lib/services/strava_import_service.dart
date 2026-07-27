@@ -221,7 +221,7 @@ class StravaImportService extends ChangeNotifier {
       _pollTimer?.cancel();
       _pollTimer = null;
       if (_state.completed || _state.failed) {
-        Future<void>.delayed(const Duration(seconds: 4), () {
+        Future<void>.delayed(const Duration(seconds: 10), () {
           if (_state.completed || _state.failed) {
             _state = const StravaImportState();
             notifyListeners();
