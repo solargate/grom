@@ -7,4 +7,5 @@ type Repository interface {
 	Create(nickname string, item *Equipment) (*Equipment, error)
 	Update(nickname string, item *Equipment) (*Equipment, error)
 	Delete(nickname, id string) error
+	SetDistance(nickname, id string, distanceMeters float64) error
 }

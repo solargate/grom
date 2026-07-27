@@ -25,6 +25,7 @@ type Equipment struct {
 	Model     string   `yaml:"model,omitempty" json:"model,omitempty"`
 	WeightKg  *float64 `yaml:"weight_kg,omitempty" json:"weight_kg,omitempty"`
 	Notes     string   `yaml:"notes,omitempty" json:"notes,omitempty"`
+	Distance  float64  `yaml:"distance,omitempty" json:"distance"`
 }
 
 type equipmentFile struct {

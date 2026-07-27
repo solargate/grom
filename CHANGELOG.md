@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Federation publish logs inbox-list failures and track/media read warnings instead of failing silently
 - Strava import result reports `media_missing`: photo files referenced in `activities.csv` but absent from the ZIP archive
 - Branded app icons and web favicon from the Grom logo (Android, iOS, web)
+- Equipment list shows accumulated distance (km) per item; updated automatically when workouts change or after Strava bulk import
 
 ### Changed
 

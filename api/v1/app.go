@@ -8,6 +8,7 @@ import (
 	"github.com/solargate/grom/internal/auth"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/equipment/distance"
 	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/integrations/strava"
 	"github.com/solargate/grom/internal/social"
@@ -22,6 +23,7 @@ type App struct {
 	Users    users.Repository
 	Workouts *workouts.Service
 	Equipment equipment.Repository
+	EquipmentDistance *distance.Service
 	Social   *social.Service
 	Federation federation.Storage
 	Blobs    blob.Store
@@ -43,11 +45,13 @@ func NewApp() (*App, error) {
 	}
 
 	socialSvc := social.NewService(backend.Users(), backend.Social(), backend.Blobs())
+	workoutSvc := backend.Workouts()
 	app := &App{
 		Backend:    backend,
 		Users:      backend.Users(),
-		Workouts:   backend.Workouts(),
+		Workouts:   workoutSvc,
 		Equipment:  backend.Equipment(),
+		EquipmentDistance: distance.NewService(backend.Equipment(), workoutSvc),
 		Social:     socialSvc,
 		Federation: backend.Federation(),
 		Blobs:      backend.Blobs(),
@@ -102,6 +106,7 @@ func (a *App) stravaJobManager() *strava.JobManager {
 			a.Workouts,
 			a.Equipment,
 			a.publishCreatedWorkout,
+			a.EquipmentDistance,
 		)
 	})
 	return a.stravaJobs

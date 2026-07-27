@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/l10n/equipment_type_localizations.dart';
+import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/equipment.dart';
 import 'package:grom/models/equipment_types.dart';
 
@@ -193,6 +194,7 @@ class _EquipmentGroupSection extends StatelessWidget {
             child: ListTile(
               title: Text(item.name),
               subtitle: _buildSubtitle(item),
+              trailing: _buildTrailing(context, item),
               onTap: () => onItemTap(item),
             ),
           ),
@@ -213,5 +215,20 @@ class _EquipmentGroupSection extends StatelessWidget {
       return null;
     }
     return Text(parts.join(' · '));
+  }
+
+  Widget? _buildTrailing(BuildContext context, Equipment item) {
+    if (item.distance <= 0) {
+      return null;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Text(
+      formatDistanceKm(l10n, item.distance),
+      textAlign: TextAlign.right,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
   }
 }

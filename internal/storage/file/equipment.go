@@ -198,9 +198,13 @@ func (s *EquipmentStore) Update(nickname string, item *equipment.Equipment) (*eq
 	}
 
 	found := false
+	var saved equipment.Equipment
 	for i := range items {
 		if items[i].ID == item.ID {
+			distance := items[i].Distance
 			items[i] = *item
+			items[i].Distance = distance
+			saved = items[i]
 			found = true
 			break
 		}
@@ -213,7 +217,7 @@ func (s *EquipmentStore) Update(nickname string, item *equipment.Equipment) (*eq
 		return nil, err
 	}
 
-	result := *item
+	result := saved
 	return &result, nil
 }
 
@@ -240,6 +244,34 @@ func (s *EquipmentStore) Delete(nickname, id string) error {
 	}
 
 	return s.save(nickname, updated)
+}
+
+func (s *EquipmentStore) SetDistance(nickname, id string, distanceMeters float64) error {
+	if distanceMeters < 0 {
+		distanceMeters = 0
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	items, err := s.load(nickname)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for i := range items {
+		if items[i].ID == id {
+			items[i].Distance = distanceMeters
+			found = true
+			break
+		}
+	}
+	if !found {
+		return equipment.ErrEquipmentNotFound
+	}
+
+	return s.save(nickname, items)
 }
 
 // Import writes an equipment item as-is (used by storage migration).
