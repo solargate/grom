@@ -265,7 +265,7 @@ func FinalizeConfig(cfg *Config) error {
 	if mode == TLSModeAutocert {
 		cacheDir := strings.TrimSpace(cfg.Server.TLS.Autocert.CacheDir)
 		if cacheDir == "" {
-			cacheDir = filepath.Join(cfg.Storage.Location, "acme-cache")
+			cacheDir = "acme-cache"
 		}
 		resolvedCacheDir, err := data.ResolveDataDir(cacheDir)
 		if err != nil {

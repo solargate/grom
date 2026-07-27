@@ -58,7 +58,7 @@ go run . --config config.dev.tls.yaml
 
 For federation between local instances, set `federation.tls_insecure_skip_verify: true` and optionally `federation.ca_cert_file` to trust your dev CA.
 
-**Production with autocert** — needs a public DNS name in `federation.domain` (hostname only), ports **80** and **443** reachable from the internet, and persistent `storage.location` (ACME cache under `{storage.location}/acme-cache`):
+**Production with autocert** — needs a public DNS name in `federation.domain` (hostname only), ports **80** and **443** reachable from the internet. ACME certificates are cached under `acme-cache` next to the grom binary by default (override with `server.tls.autocert.cache_dir`; use an absolute path if the binary lives under a system directory like `/usr/bin`):
 
 ```bash
 go run . --config config.prod.tls.yaml

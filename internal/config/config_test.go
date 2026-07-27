@@ -67,9 +67,14 @@ func TestFinalizeConfig_Autocert(t *testing.T) {
 	if cfg.Server.TLS.Autocert.CacheDir != "" {
 		t.Fatalf("CacheDir = %q, want empty (YAML value preserved)", cfg.Server.TLS.Autocert.CacheDir)
 	}
-	wantCache := filepath.Join(cfg.Storage.ResolvedLocation, "acme-cache")
-	if cfg.Server.TLS.Autocert.ResolvedCacheDir != wantCache {
-		t.Fatalf("ResolvedCacheDir = %q, want %q", cfg.Server.TLS.Autocert.ResolvedCacheDir, wantCache)
+	if !filepath.IsAbs(cfg.Server.TLS.Autocert.ResolvedCacheDir) {
+		t.Fatalf("ResolvedCacheDir = %q, want absolute", cfg.Server.TLS.Autocert.ResolvedCacheDir)
+	}
+	if filepath.Base(cfg.Server.TLS.Autocert.ResolvedCacheDir) != "acme-cache" {
+		t.Fatalf("ResolvedCacheDir = %q, want base acme-cache", cfg.Server.TLS.Autocert.ResolvedCacheDir)
+	}
+	if strings.HasPrefix(cfg.Server.TLS.Autocert.ResolvedCacheDir, cfg.Storage.ResolvedLocation+string(filepath.Separator)) {
+		t.Fatalf("ResolvedCacheDir = %q must not be under storage %q", cfg.Server.TLS.Autocert.ResolvedCacheDir, cfg.Storage.ResolvedLocation)
 	}
 }
 

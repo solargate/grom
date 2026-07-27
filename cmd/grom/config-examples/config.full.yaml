@@ -25,7 +25,7 @@ server:
     autocert:
       # Optional. Contact email for Let's Encrypt. Used only when mode is autocert.
       email: ""
-      # Optional. ACME certificate cache directory. Default: {storage.location}/acme-cache.
+      # Optional. ACME certificate cache directory. Default: acme-cache (next to the grom binary).
       # Relative paths are resolved against the grom binary directory.
       cache_dir: ""
       # Optional. Domains for which to obtain certificates. Default: [federation.domain host].

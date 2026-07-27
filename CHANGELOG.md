@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** Default autocert ACME cache is `acme-cache` next to the grom binary (no longer `{storage.location}/acme-cache`). Move an existing cache or set `server.tls.autocert.cache_dir` to the old path before upgrading
 - Equipment navigation menu icon: inventory (`inventory_2`) instead of sports whistle
 - Workout list cards no longer show equipment; detail view shows it below the stats table
 - Workout track overlay on interactive maps and static map previews uses orange (`#F45E1E`) instead of blue
