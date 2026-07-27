@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- User and admin documentation under `docs/` (overview with Android screenshots, install, configuration); root README shortened as the entry point
 - Structured server logging via `log/slog` with configurable `logging.level` (`debug`/`info`/`warn`/`error`) and `logging.format` (`text`/`json`); HTTP access logs through Gin middleware
 - Unexpected API 500s log the underlying error (with request id when available); panic recovery goes through slog
 - Auth signals: `login_failed` / `user_registered` / `register_conflict` (passwords never logged)
