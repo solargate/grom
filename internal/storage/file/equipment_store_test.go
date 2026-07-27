@@ -60,3 +60,31 @@ func TestEquipmentStoreIsolationAndPersistence(t *testing.T) {
 		t.Fatalf("missing update: %v", err)
 	}
 }
+
+func TestEquipmentStoreUpdatePreservesDistance(t *testing.T) {
+	dir := t.TempDir()
+	store := NewEquipmentStore(dir)
+
+	created, err := store.Create("alice", &equipment.Equipment{
+		Type: equipment.TypeBike,
+		Name: "Road",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := store.SetDistance("alice", created.ID, 4200); err != nil {
+		t.Fatalf("SetDistance: %v", err)
+	}
+
+	updated, err := store.Update("alice", &equipment.Equipment{
+		ID:   created.ID,
+		Type: equipment.TypeBike,
+		Name: "Gravel",
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if updated.Distance != 4200 {
+		t.Fatalf("distance = %v, want 4200", updated.Distance)
+	}
+}

@@ -377,6 +377,8 @@ func (a *App) createWorkout(ctx *gin.Context) {
 
 	a.publishCreatedWorkout(nickname, workout)
 
+	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)
+
 	slog.Info("workout created",
 		"user", nickname,
 		"workout_id", workout.ID,
@@ -599,6 +601,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 
 	a.publishCreatedWorkout(nickname, created)
+	a.scheduleEquipmentDistanceRecalc(nickname, created.Equipment)
 	slog.Info("workout created",
 		"user", nickname,
 		"workout_id", created.ID,
@@ -1082,6 +1085,16 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 	}
 
 	workoutID := ctx.Param("id")
+	workout, err := a.Workouts.Get(nickname, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to load workout", err)
+		return
+	}
+
 	if err := a.Workouts.Delete(nickname, workoutID); err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
@@ -1092,6 +1105,7 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 	}
 
 	a.publishDeletedWorkout(nickname, workoutID)
+	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)
 	slog.Info("workout deleted", "user", nickname, "workout_id", workoutID)
 	ctx.Status(http.StatusNoContent)
 }
@@ -1148,6 +1162,7 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 	}
 
 	a.publishUpdatedWorkout(nickname, updated)
+	a.scheduleEquipmentDistanceRecalc(nickname, updated.Equipment)
 	slog.Info("workout updated",
 		"user", nickname,
 		"workout_id", updated.ID,

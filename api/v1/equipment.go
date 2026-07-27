@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/equipment/distance"
 	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
@@ -20,6 +21,7 @@ type EquipmentResponse struct {
 	Model     string   `json:"model,omitempty" example:"Grizl"`
 	WeightKg  *float64 `json:"weight_kg,omitempty" example:"9.5"`
 	Notes     string   `json:"notes,omitempty" example:"Race setup"`
+	Distance  float64  `json:"distance" example:"12500"`
 }
 
 type CreateEquipmentRequest struct {
@@ -55,6 +57,7 @@ func toEquipmentResponse(item *equipment.Equipment) EquipmentResponse {
 		Model:     item.Model,
 		WeightKg:  item.WeightKg,
 		Notes:     item.Notes,
+		Distance:  item.Distance,
 	}
 }
 
@@ -279,4 +282,11 @@ func (a *App) resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([
 
 func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs []string) {
 	_ = a.Users.SetLastEquipmentForSport(userID, sportType, equipmentIDs)
+}
+
+func (a *App) scheduleEquipmentDistanceRecalc(nickname string, items []workouts.WorkoutEquipment) {
+	if a.EquipmentDistance == nil {
+		return
+	}
+	a.EquipmentDistance.ScheduleRecalculateForIDs(nickname, distance.CollectWorkoutEquipmentIDs(items))
 }

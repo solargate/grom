@@ -9,6 +9,7 @@ class Equipment {
     this.model = '',
     this.weightKg,
     this.notes = '',
+    this.distance = 0,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class Equipment {
   final String model;
   final double? weightKg;
   final String notes;
+  final double distance;
 
   factory Equipment.fromJson(Map<String, dynamic> json) {
     return Equipment(
@@ -32,6 +34,7 @@ class Equipment {
       model: json['model'] as String? ?? '',
       weightKg: (json['weight_kg'] as num?)?.toDouble(),
       notes: json['notes'] as String? ?? '',
+      distance: (json['distance'] as num?)?.toDouble() ?? 0,
     );
   }
 

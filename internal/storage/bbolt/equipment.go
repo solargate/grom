@@ -146,6 +146,24 @@ func (s *EquipmentStore) Update(nickname string, item *equipment.Equipment) (*eq
 	}
 	normalizeEquipment(item)
 
+	var distance float64
+	err := s.db.View(func(tx *bolt.Tx) error {
+		raw := tx.Bucket(bucketEquipment).Get(equipmentKey(nickname, item.ID))
+		if raw == nil {
+			return equipment.ErrEquipmentNotFound
+		}
+		var existing equipment.Equipment
+		if err := unmarshalJSON(raw, &existing); err != nil {
+			return err
+		}
+		distance = existing.Distance
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	item.Distance = distance
+
 	raw, err := marshalJSON(item)
 	if err != nil {
 		return nil, err
@@ -172,6 +190,31 @@ func (s *EquipmentStore) Delete(nickname, id string) error {
 			return equipment.ErrEquipmentNotFound
 		}
 		return b.Delete(key)
+	})
+}
+
+func (s *EquipmentStore) SetDistance(nickname, id string, distanceMeters float64) error {
+	if distanceMeters < 0 {
+		distanceMeters = 0
+	}
+
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketEquipment)
+		key := equipmentKey(nickname, id)
+		raw := b.Get(key)
+		if raw == nil {
+			return equipment.ErrEquipmentNotFound
+		}
+		var item equipment.Equipment
+		if err := unmarshalJSON(raw, &item); err != nil {
+			return err
+		}
+		item.Distance = distanceMeters
+		updated, err := marshalJSON(item)
+		if err != nil {
+			return err
+		}
+		return b.Put(key, updated)
 	})
 }
 

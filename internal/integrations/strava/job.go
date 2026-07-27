@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/equipment/distance"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -36,10 +37,11 @@ type JobStatus struct {
 }
 
 type JobManager struct {
-	tempDir        string
-	workoutStore   *workouts.Service
-	equipmentStore equipment.Repository
-	onPublish      PublishWorkoutFunc
+	tempDir            string
+	workoutStore       *workouts.Service
+	equipmentStore     equipment.Repository
+	onPublish          PublishWorkoutFunc
+	equipmentDistance  *distance.Service
 
 	mu   sync.Mutex
 	jobs map[string]*userJob
@@ -53,13 +55,14 @@ type userJob struct {
 	Status   JobStatus
 }
 
-func NewJobManager(tempDir string, workoutStore *workouts.Service, equipmentStore equipment.Repository, onPublish PublishWorkoutFunc) *JobManager {
+func NewJobManager(tempDir string, workoutStore *workouts.Service, equipmentStore equipment.Repository, onPublish PublishWorkoutFunc, equipmentDistance *distance.Service) *JobManager {
 	return &JobManager{
-		tempDir:        tempDir,
-		workoutStore:   workoutStore,
-		equipmentStore: equipmentStore,
-		onPublish:      onPublish,
-		jobs:           make(map[string]*userJob),
+		tempDir:           tempDir,
+		workoutStore:      workoutStore,
+		equipmentStore:    equipmentStore,
+		onPublish:         onPublish,
+		equipmentDistance: equipmentDistance,
+		jobs:              make(map[string]*userJob),
 	}
 }
 
@@ -183,6 +186,9 @@ func (m *JobManager) runImport(job *userJob) {
 	job.Status.ImportProgress = 1
 	job.Status.Result = &result
 	m.persist(job)
+	if m.equipmentDistance != nil {
+		m.equipmentDistance.ScheduleRecalculateAll(job.Nickname)
+	}
 	if result.MediaMissing > 0 {
 		slog.Warn("strava import completed with missing media",
 			"user", job.Nickname,
