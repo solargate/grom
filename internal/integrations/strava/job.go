@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -149,6 +150,7 @@ func (m *JobManager) StartImport(userID string) {
 }
 
 func (m *JobManager) runImport(job *userJob) {
+	slog.Info("strava import started", "user", job.Nickname, "job_id", job.JobID)
 	archivePath := filepath.Join(job.WorkDir, "archive.zip")
 
 	archive, err := OpenArchive(archivePath)
@@ -181,11 +183,28 @@ func (m *JobManager) runImport(job *userJob) {
 	job.Status.ImportProgress = 1
 	job.Status.Result = &result
 	m.persist(job)
+	if result.MediaMissing > 0 {
+		slog.Warn("strava import completed with missing media",
+			"user", job.Nickname,
+			"job_id", job.JobID,
+			"imported", result.Imported,
+			"media_missing", result.MediaMissing,
+			"parse_skipped", result.ParseSkipped,
+		)
+	} else {
+		slog.Info("strava import completed",
+			"user", job.Nickname,
+			"job_id", job.JobID,
+			"imported", result.Imported,
+			"parse_skipped", result.ParseSkipped,
+		)
+	}
 	m.cleanup(job)
 	m.remove(job.UserID)
 }
 
 func (m *JobManager) fail(job *userJob, message string) {
+	slog.Error("strava import failed", "user", job.Nickname, "job_id", job.JobID, "err", message)
 	job.Status.Active = false
 	job.Status.Phase = PhaseFailed
 	job.Status.Message = message

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -40,26 +41,42 @@ func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, de
 func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
 	var activity map[string]any
 	if err := json.NewDecoder(body).Decode(&activity); err != nil {
+		slog.Warn("federation inbox invalid JSON", "nickname", nickname, "err", err)
 		return err
 	}
 
 	actType, _ := activity["type"].(string)
+	var err error
 	switch actType {
 	case "Follow":
-		return p.handleFollow(nickname, activity)
+		err = p.handleFollow(nickname, activity)
 	case "Accept":
-		return p.handleAccept(nickname, activity)
+		err = p.handleAccept(nickname, activity)
 	case "Create":
-		return p.handleCreate(nickname, activity)
+		err = p.handleCreate(nickname, activity)
 	case "Update":
-		return p.handleUpdate(nickname, activity)
+		err = p.handleUpdate(nickname, activity)
 	case "Delete":
-		return p.handleDelete(nickname, activity)
+		err = p.handleDelete(nickname, activity)
 	case "Undo":
-		return p.handleUndo(nickname, activity)
+		err = p.handleUndo(nickname, activity)
 	default:
+		slog.Debug("federation inbox ignored activity type", "nickname", nickname, "activity_type", actType)
 		return nil
 	}
+	if err != nil {
+		slog.Error("federation inbox activity failed",
+			"nickname", nickname,
+			"activity_type", actType,
+			"err", err,
+		)
+		return err
+	}
+	slog.Info("federation inbox activity processed",
+		"nickname", nickname,
+		"activity_type", actType,
+	)
+	return nil
 }
 
 func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string]any) error {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"sort"
@@ -172,11 +172,11 @@ func (s *InboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ow
 	}
 	if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
-			log.Printf("federated map preview render failed for workout %s: %v", workout.ID, err)
+			slog.Error("federated map preview render failed", "workout_id", workout.ID, "err", err)
 		} else if len(preview) > 0 {
 			previewKey := keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)
 			if _, err := blob.PutBytes(ctx, s.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
-				log.Printf("federated map preview write failed for workout %s: %v", workout.ID, err)
+				slog.Error("federated map preview write failed", "workout_id", workout.ID, "err", err)
 			} else {
 				workout.HasMapPreview = true
 			}

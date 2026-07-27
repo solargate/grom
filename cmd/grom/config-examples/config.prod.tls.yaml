@@ -20,3 +20,7 @@ auth:
 storage:
   location: /var/lib/grom/data
   temp_dir: /var/lib/grom/tmp
+
+logging:
+  level: info
+  format: json

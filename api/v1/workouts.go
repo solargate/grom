@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -376,6 +377,12 @@ func (a *App) createWorkout(ctx *gin.Context) {
 
 	a.publishCreatedWorkout(nickname, workout)
 
+	slog.Info("workout created",
+		"user", nickname,
+		"workout_id", workout.ID,
+		"sport_type", workout.SportType,
+		"has_track", workout.Track != "",
+	)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
 }
 
@@ -560,6 +567,13 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 
 	a.publishCreatedWorkout(nickname, created)
+	slog.Info("workout created",
+		"user", nickname,
+		"workout_id", created.ID,
+		"sport_type", created.SportType,
+		"has_track", created.Track != "",
+		"has_media", created.HasMedia,
+	)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(created))
 }
 
@@ -1046,6 +1060,7 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 	}
 
 	a.publishDeletedWorkout(nickname, workoutID)
+	slog.Info("workout deleted", "user", nickname, "workout_id", workoutID)
 	ctx.Status(http.StatusNoContent)
 }
 
@@ -1101,6 +1116,11 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 	}
 
 	a.publishUpdatedWorkout(nickname, updated)
+	slog.Info("workout updated",
+		"user", nickname,
+		"workout_id", updated.ID,
+		"sport_type", updated.SportType,
+	)
 	resp := toWorkoutResponse(updated)
 	resp.Owner = nickname
 	ctx.JSON(http.StatusOK, resp)

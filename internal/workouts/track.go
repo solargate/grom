@@ -3,7 +3,7 @@ package workouts
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/solargate/grom/internal/maprender"
@@ -138,11 +138,11 @@ func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []by
 
 	if parsed != nil && parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
-			log.Printf("map preview render failed for workout %s: %v", workout.ID, err)
+			slog.Error("map preview render failed", "workout_id", workout.ID, "err", err)
 		} else if len(preview) > 0 {
 			previewKey := keys.WorkoutMapPreview(nickname, dirName)
 			if _, err := blob.PutBytes(ctx, svc.blobs, previewKey, preview, blob.PutOptions{ContentType: "image/webp"}); err != nil {
-				log.Printf("map preview write failed for workout %s: %v", workout.ID, err)
+				slog.Error("map preview write failed", "workout_id", workout.ID, "err", err)
 			} else {
 				workout.HasMapPreview = true
 			}

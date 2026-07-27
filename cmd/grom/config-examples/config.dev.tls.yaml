@@ -21,3 +21,7 @@ auth:
 storage:
   location: data
   temp_dir: tmp
+
+logging:
+  level: debug
+  format: text

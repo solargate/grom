@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -106,7 +106,7 @@ func syncAuthorAvatar(client *http.Client, blobs blob.Store, viewerNickname, own
 	needsFetch := !hasFederatedAvatar(ctx, blobs, viewerNickname, ownerKey) || (remoteURL != "" && remoteURL != prevRemote) || refresh
 	if client != nil && needsFetch {
 		if err := cacheRemoteAvatar(client, blobs, viewerNickname, ownerKey, remote); err != nil {
-			log.Printf("federated avatar cache failed for %s: %v", handle, err)
+			slog.Warn("federated avatar cache failed", "handle", handle, "err", err)
 		} else {
 			meta.AvatarVersion++
 		}

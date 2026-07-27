@@ -36,6 +36,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `api/docs/` | `swag`-generated OpenAPI (`make doc`) |
 | `internal/auth/` | JWT + password hashing + `AuthRequired` middleware |
 | `internal/config/` | Viper YAML config; global `config.Cfg` |
+| `internal/logging/` | `slog` setup from `logging.level` / `logging.format` |
 | `internal/users/` | User repository + models |
 | `internal/workouts/` | Workout service, validation, feed, media, track attach |
 | `internal/equipment/` | Equipment CRUD repository |
@@ -58,7 +59,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 
 **Backend**
 
-- Go 1.26+, Gin, Viper, JWT (`golang-jwt/jwt/v5`), swag/gin-swagger
+- Go 1.26+, Gin, Viper, JWT (`golang-jwt/jwt/v5`), swag/gin-swagger, structured logging via `log/slog` (+ `samber/slog-gin` for HTTP)
 - Track formats: `tkrajina/gpxgo`, `muktihari/fit`
 - Storage today: filesystem (`storage.driver: file`) or hybrid bbolt (`storage.driver: bbolt` — JSON metadata in Bolt, blobs on FS). Config also names `postgres` but it is **not implemented** — do not pretend it works.
 
@@ -97,7 +98,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 ## Configuration rules
 
 - Required: `auth.jwt_secret`
-- Defaults applied in `config.FinalizeConfig` (ports, JWT TTL, delivery workers, storage paths)
+- Defaults applied in `config.FinalizeConfig` (ports, JWT TTL, delivery workers, storage paths, logging level/format)
 - Legacy `data:` YAML keys still map onto `storage:` location/temp_dir
 - Config examples live under `cmd/grom/config-examples/` — keep them in sync when adding config fields
 - Runtime data dirs (`cmd/grom/data`, `tmp`, local `config.yaml`, built binary) are gitignored; do not commit secrets or user data
@@ -112,6 +113,7 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 - File driver implementation: `internal/storage/file/`.
 - API changes: add/update swag comments on handlers, then run `make doc`.
 - JSON/form DTOs live next to handlers in `api/v1`; domain models live in `internal/<pkg>/model.go`.
+- Logging: use `log/slog` via `internal/logging` (configured by `logging.level` / `logging.format`). Prefer structured attrs (`"workout_id", id`, `"err", err`), not `fmt`-style messages. Levels: DEBUG diagnostics; INFO lifecycle; WARN recoverable; ERROR failed ops. HTTP access logs go through `samber/slog-gin` in `api/v1/main.go` — do not restore `gin.Default()`. Do not add zap/zerolog/logrus; keep `log.Fatal` only for pre-slog bootstrap in `config.GetConfig`.
 - Tests: colocated `*_test.go`; use `testdata/` (tracks under `testdata/tracks/`) for binary fixtures. Run `go test ./...` after backend changes.
 
 ### Flutter (`ui/grom`)
@@ -170,4 +172,5 @@ TLS / federation profiles are documented in `README.md`. Federation **requires**
 | Track parsing/stats | `internal/tracks/` |
 | Flutter screen/API | `ui/grom/lib/pages/`, `api_request.dart` |
 | Config / TLS listen | `internal/config/`, `internal/server/` |
+| Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |
