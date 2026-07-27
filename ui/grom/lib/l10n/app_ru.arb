@@ -371,12 +371,13 @@
   "importStravaArchive": "Импорт архива Strava",
   "uploading": "Загрузка",
   "importing": "Импорт",
-  "stravaImportCompleted": "Импорт Strava завершён: импортировано {imported}, пропущено {skipped}, не разобрано в CSV {parseSkipped}, ошибок {errors}",
+  "stravaImportCompleted": "Импорт Strava завершён: импортировано {imported}, пропущено {skipped}, не разобрано в CSV {parseSkipped}, отсутствует медиа в архиве {mediaMissing}, ошибок {errors}",
   "@stravaImportCompleted": {
     "placeholders": {
       "imported": { "type": "int" },
       "skipped": { "type": "int" },
       "parseSkipped": { "type": "int" },
+      "mediaMissing": { "type": "int" },
       "errors": { "type": "int" }
     }
   },

@@ -16,6 +16,7 @@ type StravaImportResultResponse struct {
 	Imported     int `json:"imported" example:"100"`
 	Skipped      int `json:"skipped" example:"2"`
 	ParseSkipped int `json:"parse_skipped" example:"0"`
+	MediaMissing int `json:"media_missing" example:"5"`
 	Errors       int `json:"errors" example:"0"`
 }
 
@@ -154,6 +155,7 @@ func toStravaImportStatus(status strava.JobStatus) StravaImportStatusResponse {
 			Imported:     status.Result.Imported,
 			Skipped:      status.Result.Skipped,
 			ParseSkipped: status.Result.ParseSkipped,
+			MediaMissing: status.Result.MediaMissing,
 			Errors:       status.Result.Errors,
 		}
 	}

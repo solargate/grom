@@ -1836,6 +1836,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 100
                 },
+                "media_missing": {
+                    "type": "integer",
+                    "example": 5
+                },
                 "parse_skipped": {
                     "type": "integer",
                     "example": 0

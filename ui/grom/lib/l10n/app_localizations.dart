@@ -1699,9 +1699,9 @@ abstract class AppLocalizations {
   /// No description provided for @stravaImportCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Strava import completed: {imported} imported, {skipped} skipped, {parseSkipped} CSV parse skipped, {errors} errors'**
-  String stravaImportCompleted(
-      int imported, int skipped, int parseSkipped, int errors);
+  /// **'Strava import completed: {imported} imported, {skipped} skipped, {parseSkipped} CSV parse skipped, {mediaMissing} media files missing from archive, {errors} errors'**
+  String stravaImportCompleted(int imported, int skipped, int parseSkipped,
+      int mediaMissing, int errors);
 
   /// No description provided for @stravaImportFailed.
   ///

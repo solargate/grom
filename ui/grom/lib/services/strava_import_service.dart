@@ -19,6 +19,7 @@ class StravaImportState {
     this.resultImported = 0,
     this.resultSkipped = 0,
     this.resultParseSkipped = 0,
+    this.resultMediaMissing = 0,
     this.resultErrors = 0,
     this.completed = false,
     this.failed = false,
@@ -34,6 +35,7 @@ class StravaImportState {
   final int resultImported;
   final int resultSkipped;
   final int resultParseSkipped;
+  final int resultMediaMissing;
   final int resultErrors;
   final bool completed;
   final bool failed;
@@ -55,6 +57,7 @@ class StravaImportState {
     int? resultImported,
     int? resultSkipped,
     int? resultParseSkipped,
+    int? resultMediaMissing,
     int? resultErrors,
     bool? completed,
     bool? failed,
@@ -70,6 +73,7 @@ class StravaImportState {
       resultImported: resultImported ?? this.resultImported,
       resultSkipped: resultSkipped ?? this.resultSkipped,
       resultParseSkipped: resultParseSkipped ?? this.resultParseSkipped,
+      resultMediaMissing: resultMediaMissing ?? this.resultMediaMissing,
       resultErrors: resultErrors ?? this.resultErrors,
       completed: completed ?? this.completed,
       failed: failed ?? this.failed,
@@ -90,12 +94,14 @@ class StravaImportState {
     var resultImported = 0;
     var resultSkipped = 0;
     var resultParseSkipped = 0;
+    var resultMediaMissing = 0;
     var resultErrors = 0;
     final result = status['result'];
     if (result is Map<String, dynamic>) {
       resultImported = result['imported'] as int? ?? 0;
       resultSkipped = result['skipped'] as int? ?? 0;
       resultParseSkipped = result['parse_skipped'] as int? ?? 0;
+      resultMediaMissing = result['media_missing'] as int? ?? 0;
       resultErrors = result['errors'] as int? ?? 0;
     }
 
@@ -110,6 +116,7 @@ class StravaImportState {
       resultImported: resultImported,
       resultSkipped: resultSkipped,
       resultParseSkipped: resultParseSkipped,
+      resultMediaMissing: resultMediaMissing,
       resultErrors: resultErrors,
       completed: phase == 'completed',
       failed: phase == 'failed',

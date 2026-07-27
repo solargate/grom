@@ -34,6 +34,7 @@ void main() {
         'imported': 12,
         'skipped': 3,
         'parse_skipped': 1,
+        'media_missing': 47,
         'errors': 2,
       },
     });
@@ -43,6 +44,7 @@ void main() {
     expect(state.resultImported, 12);
     expect(state.resultSkipped, 3);
     expect(state.resultParseSkipped, 1);
+    expect(state.resultMediaMissing, 47);
     expect(state.resultErrors, 2);
   });
 

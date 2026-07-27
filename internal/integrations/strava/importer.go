@@ -19,6 +19,7 @@ type ImportResult struct {
 	Imported     int `json:"imported"`
 	Skipped      int `json:"skipped"`
 	ParseSkipped int `json:"parse_skipped"`
+	MediaMissing int `json:"media_missing"`
 	Errors       int `json:"errors"`
 }
 
@@ -72,7 +73,9 @@ func (imp *Importer) ImportAll(nickname string, progress func(current, total int
 			}
 		}
 
-		if err := imp.importOne(nickname, row, hint, equipmentResolver); err != nil {
+		missing, err := imp.importOne(nickname, row, hint, equipmentResolver)
+		result.MediaMissing += missing
+		if err != nil {
 			result.Errors++
 			continue
 		}
@@ -81,23 +84,23 @@ func (imp *Importer) ImportAll(nickname string, progress func(current, total int
 	return result, nil
 }
 
-func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint, resolver *EquipmentResolver) error {
+func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint, resolver *EquipmentResolver) (int, error) {
 	workout, err := row.ToWorkout(hint)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if row.EquipmentName != "" {
 		items, err := resolver.Resolve(row.EquipmentName)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		workout.Equipment = toWorkoutEquipment(items)
 	}
 
 	created, err := imp.workoutStore.Create(nickname, workout)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if row.TrackFile != "" {
@@ -105,21 +108,23 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 		if err == nil && trackInput != nil {
 			created, err = imp.workoutStore.AttachTrack(nickname, created, trackInput)
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 	}
 
+	mediaMissing := 0
 	photos := parseMediaPaths(row.MediaFiles)
 	if len(photos) > 0 {
-		mediaFiles, err := imp.loadPhotos(photos)
+		mediaFiles, missing, err := imp.loadPhotos(photos)
+		mediaMissing = missing
 		if err != nil {
-			return err
+			return mediaMissing, err
 		}
 		if len(mediaFiles) > 0 {
 			created, err = imp.workoutStore.AddMedia(nickname, created, mediaFiles)
 			if err != nil {
-				return err
+				return mediaMissing, err
 			}
 		}
 	}
@@ -127,7 +132,7 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 	if imp.onPublish != nil {
 		imp.onPublish(nickname, created)
 	}
-	return nil
+	return mediaMissing, nil
 }
 
 func (imp *Importer) loadTrack(relativePath string) (*workouts.TrackInput, error) {
@@ -164,16 +169,27 @@ func (imp *Importer) loadTrack(relativePath string) (*workouts.TrackInput, error
 	}, nil
 }
 
-func (imp *Importer) loadPhotos(relativePaths []string) ([]workouts.MediaFileInput, error) {
-	if len(relativePaths) > workouts.MaxPhotosPerWorkout {
-		relativePaths = relativePaths[:workouts.MaxPhotosPerWorkout]
-	}
-
-	files := make([]workouts.MediaFileInput, 0, len(relativePaths))
+// loadPhotos loads photo bytes from the archive. Every photo path from the CSV
+// is checked; missing files are counted even beyond MaxPhotosPerWorkout.
+// Only the first MaxPhotosPerWorkout present files are returned for attach.
+func (imp *Importer) loadPhotos(relativePaths []string) ([]workouts.MediaFileInput, int, error) {
+	files := make([]workouts.MediaFileInput, 0, min(len(relativePaths), workouts.MaxPhotosPerWorkout))
+	missing := 0
 	for _, relativePath := range relativePaths {
 		relativePath = filepath.ToSlash(strings.TrimSpace(relativePath))
+		if relativePath == "" {
+			continue
+		}
+		if !imp.archive.Has(relativePath) {
+			missing++
+			continue
+		}
+		if len(files) >= workouts.MaxPhotosPerWorkout {
+			continue
+		}
 		data, err := imp.archive.ReadFile(relativePath)
 		if err != nil {
+			missing++
 			continue
 		}
 		files = append(files, workouts.MediaFileInput{
@@ -181,5 +197,5 @@ func (imp *Importer) loadPhotos(relativePaths []string) ([]workouts.MediaFileInp
 			Data:     data,
 		})
 	}
-	return files, nil
+	return files, missing, nil
 }

@@ -371,12 +371,13 @@
   "importStravaArchive": "Import Strava archive",
   "uploading": "Uploading",
   "importing": "Importing",
-  "stravaImportCompleted": "Strava import completed: {imported} imported, {skipped} skipped, {parseSkipped} CSV parse skipped, {errors} errors",
+  "stravaImportCompleted": "Strava import completed: {imported} imported, {skipped} skipped, {parseSkipped} CSV parse skipped, {mediaMissing} media files missing from archive, {errors} errors",
   "@stravaImportCompleted": {
     "placeholders": {
       "imported": { "type": "int" },
       "skipped": { "type": "int" },
       "parseSkipped": { "type": "int" },
+      "mediaMissing": { "type": "int" },
       "errors": { "type": "int" }
     }
   },

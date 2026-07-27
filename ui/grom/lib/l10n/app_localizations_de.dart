@@ -860,9 +860,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get importing => 'Importieren';
 
   @override
-  String stravaImportCompleted(
-      int imported, int skipped, int parseSkipped, int errors) {
-    return 'Strava-Import abgeschlossen: $imported importiert, $skipped übersprungen, $parseSkipped CSV nicht gelesen, $errors Fehler';
+  String stravaImportCompleted(int imported, int skipped, int parseSkipped,
+      int mediaMissing, int errors) {
+    return 'Strava-Import abgeschlossen: $imported importiert, $skipped übersprungen, $parseSkipped CSV nicht gelesen, $mediaMissing Mediendateien fehlen im Archiv, $errors Fehler';
   }
 
   @override

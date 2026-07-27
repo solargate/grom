@@ -64,6 +64,14 @@ func (a *Archive) ReadFile(relativePath string) ([]byte, error) {
 	return io.ReadAll(file)
 }
 
+func (a *Archive) Has(relativePath string) bool {
+	if a == nil || a.reader == nil {
+		return false
+	}
+	_, ok := a.index[normalizeArchivePath(relativePath)]
+	return ok
+}
+
 func (a *Archive) Open(relativePath string) (io.ReadCloser, error) {
 	if a == nil || a.reader == nil {
 		return nil, fmt.Errorf("archive is closed")

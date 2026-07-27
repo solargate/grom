@@ -92,7 +92,10 @@ Grom detects export locale from sport type names and date strings, then parses:
 
 Localized Strava sport names are mapped to Grom sport type IDs (`Run`, `Ride`, `WeightTraining`, …). When Strava exports a generic type such as `Workout` / `Тренировка`, Grom may infer a more specific sport from the activity name (for example `Пилатес (день)` → `Pilates`). Unknown types fall back to `Workout`.
 
-Import results include `parse_skipped`: rows from `activities.csv` that could not be parsed (for example invalid dates) and were not imported.
+Import results include:
+
+- `parse_skipped` — rows from `activities.csv` that could not be parsed (for example invalid dates) and were not imported
+- `media_missing` — photo paths listed in the CSV media column that were not present in the ZIP (Strava bulk export often omits older media; videos are ignored and not counted)
 
 ## API
 

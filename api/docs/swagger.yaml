@@ -286,6 +286,9 @@ definitions:
       imported:
         example: 100
         type: integer
+      media_missing:
+        example: 5
+        type: integer
       parse_skipped:
         example: 0
         type: integer

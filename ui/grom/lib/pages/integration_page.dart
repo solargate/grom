@@ -78,6 +78,7 @@ class _IntegrationPageState extends State<IntegrationPage> {
               state.resultImported,
               state.resultSkipped,
               state.resultParseSkipped,
+              state.resultMediaMissing,
               state.resultErrors,
             ),
             style: theme.textTheme.bodyLarge?.copyWith(
