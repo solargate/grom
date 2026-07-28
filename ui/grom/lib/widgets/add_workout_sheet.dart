@@ -76,6 +76,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   String _sportTypeId = defaultSportTypeId;
   late DateTime _date;
   late TimeOfDay _time;
+  int _startSeconds = 0;
   int _durationSeconds = 0;
   int? _durationTotalSeconds;
   double _distanceKm = 0;
@@ -104,9 +105,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _nameController.text = existing.name;
       _descriptionController.text = existing.description;
       _sportTypeId = existing.sportType;
-      final local = existing.startDate.toLocal();
-      _date = DateTime(local.year, local.month, local.day);
-      _time = TimeOfDay(hour: local.hour, minute: local.minute);
+      _applyStartDateTime(existing.startDate.toLocal());
       _durationSeconds = existing.durationSeconds;
       _durationTotalSeconds = existing.durationTotalSeconds;
       _distanceKm = existing.distanceKm;
@@ -117,9 +116,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         _trackFilename = existing.track;
       }
     } else {
-      final now = DateTime.now();
-      _date = DateTime(now.year, now.month, now.day);
-      _time = TimeOfDay.fromDateTime(now);
+      _applyStartDateTime(DateTime.now());
     }
     if (_showRecordTab) {
       _tabController = TabController(length: 2, vsync: this);
@@ -201,7 +198,14 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _date.day,
       _time.hour,
       _time.minute,
+      _startSeconds,
     );
+  }
+
+  void _applyStartDateTime(DateTime local) {
+    _date = DateTime(local.year, local.month, local.day);
+    _time = TimeOfDay(hour: local.hour, minute: local.minute);
+    _startSeconds = local.second;
   }
 
   Future<bool> _confirmDiscardRecording() async {
@@ -258,7 +262,10 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       initialTime: _time,
     );
     if (picked != null) {
-      setState(() => _time = picked);
+      setState(() {
+        _time = picked;
+        _startSeconds = 0;
+      });
     }
   }
 
@@ -469,9 +476,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       if (!mounted) return;
       setState(() {
         if (metadata.startDate != null) {
-          final local = metadata.startDate!.toLocal();
-          _date = DateTime(local.year, local.month, local.day);
-          _time = TimeOfDay(hour: local.hour, minute: local.minute);
+          _applyStartDateTime(metadata.startDate!.toLocal());
         }
         if (metadata.durationSeconds != null) {
           _durationSeconds = metadata.durationSeconds!;
@@ -515,12 +520,10 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   }
 
   void _applyRecordedTrack(RecordedTrack track) {
-    final localStart = track.startTime.toLocal();
     setState(() {
       _trackFilename = 'track.gpx';
       _trackBytes = track.gpxBytes;
-      _date = DateTime(localStart.year, localStart.month, localStart.day);
-      _time = TimeOfDay(hour: localStart.hour, minute: localStart.minute);
+      _applyStartDateTime(track.startTime.toLocal());
       _durationSeconds = track.durationSeconds;
       _durationTotalSeconds = track.durationTotalSeconds;
       _distanceKm = track.distanceMeters / 1000;

@@ -114,4 +114,43 @@ func DeleteFederatedSpeedChartInTx(tx *bolt.Tx, viewer, ownerKey, workoutID stri
 	return tx.Bucket(bucketFedSpeedCharts).Delete(federatedSpeedChartKey(viewer, ownerKey, workoutID))
 }
 
+// MigrateLocalSpeedChartInTx moves a local speed chart payload when a workout dir name changes.
+func MigrateLocalSpeedChartInTx(tx *bolt.Tx, nickname, oldDirName, newDirName string) error {
+	if oldDirName == "" || newDirName == "" || oldDirName == newDirName {
+		return nil
+	}
+	if err := moveBucketValueInTx(
+		tx,
+		bucketSpeedCharts,
+		localSpeedChartKey(nickname, oldDirName),
+		localSpeedChartKey(nickname, newDirName),
+	); err != nil {
+		return fmt.Errorf("migrate speed chart: %w", err)
+	}
+	return nil
+}
+
+// moveBucketValueInTx copies a value to a new key and deletes the old key (no-op if missing).
+func moveBucketValueInTx(tx *bolt.Tx, bucketName, oldKey, newKey []byte) error {
+	if tx == nil {
+		return fmt.Errorf("transaction is nil")
+	}
+	if string(oldKey) == string(newKey) {
+		return nil
+	}
+	b := tx.Bucket(bucketName)
+	if b == nil {
+		return nil
+	}
+	raw := b.Get(oldKey)
+	if raw == nil {
+		return nil
+	}
+	copied := append([]byte(nil), raw...)
+	if err := b.Put(newKey, copied); err != nil {
+		return err
+	}
+	return b.Delete(oldKey)
+}
+
 var _ workouts.SpeedChartStore = (*SpeedChartStore)(nil)

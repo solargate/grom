@@ -259,7 +259,17 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 			if err := os.Rename(oldDir, newDir); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("rename workout dir: %w", err)
 			}
-			_ = s.deleteWorkoutMeta(tx, nickname, old)
+			oldDirName := keys.WorkoutDirName(old.StartDate, old.ID)
+			newDirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
+			if err := MigrateLocalSpeedChartInTx(tx, nickname, oldDirName, newDirName); err != nil {
+				return err
+			}
+			if err := MigrateLocalHeartRateChartInTx(tx, nickname, oldDirName, newDirName); err != nil {
+				return err
+			}
+			if err := s.deleteWorkoutMeta(tx, nickname, old); err != nil {
+				return err
+			}
 		} else if sid := strings.TrimSpace(old.StravaActivityID); sid != "" && sid != strings.TrimSpace(workout.StravaActivityID) {
 			_ = tx.Bucket(bucketIdxWorkoutsStrava).Delete([]byte(nickname + "/" + sid))
 		}

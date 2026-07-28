@@ -108,6 +108,87 @@ func TestWorkoutsStoreCRUDAndListPage(t *testing.T) {
 	}
 }
 
+func TestWorkoutsUpdateMigratesChartsOnStartDateChange(t *testing.T) {
+	b := openTestBackend(t)
+	repo := b.WorkoutsRepo()
+	svc := b.Workouts()
+
+	start := time.Date(2026, 7, 8, 10, 0, 47, 0, time.UTC)
+	created, err := repo.Create("alice", &workouts.Workout{
+		Name:      "Ride",
+		SportType: "Ride",
+		StartDate: start,
+		Track:     "track.gpx",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oldDirName, err := repo.WorkoutDirName("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	speedStore := storebbolt.NewSpeedChartStore(b.DB())
+	hrStore := storebbolt.NewHeartRateChartStore(b.DB())
+	speedSamples := []workouts.SpeedSample{
+		{Time: start, SpeedKmh: 22.5, DistanceM: 0},
+		{Time: start.Add(time.Minute), SpeedKmh: 25, DistanceM: 400},
+	}
+	dist := 100.0
+	hrSamples := []workouts.HeartRateSample{
+		{Time: start, BPM: 120, DistanceM: &dist},
+		{Time: start.Add(time.Minute), BPM: 140, DistanceM: &dist},
+	}
+	if err := speedStore.WriteLocal(ctx, "alice", oldDirName, speedSamples); err != nil {
+		t.Fatalf("write speed chart: %v", err)
+	}
+	if err := hrStore.WriteLocal(ctx, "alice", oldDirName, hrSamples); err != nil {
+		t.Fatalf("write heart rate chart: %v", err)
+	}
+
+	// Simulate edit form truncating seconds (old bug trigger).
+	patched := *created
+	patched.StartDate = time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	patched.Equipment = []workouts.WorkoutEquipment{{ID: "eq-1", Name: "Shoes", Type: "shoes"}}
+	if _, err := repo.Update("alice", &patched); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	newDirName, err := repo.WorkoutDirName("alice", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newDirName == oldDirName {
+		t.Fatalf("expected dir rename, still %q", oldDirName)
+	}
+
+	_, gotSpeed, err := svc.GetSpeedChart("alice", created.ID)
+	if err != nil {
+		t.Fatalf("GetSpeedChart: %v", err)
+	}
+	if len(gotSpeed) != 2 || gotSpeed[0].SpeedKmh != 22.5 {
+		t.Fatalf("speed chart after rename = %#v", gotSpeed)
+	}
+
+	_, gotHR, err := svc.GetHeartRateChart("alice", created.ID)
+	if err != nil {
+		t.Fatalf("GetHeartRateChart: %v", err)
+	}
+	if len(gotHR) != 2 || gotHR[1].BPM != 140 {
+		t.Fatalf("heart rate chart after rename = %#v", gotHR)
+	}
+
+	oldSpeed, err := speedStore.ReadLocal(ctx, "alice", oldDirName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(oldSpeed) != 0 {
+		t.Fatalf("expected old speed chart key cleared, got %#v", oldSpeed)
+	}
+}
+
 func TestWorkoutsBeginCreateWriteMetadata(t *testing.T) {
 	b := openTestBackend(t)
 	repo := b.WorkoutsRepo()

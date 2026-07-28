@@ -2,6 +2,7 @@ package bbolt
 
 import (
 	"context"
+	"fmt"
 
 	bolt "go.etcd.io/bbolt"
 
@@ -111,6 +112,22 @@ func DeleteFederatedHeartRateChartInTx(tx *bolt.Tx, viewer, ownerKey, workoutID 
 		return nil
 	}
 	return tx.Bucket(bucketFedHeartRateCharts).Delete(federatedHeartRateChartKey(viewer, ownerKey, workoutID))
+}
+
+// MigrateLocalHeartRateChartInTx moves a local heart-rate chart payload when a workout dir name changes.
+func MigrateLocalHeartRateChartInTx(tx *bolt.Tx, nickname, oldDirName, newDirName string) error {
+	if oldDirName == "" || newDirName == "" || oldDirName == newDirName {
+		return nil
+	}
+	if err := moveBucketValueInTx(
+		tx,
+		bucketHeartRateCharts,
+		localHeartRateChartKey(nickname, oldDirName),
+		localHeartRateChartKey(nickname, newDirName),
+	); err != nil {
+		return fmt.Errorf("migrate heart rate chart: %w", err)
+	}
+	return nil
 }
 
 var _ workouts.HeartRateChartStore = (*HeartRateChartStore)(nil)
