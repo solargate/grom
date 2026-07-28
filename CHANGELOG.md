@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Equipment type "Shoes" uses the Material Symbols `steps` icon instead of the walking-person glyph
 - **Breaking:** speed chart storage replaces full speed sidecars (`speed.yaml` / `speed.json`): pre-downsampled chart only (`speed-chart.json` blob on file driver; `speed_charts` / `fed_speed_charts` bbolt buckets on bbolt driver). Re-upload workouts with tracks after upgrade.
 - Speed chart omits non-positive speeds (0, NaN, Inf); only `speed_kmh > 0` is stored
 - Heart-rate chart is written only when the track has positive BPM samples; without GPS, `distance_m` is omitted and the UI uses minutes from the first HR sample. Re-upload workouts with HR tracks after upgrade to populate charts.

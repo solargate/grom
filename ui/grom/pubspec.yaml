@@ -60,6 +60,7 @@ dependencies:
   receive_sharing_intent: 1.8.1
   cross_file: ^0.3.4
   fl_chart: ^1.2.0
+  material_symbols_icons: ^4.2960.0
 
 dev_dependencies:
   flutter_test:

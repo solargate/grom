@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 enum EquipmentType {
   bike,
@@ -47,7 +48,7 @@ IconData equipmentTypeIcon(EquipmentType type) {
     case EquipmentType.bike:
       return Icons.directions_bike;
     case EquipmentType.shoes:
-      return Icons.directions_walk;
+      return Symbols.steps;
     case EquipmentType.water:
       return Icons.kayaking;
     case EquipmentType.other:
