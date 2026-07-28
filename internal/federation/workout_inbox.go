@@ -22,13 +22,18 @@ import (
 )
 
 type WorkoutInboxStore struct {
-	dataDir string
-	blobs   blob.Store
-	client  *http.Client
+	dataDir     string
+	blobs       blob.Store
+	client      *http.Client
+	speedFormat workouts.SpeedSidecarFormat
 }
 
 func NewWorkoutInboxStore(dataDir string, blobs blob.Store) *WorkoutInboxStore {
-	return &WorkoutInboxStore{dataDir: dataDir, blobs: blobs}
+	return &WorkoutInboxStore{
+		dataDir:     dataDir,
+		blobs:       blobs,
+		speedFormat: workouts.SpeedSidecarYAML,
+	}
 }
 
 func (s *WorkoutInboxStore) SetHTTPClient(client *http.Client) {
@@ -158,6 +163,7 @@ func (s *WorkoutInboxStore) Replace(viewerNickname, ownerHandle string, workout 
 			_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, previous.Track))
 		}
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID))
+		_ = workouts.DeleteSpeedBlob(ctx, s.blobs, keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat)))
 		workout.HasMapPreview = false
 	} else if previous != nil {
 		// Keep existing track blobs; preserve preview flag from stored artifacts.
@@ -186,7 +192,18 @@ func (s *WorkoutInboxStore) writeFederatedTrack(ctx context.Context, viewerNickn
 		return err
 	}
 
-	if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
+	parsed, err := tracks.Parse(trackData, workout.Track)
+	if err != nil {
+		slog.Warn("federated track parse failed", "workout_id", workout.ID, "err", err)
+		return nil
+	}
+
+	speedKey := keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat))
+	if err := workouts.WriteSpeedBlob(ctx, s.blobs, speedKey, s.speedFormat, workouts.SpeedSamplesFromParsed(parsed)); err != nil {
+		return fmt.Errorf("write federated speed series: %w", err)
+	}
+
+	if parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("federated map preview render failed", "workout_id", workout.ID, "err", err)
 		} else if len(preview) > 0 {
@@ -234,6 +251,7 @@ func (s *WorkoutInboxStore) Delete(viewerNickname, ownerHandle, workoutID string
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workoutID, workout.Track))
 	}
 	_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID))
+	_ = workouts.DeleteSpeedBlob(ctx, s.blobs, keys.FederatedInboxSpeed(viewerNickname, ownerKey, workoutID, workouts.SpeedFileName(s.speedFormat)))
 	for _, name := range workout.MediaFiles {
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, name))
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, name))
@@ -425,6 +443,9 @@ func (s *WorkoutInboxStore) Get(viewerNickname, ownerNickname, workoutID string)
 		nickname = meta.Nickname
 	}
 	authorHasAvatar, authorAvatarURL := authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
+	if err := s.loadSpeedSeries(viewerNickname, ownerKey, workout); err != nil {
+		return nil, err
+	}
 	return &workouts.FeedWorkout{
 		Workout: *workout,
 		Owner:   nickname,
@@ -437,6 +458,19 @@ func (s *WorkoutInboxStore) Get(viewerNickname, ownerNickname, workoutID string)
 			AvatarURL: authorAvatarURL,
 		},
 	}, nil
+}
+
+func (s *WorkoutInboxStore) loadSpeedSeries(viewerNickname, ownerKey string, workout *workouts.Workout) error {
+	if workout == nil || workout.Track == "" {
+		return nil
+	}
+	key := keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat))
+	samples, err := workouts.ReadSpeedBlob(context.Background(), s.blobs, key, s.speedFormat)
+	if err != nil {
+		return fmt.Errorf("read federated speed series: %w", err)
+	}
+	workout.Speed = samples
+	return nil
 }
 
 func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {
@@ -475,13 +509,14 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 			return nil, err
 		}
 		for _, fileEntry := range files {
-			if fileEntry.IsDir() || !strings.HasSuffix(fileEntry.Name(), ".yaml") {
+			name := fileEntry.Name()
+			if fileEntry.IsDir() || !strings.HasSuffix(name, ".yaml") {
 				continue
 			}
-			if fileEntry.Name() == authorMetaFileName {
+			if name == authorMetaFileName || name == "speed.yaml" || strings.HasSuffix(name, "_speed.yaml") {
 				continue
 			}
-			workoutID := strings.TrimSuffix(fileEntry.Name(), ".yaml")
+			workoutID := strings.TrimSuffix(name, ".yaml")
 			workout, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID)
 			if err != nil {
 				return nil, err

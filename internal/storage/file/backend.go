@@ -47,6 +47,7 @@ func Open(location string) (*Backend, error) {
 	workoutRepo := NewWorkoutsStore(location)
 	equipmentStore := NewEquipmentStore(location)
 	workoutSvc := workouts.NewService(workoutRepo, blobStore)
+	workoutSvc.SetSpeedSidecarFormat(workouts.SpeedSidecarYAML)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	return &Backend{

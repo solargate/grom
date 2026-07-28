@@ -59,6 +59,7 @@ func Open(dbPath, location string) (*Backend, error) {
 	equipmentStore := NewEquipmentStore(db)
 	workoutRepo := NewWorkoutsStore(db, location)
 	workoutSvc := workouts.NewService(workoutRepo, blobStore)
+	workoutSvc.SetSpeedSidecarFormat(workouts.SpeedSidecarJSON)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	followersStore := NewFederationFollowersStore(db)

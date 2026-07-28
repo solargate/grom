@@ -22,13 +22,14 @@ import (
 )
 
 type InboxStore struct {
-	db     *bolt.DB
-	blobs  blob.Store
-	client *http.Client
+	db          *bolt.DB
+	blobs       blob.Store
+	client      *http.Client
+	speedFormat workouts.SpeedSidecarFormat
 }
 
 func NewInboxStore(db *bolt.DB, blobs blob.Store) *InboxStore {
-	return &InboxStore{db: db, blobs: blobs}
+	return &InboxStore{db: db, blobs: blobs, speedFormat: workouts.SpeedSidecarJSON}
 }
 
 func (s *InboxStore) SetHTTPClient(client *http.Client) {
@@ -170,7 +171,19 @@ func (s *InboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ow
 	if _, err := blob.PutBytes(ctx, s.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
 		return err
 	}
-	if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
+
+	parsed, err := tracks.Parse(trackData, workout.Track)
+	if err != nil {
+		slog.Warn("federated track parse failed", "workout_id", workout.ID, "err", err)
+		return nil
+	}
+
+	speedKey := keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat))
+	if err := workouts.WriteSpeedBlob(ctx, s.blobs, speedKey, s.speedFormat, workouts.SpeedSamplesFromParsed(parsed)); err != nil {
+		return fmt.Errorf("write federated speed series: %w", err)
+	}
+
+	if parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("federated map preview render failed", "workout_id", workout.ID, "err", err)
 		} else if len(preview) > 0 {
@@ -238,6 +251,7 @@ func (s *InboxStore) Replace(viewerNickname, ownerHandle string, workout *workou
 			_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, previous.Track))
 		}
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID))
+		_ = workouts.DeleteSpeedBlob(ctx, s.blobs, keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat)))
 		workout.HasMapPreview = false
 	} else if previous != nil {
 		if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)); err == nil && exists {
@@ -284,6 +298,7 @@ func (s *InboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workoutID, workout.Track))
 	}
 	_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID))
+	_ = workouts.DeleteSpeedBlob(ctx, s.blobs, keys.FederatedInboxSpeed(viewerNickname, ownerKey, workoutID, workouts.SpeedFileName(s.speedFormat)))
 	for _, name := range workout.MediaFiles {
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaOriginal(viewerNickname, ownerKey, workoutID, name))
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMediaPreview(viewerNickname, ownerKey, workoutID, name))
@@ -429,11 +444,13 @@ func (s *InboxStore) Avatar(viewerNickname, ownerKey string) ([]byte, error) {
 
 func (s *InboxStore) Get(viewerNickname, ownerNickname, workoutID string) (*workouts.FeedWorkout, error) {
 	var result *workouts.FeedWorkout
+	var ownerKey string
 	err := s.db.View(func(tx *bolt.Tx) error {
-		ownerKey, err := s.findOwnerKey(tx, viewerNickname, ownerNickname)
+		key, err := s.findOwnerKey(tx, viewerNickname, ownerNickname)
 		if err != nil {
 			return err
 		}
+		ownerKey = key
 		workout, err := s.getWorkout(tx, viewerNickname, ownerKey, workoutID)
 		if err != nil {
 			return err
@@ -465,7 +482,26 @@ func (s *InboxStore) Get(viewerNickname, ownerNickname, workoutID string) (*work
 		}
 		return nil
 	})
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	if err := s.loadSpeedSeries(viewerNickname, ownerKey, &result.Workout); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *InboxStore) loadSpeedSeries(viewerNickname, ownerKey string, workout *workouts.Workout) error {
+	if workout == nil || workout.Track == "" {
+		return nil
+	}
+	key := keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat))
+	samples, err := workouts.ReadSpeedBlob(context.Background(), s.blobs, key, s.speedFormat)
+	if err != nil {
+		return fmt.Errorf("read federated speed series: %w", err)
+	}
+	workout.Speed = samples
+	return nil
 }
 
 func (s *InboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {

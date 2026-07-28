@@ -136,6 +136,10 @@ func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []by
 		return fmt.Errorf("write track: %w", err)
 	}
 
+	if err := svc.writeSpeedSidecar(nickname, dirName, parsed); err != nil {
+		return fmt.Errorf("write speed series: %w", err)
+	}
+
 	if parsed != nil && parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("map preview render failed", "workout_id", workout.ID, "err", err)

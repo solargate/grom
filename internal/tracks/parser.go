@@ -80,7 +80,9 @@ func parseGPX(data []byte) (*Data, error) {
 		result.StartTime = &start
 	}
 
-	result.Stats = extractGPXStats(gpxData)
+	stats, speedSeries := extractGPXStats(gpxData)
+	result.Stats = stats
+	result.SpeedSeries = speedSeries
 	populateLegacyDurationFields(result)
 
 	length := gpxData.Length2D()
@@ -158,7 +160,9 @@ func parseFIT(data []byte) (*Data, error) {
 		}
 	}
 
-	result.Stats = extractFITStats(activity)
+	stats, speedSeries := extractFITStats(activity)
+	result.Stats = stats
+	result.SpeedSeries = speedSeries
 	populateLegacyDurationFields(result)
 
 	if result.DurationSeconds == nil && hasTimestamp && !lastTimestamp.Before(firstTimestamp) {

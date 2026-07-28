@@ -19,7 +19,8 @@ type Data struct {
 	DurationTotalSeconds *int
 	DistanceMeters       *float64
 	Device               *string
-	Points          []LatLng
+	Points               []LatLng
+	SpeedSeries          []SpeedPoint
 	Stats                Stats
 }
 

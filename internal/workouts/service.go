@@ -2,21 +2,29 @@ package workouts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/storage/keys"
+	"github.com/solargate/grom/internal/tracks"
 )
 
 // Service provides workout business operations over a metadata repository and blob store.
 type Service struct {
-	repo      Repository
-	blobs     blob.Store
-	equipment EquipmentCatalog
+	repo        Repository
+	blobs       blob.Store
+	equipment   EquipmentCatalog
+	speedFormat SpeedSidecarFormat
 }
 
 func NewService(repo Repository, blobs blob.Store) *Service {
-	return &Service{repo: repo, blobs: blobs}
+	return &Service{repo: repo, blobs: blobs, speedFormat: SpeedSidecarYAML}
+}
+
+// SetSpeedSidecarFormat selects speed.yaml (file) or speed.json (bbolt).
+func (s *Service) SetSpeedSidecarFormat(format SpeedSidecarFormat) {
+	s.speedFormat = format
 }
 
 // SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
@@ -60,6 +68,9 @@ func (s *Service) Get(nickname, workoutID string) (*Workout, error) {
 	s.enrichWorkout(nickname, workout)
 	byID := s.loadEquipmentByID(nickname, []Workout{*workout})
 	ApplyEquipmentCatalog(workout.Equipment, byID)
+	if err := s.loadSpeedSeries(nickname, workout); err != nil {
+		return nil, err
+	}
 	return workout, nil
 }
 
@@ -142,3 +153,23 @@ func (s *Service) enrichWorkout(nickname string, w *Workout) {
 	}
 	w.HasMedia = len(w.MediaFiles) > 0
 }
+
+func (s *Service) loadSpeedSeries(nickname string, w *Workout) error {
+	if w == nil || w.Track == "" {
+		return nil
+	}
+	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
+	key := keys.WorkoutSpeed(nickname, dirName, SpeedFileName(s.speedFormat))
+	samples, err := ReadSpeedBlob(context.Background(), s.blobs, key, s.speedFormat)
+	if err != nil {
+		return fmt.Errorf("read speed series: %w", err)
+	}
+	w.Speed = samples
+	return nil
+}
+
+func (s *Service) writeSpeedSidecar(nickname, dirName string, parsed *tracks.Data) error {
+	key := keys.WorkoutSpeed(nickname, dirName, SpeedFileName(s.speedFormat))
+	return WriteSpeedBlob(context.Background(), s.blobs, key, s.speedFormat, SpeedSamplesFromParsed(parsed))
+}
+

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - About screen shows the author name, source code repository, and app license
+- Per-point workout speed series (km/h, UTC timestamps) stored as `speed.yaml` (file driver) or `speed.json` (bbolt); written when a track is attached (including Strava import and federated inbox from `trackData`); loaded only on full workout Get
 
 ### Fixed
 

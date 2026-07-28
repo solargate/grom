@@ -7,7 +7,7 @@ import (
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
-func extractGPXStats(gpxData *gpx.GPX) Stats {
+func extractGPXStats(gpxData *gpx.GPX) (Stats, []SpeedPoint) {
 	samples := gpxSamplePoints(gpxData)
 	stats := calculateStatsFromSamples(samples)
 
@@ -22,7 +22,7 @@ func extractGPXStats(gpxData *gpx.GPX) Stats {
 		}
 	}
 
-	return stats
+	return stats, SpeedSeriesKmh(samples)
 }
 
 func gpxSamplePoints(gpxData *gpx.GPX) []SamplePoint {
