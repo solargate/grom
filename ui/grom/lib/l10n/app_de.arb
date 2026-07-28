@@ -60,6 +60,7 @@
   "workoutElevationGain": "Höhenmeter",
   "workoutSpeedAvg": "Ø Geschwindigkeit",
   "workoutSpeedMax": "Max. Geschwindigkeit",
+  "workoutSpeedChartTitle": "Geschwindigkeit",
   "workoutTotalTime": "Gesamtzeit",
   "workoutHeartRateAvg": "Ø Puls",
   "workoutSteps": "Schritte",

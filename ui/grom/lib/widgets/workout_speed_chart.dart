@@ -63,6 +63,11 @@ class WorkoutSpeedChart extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  l10n.workoutSpeedChartTitle,
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
                 SizedBox(
                   height: kWorkoutSpeedChartHeight,
                   child: LineChart(

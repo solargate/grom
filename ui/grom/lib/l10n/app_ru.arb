@@ -60,6 +60,7 @@
   "workoutElevationGain": "Набор высоты",
   "workoutSpeedAvg": "Средняя скорость",
   "workoutSpeedMax": "Максимальная скорость",
+  "workoutSpeedChartTitle": "Скорость",
   "workoutTotalTime": "Общее время",
   "workoutHeartRateAvg": "Средний пульс",
   "workoutSteps": "Шаги",

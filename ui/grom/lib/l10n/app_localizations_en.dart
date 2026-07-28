@@ -152,6 +152,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutSpeedMax => 'Max. speed';
 
   @override
+  String get workoutSpeedChartTitle => 'Speed';
+
+  @override
   String get workoutTotalTime => 'Total time';
 
   @override
