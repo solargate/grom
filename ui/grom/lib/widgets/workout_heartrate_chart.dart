@@ -9,7 +9,7 @@ import 'package:grom/models/workout_stats.dart';
 
 import 'workout_map_preview.dart';
 
-const Color kWorkoutHeartRateChartColor = Color(0xFFB85C5C);
+const Color kWorkoutHeartRateChartColor = Color(0xFFD65151);
 const double kWorkoutHeartRateChartHeight = 180;
 
 class WorkoutHeartRateChart extends StatelessWidget {
