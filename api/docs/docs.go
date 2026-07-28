@@ -1378,7 +1378,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return the per-point speed series for a workout chart. Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.",
+                "description": "Return the per-point speed series for a workout chart (downsampled to at most 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.",
                 "produces": [
                     "application/json"
                 ],

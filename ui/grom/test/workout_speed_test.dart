@@ -35,37 +35,6 @@ void main() {
     });
   });
 
-  group('downsampleSpeedSamples', () {
-    test('keeps short series unchanged', () {
-      final samples = List.generate(
-        10,
-        (i) => WorkoutSpeedSample(
-          time: DateTime.utc(2026, 7, 8, 10, 0, i),
-          speedKmh: 10 + i.toDouble(),
-          distanceM: i * 10.0,
-        ),
-      );
-      expect(downsampleSpeedSamples(samples, maxPoints: 1000), same(samples));
-    });
-
-    test('reduces to at most maxPoints keeping ends', () {
-      final samples = List.generate(
-        5000,
-        (i) => WorkoutSpeedSample(
-          time: DateTime.utc(2026, 7, 8, 10, 0, 0).add(Duration(seconds: i)),
-          speedKmh: 10 + (i % 20),
-          distanceM: i.toDouble(),
-        ),
-      );
-      const maxPoints = 1000;
-      final drawn = downsampleSpeedSamples(samples, maxPoints: maxPoints);
-      expect(drawn.length, lessThanOrEqualTo(maxPoints));
-      expect(drawn.length, greaterThan(maxPoints ~/ 2));
-      expect(drawn.first.distanceM, samples.first.distanceM);
-      expect(drawn.last.distanceM, samples.last.distanceM);
-    });
-  });
-
   group('resolveSpeedAvgKmh / resolveSpeedMaxKmh', () {
     final samples = [
       WorkoutSpeedSample(

@@ -175,8 +175,9 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 }
 
 func toWorkoutSpeedResponse(workout *workouts.Workout) WorkoutSpeedResponse {
-	samples := make([]WorkoutSpeedSampleResponse, 0, len(workout.Speed))
-	for _, s := range workout.Speed {
+	drawn := workouts.DownsampleSpeedSamples(workout.Speed, workouts.SpeedChartMaxPoints)
+	samples := make([]WorkoutSpeedSampleResponse, 0, len(drawn))
+	for _, s := range drawn {
 		samples = append(samples, WorkoutSpeedSampleResponse{
 			T:         s.Time.UTC().Format(time.RFC3339),
 			SpeedKmh:  s.SpeedKmh,
@@ -692,7 +693,7 @@ func (a *App) parseTrack(ctx *gin.Context) {
 
 // getWorkoutSpeed godoc
 // @Summary      Get workout speed series
-// @Description  Return the per-point speed series for a workout chart. Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.
+// @Description  Return the per-point speed series for a workout chart (downsampled to at most 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth

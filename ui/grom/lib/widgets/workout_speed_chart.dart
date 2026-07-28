@@ -32,9 +32,8 @@ class WorkoutSpeedChart extends StatelessWidget {
 
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final drawn = downsampleSpeedSamples(samples);
     final spots = <FlSpot>[
-      for (final s in drawn) FlSpot(s.distanceKm, s.speedKmh),
+      for (final s in samples) FlSpot(s.distanceKm, s.speedKmh),
     ];
 
     var minX = spots.first.x;

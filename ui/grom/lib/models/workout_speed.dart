@@ -1,6 +1,3 @@
-/// Max points drawn on the speed chart (downsample threshold).
-const int kSpeedChartMaxPoints = 1000;
-
 class WorkoutSpeedSample {
   const WorkoutSpeedSample({
     required this.time,
@@ -50,28 +47,6 @@ class WorkoutSpeedSeries {
       speedAvgKmh: (json['speed_avg_kmh'] as num?)?.toDouble(),
     );
   }
-}
-
-/// Evenly spaced downsample keeping first/last; no-op when under [maxPoints].
-List<WorkoutSpeedSample> downsampleSpeedSamples(
-  List<WorkoutSpeedSample> samples, {
-  int maxPoints = kSpeedChartMaxPoints,
-}) {
-  if (samples.length <= maxPoints || maxPoints < 2) {
-    return samples;
-  }
-  final out = <WorkoutSpeedSample>[];
-  final last = samples.length - 1;
-  var prev = -1;
-  for (var i = 0; i < maxPoints; i++) {
-    final idx = ((i * last) / (maxPoints - 1)).round();
-    if (idx == prev) {
-      continue;
-    }
-    out.add(samples[idx]);
-    prev = idx;
-  }
-  return out;
 }
 
 bool _hasPositive(double? value) => value != null && value > 0;

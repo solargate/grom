@@ -1400,9 +1400,9 @@ paths:
       - workouts
   /workouts/{id}/speed:
     get:
-      description: Return the per-point speed series for a workout chart. Use owner
-        query for followed users' workouts (same as track/media). Empty samples when
-        no sidecar exists.
+      description: Return the per-point speed series for a workout chart (downsampled
+        to at most 500 points). Use owner query for followed users' workouts (same
+        as track/media). Empty samples when no sidecar exists.
       parameters:
       - description: Workout ID
         in: path
