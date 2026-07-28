@@ -175,6 +175,10 @@ func fitSamplePoints(records []*mesgdef.Record) []SamplePoint {
 			v := speed
 			pt.SpeedMps = &v
 		}
+		if dist := record.DistanceScaled(); validFloat(dist) {
+			v := dist
+			pt.DistanceM = &v
+		}
 		if record.HeartRate != basetype.Uint8Invalid {
 			v := float64(record.HeartRate)
 			pt.HeartRate = &v

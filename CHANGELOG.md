@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - About screen shows the author name, source code repository, and app license
-- Per-point workout speed series (km/h, UTC timestamps) stored as `speed.yaml` (file driver) or `speed.json` (bbolt); written when a track is attached (including Strava import and federated inbox from `trackData`); loaded only on full workout Get
+- Per-point workout speed series (km/h, UTC timestamps, distance from track start in meters) stored as `speed.yaml` (file driver) or `speed.json` (bbolt); written when a track is attached (including Strava import and federated inbox from `trackData`); loaded only on full workout Get
+
+### Changed
+
+- **Breaking:** speed sidecar values are objects `{speed_kmh, distance_m}` keyed by UTC timestamp (no longer a bare km/h float)
+- Speed series omits non-positive speeds (0, NaN, Inf); only `speed_kmh > 0` is stored
 
 ### Fixed
 

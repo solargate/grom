@@ -52,8 +52,10 @@ type Workout struct {
 	Speed []SpeedSample `yaml:"-" json:"-"`
 }
 
-// SpeedSample is a per-point speed value bound to an absolute UTC timestamp (km/h).
+// SpeedSample is a per-point speed value bound to an absolute UTC timestamp (km/h)
+// and cumulative distance from the start of the track (meters).
 type SpeedSample struct {
-	Time     time.Time
-	SpeedKmh float64
+	Time      time.Time
+	SpeedKmh  float64
+	DistanceM float64
 }

@@ -18,6 +18,7 @@ type SamplePoint struct {
 	HasTime     bool
 	Elevation   *float64
 	SpeedMps    *float64
+	DistanceM   *float64 // cumulative from activity/track start when known (e.g. FIT)
 	HeartRate   *float64
 	Cadence     *float64
 	Power       *float64

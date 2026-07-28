@@ -3,6 +3,7 @@ package workouts_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,6 +59,21 @@ func TestCreateWithTrackWritesSpeedSidecarAndGetLoadsIt(t *testing.T) {
 	if len(got.Speed) < 1 {
 		t.Fatalf("Get speed len = %d", len(got.Speed))
 	}
+	raw, err := os.ReadFile(speedPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "speed_kmh:") || !strings.Contains(string(raw), "distance_m:") {
+		t.Fatalf("speed.yaml missing fields: %s", raw)
+	}
+	for i, s := range got.Speed {
+		if s.DistanceM < 0 {
+			t.Fatalf("DistanceM[%d] = %v", i, s.DistanceM)
+		}
+		if i > 0 && s.DistanceM < got.Speed[i-1].DistanceM {
+			t.Fatalf("DistanceM not non-decreasing: %v then %v", got.Speed[i-1].DistanceM, s.DistanceM)
+		}
+	}
 }
 
 func TestCreateWithoutTrackHasNoSpeedSidecar(t *testing.T) {
@@ -100,5 +116,10 @@ func TestParseFITPopulatesSpeedSeries(t *testing.T) {
 	}
 	if len(parsed.SpeedSeries) == 0 {
 		t.Fatal("expected speed series from FIT")
+	}
+	for _, p := range parsed.SpeedSeries {
+		if p.DistanceM < 0 {
+			t.Fatalf("DistanceM = %v", p.DistanceM)
+		}
 	}
 }

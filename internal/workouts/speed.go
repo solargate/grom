@@ -3,6 +3,7 @@ package workouts
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -21,6 +22,12 @@ const (
 	SpeedSidecarJSON
 )
 
+// speedSidecarPoint is the per-timestamp value stored in speed.yaml / speed.json.
+type speedSidecarPoint struct {
+	SpeedKmh  float64 `json:"speed_kmh" yaml:"speed_kmh"`
+	DistanceM float64 `json:"distance_m" yaml:"distance_m"`
+}
+
 // SpeedFileName returns the sidecar basename for the given format.
 func SpeedFileName(format SpeedSidecarFormat) string {
 	if format == SpeedSidecarJSON {
@@ -37,8 +44,9 @@ func SpeedSamplesFromTrack(series []tracks.SpeedPoint) []SpeedSample {
 	out := make([]SpeedSample, len(series))
 	for i := range series {
 		out[i] = SpeedSample{
-			Time:     series[i].Time.UTC(),
-			SpeedKmh: series[i].Kmh,
+			Time:      series[i].Time.UTC(),
+			SpeedKmh:  series[i].Kmh,
+			DistanceM: series[i].DistanceM,
 		}
 	}
 	return out
@@ -71,7 +79,7 @@ func UnmarshalSpeedSidecar(format SpeedSidecarFormat, data []byte) ([]SpeedSampl
 	if len(data) == 0 {
 		return nil, nil
 	}
-	var raw map[string]float64
+	var raw map[string]speedSidecarPoint
 	var err error
 	switch format {
 	case SpeedSidecarJSON:
@@ -85,18 +93,31 @@ func UnmarshalSpeedSidecar(format SpeedSidecarFormat, data []byte) ([]SpeedSampl
 	return speedMapToSamples(raw)
 }
 
-func speedSamplesToMap(samples []SpeedSample) map[string]float64 {
+func speedSamplesToMap(samples []SpeedSample) map[string]speedSidecarPoint {
 	if len(samples) == 0 {
 		return nil
 	}
-	m := make(map[string]float64, len(samples))
+	m := make(map[string]speedSidecarPoint, len(samples))
 	for _, s := range samples {
-		m[s.Time.UTC().Format(time.RFC3339)] = s.SpeedKmh
+		if !positiveSpeedKmh(s.SpeedKmh) {
+			continue
+		}
+		m[s.Time.UTC().Format(time.RFC3339)] = speedSidecarPoint{
+			SpeedKmh:  s.SpeedKmh,
+			DistanceM: s.DistanceM,
+		}
+	}
+	if len(m) == 0 {
+		return nil
 	}
 	return m
 }
 
-func speedMapToSamples(raw map[string]float64) ([]SpeedSample, error) {
+func positiveSpeedKmh(kmh float64) bool {
+	return !math.IsNaN(kmh) && !math.IsInf(kmh, 0) && kmh > 0
+}
+
+func speedMapToSamples(raw map[string]speedSidecarPoint) ([]SpeedSample, error) {
 	if len(raw) == 0 {
 		return nil, nil
 	}
@@ -111,9 +132,11 @@ func speedMapToSamples(raw map[string]float64) ([]SpeedSample, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse speed timestamp %q: %w", k, err)
 		}
+		pt := raw[k]
 		out = append(out, SpeedSample{
-			Time:     ts.UTC(),
-			SpeedKmh: raw[k],
+			Time:      ts.UTC(),
+			SpeedKmh:  pt.SpeedKmh,
+			DistanceM: pt.DistanceM,
 		})
 	}
 	return out, nil
