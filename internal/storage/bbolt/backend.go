@@ -55,15 +55,16 @@ func Open(dbPath, location string) (*Backend, error) {
 
 	blobStore := blobfs.NewStore(location)
 	speedCharts := NewSpeedChartStore(db)
+	heartRateCharts := NewHeartRateChartStore(db)
 	userStore := NewUsersStore(db, location)
 	socialStore := NewSocialStore(db)
 	equipmentStore := NewEquipmentStore(db)
 	workoutRepo := NewWorkoutsStore(db, location)
-	workoutSvc := workouts.NewService(workoutRepo, blobStore, speedCharts)
+	workoutSvc := workouts.NewService(workoutRepo, blobStore, speedCharts, heartRateCharts)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	followersStore := NewFederationFollowersStore(db)
-	inboxStore := NewInboxStore(db, blobStore, speedCharts)
+	inboxStore := NewInboxStore(db, blobStore, speedCharts, heartRateCharts)
 
 	return &Backend{
 		db:          db,

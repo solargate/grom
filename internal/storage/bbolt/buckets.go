@@ -18,6 +18,8 @@ var (
 	bucketFedAuthors        = []byte("fed_authors")
 	bucketSpeedCharts       = []byte("speed_charts")
 	bucketFedSpeedCharts    = []byte("fed_speed_charts")
+	bucketHeartRateCharts   = []byte("heart_rate_charts")
+	bucketFedHeartRateCharts = []byte("fed_heart_rate_charts")
 )
 
 var allBuckets = [][]byte{
@@ -38,6 +40,8 @@ var allBuckets = [][]byte{
 	bucketFedAuthors,
 	bucketSpeedCharts,
 	bucketFedSpeedCharts,
+	bucketHeartRateCharts,
+	bucketFedHeartRateCharts,
 }
 
 const schemaVersion = "1"

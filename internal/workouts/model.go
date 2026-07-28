@@ -57,3 +57,11 @@ type SpeedSample struct {
 	SpeedKmh  float64
 	DistanceM float64
 }
+
+// HeartRateSample is a per-point heart-rate value bound to an absolute UTC timestamp (bpm)
+// and optional cumulative distance from the start of the track (meters; nil when no GPS).
+type HeartRateSample struct {
+	Time      time.Time
+	BPM       float64
+	DistanceM *float64
+}

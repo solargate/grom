@@ -125,4 +125,95 @@ func TestParseFITPopulatesSpeedSeries(t *testing.T) {
 			t.Fatalf("DistanceM = %v", p.DistanceM)
 		}
 	}
+	if len(parsed.HeartRateSeries) == 0 {
+		t.Fatal("expected heart rate series from FIT")
+	}
+	for _, p := range parsed.HeartRateSeries {
+		if p.BPM <= 0 {
+			t.Fatalf("BPM = %v", p.BPM)
+		}
+		if parsed.HasGPS() && !p.HasDistance {
+			t.Fatal("expected HasDistance with GPS")
+		}
+	}
+}
+
+func TestCreateWithTrackWritesHeartRateChartFromFIT(t *testing.T) {
+	dir := t.TempDir()
+	svc := newTestService(dir)
+
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := svc.CreateWithTrack("athlete", &workouts.Workout{
+		Name:            "Ride",
+		SportType:       "Ride",
+		StartDate:       time.Date(2026, 7, 6, 8, 40, 0, 0, time.UTC),
+		DurationSeconds: 100,
+		Distance:        1000,
+	}, &workouts.TrackInput{
+		Filename: "1-ride.fit",
+		Data:     fitData,
+	})
+	if err != nil {
+		t.Fatalf("CreateWithTrack: %v", err)
+	}
+
+	dirName := keys.WorkoutDirName(created.StartDate, created.ID)
+	hrPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.HeartRateChartFileJSON)
+	if _, err := os.Stat(hrPath); err != nil {
+		t.Fatalf("expected heartrate-chart.json: %v", err)
+	}
+
+	workout, samples, err := svc.GetHeartRateChart("athlete", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if workout.ID != created.ID {
+		t.Fatalf("workout id = %q", workout.ID)
+	}
+	if len(samples) < 1 {
+		t.Fatalf("GetHeartRateChart len = %d", len(samples))
+	}
+	if len(samples) > workouts.HeartRateChartMaxPoints {
+		t.Fatalf("samples len = %d, want <= %d", len(samples), workouts.HeartRateChartMaxPoints)
+	}
+	raw, err := os.ReadFile(hrPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"heart_rate_bpm"`) {
+		t.Fatalf("heartrate-chart.json missing fields: %s", raw)
+	}
+}
+
+func TestCreateWithoutTrackHasNoHeartRateChart(t *testing.T) {
+	dir := t.TempDir()
+	svc := newTestService(dir)
+
+	created, err := svc.Create("athlete", &workouts.Workout{
+		Name:            "Gym",
+		SportType:       "Workout",
+		StartDate:       time.Date(2026, 7, 6, 8, 40, 0, 0, time.UTC),
+		DurationSeconds: 100,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dirName := keys.WorkoutDirName(created.StartDate, created.ID)
+	hrPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.HeartRateChartFileJSON)
+	if _, err := os.Stat(hrPath); !os.IsNotExist(err) {
+		t.Fatalf("heartrate-chart.json should not exist, err=%v", err)
+	}
+
+	_, samples, err := svc.GetHeartRateChart("athlete", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 0 {
+		t.Fatalf("expected empty samples, got %d", len(samples))
+	}
 }

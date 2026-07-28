@@ -442,6 +442,34 @@ definitions:
         example: bike
         type: string
     type: object
+  v1.WorkoutHeartRateResponse:
+    properties:
+      has_gps:
+        example: true
+        type: boolean
+      heart_rate_avg:
+        example: 130
+        type: number
+      heart_rate_max:
+        example: 187
+        type: number
+      samples:
+        items:
+          $ref: '#/definitions/v1.WorkoutHeartRateSampleResponse'
+        type: array
+    type: object
+  v1.WorkoutHeartRateSampleResponse:
+    properties:
+      distance_m:
+        example: 12.5
+        type: number
+      heart_rate_bpm:
+        example: 142
+        type: number
+      t:
+        example: "2026-07-05T14:30:01Z"
+        type: string
+    type: object
   v1.WorkoutListResponse:
     properties:
       has_more:
@@ -490,6 +518,9 @@ definitions:
         type: boolean
       heart_rate_avg:
         example: 130
+        type: number
+      heart_rate_max:
+        example: 187
         type: number
       id:
         example: "38472901"
@@ -1363,6 +1394,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Update workout
+      tags:
+      - workouts
+  /workouts/{id}/heartrate:
+    get:
+      description: Return the precomputed heart-rate chart series (up to 500 points).
+        Use owner query for followed users' workouts (same as track/media). Empty
+        samples when no chart exists. distance_m is omitted when the track has no
+        GPS; has_gps indicates whether the X axis should use distance.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutHeartRateResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout heart-rate series
       tags:
       - workouts
   /workouts/{id}/map-preview:

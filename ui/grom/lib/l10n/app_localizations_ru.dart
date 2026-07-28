@@ -155,10 +155,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutSpeedChartTitle => 'Скорость';
 
   @override
+  String get workoutHeartRateChartTitle => 'Пульс';
+
+  @override
   String get workoutTotalTime => 'Общее время';
 
   @override
   String get workoutHeartRateAvg => 'Средний пульс';
+
+  @override
+  String get workoutHeartRateMax => 'Максимальный пульс';
+
+  @override
+  String chartMinutes(String value) {
+    return '$value мин';
+  }
 
   @override
   String get workoutSteps => 'Шаги';

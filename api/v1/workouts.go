@@ -109,6 +109,7 @@ type WorkoutResponse struct {
 	SpeedMaxKmh          *float64               `json:"speed_max_kmh,omitempty" example:"32.4"`
 	SpeedAvgKmh          *float64               `json:"speed_avg_kmh,omitempty" example:"17.5"`
 	ElevationGain        *float64               `json:"elevation_gain,omitempty" example:"77"`
+	HeartRateMax         *float64               `json:"heart_rate_max,omitempty" example:"187"`
 	HeartRateAvg         *float64               `json:"heart_rate_avg,omitempty" example:"130"`
 	StepsTotal           *int                   `json:"steps_total,omitempty" example:"2583"`
 	Calories             *float64               `json:"calories,omitempty" example:"415"`
@@ -132,6 +133,21 @@ type WorkoutSpeedResponse struct {
 	Samples     []WorkoutSpeedSampleResponse `json:"samples"`
 	SpeedMaxKmh *float64                     `json:"speed_max_kmh,omitempty" example:"32.4"`
 	SpeedAvgKmh *float64                     `json:"speed_avg_kmh,omitempty" example:"17.5"`
+}
+
+// WorkoutHeartRateSampleResponse is one point of the per-workout heart-rate series.
+type WorkoutHeartRateSampleResponse struct {
+	T            string   `json:"t" example:"2026-07-05T14:30:01Z"`
+	HeartRateBPM float64  `json:"heart_rate_bpm" example:"142"`
+	DistanceM    *float64 `json:"distance_m,omitempty" example:"12.5"`
+}
+
+// WorkoutHeartRateResponse is the heart-rate series for a workout detail chart.
+type WorkoutHeartRateResponse struct {
+	Samples      []WorkoutHeartRateSampleResponse `json:"samples"`
+	HeartRateMax *float64                         `json:"heart_rate_max,omitempty" example:"187"`
+	HeartRateAvg *float64                         `json:"heart_rate_avg,omitempty" example:"130"`
+	HasGPS       bool                             `json:"has_gps" example:"true"`
 }
 
 type WorkoutEquipmentItem struct {
@@ -163,6 +179,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		SpeedMaxKmh:          workout.SpeedMaxKmh,
 		SpeedAvgKmh:          workout.SpeedAvgKmh,
 		ElevationGain:        workout.ElevationGain,
+		HeartRateMax:         workout.HeartRateMax,
 		HeartRateAvg:         workout.HeartRateAvg,
 		StepsTotal:           workout.StepsTotal,
 		Calories:             workout.Calories,
@@ -187,6 +204,27 @@ func toWorkoutSpeedResponse(workout *workouts.Workout, samples []workouts.SpeedS
 		Samples:     outSamples,
 		SpeedMaxKmh: workout.SpeedMaxKmh,
 		SpeedAvgKmh: workout.SpeedAvgKmh,
+	}
+}
+
+func toWorkoutHeartRateResponse(workout *workouts.Workout, samples []workouts.HeartRateSample) WorkoutHeartRateResponse {
+	outSamples := make([]WorkoutHeartRateSampleResponse, 0, len(samples))
+	hasGPS := false
+	for _, s := range samples {
+		if s.DistanceM != nil {
+			hasGPS = true
+		}
+		outSamples = append(outSamples, WorkoutHeartRateSampleResponse{
+			T:            s.Time.UTC().Format(time.RFC3339),
+			HeartRateBPM: s.BPM,
+			DistanceM:    s.DistanceM,
+		})
+	}
+	return WorkoutHeartRateResponse{
+		Samples:      outSamples,
+		HeartRateMax: workout.HeartRateMax,
+		HeartRateAvg: workout.HeartRateAvg,
+		HasGPS:       hasGPS,
 	}
 }
 
@@ -367,7 +405,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Failure      500   {object}  ErrorResponse
 // @Router       /workouts [post]
 func (a *App) createWorkout(ctx *gin.Context) {
-		nickname, err := a.currentUserNickname(ctx)
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -746,6 +784,62 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(workout, samples))
 }
 
+// getWorkoutHeartRate godoc
+// @Summary      Get workout heart-rate series
+// @Description  Return the precomputed heart-rate chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists. distance_m is omitted when the track has no GPS; has_gps indicates whether the X axis should use distance.
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutHeartRateResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id}/heartrate [get]
+func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to resolve workout", err)
+		return
+	}
+
+	workout, samples, err := a.Workouts.GetHeartRateChart(owner, workoutID)
+	if err == nil {
+		ctx.JSON(http.StatusOK, toWorkoutHeartRateResponse(workout, samples))
+		return
+	}
+	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		respondInternal(ctx, "failed to load workout heart rate", err)
+		return
+	}
+
+	if a.Federation.Inbox() == nil {
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+		return
+	}
+	workout, samples, err = a.Federation.Inbox().GetHeartRateChart(nickname, owner, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to load workout heart rate", err)
+		return
+	}
+	ctx.JSON(http.StatusOK, toWorkoutHeartRateResponse(workout, samples))
+}
+
 // getWorkoutTrack godoc
 // @Summary      Get workout track file
 // @Description  Return the workout track file. Use format=gpx to download as GPX (FIT is converted on the fly). Original format is only available for your own workouts.
@@ -762,7 +856,7 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 // @Failure      404  {object}  ErrorResponse
 // @Router       /workouts/{id}/track [get]
 func (a *App) getWorkoutTrack(ctx *gin.Context) {
-		nickname, err := a.currentUserNickname(ctx)
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
@@ -792,7 +886,7 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 	data, storageName, workoutName, err := a.Workouts.TrackFile(owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
-						if a.Federation.Inbox() != nil {
+			if a.Federation.Inbox() != nil {
 				data, storageName, workoutName, err = a.Federation.Inbox().TrackFile(nickname, owner, workoutID)
 			}
 		}
@@ -1166,7 +1260,7 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 // @Failure      500  {object}  ErrorResponse
 // @Router       /workouts/{id} [delete]
 func (a *App) deleteWorkout(ctx *gin.Context) {
-		nickname, err := a.currentUserNickname(ctx)
+	nickname, err := a.currentUserNickname(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return

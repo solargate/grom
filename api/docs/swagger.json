@@ -1313,6 +1313,64 @@
                 }
             }
         },
+        "/workouts/{id}/heartrate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return the precomputed heart-rate chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists. distance_m is omitted when the track has no GPS; has_gps indicates whether the X axis should use distance.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Get workout heart-rate series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workout ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout owner nickname (required for followed users' workouts)",
+                        "name": "owner",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.WorkoutHeartRateResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/workouts/{id}/map-preview": {
             "get": {
                 "security": [
@@ -2105,6 +2163,46 @@
                 }
             }
         },
+        "v1.WorkoutHeartRateResponse": {
+            "type": "object",
+            "properties": {
+                "has_gps": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "heart_rate_avg": {
+                    "type": "number",
+                    "example": 130
+                },
+                "heart_rate_max": {
+                    "type": "number",
+                    "example": 187
+                },
+                "samples": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.WorkoutHeartRateSampleResponse"
+                    }
+                }
+            }
+        },
+        "v1.WorkoutHeartRateSampleResponse": {
+            "type": "object",
+            "properties": {
+                "distance_m": {
+                    "type": "number",
+                    "example": 12.5
+                },
+                "heart_rate_bpm": {
+                    "type": "number",
+                    "example": 142
+                },
+                "t": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:01Z"
+                }
+            }
+        },
         "v1.WorkoutListResponse": {
             "type": "object",
             "properties": {
@@ -2173,6 +2271,10 @@
                 "heart_rate_avg": {
                     "type": "number",
                     "example": 130
+                },
+                "heart_rate_max": {
+                    "type": "number",
+                    "example": 187
                 },
                 "id": {
                     "type": "string",

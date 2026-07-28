@@ -8,8 +8,9 @@ import (
 
 func newTestService(dir string) *workouts.Service {
 	blobs := blobfs.NewStore(dir)
-	charts := workouts.NewBlobSpeedChartStore(blobs)
-	return workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts)
+	speedCharts := workouts.NewBlobSpeedChartStore(blobs)
+	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
+	return workouts.NewService(file.NewWorkoutsStore(dir), blobs, speedCharts, hrCharts)
 }
 
 func newTestServiceWithEquipment(dir string) *workouts.Service {

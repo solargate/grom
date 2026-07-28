@@ -382,6 +382,12 @@ abstract class AppLocalizations {
   /// **'Speed'**
   String get workoutSpeedChartTitle;
 
+  /// No description provided for @workoutHeartRateChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get workoutHeartRateChartTitle;
+
   /// No description provided for @workoutTotalTime.
   ///
   /// In en, this message translates to:
@@ -393,6 +399,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Avg. heart rate'**
   String get workoutHeartRateAvg;
+
+  /// No description provided for @workoutHeartRateMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max. heart rate'**
+  String get workoutHeartRateMax;
+
+  /// No description provided for @chartMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} min'**
+  String chartMinutes(String value);
 
   /// No description provided for @workoutSteps.
   ///

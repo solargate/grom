@@ -26,4 +26,10 @@ func TestKeyHelpers(t *testing.T) {
 	if got := keys.FederatedInboxSpeed("viewer", "owner", "wid", keys.SpeedChartFileJSON); !strings.HasSuffix(got, "wid_speed-chart.json") {
 		t.Fatalf("FederatedInboxSpeed = %q", got)
 	}
+	if got := keys.WorkoutSpeed("alice", "dir", keys.HeartRateChartFileJSON); !strings.HasSuffix(got, "heartrate-chart.json") {
+		t.Fatalf("WorkoutSpeed heartrate = %q", got)
+	}
+	if got := keys.FederatedInboxSpeed("viewer", "owner", "wid", keys.HeartRateChartFileJSON); !strings.HasSuffix(got, "wid_heartrate-chart.json") {
+		t.Fatalf("FederatedInboxSpeed heartrate = %q", got)
+	}
 }

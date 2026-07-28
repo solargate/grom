@@ -22,14 +22,15 @@ import (
 )
 
 type InboxStore struct {
-	db          *bolt.DB
-	blobs       blob.Store
-	speedCharts workouts.SpeedChartStore
-	client      *http.Client
+	db              *bolt.DB
+	blobs           blob.Store
+	speedCharts     workouts.SpeedChartStore
+	heartRateCharts workouts.HeartRateChartStore
+	client          *http.Client
 }
 
-func NewInboxStore(db *bolt.DB, blobs blob.Store, speedCharts workouts.SpeedChartStore) *InboxStore {
-	return &InboxStore{db: db, blobs: blobs, speedCharts: speedCharts}
+func NewInboxStore(db *bolt.DB, blobs blob.Store, speedCharts workouts.SpeedChartStore, heartRateCharts workouts.HeartRateChartStore) *InboxStore {
+	return &InboxStore{db: db, blobs: blobs, speedCharts: speedCharts, heartRateCharts: heartRateCharts}
 }
 
 func (s *InboxStore) SetHTTPClient(client *http.Client) {
@@ -184,6 +185,12 @@ func (s *InboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ow
 		}
 	}
 
+	if s.heartRateCharts != nil {
+		if err := s.heartRateCharts.WriteFederated(ctx, viewerNickname, ownerKey, workout.ID, workouts.BuildHeartRateChartSamples(parsed)); err != nil {
+			slog.Error("federated heart rate chart write failed", "workout_id", workout.ID, "err", err)
+		}
+	}
+
 	if parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("federated map preview render failed", "workout_id", workout.ID, "err", err)
@@ -255,6 +262,9 @@ func (s *InboxStore) Replace(viewerNickname, ownerHandle string, workout *workou
 		if s.speedCharts != nil {
 			_ = s.speedCharts.DeleteFederated(ctx, viewerNickname, ownerKey, workout.ID)
 		}
+		if s.heartRateCharts != nil {
+			_ = s.heartRateCharts.DeleteFederated(ctx, viewerNickname, ownerKey, workout.ID)
+		}
 		workout.HasMapPreview = false
 	} else if previous != nil {
 		if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)); err == nil && exists {
@@ -291,6 +301,9 @@ func (s *InboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error
 		}
 		workout = w
 		if err := DeleteFederatedSpeedChartInTx(tx, viewerNickname, ownerKey, workoutID); err != nil {
+			return err
+		}
+		if err := DeleteFederatedHeartRateChartInTx(tx, viewerNickname, ownerKey, workoutID); err != nil {
 			return err
 		}
 		return tx.Bucket(bucketFedInbox).Delete(fedInboxKey(viewerNickname, ownerKey, workoutID))
@@ -514,6 +527,31 @@ func (s *InboxStore) GetSpeedChart(viewerNickname, ownerNickname, workoutID stri
 	samples, err := s.speedCharts.ReadFederated(context.Background(), viewerNickname, ownerKey, workoutID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read federated speed chart: %w", err)
+	}
+	return workout, samples, nil
+}
+
+func (s *InboxStore) GetHeartRateChart(viewerNickname, ownerNickname, workoutID string) (*workouts.Workout, []workouts.HeartRateSample, error) {
+	var workout *workouts.Workout
+	var ownerKey string
+	err := s.db.View(func(tx *bolt.Tx) error {
+		var err error
+		ownerKey, err = s.findOwnerKey(tx, viewerNickname, ownerNickname)
+		if err != nil {
+			return err
+		}
+		workout, err = s.getWorkout(tx, viewerNickname, ownerKey, workoutID)
+		return err
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.heartRateCharts == nil {
+		return workout, nil, nil
+	}
+	samples, err := s.heartRateCharts.ReadFederated(context.Background(), viewerNickname, ownerKey, workoutID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read federated heart rate chart: %w", err)
 	}
 	return workout, samples, nil
 }

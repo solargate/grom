@@ -12,14 +12,15 @@ import (
 
 // Service provides workout business operations over a metadata repository and blob store.
 type Service struct {
-	repo        Repository
-	blobs       blob.Store
-	speedCharts SpeedChartStore
-	equipment   EquipmentCatalog
+	repo            Repository
+	blobs           blob.Store
+	speedCharts     SpeedChartStore
+	heartRateCharts HeartRateChartStore
+	equipment       EquipmentCatalog
 }
 
-func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore) *Service {
-	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts}
+func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore, heartRateCharts HeartRateChartStore) *Service {
+	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts, heartRateCharts: heartRateCharts}
 }
 
 // SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
@@ -79,6 +80,23 @@ func (s *Service) GetSpeedChart(nickname, workoutID string) (*Workout, []SpeedSa
 	samples, err := s.speedCharts.ReadLocal(context.Background(), nickname, dirName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read speed chart: %w", err)
+	}
+	return workout, samples, nil
+}
+
+// GetHeartRateChart returns workout metadata and precomputed chart samples for /heartrate.
+func (s *Service) GetHeartRateChart(nickname, workoutID string) (*Workout, []HeartRateSample, error) {
+	workout, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.heartRateCharts == nil {
+		return workout, nil, nil
+	}
+	dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
+	samples, err := s.heartRateCharts.ReadLocal(context.Background(), nickname, dirName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read heart rate chart: %w", err)
 	}
 	return workout, samples, nil
 }
@@ -167,4 +185,11 @@ func (s *Service) writeSpeedChart(nickname, dirName string, parsed *tracks.Data)
 		return fmt.Errorf("speed chart store is nil")
 	}
 	return s.speedCharts.WriteLocal(context.Background(), nickname, dirName, BuildSpeedChartSamples(parsed))
+}
+
+func (s *Service) writeHeartRateChart(nickname, dirName string, parsed *tracks.Data) error {
+	if s.heartRateCharts == nil {
+		return fmt.Errorf("heart rate chart store is nil")
+	}
+	return s.heartRateCharts.WriteLocal(context.Background(), nickname, dirName, BuildHeartRateChartSamples(parsed))
 }

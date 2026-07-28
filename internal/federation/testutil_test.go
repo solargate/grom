@@ -7,6 +7,7 @@ import (
 
 func newTestInboxStore(dir string) *WorkoutInboxStore {
 	blobs := blobfs.NewStore(dir)
-	charts := workouts.NewBlobSpeedChartStore(blobs)
-	return NewWorkoutInboxStore(dir, blobs, charts)
+	speedCharts := workouts.NewBlobSpeedChartStore(blobs)
+	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
+	return NewWorkoutInboxStore(dir, blobs, speedCharts, hrCharts)
 }
