@@ -642,6 +642,95 @@ func TestGetWorkoutSpeed(t *testing.T) {
 	}
 }
 
+func TestGetWorkoutHeartRate(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	ta.register(t, "bob", "bob@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+	bobToken, _ := ta.login(t, "bob@example.com", "password12")
+
+	fit := readTestdata(t, "tracks/1-ride.fit")
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", aliceToken,
+		map[string]string{
+			"name":       "Alice FIT",
+			"sport_type": "Ride",
+			"start_date": "2026-07-08T10:00:00Z",
+		},
+		map[string][]filePart{
+			"track": {{filename: "ride.fit", data: fit}},
+		},
+	)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	id, _ := created["id"].(string)
+	if _, ok := created["heart_rate_max"].(float64); !ok {
+		// may be present from FIT enrichment
+		_ = ok
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/heartrate", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	body := decodeObject(t, w)
+	samples, _ := body["samples"].([]any)
+	if len(samples) < 2 {
+		t.Fatalf("expected heart rate samples from FIT, got %#v", body)
+	}
+	first, _ := samples[0].(map[string]any)
+	if _, ok := first["heart_rate_bpm"].(float64); !ok {
+		t.Fatalf("expected heart_rate_bpm in sample: %#v", first)
+	}
+	if _, ok := first["t"].(string); !ok {
+		t.Fatalf("expected t in sample: %#v", first)
+	}
+	if hasGPS, ok := body["has_gps"].(bool); !ok || !hasGPS {
+		t.Fatalf("expected has_gps true for GPS FIT, got %#v", body["has_gps"])
+	}
+	if _, ok := first["distance_m"].(float64); !ok {
+		t.Fatalf("expected distance_m in GPS sample: %#v", first)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/heartrate?owner=alice", nil, bobToken)
+	expectStatus(t, w, http.StatusNotFound)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/heartrate?owner=alice", nil, bobToken)
+	expectStatus(t, w, http.StatusOK)
+	body = decodeObject(t, w)
+	samples, _ = body["samples"].([]any)
+	if len(samples) < 2 {
+		t.Fatalf("expected followed workout heart rate samples, got %#v", body)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id, nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	detail := decodeObject(t, w)
+	if _, ok := detail["heart_rate_avg"].(float64); !ok {
+		t.Fatalf("expected heart_rate_avg on workout response: %#v", detail)
+	}
+	if _, ok := detail["heart_rate_max"].(float64); !ok {
+		t.Fatalf("expected heart_rate_max on workout response: %#v", detail)
+	}
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name":             "No track",
+		"sport_type":       "Workout",
+		"start_date":       "2026-07-08T11:00:00Z",
+		"duration_seconds": 600,
+	}, aliceToken)
+	expectStatus(t, w, http.StatusCreated)
+	noTrackID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+noTrackID+"/heartrate", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	body = decodeObject(t, w)
+	samples, _ = body["samples"].([]any)
+	if len(samples) != 0 {
+		t.Fatalf("expected empty samples without track, got %#v", body)
+	}
+}
+
 func TestGetWorkout(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

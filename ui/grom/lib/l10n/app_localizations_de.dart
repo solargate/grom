@@ -156,10 +156,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutSpeedChartTitle => 'Geschwindigkeit';
 
   @override
+  String get workoutHeartRateChartTitle => 'Puls';
+
+  @override
   String get workoutTotalTime => 'Gesamtzeit';
 
   @override
   String get workoutHeartRateAvg => 'Ø Puls';
+
+  @override
+  String get workoutHeartRateMax => 'Max. Puls';
+
+  @override
+  String chartMinutes(String value) {
+    return '$value Min';
+  }
 
   @override
   String get workoutSteps => 'Schritte';

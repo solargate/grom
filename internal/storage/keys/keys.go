@@ -12,7 +12,8 @@ const (
 	MapPreviewFileName = "map-preview.webp"
 	MediaSubdir        = "media"
 	PreviewPrefix      = "preview-"
-	SpeedChartFileJSON = "speed-chart.json"
+	SpeedChartFileJSON     = "speed-chart.json"
+	HeartRateChartFileJSON = "heartrate-chart.json"
 )
 
 // WorkoutDirName returns the workout directory basename ({startDate}-{id}).

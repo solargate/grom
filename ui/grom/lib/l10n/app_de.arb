@@ -61,8 +61,18 @@
   "workoutSpeedAvg": "Ø Geschwindigkeit",
   "workoutSpeedMax": "Max. Geschwindigkeit",
   "workoutSpeedChartTitle": "Geschwindigkeit",
+  "workoutHeartRateChartTitle": "Puls",
   "workoutTotalTime": "Gesamtzeit",
   "workoutHeartRateAvg": "Ø Puls",
+  "workoutHeartRateMax": "Max. Puls",
+  "chartMinutes": "{value} Min",
+  "@chartMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "workoutSteps": "Schritte",
   "workoutCalories": "Kalorien",
   "elevationMeters": "{value} m",

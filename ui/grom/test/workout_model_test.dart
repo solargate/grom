@@ -47,6 +47,7 @@ void main() {
       'speed_avg_kmh': 10,
       'elevation_gain': 80,
       'heart_rate_avg': 145,
+      'heart_rate_max': 187,
       'steps_total': 9000,
       'calories': 500,
     });
@@ -57,6 +58,7 @@ void main() {
     expect(workout.speedAvgKmh, 10);
     expect(workout.elevationGain, 80);
     expect(workout.heartRateAvg, 145);
+    expect(workout.heartRateMax, 187);
     expect(workout.stepsTotal, 9000);
     expect(workout.calories, 500);
   });

@@ -10,18 +10,19 @@ import (
 	"github.com/muktihari/fit/profile/untyped/mesgnum"
 )
 
-func extractFITStats(activity *filedef.Activity) (Stats, []SpeedPoint) {
+func extractFITStats(activity *filedef.Activity, hasGPS bool) (Stats, []SpeedPoint, []HeartRatePoint) {
 	var stats Stats
 	if activity == nil {
-		return stats, nil
+		return stats, nil, nil
 	}
 
 	samples := fitSamplePoints(activity.Records)
 	series := SpeedSeriesKmh(samples)
+	hrSeries := HeartRateSeries(samples, hasGPS)
 
 	if len(activity.Sessions) == 0 {
 		calc := calculateStatsFromSamples(samples)
-		return calc, series
+		return calc, series, hrSeries
 	}
 
 	session := activity.Sessions[0]
@@ -32,7 +33,7 @@ func extractFITStats(activity *filedef.Activity) (Stats, []SpeedPoint) {
 	mergeCalculatedStats(&stats, &calc)
 	applyCalculatedCadence(&stats, &calc)
 
-	return stats, series
+	return stats, series, hrSeries
 }
 
 func extractFITSessionStats(session *mesgdef.Session, stats *Stats) {

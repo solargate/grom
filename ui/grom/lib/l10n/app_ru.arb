@@ -61,8 +61,18 @@
   "workoutSpeedAvg": "Средняя скорость",
   "workoutSpeedMax": "Максимальная скорость",
   "workoutSpeedChartTitle": "Скорость",
+  "workoutHeartRateChartTitle": "Пульс",
   "workoutTotalTime": "Общее время",
   "workoutHeartRateAvg": "Средний пульс",
+  "workoutHeartRateMax": "Максимальный пульс",
+  "chartMinutes": "{value} мин",
+  "@chartMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "workoutSteps": "Шаги",
   "workoutCalories": "Калории",
   "elevationMeters": "{value} м",

@@ -19,16 +19,16 @@ import (
 )
 
 type App struct {
-	Backend  storage.Backend
-	Users    users.Repository
-	Workouts *workouts.Service
-	Equipment equipment.Repository
+	Backend           storage.Backend
+	Users             users.Repository
+	Workouts          *workouts.Service
+	Equipment         equipment.Repository
 	EquipmentDistance *distance.Service
-	Social   *social.Service
-	Federation federation.Storage
-	Blobs    blob.Store
-	Location string
-	TempDir  string
+	Social            *social.Service
+	Federation        federation.Storage
+	Blobs             blob.Store
+	Location          string
+	TempDir           string
 
 	federationOnce      sync.Once
 	federationDelivery  *federation.Delivery
@@ -47,16 +47,16 @@ func NewApp() (*App, error) {
 	socialSvc := social.NewService(backend.Users(), backend.Social(), backend.Blobs())
 	workoutSvc := backend.Workouts()
 	app := &App{
-		Backend:    backend,
-		Users:      backend.Users(),
-		Workouts:   workoutSvc,
-		Equipment:  backend.Equipment(),
+		Backend:           backend,
+		Users:             backend.Users(),
+		Workouts:          workoutSvc,
+		Equipment:         backend.Equipment(),
 		EquipmentDistance: distance.NewService(backend.Equipment(), workoutSvc),
-		Social:     socialSvc,
-		Federation: backend.Federation(),
-		Blobs:      backend.Blobs(),
-		Location:   config.Cfg.Storage.ResolvedLocation,
-		TempDir:    config.Cfg.Storage.ResolvedTempDir,
+		Social:            socialSvc,
+		Federation:        backend.Federation(),
+		Blobs:             backend.Blobs(),
+		Location:          config.Cfg.Storage.ResolvedLocation,
+		TempDir:           config.Cfg.Storage.ResolvedTempDir,
 	}
 
 	socialSvc.SetInboundFollowers(federation.NewInboundFollowersAdapter(app.Federation.Followers()))
@@ -145,6 +145,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.POST("/parse-track", a.parseTrack)
 		workoutGroup.GET("/:id/track", a.getWorkoutTrack)
 		workoutGroup.GET("/:id/speed", a.getWorkoutSpeed)
+		workoutGroup.GET("/:id/heartrate", a.getWorkoutHeartRate)
 		workoutGroup.GET("/:id/map-preview", a.getWorkoutMapPreview)
 		workoutGroup.GET("/:id/media/:filename/preview", a.getWorkoutMediaPreview)
 		workoutGroup.GET("/:id/media/:filename", a.getWorkoutMediaOriginal)

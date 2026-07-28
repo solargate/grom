@@ -21,6 +21,7 @@ type Data struct {
 	Device               *string
 	Points               []LatLng
 	SpeedSeries          []SpeedPoint
+	HeartRateSeries      []HeartRatePoint
 	Stats                Stats
 }
 

@@ -35,6 +35,7 @@ class Workout {
     this.speedAvgKmh,
     this.elevationGain,
     this.heartRateAvg,
+    this.heartRateMax,
     this.stepsTotal,
     this.calories,
     this.owner = '',
@@ -61,6 +62,7 @@ class Workout {
   final double? speedAvgKmh;
   final double? elevationGain;
   final double? heartRateAvg;
+  final double? heartRateMax;
   final int? stepsTotal;
   final double? calories;
   final String device;
@@ -105,6 +107,7 @@ class Workout {
       speedAvgKmh: (json['speed_avg_kmh'] as num?)?.toDouble(),
       elevationGain: (json['elevation_gain'] as num?)?.toDouble(),
       heartRateAvg: (json['heart_rate_avg'] as num?)?.toDouble(),
+      heartRateMax: (json['heart_rate_max'] as num?)?.toDouble(),
       stepsTotal: json['steps_total'] as int?,
       calories: (json['calories'] as num?)?.toDouble(),
       device: json['device'] as String? ?? '',

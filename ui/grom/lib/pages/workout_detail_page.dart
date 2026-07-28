@@ -5,9 +5,11 @@ import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
+import '../models/workout_heartrate.dart';
 import '../models/workout_speed.dart';
 import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
+import '../widgets/workout_heartrate_chart.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
 import '../widgets/workout_media_strip.dart';
@@ -52,10 +54,19 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   double? _speedMaxKmh;
   bool _isLoadingSpeed = false;
 
+  List<WorkoutHeartRateSample>? _heartRateSamples;
+  bool _heartRateHasGps = false;
+  double? _heartRateAvg;
+  double? _heartRateMax;
+  bool _isLoadingHeartRate = false;
+
   bool get _hasGpsMap => widget.workout.hasMapPreview;
 
   bool get _hasSpeedChart =>
       _speedSamples != null && _speedSamples!.length >= 2;
+
+  bool get _hasHeartRateChart =>
+      _heartRateSamples != null && _heartRateSamples!.length >= 2;
 
   bool get _hasInteractiveMap {
     final points = _trackPoints;
@@ -72,6 +83,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       _loadTrack();
     }
     _loadSpeed();
+    _loadHeartRate();
   }
 
   Future<void> _loadSpeed() async {
@@ -110,6 +122,47 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       setState(() {
         _speedSamples = const [];
         _isLoadingSpeed = false;
+      });
+    }
+  }
+
+  Future<void> _loadHeartRate() async {
+    setState(() {
+      _isLoadingHeartRate = true;
+    });
+
+    try {
+      final series = await _api.getWorkoutHeartRate(
+        token: widget.authToken,
+        workoutId: widget.workout.id,
+        owner: widget.workout.ownerNickname.isNotEmpty
+            ? widget.workout.ownerNickname
+            : null,
+      );
+      if (!mounted) {
+        return;
+      }
+      final samples = series.samples;
+      setState(() {
+        _heartRateSamples = samples;
+        _heartRateHasGps = series.hasGps;
+        _heartRateAvg = resolveHeartRateAvg(
+          widget.workout.heartRateAvg ?? series.heartRateAvg,
+          samples,
+        );
+        _heartRateMax = resolveHeartRateMax(
+          widget.workout.heartRateMax ?? series.heartRateMax,
+          samples,
+        );
+        _isLoadingHeartRate = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _heartRateSamples = const [];
+        _isLoadingHeartRate = false;
       });
     }
   }
@@ -325,6 +378,42 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             ),
                           )
                         else if (_isLoadingSpeed)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: SizedBox(
+                              height: 40,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_hasHeartRateChart)
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              (widget.workout.hasMedia ||
+                                      _hasGpsMap ||
+                                      _hasSpeedChart ||
+                                      _isLoadingSpeed)
+                                  ? 0
+                                  : 16,
+                              16,
+                              16,
+                            ),
+                            child: WorkoutHeartRateChart(
+                              samples: _heartRateSamples!,
+                              hasGps: _heartRateHasGps,
+                              heartRateAvg: _heartRateAvg,
+                              heartRateMax: _heartRateMax,
+                            ),
+                          )
+                        else if (_isLoadingHeartRate)
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
                             child: SizedBox(
