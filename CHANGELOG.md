@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `/api/docs` (no trailing slash) redirects to `/api/docs/` so Swagger UI assets load instead of a blank page
+
 ## [0.3.0] - 2026-07-27
 
 ### Added

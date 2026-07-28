@@ -79,7 +79,11 @@ func RunRouter() {
 		c.Request.RequestURI = "/api/docs/index.html"
 		swaggerHandler(c)
 	}
-	router.GET("/api/docs", serveSwaggerUI)
+	// Redirect so the browser URL ends with "/", otherwise relative Swagger UI
+	// asset paths (./swagger-ui.css etc.) resolve under /api/ and the page is blank.
+	router.GET("/api/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/api/docs/")
+	})
 	router.GET("/api/docs/*any", func(c *gin.Context) {
 		switch c.Param("any") {
 		case "", "/":
