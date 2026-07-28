@@ -1372,7 +1372,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return the precomputed speed chart series (up to 1000 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.",
+                "description": "Return the precomputed speed chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.",
                 "produces": [
                     "application/json"
                 ],

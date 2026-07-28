@@ -11,7 +11,7 @@ import (
 )
 
 // SpeedChartMaxPoints is the maximum number of speed samples stored for the detail chart.
-const SpeedChartMaxPoints = 1000
+const SpeedChartMaxPoints = 500
 
 // SpeedChartStore persists pre-downsampled speed chart payloads.
 type SpeedChartStore interface {

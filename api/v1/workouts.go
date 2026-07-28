@@ -692,7 +692,7 @@ func (a *App) parseTrack(ctx *gin.Context) {
 
 // getWorkoutSpeed godoc
 // @Summary      Get workout speed series
-// @Description  Return the precomputed speed chart series (up to 1000 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.
+// @Description  Return the precomputed speed chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth
