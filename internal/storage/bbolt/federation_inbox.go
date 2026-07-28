@@ -180,7 +180,7 @@ func (s *InboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ow
 
 	speedKey := keys.FederatedInboxSpeed(viewerNickname, ownerKey, workout.ID, workouts.SpeedFileName(s.speedFormat))
 	if err := workouts.WriteSpeedBlob(ctx, s.blobs, speedKey, s.speedFormat, workouts.SpeedSamplesFromParsed(parsed)); err != nil {
-		return fmt.Errorf("write federated speed series: %w", err)
+		slog.Error("federated speed series write failed", "workout_id", workout.ID, "err", err)
 	}
 
 	if parsed.HasGPS() {

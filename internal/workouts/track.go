@@ -137,7 +137,7 @@ func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []by
 	}
 
 	if err := svc.writeSpeedSidecar(nickname, dirName, parsed); err != nil {
-		return fmt.Errorf("write speed series: %w", err)
+		slog.Error("speed series write failed", "workout_id", workout.ID, "err", err)
 	}
 
 	if parsed != nil && parsed.HasGPS() {
