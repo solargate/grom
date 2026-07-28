@@ -59,6 +59,7 @@
   "workoutPace": "Темп",
   "workoutElevationGain": "Набор высоты",
   "workoutSpeedAvg": "Средняя скорость",
+  "workoutSpeedMax": "Максимальная скорость",
   "workoutTotalTime": "Общее время",
   "workoutHeartRateAvg": "Средний пульс",
   "workoutSteps": "Шаги",

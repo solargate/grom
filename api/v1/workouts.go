@@ -106,6 +106,7 @@ type WorkoutResponse struct {
 	DurationTotalSeconds int                    `json:"duration_total_seconds,omitempty" example:"3900"`
 	Distance             float64                `json:"distance" example:"5200"`
 	TempAvgKmm           *string                `json:"temp_avg_kmm,omitempty" example:"12:22"`
+	SpeedMaxKmh          *float64               `json:"speed_max_kmh,omitempty" example:"32.4"`
 	SpeedAvgKmh          *float64               `json:"speed_avg_kmh,omitempty" example:"17.5"`
 	ElevationGain        *float64               `json:"elevation_gain,omitempty" example:"77"`
 	HeartRateAvg         *float64               `json:"heart_rate_avg,omitempty" example:"130"`
@@ -117,6 +118,20 @@ type WorkoutResponse struct {
 	HasMedia             bool                   `json:"has_media" example:"true"`
 	MediaFiles           []string               `json:"media_files,omitempty"`
 	Author               *WorkoutAuthorResponse `json:"author,omitempty"`
+}
+
+// WorkoutSpeedSampleResponse is one point of the per-workout speed series.
+type WorkoutSpeedSampleResponse struct {
+	T         string  `json:"t" example:"2026-07-05T14:30:01Z"`
+	SpeedKmh  float64 `json:"speed_kmh" example:"18.4"`
+	DistanceM float64 `json:"distance_m" example:"12.5"`
+}
+
+// WorkoutSpeedResponse is the speed series for a workout detail chart.
+type WorkoutSpeedResponse struct {
+	Samples     []WorkoutSpeedSampleResponse `json:"samples"`
+	SpeedMaxKmh *float64                     `json:"speed_max_kmh,omitempty" example:"32.4"`
+	SpeedAvgKmh *float64                     `json:"speed_avg_kmh,omitempty" example:"17.5"`
 }
 
 type WorkoutEquipmentItem struct {
@@ -145,6 +160,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		DurationTotalSeconds: workout.DurationTotalSeconds,
 		Distance:             workout.Distance,
 		TempAvgKmm:           workout.TempAvgKmm,
+		SpeedMaxKmh:          workout.SpeedMaxKmh,
 		SpeedAvgKmh:          workout.SpeedAvgKmh,
 		ElevationGain:        workout.ElevationGain,
 		HeartRateAvg:         workout.HeartRateAvg,
@@ -155,6 +171,22 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		HasMapPreview:        workout.HasMapPreview,
 		HasMedia:             workout.HasMedia,
 		MediaFiles:           workout.MediaFiles,
+	}
+}
+
+func toWorkoutSpeedResponse(workout *workouts.Workout) WorkoutSpeedResponse {
+	samples := make([]WorkoutSpeedSampleResponse, 0, len(workout.Speed))
+	for _, s := range workout.Speed {
+		samples = append(samples, WorkoutSpeedSampleResponse{
+			T:         s.Time.UTC().Format(time.RFC3339),
+			SpeedKmh:  s.SpeedKmh,
+			DistanceM: s.DistanceM,
+		})
+	}
+	return WorkoutSpeedResponse{
+		Samples:     samples,
+		SpeedMaxKmh: workout.SpeedMaxKmh,
+		SpeedAvgKmh: workout.SpeedAvgKmh,
 	}
 }
 
@@ -656,6 +688,62 @@ func (a *App) parseTrack(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toParseTrackResponse(parsed))
+}
+
+// getWorkoutSpeed godoc
+// @Summary      Get workout speed series
+// @Description  Return the per-point speed series for a workout chart. Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutSpeedResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id}/speed [get]
+func (a *App) getWorkoutSpeed(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to resolve workout", err)
+		return
+	}
+
+	workout, err := a.Workouts.Get(owner, workoutID)
+	if err == nil {
+		ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(workout))
+		return
+	}
+	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		respondInternal(ctx, "failed to load workout", err)
+		return
+	}
+
+	if a.Federation.Inbox() == nil {
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+		return
+	}
+	item, err := a.Federation.Inbox().Get(nickname, owner, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to load workout", err)
+		return
+	}
+	ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(&item.Workout))
 }
 
 // getWorkoutTrack godoc

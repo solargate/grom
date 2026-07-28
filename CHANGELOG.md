@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - About screen shows the author name, source code repository, and app license
 - Per-point workout speed series (km/h, UTC timestamps, distance from track start in meters) stored as `speed.yaml` (file driver) or `speed.json` (bbolt); written when a track is attached (including Strava import and federated inbox from `trackData`); loaded only on full workout Get
+- Workout detail speed chart (distance km × speed km/h) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/speed` and `speed_max_kmh` on workout responses
 
 ### Changed
 

@@ -59,6 +59,7 @@
   "workoutPace": "Pace",
   "workoutElevationGain": "Elevation gain",
   "workoutSpeedAvg": "Avg. speed",
+  "workoutSpeedMax": "Max. speed",
   "workoutTotalTime": "Total time",
   "workoutHeartRateAvg": "Avg. heart rate",
   "workoutSteps": "Steps",

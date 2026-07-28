@@ -7,6 +7,7 @@ import 'models/equipment.dart';
 import 'models/parsed_track_metadata.dart';
 import 'models/social.dart';
 import 'models/workout.dart';
+import 'models/workout_speed.dart';
 import 'server_storage.dart';
 
 class ApiException implements Exception {
@@ -449,6 +450,28 @@ class ApiRequest {
       uri = uri.replace(queryParameters: {'owner': owner});
     }
     return uri.toString();
+  }
+
+  Future<WorkoutSpeedSeries> getWorkoutSpeed({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/speed');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutSpeedSeries.fromJson(json);
+    }
+
+    throw _parseError(response);
   }
 
   Future<DownloadedTrack> downloadWorkoutTrack({

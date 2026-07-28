@@ -31,6 +31,7 @@ class Workout {
     required this.distance,
     this.durationTotalSeconds,
     this.tempAvgKmm,
+    this.speedMaxKmh,
     this.speedAvgKmh,
     this.elevationGain,
     this.heartRateAvg,
@@ -56,6 +57,7 @@ class Workout {
   final double distance;
   final int? durationTotalSeconds;
   final String? tempAvgKmm;
+  final double? speedMaxKmh;
   final double? speedAvgKmh;
   final double? elevationGain;
   final double? heartRateAvg;
@@ -99,6 +101,7 @@ class Workout {
       distance: (json['distance'] as num?)?.toDouble() ?? 0,
       durationTotalSeconds: json['duration_total_seconds'] as int?,
       tempAvgKmm: json['temp_avg_kmm'] as String?,
+      speedMaxKmh: (json['speed_max_kmh'] as num?)?.toDouble(),
       speedAvgKmh: (json['speed_avg_kmh'] as num?)?.toDouble(),
       elevationGain: (json['elevation_gain'] as num?)?.toDouble(),
       heartRateAvg: (json['heart_rate_avg'] as num?)?.toDouble(),

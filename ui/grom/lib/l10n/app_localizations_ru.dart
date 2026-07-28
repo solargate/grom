@@ -149,6 +149,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutSpeedAvg => 'Средняя скорость';
 
   @override
+  String get workoutSpeedMax => 'Максимальная скорость';
+
+  @override
   String get workoutTotalTime => 'Общее время';
 
   @override
