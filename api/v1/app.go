@@ -144,6 +144,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.POST("", a.createWorkout)
 		workoutGroup.POST("/parse-track", a.parseTrack)
 		workoutGroup.GET("/:id/track", a.getWorkoutTrack)
+		workoutGroup.GET("/:id/speed", a.getWorkoutSpeed)
 		workoutGroup.GET("/:id/map-preview", a.getWorkoutMapPreview)
 		workoutGroup.GET("/:id/media/:filename/preview", a.getWorkoutMediaPreview)
 		workoutGroup.GET("/:id/media/:filename", a.getWorkoutMediaOriginal)

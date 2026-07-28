@@ -1365,6 +1365,64 @@
                 }
             }
         },
+        "/workouts/{id}/speed": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return the precomputed speed chart series (up to 1000 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Get workout speed series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workout ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout owner nickname (required for followed users' workouts)",
+                        "name": "owner",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.WorkoutSpeedResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/workouts/{id}/track": {
             "get": {
                 "security": [
@@ -2138,6 +2196,10 @@
                     "type": "number",
                     "example": 17.5
                 },
+                "speed_max_kmh": {
+                    "type": "number",
+                    "example": 32.4
+                },
                 "sport_type": {
                     "type": "string",
                     "example": "Run"
@@ -2157,6 +2219,42 @@
                 "track": {
                     "type": "string",
                     "example": "track.gpx"
+                }
+            }
+        },
+        "v1.WorkoutSpeedResponse": {
+            "type": "object",
+            "properties": {
+                "samples": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.WorkoutSpeedSampleResponse"
+                    }
+                },
+                "speed_avg_kmh": {
+                    "type": "number",
+                    "example": 17.5
+                },
+                "speed_max_kmh": {
+                    "type": "number",
+                    "example": 32.4
+                }
+            }
+        },
+        "v1.WorkoutSpeedSampleResponse": {
+            "type": "object",
+            "properties": {
+                "distance_m": {
+                    "type": "number",
+                    "example": 12.5
+                },
+                "speed_kmh": {
+                    "type": "number",
+                    "example": 18.4
+                },
+                "t": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:01Z"
                 }
             }
         }

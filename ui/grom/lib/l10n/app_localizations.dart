@@ -370,6 +370,18 @@ abstract class AppLocalizations {
   /// **'Avg. speed'**
   String get workoutSpeedAvg;
 
+  /// No description provided for @workoutSpeedMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max. speed'**
+  String get workoutSpeedMax;
+
+  /// No description provided for @workoutSpeedChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get workoutSpeedChartTitle;
+
   /// No description provided for @workoutTotalTime.
   ///
   /// In en, this message translates to:

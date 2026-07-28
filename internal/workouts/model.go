@@ -49,3 +49,11 @@ type Workout struct {
 	HasMapPreview        bool               `yaml:"-" json:"has_map_preview"`
 	HasMedia             bool               `yaml:"-" json:"has_media"`
 }
+
+// SpeedSample is a per-point speed value bound to an absolute UTC timestamp (km/h)
+// and cumulative distance from the start of the track (meters).
+type SpeedSample struct {
+	Time      time.Time
+	SpeedKmh  float64
+	DistanceM float64
+}

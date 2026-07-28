@@ -125,7 +125,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 - File driver implementation: `internal/storage/file/`.
 - API changes: add/update swag comments on handlers, then run `make doc`.
 - JSON/form DTOs live next to handlers in `api/v1`; domain models live in `internal/<pkg>/model.go`.
-- Logging: use `log/slog` via `internal/logging` (configured by `logging.level` / `logging.format`). Prefer structured attrs (`"workout_id", id`, `"err", err`), not `fmt`-style messages. Levels: DEBUG diagnostics; INFO lifecycle; WARN recoverable; ERROR failed ops. HTTP access logs go through `samber/slog-gin` in `api/v1/main.go` — do not restore `gin.Default()`. Do not add zap/zerolog/logrus; keep `log.Fatal` only for pre-slog bootstrap in `config.GetConfig`.
+- Logging: use `log/slog` via `internal/logging` (configured by `logging.level` / `logging.format`). Prefer structured attrs (`"workout_id", id`, `"err", err`), not interpolated/`fmt.Sprintf` message strings. Levels: DEBUG diagnostics; INFO lifecycle; WARN recoverable; ERROR failed ops. HTTP access logs go through `samber/slog-gin` in `api/v1/main.go` — do not restore `gin.Default()`. Do not add zap/zerolog/logrus; keep `log.Fatal` only for pre-slog bootstrap in `config.GetConfig`. Do **not** use `fmt.Print*` / `log.Print*` for server diagnostics. `fmt.Errorf` / `%w` for **returned errors** is fine and is not logging — reserve slog for side-effect diagnostics (especially when the error is swallowed or best-effort). CLI user-facing output in `cmd/grom` (`fmt.Printf` for migrate/gencerts/version) is separate from server logging.
 - Tests: colocated `*_test.go`; use `testdata/` (tracks under `testdata/tracks/`) for binary fixtures. Run `go test ./...` after backend changes.
 
 ### Flutter (`ui/grom`)
@@ -152,6 +152,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 4. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
 5. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
 6. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
+7. **Speed chart:** pre-downsampled series (≤1000 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob; bbolt driver: `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
 
 ## Agent do / don't
 

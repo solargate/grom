@@ -5,6 +5,7 @@ import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
+import '../models/workout_speed.dart';
 import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
 import '../widgets/workout_map_expand_button.dart';
@@ -12,6 +13,7 @@ import '../widgets/workout_map_preview.dart';
 import '../widgets/workout_media_strip.dart';
 import '../widgets/workout_photo_viewer.dart';
 import '../widgets/workout_record_map.dart';
+import '../widgets/workout_speed_chart.dart';
 
 class WorkoutDetailView extends StatefulWidget {
   const WorkoutDetailView({
@@ -45,7 +47,15 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   bool _isLoadingTrack = false;
   String? _trackError;
 
+  List<WorkoutSpeedSample>? _speedSamples;
+  double? _speedAvgKmh;
+  double? _speedMaxKmh;
+  bool _isLoadingSpeed = false;
+
   bool get _hasGpsMap => widget.workout.hasMapPreview;
+
+  bool get _hasSpeedChart =>
+      _speedSamples != null && _speedSamples!.length >= 2;
 
   bool get _hasInteractiveMap {
     final points = _trackPoints;
@@ -60,6 +70,47 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
     super.initState();
     if (_hasGpsMap) {
       _loadTrack();
+    }
+    _loadSpeed();
+  }
+
+  Future<void> _loadSpeed() async {
+    setState(() {
+      _isLoadingSpeed = true;
+    });
+
+    try {
+      final series = await _api.getWorkoutSpeed(
+        token: widget.authToken,
+        workoutId: widget.workout.id,
+        owner: widget.workout.ownerNickname.isNotEmpty
+            ? widget.workout.ownerNickname
+            : null,
+      );
+      if (!mounted) {
+        return;
+      }
+      final samples = series.samples;
+      setState(() {
+        _speedSamples = samples;
+        _speedAvgKmh = resolveSpeedAvgKmh(
+          widget.workout.speedAvgKmh ?? series.speedAvgKmh,
+          samples,
+        );
+        _speedMaxKmh = resolveSpeedMaxKmh(
+          widget.workout.speedMaxKmh ?? series.speedMaxKmh,
+          samples,
+        );
+        _isLoadingSpeed = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _speedSamples = const [];
+        _isLoadingSpeed = false;
+      });
     }
   }
 
@@ -257,6 +308,36 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                               workout: widget.workout,
                               authToken: widget.authToken,
                               onPhotoTap: _openPhotoViewer,
+                            ),
+                          ),
+                        if (_hasSpeedChart)
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              (widget.workout.hasMedia || _hasGpsMap) ? 0 : 16,
+                              16,
+                              16,
+                            ),
+                            child: WorkoutSpeedChart(
+                              samples: _speedSamples!,
+                              speedAvgKmh: _speedAvgKmh,
+                              speedMaxKmh: _speedMaxKmh,
+                            ),
+                          )
+                        else if (_isLoadingSpeed)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: SizedBox(
+                              height: 40,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                       ],

@@ -95,6 +95,10 @@ func (s *WorkoutsStore) putWorkout(tx *bolt.Tx, nickname string, w *workouts.Wor
 
 func (s *WorkoutsStore) deleteWorkoutMeta(tx *bolt.Tx, nickname string, w *workouts.Workout) error {
 	primaryKey := workoutPrimaryKey(nickname, w.StartDate, w.ID)
+	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
+	if err := DeleteLocalSpeedChartInTx(tx, nickname, dirName); err != nil {
+		return err
+	}
 	_ = tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey))
 	_ = tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID))
 	if sid := strings.TrimSpace(w.StravaActivityID); sid != "" {

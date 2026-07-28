@@ -10,6 +10,8 @@ Your home feed lists activities with type, date, device, distance/time (and pace
 
 ![Workout list on Android](../screenshots/workout-list.jpg)
 
+Open a workout for the full card: interactive map (when a track is present), photo gallery, and a speed-over-distance chart with average and maximum speed. Tap the chart to see speed and distance at that point.
+
 You can create workouts manually, import GPX/FIT tracks, attach photos, and link equipment. On Android you can also record a live GPS track (see below).
 
 ## Live recording (Android)

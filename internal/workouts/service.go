@@ -2,21 +2,24 @@ package workouts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/storage/keys"
+	"github.com/solargate/grom/internal/tracks"
 )
 
 // Service provides workout business operations over a metadata repository and blob store.
 type Service struct {
-	repo      Repository
-	blobs     blob.Store
-	equipment EquipmentCatalog
+	repo        Repository
+	blobs       blob.Store
+	speedCharts SpeedChartStore
+	equipment   EquipmentCatalog
 }
 
-func NewService(repo Repository, blobs blob.Store) *Service {
-	return &Service{repo: repo, blobs: blobs}
+func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore) *Service {
+	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts}
 }
 
 // SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
@@ -61,6 +64,23 @@ func (s *Service) Get(nickname, workoutID string) (*Workout, error) {
 	byID := s.loadEquipmentByID(nickname, []Workout{*workout})
 	ApplyEquipmentCatalog(workout.Equipment, byID)
 	return workout, nil
+}
+
+// GetSpeedChart returns workout metadata and precomputed chart samples for /speed.
+func (s *Service) GetSpeedChart(nickname, workoutID string) (*Workout, []SpeedSample, error) {
+	workout, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.speedCharts == nil {
+		return workout, nil, nil
+	}
+	dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
+	samples, err := s.speedCharts.ReadLocal(context.Background(), nickname, dirName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read speed chart: %w", err)
+	}
+	return workout, samples, nil
 }
 
 func (s *Service) loadEquipmentByID(nickname string, items []Workout) map[string]equipment.Equipment {
@@ -134,11 +154,17 @@ func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Wo
 }
 
 func (s *Service) enrichWorkout(nickname string, w *Workout) {
-	// Derive dir name from metadata — avoids O(N) directory scans per list item.
 	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
 	ctx := context.Background()
 	if ok, _ := s.blobs.Exists(ctx, keys.WorkoutMapPreview(nickname, dirName)); ok {
 		w.HasMapPreview = true
 	}
 	w.HasMedia = len(w.MediaFiles) > 0
+}
+
+func (s *Service) writeSpeedChart(nickname, dirName string, parsed *tracks.Data) error {
+	if s.speedCharts == nil {
+		return fmt.Errorf("speed chart store is nil")
+	}
+	return s.speedCharts.WriteLocal(context.Background(), nickname, dirName, BuildSpeedChartSamples(parsed))
 }

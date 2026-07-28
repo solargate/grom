@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - About screen shows the author name, source code repository, and app license
+- Workout detail speed chart (distance km × speed km/h) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/speed` (precomputed chart, up to 1000 points) and `speed_max_kmh` on workout responses
+
+### Changed
+
+- **Breaking:** speed chart storage replaces full speed sidecars (`speed.yaml` / `speed.json`): pre-downsampled chart only (`speed-chart.json` blob on file driver; `speed_charts` / `fed_speed_charts` bbolt buckets on bbolt driver). Re-upload workouts with tracks after upgrade.
+- Speed chart omits non-positive speeds (0, NaN, Inf); only `speed_kmh > 0` is stored
 
 ### Fixed
 

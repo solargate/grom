@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/tracks"
 	"github.com/solargate/grom/internal/workouts"
 )
@@ -73,6 +74,21 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	}
 	if got.ID != "38472901" || got.Owner != "test2" || got.Author.IsLocal {
 		t.Fatalf("unexpected Get item: %#v", got)
+	}
+
+	_, samples, err := store.GetSpeedChart("solarwind", "test2", "38472901")
+	if err != nil {
+		t.Fatalf("GetSpeedChart() error = %v", err)
+	}
+	if len(samples) < 1 {
+		t.Fatalf("expected speed chart samples, got %d", len(samples))
+	}
+
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	speedKey := keys.FederatedInboxSpeed("solarwind", ownerKey, "38472901", keys.SpeedChartFileJSON)
+	speedPath := filepath.Join(dir, speedKey)
+	if _, err := os.Stat(speedPath); err != nil {
+		t.Fatalf("expected federated speed-chart.json: %v", err)
 	}
 }
 

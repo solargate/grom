@@ -507,6 +507,9 @@ definitions:
       speed_avg_kmh:
         example: 17.5
         type: number
+      speed_max_kmh:
+        example: 32.4
+        type: number
       sport_type:
         example: Run
         type: string
@@ -521,6 +524,31 @@ definitions:
         type: string
       track:
         example: track.gpx
+        type: string
+    type: object
+  v1.WorkoutSpeedResponse:
+    properties:
+      samples:
+        items:
+          $ref: '#/definitions/v1.WorkoutSpeedSampleResponse'
+        type: array
+      speed_avg_kmh:
+        example: 17.5
+        type: number
+      speed_max_kmh:
+        example: 32.4
+        type: number
+    type: object
+  v1.WorkoutSpeedSampleResponse:
+    properties:
+      distance_m:
+        example: 12.5
+        type: number
+      speed_kmh:
+        example: 18.4
+        type: number
+      t:
+        example: "2026-07-05T14:30:01Z"
         type: string
     type: object
 host: localhost:8080
@@ -1368,6 +1396,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Get workout map preview
+      tags:
+      - workouts
+  /workouts/{id}/speed:
+    get:
+      description: Return the precomputed speed chart series (up to 1000 points).
+        Use owner query for followed users' workouts (same as track/media). Empty
+        samples when no chart exists.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutSpeedResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout speed series
       tags:
       - workouts
   /workouts/{id}/track:

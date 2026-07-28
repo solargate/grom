@@ -22,13 +22,14 @@ import (
 )
 
 type InboxStore struct {
-	db     *bolt.DB
-	blobs  blob.Store
-	client *http.Client
+	db          *bolt.DB
+	blobs       blob.Store
+	speedCharts workouts.SpeedChartStore
+	client      *http.Client
 }
 
-func NewInboxStore(db *bolt.DB, blobs blob.Store) *InboxStore {
-	return &InboxStore{db: db, blobs: blobs}
+func NewInboxStore(db *bolt.DB, blobs blob.Store, speedCharts workouts.SpeedChartStore) *InboxStore {
+	return &InboxStore{db: db, blobs: blobs, speedCharts: speedCharts}
 }
 
 func (s *InboxStore) SetHTTPClient(client *http.Client) {
@@ -170,7 +171,20 @@ func (s *InboxStore) writeFederatedTrack(ctx context.Context, viewerNickname, ow
 	if _, err := blob.PutBytes(ctx, s.blobs, trackKey, trackData, blob.PutOptions{}); err != nil {
 		return err
 	}
-	if parsed, err := tracks.Parse(trackData, workout.Track); err == nil && parsed.HasGPS() {
+
+	parsed, err := tracks.Parse(trackData, workout.Track)
+	if err != nil {
+		slog.Warn("federated track parse failed", "workout_id", workout.ID, "err", err)
+		return nil
+	}
+
+	if s.speedCharts != nil {
+		if err := s.speedCharts.WriteFederated(ctx, viewerNickname, ownerKey, workout.ID, workouts.BuildSpeedChartSamples(parsed)); err != nil {
+			slog.Error("federated speed chart write failed", "workout_id", workout.ID, "err", err)
+		}
+	}
+
+	if parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("federated map preview render failed", "workout_id", workout.ID, "err", err)
 		} else if len(preview) > 0 {
@@ -238,6 +252,9 @@ func (s *InboxStore) Replace(viewerNickname, ownerHandle string, workout *workou
 			_ = s.blobs.Delete(ctx, keys.FederatedInboxTrack(viewerNickname, ownerKey, workout.ID, previous.Track))
 		}
 		_ = s.blobs.Delete(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID))
+		if s.speedCharts != nil {
+			_ = s.speedCharts.DeleteFederated(ctx, viewerNickname, ownerKey, workout.ID)
+		}
 		workout.HasMapPreview = false
 	} else if previous != nil {
 		if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workout.ID)); err == nil && exists {
@@ -273,6 +290,9 @@ func (s *InboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error
 			return err
 		}
 		workout = w
+		if err := DeleteFederatedSpeedChartInTx(tx, viewerNickname, ownerKey, workoutID); err != nil {
+			return err
+		}
 		return tx.Bucket(bucketFedInbox).Delete(fedInboxKey(viewerNickname, ownerKey, workoutID))
 	})
 	if err != nil || workout == nil {
@@ -429,11 +449,13 @@ func (s *InboxStore) Avatar(viewerNickname, ownerKey string) ([]byte, error) {
 
 func (s *InboxStore) Get(viewerNickname, ownerNickname, workoutID string) (*workouts.FeedWorkout, error) {
 	var result *workouts.FeedWorkout
+	var ownerKey string
 	err := s.db.View(func(tx *bolt.Tx) error {
-		ownerKey, err := s.findOwnerKey(tx, viewerNickname, ownerNickname)
+		key, err := s.findOwnerKey(tx, viewerNickname, ownerNickname)
 		if err != nil {
 			return err
 		}
+		ownerKey = key
 		workout, err := s.getWorkout(tx, viewerNickname, ownerKey, workoutID)
 		if err != nil {
 			return err
@@ -465,7 +487,35 @@ func (s *InboxStore) Get(viewerNickname, ownerNickname, workoutID string) (*work
 		}
 		return nil
 	})
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *InboxStore) GetSpeedChart(viewerNickname, ownerNickname, workoutID string) (*workouts.Workout, []workouts.SpeedSample, error) {
+	var workout *workouts.Workout
+	var ownerKey string
+	err := s.db.View(func(tx *bolt.Tx) error {
+		var err error
+		ownerKey, err = s.findOwnerKey(tx, viewerNickname, ownerNickname)
+		if err != nil {
+			return err
+		}
+		workout, err = s.getWorkout(tx, viewerNickname, ownerKey, workoutID)
+		return err
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.speedCharts == nil {
+		return workout, nil, nil
+	}
+	samples, err := s.speedCharts.ReadFederated(context.Background(), viewerNickname, ownerKey, workoutID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read federated speed chart: %w", err)
+	}
+	return workout, samples, nil
 }
 
 func (s *InboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {

@@ -471,3 +471,4 @@ func loadFileFederationInbox(location string) (
 	}
 	return authors, inbox, nil
 }
+

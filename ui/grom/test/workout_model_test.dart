@@ -43,6 +43,7 @@ void main() {
       'duration_total_seconds': 3900,
       'distance': 10000,
       'temp_avg_kmm': '6:00',
+      'speed_max_kmh': 32.4,
       'speed_avg_kmh': 10,
       'elevation_gain': 80,
       'heart_rate_avg': 145,
@@ -52,6 +53,7 @@ void main() {
 
     expect(workout.durationTotalSeconds, 3900);
     expect(workout.tempAvgKmm, '6:00');
+    expect(workout.speedMaxKmh, 32.4);
     expect(workout.speedAvgKmh, 10);
     expect(workout.elevationGain, 80);
     expect(workout.heartRateAvg, 145);
