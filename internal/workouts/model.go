@@ -48,8 +48,6 @@ type Workout struct {
 	MediaFiles           []string           `yaml:"media_files,omitempty" json:"media_files,omitempty"`
 	HasMapPreview        bool               `yaml:"-" json:"has_map_preview"`
 	HasMedia             bool               `yaml:"-" json:"has_media"`
-	// Speed is loaded from the speed sidecar on Get only; never persisted in workout metadata.
-	Speed []SpeedSample `yaml:"-" json:"-"`
 }
 
 // SpeedSample is a per-point speed value bound to an absolute UTC timestamp (km/h)

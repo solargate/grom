@@ -75,17 +75,20 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	if got.ID != "38472901" || got.Owner != "test2" || got.Author.IsLocal {
 		t.Fatalf("unexpected Get item: %#v", got)
 	}
-	if len(got.Speed) < 1 {
-		t.Fatalf("expected speed series on Get, got %d", len(got.Speed))
+
+	_, samples, err := store.GetSpeedChart("solarwind", "test2", "38472901")
+	if err != nil {
+		t.Fatalf("GetSpeedChart() error = %v", err)
 	}
-	if items[0].Speed != nil {
-		t.Fatal("list item should not include speed series")
+	if len(samples) < 1 {
+		t.Fatalf("expected speed chart samples, got %d", len(samples))
 	}
 
 	ownerKey := OwnerKeyFromHandle(ownerHandle)
-	speedPath := filepath.Join(dir, "users", "solarwind", "federation", "inbox", "workouts", ownerKey, "38472901_"+keys.SpeedFileYAML)
+	speedKey := keys.FederatedInboxSpeed("solarwind", ownerKey, "38472901", keys.SpeedChartFileJSON)
+	speedPath := filepath.Join(dir, speedKey)
 	if _, err := os.Stat(speedPath); err != nil {
-		t.Fatalf("expected federated speed.yaml: %v", err)
+		t.Fatalf("expected federated speed-chart.json: %v", err)
 	}
 }
 

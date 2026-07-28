@@ -14,7 +14,9 @@ import (
 
 func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	dir := t.TempDir()
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
+	blobs := blobfs.NewStore(dir)
+	charts := workouts.NewBlobSpeedChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
@@ -76,7 +78,9 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 
 func TestStoreCreateWithTrack(t *testing.T) {
 	dir := t.TempDir()
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobfs.NewStore(dir))
+	blobs := blobfs.NewStore(dir)
+	charts := workouts.NewBlobSpeedChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {

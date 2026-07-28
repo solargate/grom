@@ -99,10 +99,6 @@ func Run(opts Options) (*Result, error) {
 		return result, closeErr
 	}
 
-	if err := convertSpeedSidecars(cfg.ResolvedLocation, opts.To); err != nil {
-		return result, fmt.Errorf("convert speed sidecars: %w", err)
-	}
-
 	if opts.Verify {
 		srcCount, err := countAll(src, cfg.ResolvedLocation)
 		if err != nil {
@@ -455,7 +451,7 @@ func loadFileFederationInbox(location string) (
 			}
 			for _, f := range files {
 				name := f.Name()
-				if f.IsDir() || !strings.HasSuffix(name, ".yaml") || name == "author.yaml" || name == "speed.yaml" || strings.HasSuffix(name, "_speed.yaml") {
+				if f.IsDir() || !strings.HasSuffix(name, ".yaml") || name == "author.yaml" {
 					continue
 				}
 				raw, err := os.ReadFile(filepath.Join(ownerDir, name))
@@ -474,53 +470,5 @@ func loadFileFederationInbox(location string) (
 		}
 	}
 	return authors, inbox, nil
-}
-
-// convertSpeedSidecars rewrites shared blob sidecars between yaml (file) and json (bbolt).
-func convertSpeedSidecars(location string, to config.StorageDriver) error {
-	var fromFormat, toFormat workouts.SpeedSidecarFormat
-	switch to {
-	case config.StorageDriverBBolt:
-		fromFormat, toFormat = workouts.SpeedSidecarYAML, workouts.SpeedSidecarJSON
-	case config.StorageDriverFile:
-		fromFormat, toFormat = workouts.SpeedSidecarJSON, workouts.SpeedSidecarYAML
-	default:
-		return nil
-	}
-	fromName := workouts.SpeedFileName(fromFormat)
-	toName := workouts.SpeedFileName(toFormat)
-
-	return filepath.WalkDir(location, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		name := d.Name()
-		if name != fromName && !strings.HasSuffix(name, "_"+fromName) {
-			return nil
-		}
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		samples, err := workouts.UnmarshalSpeedSidecar(fromFormat, raw)
-		if err != nil {
-			return fmt.Errorf("parse %s: %w", path, err)
-		}
-		out, err := workouts.MarshalSpeedSidecar(toFormat, samples)
-		if err != nil {
-			return err
-		}
-		dest := filepath.Join(filepath.Dir(path), strings.TrimSuffix(name, fromName)+toName)
-		if err := os.WriteFile(dest, out, 0600); err != nil {
-			return err
-		}
-		if dest != path {
-			_ = os.Remove(path)
-		}
-		return nil
-	})
 }
 

@@ -10,13 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - About screen shows the author name, source code repository, and app license
-- Per-point workout speed series (km/h, UTC timestamps, distance from track start in meters) stored as `speed.yaml` (file driver) or `speed.json` (bbolt); written when a track is attached (including Strava import and federated inbox from `trackData`); loaded only on full workout Get
-- Workout detail speed chart (distance km × speed km/h) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/speed` (downsampled to 500 points server-side) and `speed_max_kmh` on workout responses
+- Workout detail speed chart (distance km × speed km/h) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/speed` (precomputed chart, up to 1000 points) and `speed_max_kmh` on workout responses
 
 ### Changed
 
-- **Breaking:** speed sidecar values are objects `{speed_kmh, distance_m}` keyed by UTC timestamp (no longer a bare km/h float)
-- Speed series omits non-positive speeds (0, NaN, Inf); only `speed_kmh > 0` is stored
+- **Breaking:** speed chart storage replaces full speed sidecars (`speed.yaml` / `speed.json`): pre-downsampled chart only (`speed-chart.json` blob on file driver; `speed_charts` / `fed_speed_charts` bbolt buckets on bbolt driver). Re-upload workouts with tracks after upgrade.
+- Speed chart omits non-positive speeds (0, NaN, Inf); only `speed_kmh > 0` is stored
 
 ### Fixed
 

@@ -42,12 +42,12 @@ func Open(location string) (*Backend, error) {
 	}
 
 	followersStore := NewFederationFollowersStore(location)
-	inboxStore := federation.NewWorkoutInboxStore(location, blobStore)
+	speedCharts := workouts.NewBlobSpeedChartStore(blobStore)
+	inboxStore := federation.NewWorkoutInboxStore(location, blobStore, speedCharts)
 
 	workoutRepo := NewWorkoutsStore(location)
 	equipmentStore := NewEquipmentStore(location)
-	workoutSvc := workouts.NewService(workoutRepo, blobStore)
-	workoutSvc.SetSpeedSidecarFormat(workouts.SpeedSidecarYAML)
+	workoutSvc := workouts.NewService(workoutRepo, blobStore, speedCharts)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	return &Backend{

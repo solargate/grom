@@ -51,10 +51,10 @@ Notes:
 
 ## Storage drivers
 
-| Driver | Metadata | Blobs (tracks, photos, avatars, keys) |
-|--------|----------|----------------------------------------|
-| `file` (default) | YAML under `storage.location` | Same tree |
-| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | Same filesystem layout under `storage.location` |
+| Driver | Metadata | Speed chart | Blobs (tracks, photos, avatars, keys) |
+|--------|----------|-------------|----------------------------------------|
+| `file` (default) | YAML under `storage.location` | `speed-chart.json` in each workout dir | Same tree |
+| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | JSON in bbolt buckets `speed_charts` (local) and `fed_speed_charts` (federated inbox) | Same filesystem layout under `storage.location` |
 
 `postgres` is reserved in config but not implemented.
 

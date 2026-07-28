@@ -152,6 +152,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 4. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
 5. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
 6. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
+7. **Speed chart:** pre-downsampled series (≤1000 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob; bbolt driver: `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
 
 ## Agent do / don't
 

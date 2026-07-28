@@ -14,17 +14,12 @@ import (
 type Service struct {
 	repo        Repository
 	blobs       blob.Store
+	speedCharts SpeedChartStore
 	equipment   EquipmentCatalog
-	speedFormat SpeedSidecarFormat
 }
 
-func NewService(repo Repository, blobs blob.Store) *Service {
-	return &Service{repo: repo, blobs: blobs, speedFormat: SpeedSidecarYAML}
-}
-
-// SetSpeedSidecarFormat selects speed.yaml (file) or speed.json (bbolt).
-func (s *Service) SetSpeedSidecarFormat(format SpeedSidecarFormat) {
-	s.speedFormat = format
+func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore) *Service {
+	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts}
 }
 
 // SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
@@ -68,10 +63,24 @@ func (s *Service) Get(nickname, workoutID string) (*Workout, error) {
 	s.enrichWorkout(nickname, workout)
 	byID := s.loadEquipmentByID(nickname, []Workout{*workout})
 	ApplyEquipmentCatalog(workout.Equipment, byID)
-	if err := s.loadSpeedSeries(nickname, workout); err != nil {
-		return nil, err
-	}
 	return workout, nil
+}
+
+// GetSpeedChart returns workout metadata and precomputed chart samples for /speed.
+func (s *Service) GetSpeedChart(nickname, workoutID string) (*Workout, []SpeedSample, error) {
+	workout, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.speedCharts == nil {
+		return workout, nil, nil
+	}
+	dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
+	samples, err := s.speedCharts.ReadLocal(context.Background(), nickname, dirName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read speed chart: %w", err)
+	}
+	return workout, samples, nil
 }
 
 func (s *Service) loadEquipmentByID(nickname string, items []Workout) map[string]equipment.Equipment {
@@ -145,7 +154,6 @@ func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Wo
 }
 
 func (s *Service) enrichWorkout(nickname string, w *Workout) {
-	// Derive dir name from metadata — avoids O(N) directory scans per list item.
 	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
 	ctx := context.Background()
 	if ok, _ := s.blobs.Exists(ctx, keys.WorkoutMapPreview(nickname, dirName)); ok {
@@ -154,22 +162,9 @@ func (s *Service) enrichWorkout(nickname string, w *Workout) {
 	w.HasMedia = len(w.MediaFiles) > 0
 }
 
-func (s *Service) loadSpeedSeries(nickname string, w *Workout) error {
-	if w == nil || w.Track == "" {
-		return nil
+func (s *Service) writeSpeedChart(nickname, dirName string, parsed *tracks.Data) error {
+	if s.speedCharts == nil {
+		return fmt.Errorf("speed chart store is nil")
 	}
-	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
-	key := keys.WorkoutSpeed(nickname, dirName, SpeedFileName(s.speedFormat))
-	samples, err := ReadSpeedBlob(context.Background(), s.blobs, key, s.speedFormat)
-	if err != nil {
-		return fmt.Errorf("read speed series: %w", err)
-	}
-	w.Speed = samples
-	return nil
+	return s.speedCharts.WriteLocal(context.Background(), nickname, dirName, BuildSpeedChartSamples(parsed))
 }
-
-func (s *Service) writeSpeedSidecar(nickname, dirName string, parsed *tracks.Data) error {
-	key := keys.WorkoutSpeed(nickname, dirName, SpeedFileName(s.speedFormat))
-	return WriteSpeedBlob(context.Background(), s.blobs, key, s.speedFormat, SpeedSamplesFromParsed(parsed))
-}
-

@@ -174,18 +174,17 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 	}
 }
 
-func toWorkoutSpeedResponse(workout *workouts.Workout) WorkoutSpeedResponse {
-	drawn := workouts.DownsampleSpeedSamples(workout.Speed, workouts.SpeedChartMaxPoints)
-	samples := make([]WorkoutSpeedSampleResponse, 0, len(drawn))
-	for _, s := range drawn {
-		samples = append(samples, WorkoutSpeedSampleResponse{
+func toWorkoutSpeedResponse(workout *workouts.Workout, samples []workouts.SpeedSample) WorkoutSpeedResponse {
+	outSamples := make([]WorkoutSpeedSampleResponse, 0, len(samples))
+	for _, s := range samples {
+		outSamples = append(outSamples, WorkoutSpeedSampleResponse{
 			T:         s.Time.UTC().Format(time.RFC3339),
 			SpeedKmh:  s.SpeedKmh,
 			DistanceM: s.DistanceM,
 		})
 	}
 	return WorkoutSpeedResponse{
-		Samples:     samples,
+		Samples:     outSamples,
 		SpeedMaxKmh: workout.SpeedMaxKmh,
 		SpeedAvgKmh: workout.SpeedAvgKmh,
 	}
@@ -693,7 +692,7 @@ func (a *App) parseTrack(ctx *gin.Context) {
 
 // getWorkoutSpeed godoc
 // @Summary      Get workout speed series
-// @Description  Return the per-point speed series for a workout chart (downsampled to at most 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no sidecar exists.
+// @Description  Return the precomputed speed chart series (up to 1000 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists.
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth
@@ -721,13 +720,13 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 		return
 	}
 
-	workout, err := a.Workouts.Get(owner, workoutID)
+	workout, samples, err := a.Workouts.GetSpeedChart(owner, workoutID)
 	if err == nil {
-		ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(workout))
+		ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(workout, samples))
 		return
 	}
 	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
-		respondInternal(ctx, "failed to load workout", err)
+		respondInternal(ctx, "failed to load workout speed", err)
 		return
 	}
 
@@ -735,16 +734,16 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
-	item, err := a.Federation.Inbox().Get(nickname, owner, workoutID)
+	workout, samples, err = a.Federation.Inbox().GetSpeedChart(nickname, owner, workoutID)
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 			return
 		}
-		respondInternal(ctx, "failed to load workout", err)
+		respondInternal(ctx, "failed to load workout speed", err)
 		return
 	}
-	ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(&item.Workout))
+	ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(workout, samples))
 }
 
 // getWorkoutTrack godoc

@@ -12,7 +12,7 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-func TestCreateWithTrackWritesSpeedSidecarAndGetLoadsIt(t *testing.T) {
+func TestCreateWithTrackWritesSpeedChartAndGetSpeedChartLoadsIt(t *testing.T) {
 	dir := t.TempDir()
 	svc := newTestService(dir)
 
@@ -36,9 +36,9 @@ func TestCreateWithTrackWritesSpeedSidecarAndGetLoadsIt(t *testing.T) {
 	}
 
 	dirName := keys.WorkoutDirName(created.StartDate, created.ID)
-	speedPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.SpeedFileYAML)
+	speedPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.SpeedChartFileJSON)
 	if _, err := os.Stat(speedPath); err != nil {
-		t.Fatalf("expected speed.yaml: %v", err)
+		t.Fatalf("expected speed-chart.json: %v", err)
 	}
 
 	listed, err := svc.List("athlete")
@@ -48,35 +48,38 @@ func TestCreateWithTrackWritesSpeedSidecarAndGetLoadsIt(t *testing.T) {
 	if len(listed) != 1 {
 		t.Fatalf("list len = %d", len(listed))
 	}
-	if listed[0].Speed != nil {
-		t.Fatalf("list should not load speed, got %d samples", len(listed[0].Speed))
-	}
 
-	got, err := svc.Get("athlete", created.ID)
+	workout, samples, err := svc.GetSpeedChart("athlete", created.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Speed) < 1 {
-		t.Fatalf("Get speed len = %d", len(got.Speed))
+	if workout.ID != created.ID {
+		t.Fatalf("workout id = %q", workout.ID)
+	}
+	if len(samples) < 1 {
+		t.Fatalf("GetSpeedChart len = %d", len(samples))
+	}
+	if len(samples) > workouts.SpeedChartMaxPoints {
+		t.Fatalf("samples len = %d, want <= %d", len(samples), workouts.SpeedChartMaxPoints)
 	}
 	raw, err := os.ReadFile(speedPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), "speed_kmh:") || !strings.Contains(string(raw), "distance_m:") {
-		t.Fatalf("speed.yaml missing fields: %s", raw)
+	if !strings.Contains(string(raw), `"speed_kmh"`) || !strings.Contains(string(raw), `"distance_m"`) {
+		t.Fatalf("speed-chart.json missing fields: %s", raw)
 	}
-	for i, s := range got.Speed {
+	for i, s := range samples {
 		if s.DistanceM < 0 {
 			t.Fatalf("DistanceM[%d] = %v", i, s.DistanceM)
 		}
-		if i > 0 && s.DistanceM < got.Speed[i-1].DistanceM {
-			t.Fatalf("DistanceM not non-decreasing: %v then %v", got.Speed[i-1].DistanceM, s.DistanceM)
+		if i > 0 && s.DistanceM < samples[i-1].DistanceM {
+			t.Fatalf("DistanceM not non-decreasing: %v then %v", samples[i-1].DistanceM, s.DistanceM)
 		}
 	}
 }
 
-func TestCreateWithoutTrackHasNoSpeedSidecar(t *testing.T) {
+func TestCreateWithoutTrackHasNoSpeedChart(t *testing.T) {
 	dir := t.TempDir()
 	svc := newTestService(dir)
 
@@ -91,17 +94,17 @@ func TestCreateWithoutTrackHasNoSpeedSidecar(t *testing.T) {
 	}
 
 	dirName := keys.WorkoutDirName(created.StartDate, created.ID)
-	speedPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.SpeedFileYAML)
+	speedPath := filepath.Join(dir, "users", "athlete", "workouts", dirName, keys.SpeedChartFileJSON)
 	if _, err := os.Stat(speedPath); !os.IsNotExist(err) {
-		t.Fatalf("speed.yaml should not exist, err=%v", err)
+		t.Fatalf("speed-chart.json should not exist, err=%v", err)
 	}
 
-	got, err := svc.Get("athlete", created.ID)
+	_, samples, err := svc.GetSpeedChart("athlete", created.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Speed != nil {
-		t.Fatalf("expected nil speed, got %v", got.Speed)
+	if len(samples) != 0 {
+		t.Fatalf("expected empty samples, got %d", len(samples))
 	}
 }
 

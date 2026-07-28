@@ -2,10 +2,6 @@ package workouts
 
 import "math"
 
-// SpeedChartMaxPoints is the maximum number of speed samples returned by the API
-// for the workout detail chart.
-const SpeedChartMaxPoints = 500
-
 // DownsampleSpeedSamples evenly spaces samples keeping first and last.
 // No-op when len(samples) <= maxPoints or maxPoints < 2.
 func DownsampleSpeedSamples(samples []SpeedSample, maxPoints int) []SpeedSample {
