@@ -831,6 +831,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get about => 'Über';
 
   @override
+  String get aboutAuthorLabel => 'Autor';
+
+  @override
+  String get aboutSourceCodeLabel => 'Quellcode';
+
+  @override
+  String get aboutLicenseLabel => 'Lizenz';
+
+  @override
   String get mapDataAttributionTitle => 'Kartendaten';
 
   @override

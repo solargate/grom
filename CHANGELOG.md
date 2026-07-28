@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- About screen shows the author name, source code repository, and app license
+
 ### Fixed
 
 - `/api/docs` (no trailing slash) redirects to `/api/docs/` so Swagger UI assets load instead of a blank page

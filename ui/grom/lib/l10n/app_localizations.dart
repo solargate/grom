@@ -1642,6 +1642,24 @@ abstract class AppLocalizations {
   /// **'About'**
   String get about;
 
+  /// No description provided for @aboutAuthorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Author'**
+  String get aboutAuthorLabel;
+
+  /// No description provided for @aboutSourceCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source code'**
+  String get aboutSourceCodeLabel;
+
+  /// No description provided for @aboutLicenseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get aboutLicenseLabel;
+
   /// No description provided for @mapDataAttributionTitle.
   ///
   /// In en, this message translates to:

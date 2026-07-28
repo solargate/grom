@@ -822,6 +822,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
+  String get aboutAuthorLabel => 'Author';
+
+  @override
+  String get aboutSourceCodeLabel => 'Source code';
+
+  @override
+  String get aboutLicenseLabel => 'License';
+
+  @override
   String get mapDataAttributionTitle => 'Map data';
 
   @override

@@ -821,6 +821,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get about => 'О приложении';
 
   @override
+  String get aboutAuthorLabel => 'Автор';
+
+  @override
+  String get aboutSourceCodeLabel => 'Исходный код';
+
+  @override
+  String get aboutLicenseLabel => 'Лицензия';
+
+  @override
   String get mapDataAttributionTitle => 'Картографические данные';
 
   @override
