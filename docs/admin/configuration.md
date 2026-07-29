@@ -54,7 +54,7 @@ Notes:
 | Driver | Metadata | Charts (speed / heart rate) | Blobs (tracks, photos, avatars, keys) |
 |--------|----------|-----------------------------|----------------------------------------|
 | `file` (default) | YAML under `storage.location` | `speed-chart.json` and `heartrate-chart.json` in each workout dir | Same tree |
-| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | JSON in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Same filesystem layout under `storage.location` |
+| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`) | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Same filesystem layout under `storage.location` |
 
 `postgres` is reserved in config but not implemented.
 

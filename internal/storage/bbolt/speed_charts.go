@@ -9,7 +9,7 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-// SpeedChartStore stores speed charts in bbolt buckets (bbolt storage driver).
+// SpeedChartStore stores speed charts in bbolt buckets as packed binary (bbolt storage driver).
 type SpeedChartStore struct {
 	db *bolt.DB
 }
@@ -35,7 +35,7 @@ func (s *SpeedChartStore) ReadLocal(_ context.Context, nickname, workoutDirName 
 	if err != nil {
 		return nil, err
 	}
-	return workouts.UnmarshalSpeedChart(raw)
+	return workouts.UnmarshalSpeedChartBinary(raw)
 }
 
 func (s *SpeedChartStore) WriteLocal(_ context.Context, nickname, workoutDirName string, samples []workouts.SpeedSample) error {
@@ -45,7 +45,7 @@ func (s *SpeedChartStore) WriteLocal(_ context.Context, nickname, workoutDirName
 		if len(samples) == 0 {
 			return b.Delete(key)
 		}
-		data, err := workouts.MarshalSpeedChart(samples)
+		data, err := workouts.MarshalSpeedChartBinary(samples)
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (s *SpeedChartStore) ReadFederated(_ context.Context, viewer, ownerKey, wor
 	if err != nil {
 		return nil, err
 	}
-	return workouts.UnmarshalSpeedChart(raw)
+	return workouts.UnmarshalSpeedChartBinary(raw)
 }
 
 func (s *SpeedChartStore) WriteFederated(_ context.Context, viewer, ownerKey, workoutID string, samples []workouts.SpeedSample) error {
@@ -81,7 +81,7 @@ func (s *SpeedChartStore) WriteFederated(_ context.Context, viewer, ownerKey, wo
 		if len(samples) == 0 {
 			return b.Delete(key)
 		}
-		data, err := workouts.MarshalSpeedChart(samples)
+		data, err := workouts.MarshalSpeedChartBinary(samples)
 		if err != nil {
 			return err
 		}

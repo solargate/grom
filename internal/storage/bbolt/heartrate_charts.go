@@ -9,7 +9,7 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-// HeartRateChartStore stores heart-rate charts in bbolt buckets (bbolt storage driver).
+// HeartRateChartStore stores heart-rate charts in bbolt buckets as packed binary (bbolt storage driver).
 type HeartRateChartStore struct {
 	db *bolt.DB
 }
@@ -35,7 +35,7 @@ func (s *HeartRateChartStore) ReadLocal(_ context.Context, nickname, workoutDirN
 	if err != nil {
 		return nil, err
 	}
-	return workouts.UnmarshalHeartRateChart(raw)
+	return workouts.UnmarshalHeartRateChartBinary(raw)
 }
 
 func (s *HeartRateChartStore) WriteLocal(_ context.Context, nickname, workoutDirName string, samples []workouts.HeartRateSample) error {
@@ -45,7 +45,7 @@ func (s *HeartRateChartStore) WriteLocal(_ context.Context, nickname, workoutDir
 		if len(samples) == 0 {
 			return b.Delete(key)
 		}
-		data, err := workouts.MarshalHeartRateChart(samples)
+		data, err := workouts.MarshalHeartRateChartBinary(samples)
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (s *HeartRateChartStore) ReadFederated(_ context.Context, viewer, ownerKey,
 	if err != nil {
 		return nil, err
 	}
-	return workouts.UnmarshalHeartRateChart(raw)
+	return workouts.UnmarshalHeartRateChartBinary(raw)
 }
 
 func (s *HeartRateChartStore) WriteFederated(_ context.Context, viewer, ownerKey, workoutID string, samples []workouts.HeartRateSample) error {
@@ -81,7 +81,7 @@ func (s *HeartRateChartStore) WriteFederated(_ context.Context, viewer, ownerKey
 		if len(samples) == 0 {
 			return b.Delete(key)
 		}
-		data, err := workouts.MarshalHeartRateChart(samples)
+		data, err := workouts.MarshalHeartRateChartBinary(samples)
 		if err != nil {
 			return err
 		}

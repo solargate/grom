@@ -152,8 +152,8 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 4. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
 5. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
 6. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
-7. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob; bbolt driver: `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
-8. **Heart rate chart:** same pattern as speed (`heartrate-chart.json`; bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
+7. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
+8. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
 
 ## Agent do / don't
 
