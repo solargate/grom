@@ -634,6 +634,12 @@ abstract class AppLocalizations {
   /// **'Cycle Sports'**
   String get sportCategoryCycle;
 
+  /// No description provided for @sportCategoryStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength Sports'**
+  String get sportCategoryStrength;
+
   /// No description provided for @sportCategoryWater.
   ///
   /// In en, this message translates to:
@@ -645,6 +651,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Winter Sports'**
   String get sportCategoryWinter;
+
+  /// No description provided for @sportCategoryTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team Sports'**
+  String get sportCategoryTeam;
+
+  /// No description provided for @sportCategoryRacket.
+  ///
+  /// In en, this message translates to:
+  /// **'Racket Sports'**
+  String get sportCategoryRacket;
 
   /// No description provided for @sportCategoryOther.
   ///
@@ -661,13 +679,13 @@ abstract class AppLocalizations {
   /// No description provided for @sportTypeHike.
   ///
   /// In en, this message translates to:
-  /// **'Hike'**
+  /// **'Hiking'**
   String get sportTypeHike;
 
   /// No description provided for @sportTypeTrailRun.
   ///
   /// In en, this message translates to:
-  /// **'Trail Run'**
+  /// **'Trail Running'**
   String get sportTypeTrailRun;
 
   /// No description provided for @sportTypeWheelchair.
@@ -681,6 +699,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Walk'**
   String get sportTypeWalk;
+
+  /// No description provided for @sportTypeNordicWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Nordic Walk'**
+  String get sportTypeNordicWalk;
 
   /// No description provided for @sportTypeRide.
   ///
@@ -813,6 +837,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Backcountry Ski'**
   String get sportTypeBackcountrySki;
+
+  /// No description provided for @sportTypeIceHockey.
+  ///
+  /// In en, this message translates to:
+  /// **'Ice Hockey'**
+  String get sportTypeIceHockey;
 
   /// No description provided for @sportTypeSnowshoe.
   ///

@@ -304,10 +304,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sportCategoryCycle => 'Radsport';
 
   @override
+  String get sportCategoryStrength => 'Kraftsport';
+
+  @override
   String get sportCategoryWater => 'Wassersport';
 
   @override
   String get sportCategoryWinter => 'Wintersport';
+
+  @override
+  String get sportCategoryTeam => 'Mannschaftssport';
+
+  @override
+  String get sportCategoryRacket => 'Schlägersport';
 
   @override
   String get sportCategoryOther => 'Andere Sportarten';
@@ -316,16 +325,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sportTypeRun => 'Laufen';
 
   @override
-  String get sportTypeHike => 'Wandern';
+  String get sportTypeHike => 'Hiking';
 
   @override
-  String get sportTypeTrailRun => 'Trailrun';
+  String get sportTypeTrailRun => 'Trailrunning';
 
   @override
   String get sportTypeWheelchair => 'Rollstuhl';
 
   @override
   String get sportTypeWalk => 'Gehen';
+
+  @override
+  String get sportTypeNordicWalk => 'Nordic Walking';
 
   @override
   String get sportTypeRide => 'Radfahren';
@@ -392,6 +404,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sportTypeBackcountrySki => 'Skitour';
+
+  @override
+  String get sportTypeIceHockey => 'Eishockey';
 
   @override
   String get sportTypeSnowshoe => 'Schneeschuhwandern';

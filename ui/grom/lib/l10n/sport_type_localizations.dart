@@ -12,6 +12,8 @@ String sportTypeLocalization(AppLocalizations l10n, String id) {
       return l10n.sportTypeWheelchair;
     case 'Walk':
       return l10n.sportTypeWalk;
+    case 'NordicWalk':
+      return l10n.sportTypeNordicWalk;
     case 'Ride':
       return l10n.sportTypeRide;
     case 'EBikeRide':
@@ -29,6 +31,7 @@ String sportTypeLocalization(AppLocalizations l10n, String id) {
     case 'Canoeing':
       return l10n.sportTypeCanoeing;
     case 'StandUpPaddling':
+    case 'SUP':
       return l10n.sportTypeStandUpPaddling;
     case 'Kayaking':
       return l10n.sportTypeKayaking;
@@ -56,6 +59,8 @@ String sportTypeLocalization(AppLocalizations l10n, String id) {
       return l10n.sportTypeSnowboard;
     case 'BackcountrySki':
       return l10n.sportTypeBackcountrySki;
+    case 'IceHockey':
+      return l10n.sportTypeIceHockey;
     case 'Snowshoe':
       return l10n.sportTypeSnowshoe;
     case 'Workout':
@@ -104,6 +109,7 @@ String sportTypeLocalization(AppLocalizations l10n, String id) {
       return l10n.sportTypePilates;
     case 'Racquetball':
       return l10n.sportTypeRacquetball;
+    case 'HIIT':
     case 'HighIntensityIntervalTraining':
       return l10n.sportTypeHiit;
     case 'Cricket':

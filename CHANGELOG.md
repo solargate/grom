@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - About screen shows the author name, source code repository, and app license
 - Workout detail speed chart (distance km × speed km/h) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/speed` (precomputed chart, up to 500 points) and `speed_max_kmh` on workout responses
 - Workout detail heart-rate chart (distance km or elapsed minutes × bpm, red fill) with tap tooltip, avg/max rows; `GET /api/v1/workouts/{id}/heartrate` (precomputed chart, up to 500 points); `heart_rate_max` on workout list/detail responses; `heartrate-chart.json` / bbolt `heart_rate_charts` (+ federated buckets)
+- Sport types Nordic Walk (`NordicWalk`) and Ice Hockey (`IceHockey`); sport categories Strength, Team, and Racket
 
 ### Changed
 
 - Equipment type "Shoes" uses the Material Symbols `steps` icon instead of the walking-person glyph
+- Sport type picker regrouped (strength / team / racket categories) with updated labels, order, colors, and icons; Strava import IDs unchanged for existing sports
 - **Breaking:** bbolt speed/heart-rate chart bucket values use packed binary instead of JSON (file driver still stores `speed-chart.json` / `heartrate-chart.json`). Recreate the bbolt database or re-attach tracks after upgrade.
 - **Breaking:** speed chart storage replaces full speed sidecars (`speed.yaml` / `speed.json`): pre-downsampled chart only (`speed-chart.json` blob on file driver; `speed_charts` / `fed_speed_charts` bbolt buckets on bbolt driver). Re-upload workouts with tracks after upgrade.
 - Heart-rate chart without GPS omits `distance_m`; the UI uses minutes from the first HR sample
