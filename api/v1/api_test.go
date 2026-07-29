@@ -20,8 +20,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	v1 "github.com/solargate/grom/api/v1"
+	"github.com/solargate/grom/internal/avatars"
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/storage"
+	"github.com/solargate/grom/internal/storage/keys"
 )
 
 type testApp struct {
@@ -36,6 +39,16 @@ func setupTestApp(t *testing.T) *testApp {
 		cfg.Server.TLS.Mode = "off"
 		cfg.Federation.Enabled = false
 		cfg.Federation.Domain = "localhost"
+	})
+}
+
+func setupTestAppWithDriver(t *testing.T, driver config.StorageDriver) *testApp {
+	t.Helper()
+	return setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Federation.Domain = "localhost"
+		cfg.Storage.Driver = driver
 	})
 }
 
@@ -590,6 +603,9 @@ func TestGetWorkoutSpeed(t *testing.T) {
 	expectStatus(t, w, http.StatusCreated)
 	created := decodeObject(t, w)
 	id, _ := created["id"].(string)
+	if _, ok := created["speed_max_kmh"].(float64); !ok {
+		t.Fatalf("expected speed_max_kmh on create: %#v", created)
+	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/speed", nil, aliceToken)
 	expectStatus(t, w, http.StatusOK)
@@ -664,8 +680,7 @@ func TestGetWorkoutHeartRate(t *testing.T) {
 	created := decodeObject(t, w)
 	id, _ := created["id"].(string)
 	if _, ok := created["heart_rate_max"].(float64); !ok {
-		// may be present from FIT enrichment
-		_ = ok
+		t.Fatalf("expected heart_rate_max on create: %#v", created)
 	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/heartrate", nil, aliceToken)
@@ -857,6 +872,184 @@ func TestListWorkoutsPagination(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&cursor=not-a-valid-cursor", nil, token)
 	expectStatus(t, w, http.StatusBadRequest)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=0", nil, token)
+	expectStatus(t, w, http.StatusBadRequest)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=999", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	clamped, _, _ := decodeWorkoutPage(t, w)
+	if len(clamped) > 100 {
+		t.Fatalf("expected clamped page size, got %d", len(clamped))
+	}
+}
+
+func TestWorkoutChartsAcrossStorageDrivers(t *testing.T) {
+	for _, driver := range []config.StorageDriver{config.StorageDriverFile, config.StorageDriverBBolt} {
+		t.Run(string(driver), func(t *testing.T) {
+			ta := setupTestAppWithDriver(t, driver)
+			ta.register(t, "alice", "alice@example.com", "password12")
+			token, _ := ta.login(t, "alice@example.com", "password12")
+
+			gpx := readTestdata(t, "tracks/1-sample.gpx")
+			w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+				map[string]string{
+					"name":       "Chart run",
+					"sport_type": "Run",
+					"start_date": "2026-07-08T10:00:47Z",
+				},
+				map[string][]filePart{
+					"track": {{filename: "sample.gpx", data: gpx}},
+				},
+			)
+			expectStatus(t, w, http.StatusCreated)
+			created := decodeObject(t, w)
+			id, _ := created["id"].(string)
+
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/speed", nil, token)
+			expectStatus(t, w, http.StatusOK)
+			body := decodeObject(t, w)
+			samples, _ := body["samples"].([]any)
+			if len(samples) < 2 {
+				t.Fatalf("speed samples: %#v", body)
+			}
+
+			w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+id, map[string]any{
+				"name":       "Chart run renamed",
+				"sport_type": "Run",
+				"start_date": "2026-07-09T10:00:47Z",
+			}, token)
+			expectStatus(t, w, http.StatusOK)
+
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/speed", nil, token)
+			expectStatus(t, w, http.StatusOK)
+			body = decodeObject(t, w)
+			samples, _ = body["samples"].([]any)
+			if len(samples) < 2 {
+				t.Fatalf("speed samples after rename: %#v", body)
+			}
+
+			fit := readTestdata(t, "tracks/1-ride.fit")
+			w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+				map[string]string{
+					"name":       "Chart ride",
+					"sport_type": "Ride",
+					"start_date": "2026-07-10T10:00:00Z",
+				},
+				map[string][]filePart{
+					"track": {{filename: "ride.fit", data: fit}},
+				},
+			)
+			expectStatus(t, w, http.StatusCreated)
+			rideID, _ := decodeObject(t, w)["id"].(string)
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+rideID+"/heartrate", nil, token)
+			expectStatus(t, w, http.StatusOK)
+			hrBody := decodeObject(t, w)
+			hrSamples, _ := hrBody["samples"].([]any)
+			if len(hrSamples) < 2 {
+				t.Fatalf("hr samples: %#v", hrBody)
+			}
+		})
+	}
+}
+
+func TestAuthShortPasswordAndDuplicateNickname(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
+		"nickname": "bob",
+		"name":     "Bob",
+		"email":    "bob@example.com",
+		"password": "short",
+	}, "")
+	expectStatus(t, w, http.StatusBadRequest)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
+		"nickname": "alice",
+		"name":     "Other",
+		"email":    "other@example.com",
+		"password": "password12",
+	}, "")
+	expectStatus(t, w, http.StatusConflict)
+}
+
+func TestWorkoutUpdateEquipmentDistanceAndForeignACL(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	ta.register(t, "bob", "bob@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+	bobToken, _ := ta.login(t, "bob@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/equipment", map[string]any{
+		"type": "shoes", "name": "Road",
+	}, aliceToken)
+	expectStatus(t, w, http.StatusCreated)
+	eqID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Run", "sport_type": "Run", "start_date": "2026-07-08T10:00:00Z",
+		"duration_seconds": 1800, "distance": 5000, "equipment_ids": []string{eqID},
+	}, aliceToken)
+	expectStatus(t, w, http.StatusCreated)
+	id, _ := decodeObject(t, w)["id"].(string)
+
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/equipment", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	items := decodeList(t, w)
+	if len(items) != 1 || items[0]["distance"].(float64) != 5000 {
+		t.Fatalf("equipment distance after create: %#v", items)
+	}
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+id, map[string]any{
+		"name": "Run", "sport_type": "Run", "start_date": "2026-07-08T10:00:00Z",
+		"duration_seconds": 1800, "distance": 7500, "equipment_ids": []string{eqID},
+	}, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/equipment", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	items = decodeList(t, w)
+	if items[0]["distance"].(float64) != 7500 {
+		t.Fatalf("equipment distance after update: %#v", items)
+	}
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+id, map[string]any{
+		"name": "Nope", "sport_type": "Run", "start_date": "2026-07-08T10:00:00Z",
+	}, bobToken)
+	expectStatus(t, w, http.StatusNotFound)
+
+	// Drain async equipment distance workers before TempDir cleanup.
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFederatedAuthorAvatarAPI(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	ownerKey := federation.OwnerKeyFromHandle("bob@remote.test")
+	key := keys.FederatedInboxAvatar("alice", ownerKey)
+	png := readTestdata(t, "images/avatar-square.png")
+	if err := avatars.SaveKey(ta.app.Blobs, key, png); err != nil {
+		t.Fatal(err)
+	}
+
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/federation/authors/"+ownerKey+"/avatar", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	if ct := w.Header().Get("Content-Type"); ct != "image/webp" {
+		t.Fatalf("content-type = %q", ct)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/federation/authors/missing_key/avatar", nil, token)
+	expectStatus(t, w, http.StatusNotFound)
 }
 
 // Ensure storage.Open path used by NewApp is exercised via setup.

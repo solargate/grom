@@ -85,4 +85,27 @@ void main() {
       expect(resolveHeartRateMax(-1, samples), 140);
     });
   });
+
+  group('minutesFromSeriesStart', () {
+    test('returns 0 for empty series', () {
+      expect(minutesFromSeriesStart([], DateTime.utc(2026, 7, 8, 10)), 0);
+    });
+
+    test('returns fractional minutes from first sample', () {
+      final samples = [
+        WorkoutHeartRateSample(
+          time: DateTime.utc(2026, 7, 8, 10),
+          heartRateBpm: 100,
+        ),
+        WorkoutHeartRateSample(
+          time: DateTime.utc(2026, 7, 8, 10, 0, 30),
+          heartRateBpm: 120,
+        ),
+      ];
+      expect(
+        minutesFromSeriesStart(samples, samples.last.time),
+        closeTo(0.5, 1e-9),
+      );
+    });
+  });
 }

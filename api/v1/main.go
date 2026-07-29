@@ -73,6 +73,23 @@ func RunRouter() {
 
 	app.RegisterRoutes(router)
 
+	RegisterAPIDocs(router)
+
+	web.RegisterRoutes(router)
+
+	slog.Info("HTTP server listening",
+		"tls_mode", config.Cfg.Server.TLS.Mode,
+		"http_port", config.Cfg.Server.Port,
+		"https_port", config.Cfg.Server.TLS.Port,
+	)
+	if err := server.Run(router); err != nil {
+		slog.Error("HTTP server stopped", "err", err)
+		panic(err)
+	}
+}
+
+// RegisterAPIDocs mounts Swagger UI under /api/docs with a slash redirect.
+func RegisterAPIDocs(router *gin.Engine) {
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)
 	serveSwaggerUI := func(c *gin.Context) {
 		c.Request.URL.Path = "/api/docs/index.html"
@@ -92,16 +109,4 @@ func RunRouter() {
 			swaggerHandler(c)
 		}
 	})
-
-	web.RegisterRoutes(router)
-
-	slog.Info("HTTP server listening",
-		"tls_mode", config.Cfg.Server.TLS.Mode,
-		"http_port", config.Cfg.Server.Port,
-		"https_port", config.Cfg.Server.TLS.Port,
-	)
-	if err := server.Run(router); err != nil {
-		slog.Error("HTTP server stopped", "err", err)
-		panic(err)
-	}
 }

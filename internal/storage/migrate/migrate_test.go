@@ -1,6 +1,7 @@
 package migrate_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -99,6 +100,118 @@ func TestMigrateFileToBBoltAndBack(t *testing.T) {
 	}
 }
 
+func TestMigratePreservesLocalCharts(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123"); err != nil {
+		t.Fatal(err)
+	}
+
+	gpx, err := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "tracks", "1-sample.gpx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fit, err := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "tracks", "1-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gpxWorkout, err := fileBackend.Workouts().CreateWithTrack("alice", &workouts.Workout{
+		Name: "GPX run", SportType: "Run",
+		StartDate: time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+	}, &workouts.TrackInput{Filename: "1-sample.gpx", Data: gpx})
+	if err != nil {
+		t.Fatalf("CreateWithTrack GPX: %v", err)
+	}
+	fitWorkout, err := fileBackend.Workouts().CreateWithTrack("alice", &workouts.Workout{
+		Name: "FIT ride", SportType: "Ride",
+		StartDate: time.Date(2026, 7, 9, 10, 0, 0, 0, time.UTC),
+	}, &workouts.TrackInput{Filename: "1-ride.fit", Data: fit})
+	if err != nil {
+		t.Fatalf("CreateWithTrack FIT: %v", err)
+	}
+
+	_, wantSpeed, err := fileBackend.Workouts().GetSpeedChart("alice", gpxWorkout.ID)
+	if err != nil || len(wantSpeed) < 1 {
+		t.Fatalf("file speed chart: len=%d err=%v", len(wantSpeed), err)
+	}
+	_, wantHR, err := fileBackend.Workouts().GetHeartRateChart("alice", fitWorkout.ID)
+	if err != nil || len(wantHR) < 1 {
+		t.Fatalf("file HR chart: len=%d err=%v", len(wantHR), err)
+	}
+	_ = fileBackend.Close()
+
+	if _, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Force: true,
+	}); err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, gotSpeed, err := boltBackend.Workouts().GetSpeedChart("alice", gpxWorkout.ID)
+	if err != nil {
+		t.Fatalf("bbolt GetSpeedChart: %v", err)
+	}
+	if len(gotSpeed) != len(wantSpeed) {
+		t.Fatalf("bbolt speed len=%d want %d", len(gotSpeed), len(wantSpeed))
+	}
+	_, gotHR, err := boltBackend.Workouts().GetHeartRateChart("alice", fitWorkout.ID)
+	if err != nil {
+		t.Fatalf("bbolt GetHeartRateChart: %v", err)
+	}
+	if len(gotHR) != len(wantHR) {
+		t.Fatalf("bbolt HR len=%d want %d", len(gotHR), len(wantHR))
+	}
+	_ = boltBackend.Close()
+
+	// Remove JSON chart blobs so bbolt→file must rewrite them from binary buckets.
+	gpxDir := filepath.Join(dir, "users", "alice", "workouts")
+	entries, err := os.ReadDir(gpxDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		_ = os.Remove(filepath.Join(gpxDir, e.Name(), "speed-chart.json"))
+		_ = os.Remove(filepath.Join(gpxDir, e.Name(), "heartrate-chart.json"))
+	}
+
+	if _, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg,
+	}); err != nil {
+		t.Fatalf("bbolt→file: %v", err)
+	}
+
+	fileCfg := cfg
+	fileCfg.Driver = config.StorageDriverFile
+	fileBackend2, err := storage.Open(fileCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fileBackend2.Close()
+	_, roundSpeed, err := fileBackend2.Workouts().GetSpeedChart("alice", gpxWorkout.ID)
+	if err != nil || len(roundSpeed) != len(wantSpeed) {
+		t.Fatalf("round-trip speed len=%d want %d err=%v", len(roundSpeed), len(wantSpeed), err)
+	}
+	_, roundHR, err := fileBackend2.Workouts().GetHeartRateChart("alice", fitWorkout.ID)
+	if err != nil || len(roundHR) != len(wantHR) {
+		t.Fatalf("round-trip HR len=%d want %d err=%v", len(roundHR), len(wantHR), err)
+	}
+}
+
 func TestMigrateDryRun(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.StorageConfig{
@@ -127,18 +240,7 @@ func TestMigrateDryRun(t *testing.T) {
 	if result.Users != 1 {
 		t.Fatalf("dry-run users=%d", result.Users)
 	}
-	if _, err := osStat(filepath.Join(dir, "grom.db")); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "grom.db")); err == nil {
 		t.Fatal("dry-run should not create bbolt db")
 	}
-}
-
-func osStat(path string) (interface{}, error) {
-	return nil, errNotExist{}
-}
-
-type errNotExist struct{}
-
-func (errNotExist) Error() string { return "not exist" }
-func (errNotExist) Is(target error) bool {
-	return target != nil
 }

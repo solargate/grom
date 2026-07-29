@@ -23,8 +23,9 @@ var migrateStorageCmd = &cobra.Command{
 	Long: `Migrate application metadata between storage drivers.
 
 Blob files (tracks, photos, avatars, keys) under storage.location are shared and
-not copied. After a successful migration, set storage.driver in your config to
-the target driver and restart the server.
+not copied. Speed and heart-rate charts are converted between file JSON blobs and
+bbolt binary buckets. After a successful migration, set storage.driver in your
+config to the target driver and restart the server.
 
 Stop the server before running this command.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

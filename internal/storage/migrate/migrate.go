@@ -38,8 +38,10 @@ type Result struct {
 	FedInboxWorkouts int
 }
 
-// Run copies metadata from one storage driver to another. Blob files under
-// storage.location are shared and not copied.
+// Run copies metadata from one storage driver to another. Track/media/avatar
+// blob files under storage.location are shared and not copied. Speed and
+// heart-rate charts are converted between file JSON blobs and bbolt binary
+// buckets so they remain readable after switching drivers.
 func Run(opts Options) (*Result, error) {
 	if opts.From == opts.To {
 		return nil, fmt.Errorf("from and to drivers must differ")
@@ -160,6 +162,9 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 			if err := importWorkout(dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("import workout %s: %w", w.ID, err)
 			}
+			if err := copyLocalCharts(src, dst, u.Nickname, &w); err != nil {
+				return result, fmt.Errorf("copy charts for workout %s: %w", w.ID, err)
+			}
 			result.Workouts++
 		}
 
@@ -204,6 +209,9 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 				w := list[i]
 				if err := importInboxWorkout(dst, viewer, ownerKey, &w); err != nil {
 					return result, fmt.Errorf("import inbox workout: %w", err)
+				}
+				if err := copyFederatedCharts(src, dst, viewer, ownerKey, &w); err != nil {
+					return result, fmt.Errorf("copy federated charts for workout %s: %w", w.ID, err)
 				}
 				result.FedInboxWorkouts++
 			}

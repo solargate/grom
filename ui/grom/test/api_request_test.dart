@@ -267,4 +267,89 @@ void main() {
     expect(status['phase'], 'importing');
     expect(status['import_progress'], 0.5);
   });
+
+  test('getWorkoutSpeed requests owner and parses samples', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/workouts/wid/speed');
+      expect(request.url.queryParameters['owner'], 'alice');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode({
+          'samples': [
+            {
+              't': '2026-07-08T10:00:00Z',
+              'speed_kmh': 12.5,
+              'distance_m': 10,
+            },
+            {
+              't': '2026-07-08T10:00:10Z',
+              'speed_kmh': 13.0,
+              'distance_m': 40,
+            },
+          ],
+          'speed_avg_kmh': 12.7,
+          'speed_max_kmh': 13.0,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final series = await ApiRequest(client: client).getWorkoutSpeed(
+      token: 'tok',
+      workoutId: 'wid',
+      owner: 'alice',
+    );
+    expect(series.samples, hasLength(2));
+    expect(series.samples.first.speedKmh, 12.5);
+    expect(series.speedMaxKmh, 13.0);
+  });
+
+  test('getWorkoutHeartRate parses has_gps false and empty distance', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/v1/workouts/wid/heartrate');
+      return http.Response(
+        jsonEncode({
+          'samples': [
+            {'t': '2026-07-08T10:00:00Z', 'heart_rate_bpm': 110},
+            {'t': '2026-07-08T10:01:00Z', 'heart_rate_bpm': 140},
+          ],
+          'has_gps': false,
+          'heart_rate_avg': 125,
+          'heart_rate_max': 140,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final series = await ApiRequest(client: client).getWorkoutHeartRate(
+      token: 'tok',
+      workoutId: 'wid',
+    );
+    expect(series.hasGps, isFalse);
+    expect(series.samples.first.distanceM, isNull);
+    expect(series.heartRateMax, 140);
+  });
+
+  test('getWorkoutSpeed maps API errors', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'workout not found'}),
+        404,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    expect(
+      () => ApiRequest(client: client).getWorkoutSpeed(
+        token: 'tok',
+        workoutId: 'missing',
+      ),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 404),
+      ),
+    );
+  });
 }

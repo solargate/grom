@@ -38,7 +38,8 @@ func WorkoutMapPreview(nickname, workoutDirName string) string {
 	return filepath.Join(data.UsersSubdir, nickname, "workouts", workoutDirName, MapPreviewFileName)
 }
 
-// WorkoutSpeed returns the logical storage key for a workout speed sidecar file.
+// WorkoutSpeed returns the logical storage key for a workout chart sidecar file
+// (speed-chart.json or heartrate-chart.json on the file driver).
 func WorkoutSpeed(nickname, workoutDirName, filename string) string {
 	return filepath.Join(data.UsersSubdir, nickname, "workouts", workoutDirName, filename)
 }
@@ -78,7 +79,8 @@ func FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID string) string
 	return filepath.Join(FederatedInboxOwnerDir(viewerNickname, ownerKey), workoutID+"_"+MapPreviewFileName)
 }
 
-// FederatedInboxSpeed returns the logical storage key for a federated workout speed sidecar.
+// FederatedInboxSpeed returns the logical storage key for a federated workout
+// chart sidecar (speed-chart.json or heartrate-chart.json on the file driver).
 func FederatedInboxSpeed(viewerNickname, ownerKey, workoutID, filename string) string {
 	return filepath.Join(FederatedInboxOwnerDir(viewerNickname, ownerKey), workoutID+"_"+filename)
 }

@@ -92,6 +92,45 @@ func TestWorkoutInboxStoreSaveTrackAndPreview(t *testing.T) {
 	}
 }
 
+func TestWorkoutInboxStoreSaveFITWritesHeartRateChart(t *testing.T) {
+	dir := t.TempDir()
+	store := newTestInboxStore(dir)
+
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	workout := &workouts.Workout{
+		ID:              "87654321",
+		Name:            "Remote ride",
+		SportType:       "Ride",
+		StartDate:       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+		DurationSeconds: 3600,
+		Distance:        20000,
+		Track:           tracks.TrackFileFIT,
+	}
+	ownerHandle := "rider@remote.test"
+
+	if err := store.Save("viewer", ownerHandle, workout, fitData, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	_, samples, err := store.GetHeartRateChart("viewer", "rider", "87654321")
+	if err != nil {
+		t.Fatalf("GetHeartRateChart() error = %v", err)
+	}
+	if len(samples) < 1 {
+		t.Fatalf("expected heart rate chart samples, got %d", len(samples))
+	}
+
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	hrKey := keys.FederatedInboxSpeed("viewer", ownerKey, "87654321", keys.HeartRateChartFileJSON)
+	if _, err := os.Stat(filepath.Join(dir, hrKey)); err != nil {
+		t.Fatalf("expected federated heartrate-chart.json: %v", err)
+	}
+}
+
 func TestWorkoutInboxStoreDelete(t *testing.T) {
 	dir := t.TempDir()
 	store := newTestInboxStore(dir)

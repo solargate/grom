@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `grom migrate-storage` copies speed/heart-rate charts between file JSON blobs and bbolt binary buckets (alongside other metadata)
 - `/api/docs` (no trailing slash) redirects to `/api/docs/` so Swagger UI assets load instead of a blank page
 - bbolt: renaming a workout (e.g. edit that changes `start_date`) migrates speed/heart-rate chart buckets instead of deleting them; edit form preserves start-time seconds so silent truncations no longer trigger a rename
 
