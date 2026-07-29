@@ -12,7 +12,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | Area | What to set |
 |------|-------------|
 | `server.port` / `server.tls` | Listen ports and TLS mode (`off`, `static`, or `autocert`) |
-| `storage.driver` / `location` / `temp_dir` | `file` (default) or `bbolt`; data root and temp dirs |
+| `storage.driver` / `location` / `temp_dir` | `file` (default; tests / tiny instances) or `bbolt` (recommended for normal installs); data root and temp dirs |
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
@@ -50,6 +50,8 @@ Notes:
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
 
 ## Storage drivers
+
+`file` is fine for tests and very small instances (YAML metadata on disk is easy to inspect). For a normal or production install, prefer `bbolt` — metadata lives in a Bolt DB while tracks, photos, and other blobs stay on the filesystem.
 
 | Driver | Metadata | Charts (speed / heart rate) | Blobs (tracks, photos, avatars, keys) |
 |--------|----------|-----------------------------|----------------------------------------|

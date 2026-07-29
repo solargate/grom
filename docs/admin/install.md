@@ -77,7 +77,7 @@ grom --version
 
 ## Next steps
 
-- Choose a TLS profile and storage driver — [Configuration](configuration.md)
+- Choose a TLS profile and storage driver (`bbolt` for normal installs; `file` is mainly for tests / tiny instances) — [Configuration](configuration.md)
 - Generate self-signed certs for local HTTPS — `grom gencerts` (see TLS section in configuration)
 - Product tour for the client — [User overview](../user/overview.md)
 - API reference in the browser — `/api/docs/` on the running server

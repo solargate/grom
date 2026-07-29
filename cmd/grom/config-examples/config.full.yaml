@@ -58,6 +58,7 @@ auth:
 storage:
   # Optional. Storage backend driver: file | bbolt | postgres. Default: file.
   # Implemented: file (YAML metadata), bbolt (JSON metadata in a Bolt DB; blobs stay on the filesystem).
+  # Prefer bbolt for normal / production installs; file is mainly for tests or very small instances.
   # postgres is not implemented.
   driver: file
   # Optional. Root directory for application data (and blob files). Default: data.
