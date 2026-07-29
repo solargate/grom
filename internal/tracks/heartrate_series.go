@@ -1,7 +1,6 @@
 package tracks
 
 import (
-	"math"
 	"time"
 )
 
@@ -16,9 +15,14 @@ type HeartRatePoint struct {
 }
 
 // HeartRateSeries builds a per-sample heart-rate series from track samples.
-// Only timed points with positive finite BPM are included.
+// Only timed points with a HeartRate reading are considered.
+// Inclusion of zero BPM follows HeartRateChartZeroPolicy (NaN/Inf always dropped).
 // When hasGPS is false, distance is omitted (HasDistance=false).
 func HeartRateSeries(points []SamplePoint, hasGPS bool) []HeartRatePoint {
+	return heartRateSeries(points, hasGPS, HeartRateChartZeroPolicy)
+}
+
+func heartRateSeries(points []SamplePoint, hasGPS bool, policy ChartZeroPolicy) []HeartRatePoint {
 	if len(points) == 0 {
 		return nil
 	}
@@ -40,7 +44,7 @@ func HeartRateSeries(points []SamplePoint, hasGPS bool) []HeartRatePoint {
 			continue
 		}
 		bpm := *cur.HeartRate
-		if !positiveHeartRate(bpm) {
+		if !AcceptHeartRateBPM(bpm, policy) {
 			continue
 		}
 
@@ -58,8 +62,4 @@ func HeartRateSeries(points []SamplePoint, hasGPS bool) []HeartRatePoint {
 		return nil
 	}
 	return out
-}
-
-func positiveHeartRate(bpm float64) bool {
-	return !math.IsNaN(bpm) && !math.IsInf(bpm, 0) && bpm > 0
 }

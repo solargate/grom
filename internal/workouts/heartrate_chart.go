@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/solargate/grom/internal/tracks"
@@ -71,7 +70,8 @@ func HeartRateSamplesFromParsed(parsed *tracks.Data) []HeartRateSample {
 	return HeartRateSamplesFromTrack(parsed.HeartRateSeries)
 }
 
-// BuildHeartRateChartSamples builds the stored chart series (downsampled, positive BPM only).
+// BuildHeartRateChartSamples builds the stored chart series (downsampled).
+// Zero-BPM inclusion follows tracks.HeartRateChartZeroPolicy.
 func BuildHeartRateChartSamples(parsed *tracks.Data) []HeartRateSample {
 	full := HeartRateSamplesFromParsed(parsed)
 	if len(full) == 0 {
@@ -79,16 +79,12 @@ func BuildHeartRateChartSamples(parsed *tracks.Data) []HeartRateSample {
 	}
 	filtered := make([]HeartRateSample, 0, len(full))
 	for _, s := range full {
-		if !positiveHeartRateBPM(s.BPM) {
+		if !tracks.AcceptHeartRateBPM(s.BPM, tracks.HeartRateChartZeroPolicy) {
 			continue
 		}
 		filtered = append(filtered, s)
 	}
 	return DownsampleHeartRateSamples(filtered, HeartRateChartMaxPoints)
-}
-
-func positiveHeartRateBPM(bpm float64) bool {
-	return !math.IsNaN(bpm) && !math.IsInf(bpm, 0) && bpm > 0
 }
 
 // MarshalHeartRateChart encodes chart samples as compact JSON.

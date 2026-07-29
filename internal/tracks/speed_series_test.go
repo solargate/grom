@@ -134,7 +134,7 @@ func TestSpeedSeriesKmhDeviceDistanceWithoutGPS(t *testing.T) {
 	}
 }
 
-func TestSpeedSeriesKmhSkipsZeroAndNaN(t *testing.T) {
+func TestSpeedSeriesKmhSkipsNaNKeepsZero(t *testing.T) {
 	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
 	nan := math.NaN()
 	points := []tracks.SamplePoint{
@@ -144,11 +144,11 @@ func TestSpeedSeriesKmhSkipsZeroAndNaN(t *testing.T) {
 		{Lat: 10.002, Lng: 10, Time: t0.Add(3 * time.Second), HasTime: true}, // stationary → 0 km/h
 	}
 	series := tracks.SpeedSeriesKmh(points)
-	if len(series) != 1 {
-		t.Fatalf("len = %d, want 1 (only positive speed)", len(series))
+	if len(series) != 3 {
+		t.Fatalf("len = %d, want 3 (zeros kept per SpeedChartZeroPolicy)", len(series))
 	}
-	if series[0].Kmh != 18 {
-		t.Fatalf("kmh = %v", series[0].Kmh)
+	if series[0].Kmh != 0 || series[1].Kmh != 18 || series[2].Kmh != 0 {
+		t.Fatalf("kmh = %v, %v, %v", series[0].Kmh, series[1].Kmh, series[2].Kmh)
 	}
 }
 

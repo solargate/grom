@@ -169,10 +169,10 @@ func fitSamplePoints(records []*mesgdef.Record) []SamplePoint {
 			v := alt
 			pt.Elevation = &v
 		}
-		if speed := record.EnhancedSpeedScaled(); validSpeedMps(speed) {
+		if speed := record.EnhancedSpeedScaled(); AcceptSpeedMpsForSample(speed) {
 			v := speed
 			pt.SpeedMps = &v
-		} else if speed := record.SpeedScaled(); validSpeedMps(speed) {
+		} else if speed := record.SpeedScaled(); AcceptSpeedMpsForSample(speed) {
 			v := speed
 			pt.SpeedMps = &v
 		}

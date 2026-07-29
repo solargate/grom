@@ -58,7 +58,7 @@ func applyGPXExtensionNode(sample *SamplePoint, node gpx.ExtensionNode) {
 	value := strings.TrimSpace(node.Data)
 	switch {
 	case name == "hr" || name == "heartrate":
-		if v, ok := parseExtensionFloat(value); ok && v > 0 {
+		if v, ok := parseExtensionFloat(value); ok && AcceptHeartRateForSample(v) {
 			sample.HeartRate = &v
 		}
 	case name == "cad":

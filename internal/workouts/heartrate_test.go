@@ -44,7 +44,7 @@ func TestHeartRateChartRoundTrip(t *testing.T) {
 	}
 }
 
-func TestBuildHeartRateChartSamplesOmitsZeroAndNaN(t *testing.T) {
+func TestBuildHeartRateChartSamplesKeepsZeroOmitsNaN(t *testing.T) {
 	t0 := time.Date(2026, 7, 14, 8, 0, 1, 0, time.UTC)
 	nan := math.NaN()
 	parsed := &tracks.Data{
@@ -55,11 +55,14 @@ func TestBuildHeartRateChartSamplesOmitsZeroAndNaN(t *testing.T) {
 		},
 	}
 	got := workouts.BuildHeartRateChartSamples(parsed)
-	if len(got) != 1 || got[0].BPM != 142 {
+	if len(got) != 2 {
+		t.Fatalf("len = %d, want 2 (zero kept, NaN dropped)", len(got))
+	}
+	if got[0].BPM != 0 || got[1].BPM != 142 {
 		t.Fatalf("got %+v", got)
 	}
-	if got[0].DistanceM == nil || *got[0].DistanceM != 10 {
-		t.Fatalf("distance = %v", got[0].DistanceM)
+	if got[1].DistanceM == nil || *got[1].DistanceM != 10 {
+		t.Fatalf("distance = %v", got[1].DistanceM)
 	}
 }
 

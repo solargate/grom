@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/solargate/grom/internal/tracks"
@@ -68,7 +67,8 @@ func SpeedSamplesFromParsed(parsed *tracks.Data) []SpeedSample {
 	return SpeedSamplesFromTrack(parsed.SpeedSeries)
 }
 
-// BuildSpeedChartSamples builds the stored chart series (downsampled, positive speeds only).
+// BuildSpeedChartSamples builds the stored chart series (downsampled).
+// Zero-speed inclusion follows tracks.SpeedChartZeroPolicy.
 func BuildSpeedChartSamples(parsed *tracks.Data) []SpeedSample {
 	full := SpeedSamplesFromParsed(parsed)
 	if len(full) == 0 {
@@ -76,16 +76,12 @@ func BuildSpeedChartSamples(parsed *tracks.Data) []SpeedSample {
 	}
 	filtered := make([]SpeedSample, 0, len(full))
 	for _, s := range full {
-		if !positiveSpeedKmh(s.SpeedKmh) {
+		if !tracks.AcceptSpeedKmh(s.SpeedKmh, tracks.SpeedChartZeroPolicy) {
 			continue
 		}
 		filtered = append(filtered, s)
 	}
 	return DownsampleSpeedSamples(filtered, SpeedChartMaxPoints)
-}
-
-func positiveSpeedKmh(kmh float64) bool {
-	return !math.IsNaN(kmh) && !math.IsInf(kmh, 0) && kmh > 0
 }
 
 // MarshalSpeedChart encodes chart samples as compact JSON.

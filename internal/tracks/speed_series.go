@@ -1,7 +1,6 @@
 package tracks
 
 import (
-	"math"
 	"time"
 )
 
@@ -17,11 +16,15 @@ type SpeedPoint struct {
 // Explicit SpeedMps is preferred; otherwise speed is derived from consecutive
 // timed points (including across long gaps). Points without time are skipped
 // for the series, but still contribute to path distance.
-// Only positive finite speeds are included (zero, NaN, and Inf are dropped).
+// Inclusion of zero speeds follows SpeedChartZeroPolicy (NaN/Inf always dropped).
 //
 // DistanceM is meters from the start of the sample list: FIT DistanceM is used
 // when present, otherwise cumulative haversine over points with valid GPS.
 func SpeedSeriesKmh(points []SamplePoint) []SpeedPoint {
+	return speedSeriesKmh(points, SpeedChartZeroPolicy)
+}
+
+func speedSeriesKmh(points []SamplePoint, policy ChartZeroPolicy) []SpeedPoint {
 	if len(points) == 0 {
 		return nil
 	}
@@ -45,7 +48,7 @@ func SpeedSeriesKmh(points []SamplePoint) []SpeedPoint {
 		var kmh float64
 		have := false
 		if cur.SpeedMps != nil {
-			if validSpeedMps(*cur.SpeedMps) {
+			if acceptNonNegativeFinite(*cur.SpeedMps, policy) {
 				kmh = roundFloat(mpsToKmh(*cur.SpeedMps))
 				have = true
 			}
@@ -57,7 +60,7 @@ func SpeedSeriesKmh(points []SamplePoint) []SpeedPoint {
 			}
 		}
 
-		if have && positiveSpeedKmh(kmh) {
+		if have && AcceptSpeedKmh(kmh, policy) {
 			out = append(out, SpeedPoint{
 				Time:      cur.Time.UTC(),
 				Kmh:       kmh,
@@ -70,10 +73,6 @@ func SpeedSeriesKmh(points []SamplePoint) []SpeedPoint {
 		return nil
 	}
 	return out
-}
-
-func positiveSpeedKmh(kmh float64) bool {
-	return !math.IsNaN(kmh) && !math.IsInf(kmh, 0) && kmh > 0
 }
 
 func advancePathDistance(cum float64, prev, cur *SamplePoint) float64 {
