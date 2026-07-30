@@ -135,20 +135,20 @@ Color sportTypeColor(String id) {
   }
   switch (info.category) {
     case SportCategory.foot:
-      return const Color(0xFFFC4C02);
+      return const Color(0xFF499C4C);
     case SportCategory.cycle:
-      return const Color(0xFF1E88E5);
+      return const Color(0xFF0F5CD1);
     case SportCategory.strength:
-      return const Color(0xFF8A9440);
+      return const Color(0xFFFC4C02);
     case SportCategory.water:
-      return const Color(0xFF00897B);
+      return const Color(0xFF2292F5);
     case SportCategory.winter:
       return const Color(0xFF5C6BC0);
     case SportCategory.team:
       return const Color(0xFFC45C5C);
     case SportCategory.racket:
-      return const Color(0xFF5E8A5E);
+      return const Color(0xFF99990F);
     case SportCategory.other:
-      return const Color(0xFF8E24AA);
+      return const Color(0xFFA930C9);
   }
 }

@@ -59,13 +59,13 @@ IconData equipmentTypeIcon(EquipmentType type) {
 Color equipmentTypeColor(EquipmentType type) {
   switch (type) {
     case EquipmentType.bike:
-      return const Color(0xFF1E88E5);
+      return const Color(0xFF0F5CD1);
     case EquipmentType.shoes:
-      return const Color(0xFFFC4C02);
+      return const Color(0xFF499C4C);
     case EquipmentType.water:
-      return const Color(0xFF00897B);
+      return const Color(0xFF2292F5);
     case EquipmentType.other:
-      return const Color(0xFF8E24AA);
+      return const Color(0xFFA930C9);
   }
 }
 
