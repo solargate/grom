@@ -50,30 +50,7 @@ jobs:
   test:
     name: Test
     needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.44.6'
-          channel: stable
-          cache: true
-
-      - name: Go tests
-        run: go test ./...
-
-      - name: Flutter tests
-        working-directory: ui/grom
-        run: flutter test
+    uses: ./.github/workflows/checks.yml
 
   build-server:
     name: Build server
