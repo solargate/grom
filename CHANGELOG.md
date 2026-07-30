@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-30
+
 ### Added
 
 - Create-workout form auto-fills the name from the localized sport type and updates it when the sport changes until the user edits the name
@@ -109,7 +111,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/solargate/grom/releases/tag/0.4.1
 [0.4.0]: https://github.com/solargate/grom/releases/tag/0.4.0
 [0.3.0]: https://github.com/solargate/grom/releases/tag/0.3.0
 [0.2.0]: https://github.com/solargate/grom/releases/tag/0.2.0
