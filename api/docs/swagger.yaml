@@ -227,6 +227,9 @@ definitions:
       heart_rate_max:
         example: 187
         type: number
+      name:
+        example: Morning run
+        type: string
       reps_total:
         example: 120
         type: integer

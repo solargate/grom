@@ -48,6 +48,7 @@ type CreateWorkoutForm struct {
 }
 
 type ParseTrackResponse struct {
+	Name                 string   `json:"name,omitempty" example:"Morning run"`
 	StartDate            string   `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
 	Device               string   `json:"device,omitempty" example:"Garmin Edge 530"`
 	DurationSeconds      int      `json:"duration_seconds,omitempty" example:"3600"`
@@ -245,6 +246,7 @@ func toFeedWorkoutResponse(item *workouts.FeedWorkout) WorkoutResponse {
 func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
 	meta := data.Metadata()
 	return ParseTrackResponse{
+		Name:                 meta.Name,
 		StartDate:            meta.StartDate,
 		Device:               meta.Device,
 		DurationSeconds:      meta.DurationSeconds,

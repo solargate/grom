@@ -1872,6 +1872,10 @@ const docTemplate = `{
                     "type": "number",
                     "example": 187
                 },
+                "name": {
+                    "type": "string",
+                    "example": "Morning run"
+                },
                 "reps_total": {
                     "type": "integer",
                     "example": 120

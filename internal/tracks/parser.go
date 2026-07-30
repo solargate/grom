@@ -59,7 +59,9 @@ func parseGPX(data []byte) (*Data, error) {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidTrack, err)
 	}
 
-	result := &Data{}
+	result := &Data{
+		Name: gpxActivityName(gpxData),
+	}
 	points := make([]LatLng, 0)
 
 	for _, track := range gpxData.Tracks {
@@ -112,7 +114,9 @@ func parseFIT(data []byte) (*Data, error) {
 		return nil, fmt.Errorf("%w: not an activity file", ErrInvalidTrack)
 	}
 
-	result := &Data{}
+	result := &Data{
+		Name: fitActivityName(activity),
+	}
 	points := make([]LatLng, 0, len(activity.Records))
 
 	var firstTimestamp time.Time
@@ -181,6 +185,37 @@ func parseFIT(data []byte) (*Data, error) {
 
 	result.Stats.FinalizePace(result.DistanceMeters)
 	return result, nil
+}
+
+func gpxActivityName(gpxData *gpx.GPX) string {
+	if name := strings.TrimSpace(gpxData.Name); name != "" {
+		return name
+	}
+	for _, track := range gpxData.Tracks {
+		if name := strings.TrimSpace(track.Name); name != "" {
+			return name
+		}
+	}
+	return ""
+}
+
+func fitActivityName(activity *filedef.Activity) string {
+	for _, workout := range activity.Workouts {
+		if name := strings.TrimSpace(workout.WktName); name != "" {
+			return name
+		}
+	}
+	for _, session := range activity.Sessions {
+		if name := strings.TrimSpace(session.SportProfileName); name != "" {
+			return name
+		}
+	}
+	for _, sport := range activity.Sports {
+		if name := strings.TrimSpace(sport.Name); name != "" {
+			return name
+		}
+	}
+	return ""
 }
 
 func populateLegacyDurationFields(result *Data) {

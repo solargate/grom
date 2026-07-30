@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Create-workout form auto-fills the name from the localized sport type and updates it when the sport changes until the user edits the name
+- `POST /api/v1/workouts/parse-track` returns optional `name` extracted from GPX metadata/track name or FIT workout / sport profile name
+
 ## [0.4.0] - 2026-07-29
 
 ### Added

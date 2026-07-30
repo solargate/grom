@@ -1,5 +1,6 @@
 class ParsedTrackMetadata {
   ParsedTrackMetadata({
+    this.name,
     this.startDate,
     this.durationSeconds,
     this.durationTotalSeconds,
@@ -9,6 +10,7 @@ class ParsedTrackMetadata {
     required this.hasGps,
   });
 
+  final String? name;
   final DateTime? startDate;
   final int? durationSeconds;
   final int? durationTotalSeconds;
@@ -18,7 +20,10 @@ class ParsedTrackMetadata {
   final bool hasGps;
 
   factory ParsedTrackMetadata.fromJson(Map<String, dynamic> json) {
+    final rawName = json['name'];
+    final name = rawName is String ? rawName.trim() : null;
     return ParsedTrackMetadata(
+      name: (name == null || name.isEmpty) ? null : name,
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'] as String)
           : null,

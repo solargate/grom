@@ -12,7 +12,7 @@ Your home feed lists activities with type, date, device, distance/time (and pace
 
 Open a workout for the full card: interactive map (when a track is present), photo gallery, a speed-over-distance chart with average and maximum speed, and a heart-rate chart (distance when GPS is present, otherwise elapsed minutes) with average and maximum heart rate. Tap a chart to see values at that point.
 
-You can create workouts manually, import GPX/FIT tracks, attach photos, and link equipment. On Android you can also record a live GPS track (see below).
+You can create workouts manually, import GPX/FIT tracks, attach photos, and link equipment. On create, the workout name defaults to the localized sport type and follows sport changes until you edit it. On Android you can also record a live GPS track (see below).
 
 ## Live recording (Android)
 

@@ -14,6 +14,7 @@ type LatLng struct {
 }
 
 type Data struct {
+	Name                 string
 	StartTime            *time.Time
 	DurationSeconds      *int
 	DurationTotalSeconds *int

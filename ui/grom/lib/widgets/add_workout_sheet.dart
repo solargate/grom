@@ -15,6 +15,7 @@ import '../models/equipment.dart';
 import '../models/workout.dart';
 import '../services/track_recording_service.dart';
 import '../platform/shared_track_intent.dart';
+import 'create_workout_name_sync.dart';
 import 'manual_workout_form.dart';
 import 'record_workout_tab.dart';
 import 'equipment_picker_field.dart';
@@ -70,8 +71,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _recorder = TrackRecordingService.instance;
+  final _nameSync = CreateWorkoutNameSync();
 
   TabController? _tabController;
+  bool _didInitAutoName = false;
+  bool _updatingNameProgrammatically = false;
 
   String _sportTypeId = defaultSportTypeId;
   late DateTime _date;
@@ -102,6 +106,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     super.initState();
     final existing = widget.workout;
     if (existing != null) {
+      _nameSync.synced = false;
       _nameController.text = existing.name;
       _descriptionController.text = existing.description;
       _sportTypeId = existing.sportType;
@@ -117,6 +122,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       }
     } else {
       _applyStartDateTime(DateTime.now());
+      _nameController.addListener(_onNameEdited);
     }
     if (_showRecordTab) {
       _tabController = TabController(length: 2, vsync: this);
@@ -134,6 +140,17 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         _applyTrackFile(initialTrack.filename, initialTrack.bytes);
       });
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isEditing || _didInitAutoName) {
+      return;
+    }
+    _didInitAutoName = true;
+    final l10n = AppLocalizations.of(context)!;
+    _setNameProgrammatically(sportTypeLabel(l10n, _sportTypeId));
   }
 
   Future<void> _loadEquipmentData() async {
@@ -179,10 +196,29 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     if (_showRecordTab) {
       _recorder.removeListener(_onRecorderChanged);
     }
+    if (!_isEditing) {
+      _nameController.removeListener(_onNameEdited);
+    }
     _tabController?.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _onNameEdited() {
+    if (_updatingNameProgrammatically || _isEditing) {
+      return;
+    }
+    _nameSync.onUserEdited();
+  }
+
+  void _setNameProgrammatically(String value) {
+    _updatingNameProgrammatically = true;
+    _nameController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+    _updatingNameProgrammatically = false;
   }
 
   void _onRecorderChanged() {
@@ -329,6 +365,10 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       setState(() {
         _sportTypeId = selected;
         _applyLastEquipmentForSport(selected);
+        final autoName = _nameSync.nameForSportChange(sportTypeLabel(l10n, selected));
+        if (autoName != null) {
+          _setNameProgrammatically(autoName);
+        }
       });
     }
   }

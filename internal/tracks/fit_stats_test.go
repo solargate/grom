@@ -38,6 +38,9 @@ func TestParseFITBikeSessionMetrics(t *testing.T) {
 	if parsed.Stats.TempAvgKmm.Value == nil {
 		t.Fatal("expected temp_avg_kmm")
 	}
+	if parsed.Name != "Cycling" {
+		t.Fatalf("name = %q, want %q", parsed.Name, "Cycling")
+	}
 }
 
 func TestParseFITSixRideCadenceFromRecords(t *testing.T) {

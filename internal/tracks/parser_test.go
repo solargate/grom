@@ -41,6 +41,9 @@ func TestParseGPX(t *testing.T) {
 	if parsed.DistanceMeters == nil || *parsed.DistanceMeters <= 0 {
 		t.Fatalf("expected positive distance, got %v", parsed.DistanceMeters)
 	}
+	if parsed.Name != "Test track" {
+		t.Fatalf("name = %q, want %q", parsed.Name, "Test track")
+	}
 }
 
 func TestParseRejectsInvalidExtension(t *testing.T) {

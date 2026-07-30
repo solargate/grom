@@ -532,6 +532,9 @@ func TestParseTrackEndpoint(t *testing.T) {
 	if _, ok := parsed["has_gps"]; !ok {
 		t.Fatalf("expected has_gps field, got %#v", parsed)
 	}
+	if name, _ := parsed["name"].(string); name != "Test track" {
+		t.Fatalf("expected name %q, got %#v", "Test track", parsed["name"])
+	}
 }
 
 func TestUserSearch(t *testing.T) {
