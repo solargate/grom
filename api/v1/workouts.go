@@ -20,17 +20,23 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
+type ExternalIDRequest struct {
+	Name string `json:"name" example:"health-sync/strava"`
+	ID   string `json:"id" example:"CYCLING 2026.07.30 16.26 Strava.csv"`
+}
+
 type CreateWorkoutRequest struct {
-	Name                 string   `json:"name" binding:"required" example:"Morning run"`
-	Description          string   `json:"description" example:"Easy session"`
-	SportType            string   `json:"sport_type" binding:"required" example:"Run"`
-	StartDate            string   `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
-	DurationSeconds      int      `json:"duration_seconds" example:"3600"`
-	DurationTotalSeconds int      `json:"duration_total_seconds,omitempty" example:"3900"`
-	Distance             float64  `json:"distance" example:"5200"`
-	SpeedMaxKmh          *float64 `json:"speed_max_kmh,omitempty" example:"32.5"`
-	SpeedAvgKmh          *float64 `json:"speed_avg_kmh,omitempty" example:"18.2"`
-	EquipmentIDs         []string `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name                 string             `json:"name" binding:"required" example:"Morning run"`
+	Description          string             `json:"description" example:"Easy session"`
+	SportType            string             `json:"sport_type" binding:"required" example:"Run"`
+	StartDate            string             `json:"start_date" binding:"required" example:"2026-07-05T14:30:00+03:00"`
+	DurationSeconds      int                `json:"duration_seconds" example:"3600"`
+	DurationTotalSeconds int                `json:"duration_total_seconds,omitempty" example:"3900"`
+	Distance             float64            `json:"distance" example:"5200"`
+	SpeedMaxKmh          *float64           `json:"speed_max_kmh,omitempty" example:"32.5"`
+	SpeedAvgKmh          *float64           `json:"speed_avg_kmh,omitempty" example:"18.2"`
+	EquipmentIDs         []string           `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	ExternalID           *ExternalIDRequest `json:"external_id,omitempty"`
 }
 
 type CreateWorkoutForm struct {
@@ -44,7 +50,13 @@ type CreateWorkoutForm struct {
 	SpeedMaxKmh          string                `form:"speed_max_kmh"`
 	SpeedAvgKmh          string                `form:"speed_avg_kmh"`
 	EquipmentIDs         string                `form:"equipment_ids"`
+	ExternalIDName       string                `form:"external_id_name"`
+	ExternalIDID         string                `form:"external_id_id"`
 	Track                *multipart.FileHeader `form:"track"`
+}
+
+type ExternalIDExistsResponse struct {
+	Exists bool `json:"exists" example:"true"`
 }
 
 type ParseTrackResponse struct {
@@ -115,6 +127,7 @@ type WorkoutResponse struct {
 	StepsTotal           *int                   `json:"steps_total,omitempty" example:"2583"`
 	Calories             *float64               `json:"calories,omitempty" example:"415"`
 	Track                string                 `json:"track,omitempty" example:"track.gpx"`
+	ExternalID           *ExternalIDRequest     `json:"external_id,omitempty"`
 	Equipment            []WorkoutEquipmentItem `json:"equipment,omitempty"`
 	HasMapPreview        bool                   `json:"has_map_preview" example:"true"`
 	HasMedia             bool                   `json:"has_media" example:"true"`
@@ -166,6 +179,13 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 			Type: item.Type,
 		})
 	}
+	var externalID *ExternalIDRequest
+	if workout.ExternalID != nil {
+		externalID = &ExternalIDRequest{
+			Name: workout.ExternalID.Name,
+			ID:   workout.ExternalID.ID,
+		}
+	}
 	return WorkoutResponse{
 		ID:                   workout.ID,
 		Name:                 workout.Name,
@@ -185,6 +205,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		StepsTotal:           workout.StepsTotal,
 		Calories:             workout.Calories,
 		Track:                workout.Track,
+		ExternalID:           externalID,
 		Equipment:            equipment,
 		HasMapPreview:        workout.HasMapPreview,
 		HasMedia:             workout.HasMedia,
@@ -290,7 +311,24 @@ func workoutFromCreateRequest(req CreateWorkoutRequest, startDate time.Time, equ
 		SpeedMaxKmh:          req.SpeedMaxKmh,
 		SpeedAvgKmh:          req.SpeedAvgKmh,
 		Equipment:            equipment,
+		ExternalID:           externalIDFromRequest(req.ExternalID),
 	}
+}
+
+func externalIDFromRequest(req *ExternalIDRequest) *workouts.ExternalID {
+	if req == nil {
+		return nil
+	}
+	name := strings.TrimSpace(req.Name)
+	id := strings.TrimSpace(req.ID)
+	if name == "" || id == "" {
+		return nil
+	}
+	return &workouts.ExternalID{Name: name, ID: id}
+}
+
+func externalIDFromForm(name, id string) *workouts.ExternalID {
+	return externalIDFromRequest(&ExternalIDRequest{Name: name, ID: id})
 }
 
 func parseOptionalFloatForm(raw string) (*float64, error) {
@@ -378,7 +416,8 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 		errors.Is(err, workouts.ErrPhotoTooLarge),
 		errors.Is(err, workouts.ErrTooManyPhotos):
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-	case errors.Is(err, workouts.ErrWorkoutExists):
+	case errors.Is(err, workouts.ErrWorkoutExists),
+		errors.Is(err, workouts.ErrExternalIDExists):
 		ctx.JSON(http.StatusConflict, ErrorResponse{Error: err.Error()})
 	default:
 		respondInternal(ctx, "failed to create workout", err)
@@ -630,6 +669,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		SpeedMaxKmh:          speedMaxKmh,
 		SpeedAvgKmh:          speedAvgKmh,
 		Equipment:            equipmentItems,
+		ExternalID:           externalIDFromForm(form.ExternalIDName, form.ExternalIDID),
 	}
 
 	var trackInput *workouts.TrackInput
@@ -1135,6 +1175,41 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 	ctx.Header("Cache-Control", "public, max-age=31536000, immutable")
 	ctx.Header("Content-Type", contentType)
 	ctx.Data(http.StatusOK, contentType, data)
+}
+
+// checkWorkoutExternalID godoc
+// @Summary      Check external workout id
+// @Description  Returns whether the authenticated user already has a workout with the given external_id name+id pair
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        name  query  string  true  "external_id.name"
+// @Param        id    query  string  true  "external_id.id"
+// @Success      200  {object}  ExternalIDExistsResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/external [get]
+func (a *App) checkWorkoutExternalID(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	name := strings.TrimSpace(ctx.Query("name"))
+	id := strings.TrimSpace(ctx.Query("id"))
+	if name == "" || id == "" {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "name and id are required"})
+		return
+	}
+
+	exists, err := a.Workouts.HasExternalID(nickname, name, id)
+	if err != nil {
+		respondInternal(ctx, "failed to check external_id", err)
+		return
+	}
+	ctx.JSON(http.StatusOK, ExternalIDExistsResponse{Exists: exists})
 }
 
 // listWorkouts godoc

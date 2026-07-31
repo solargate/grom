@@ -50,6 +50,8 @@ definitions:
         items:
           type: string
         type: array
+      external_id:
+        $ref: '#/definitions/v1.ExternalIDRequest'
       name:
         example: Morning run
         type: string
@@ -107,6 +109,21 @@ definitions:
     properties:
       error:
         example: email already registered
+        type: string
+    type: object
+  v1.ExternalIDExistsResponse:
+    properties:
+      exists:
+        example: true
+        type: boolean
+    type: object
+  v1.ExternalIDRequest:
+    properties:
+      id:
+        example: CYCLING 2026.07.30 16.26 Strava.csv
+        type: string
+      name:
+        example: health-sync/strava
         type: string
     type: object
   v1.FollowRequest:
@@ -513,6 +530,8 @@ definitions:
         items:
           $ref: '#/definitions/v1.WorkoutEquipmentItem'
         type: array
+      external_id:
+        $ref: '#/definitions/v1.ExternalIDRequest'
       has_map_preview:
         example: true
         type: boolean
@@ -1554,6 +1573,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Get workout track file
+      tags:
+      - workouts
+  /workouts/external:
+    get:
+      description: Returns whether the authenticated user already has a workout with
+        the given external_id name+id pair
+      parameters:
+      - description: external_id.name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: external_id.id
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.ExternalIDExistsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check external workout id
       tags:
       - workouts
   /workouts/parse-track:

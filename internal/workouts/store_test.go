@@ -80,6 +80,44 @@ func TestStoreRejectsInvalidSportType(t *testing.T) {
 	}
 }
 
+func TestCreateRejectsDuplicateExternalID(t *testing.T) {
+	svc := newTestService(t.TempDir())
+	start := time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC)
+	first, err := svc.Create("alice", &workouts.Workout{
+		Name:      "Ride",
+		SportType: "Ride",
+		StartDate: start,
+		ExternalID: &workouts.ExternalID{
+			Name: "health-sync/strava",
+			ID:   "CYCLING 2026.07.30 16.26 Strava.csv",
+		},
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if first.ExternalID == nil || first.ExternalID.Name != "health-sync/strava" {
+		t.Fatalf("expected external_id to persist, got %#v", first.ExternalID)
+	}
+
+	_, err = svc.Create("alice", &workouts.Workout{
+		Name:      "Ride again",
+		SportType: "Ride",
+		StartDate: start.Add(time.Hour),
+		ExternalID: &workouts.ExternalID{
+			Name: "health-sync/strava",
+			ID:   "CYCLING 2026.07.30 16.26 Strava.csv",
+		},
+	})
+	if err != workouts.ErrExternalIDExists {
+		t.Fatalf("expected ErrExternalIDExists, got %v", err)
+	}
+
+	ok, err := svc.HasExternalID("alice", "health-sync/strava", "CYCLING 2026.07.30 16.26 Strava.csv")
+	if err != nil || !ok {
+		t.Fatalf("HasExternalID = %v err=%v", ok, err)
+	}
+}
+
 func TestStoreListSortedDescending(t *testing.T) {
 	dir := t.TempDir()
 	store := file.NewWorkoutsStore(dir)

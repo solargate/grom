@@ -61,6 +61,10 @@ dependencies:
   cross_file: ^0.3.4
   fl_chart: ^1.2.0
   material_symbols_icons: ^4.2960.0
+  google_sign_in: ^6.2.2
+  googleapis: ^14.0.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
+  googleapis_auth: ^2.0.0
 
 dev_dependencies:
   flutter_test:

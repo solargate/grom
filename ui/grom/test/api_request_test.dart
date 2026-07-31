@@ -333,6 +333,27 @@ void main() {
     expect(series.heartRateMax, 140);
   });
 
+  test('hasExternalID returns exists flag from API', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/v1/workouts/external');
+      expect(request.url.queryParameters['name'], 'health-sync/strava');
+      expect(request.url.queryParameters['id'], 'CYCLING 2026.07.30 16.26 Strava.csv');
+      return http.Response(
+        jsonEncode({'exists': true}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final exists = await ApiRequest(client: client).hasExternalID(
+      token: 'tok',
+      name: 'health-sync/strava',
+      id: 'CYCLING 2026.07.30 16.26 Strava.csv',
+    );
+    expect(exists, isTrue);
+  });
+
   test('getWorkoutSpeed maps API errors', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {

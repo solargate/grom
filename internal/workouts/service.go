@@ -132,7 +132,29 @@ func (s *Service) Create(nickname string, workout *Workout) (*Workout, error) {
 	if err := validateWorkout(workout); err != nil {
 		return nil, err
 	}
+	if err := s.ensureExternalIDAvailable(nickname, workout); err != nil {
+		return nil, err
+	}
 	return s.repo.Create(nickname, workout)
+}
+
+func (s *Service) ensureExternalIDAvailable(nickname string, workout *Workout) error {
+	if workout == nil || workout.ExternalID == nil {
+		return nil
+	}
+	name := workout.ExternalID.Name
+	id := workout.ExternalID.ID
+	if name == "" || id == "" {
+		return nil
+	}
+	exists, err := s.repo.HasExternalID(nickname, name, id)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrExternalIDExists
+	}
+	return nil
 }
 
 // Update applies editable metadata fields onto an existing workout.
