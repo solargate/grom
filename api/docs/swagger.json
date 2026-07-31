@@ -1091,6 +1091,65 @@
                 }
             }
         },
+        "/workouts/external": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns whether the authenticated user already has a workout with the given external_id name+id pair",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Check external workout id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "external_id.name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "external_id.id",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ExternalIDExistsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/workouts/parse-track": {
             "post": {
                 "security": [
@@ -1622,6 +1681,9 @@
                         "550e8400-e29b-41d4-a716-446655440000"
                     ]
                 },
+                "external_id": {
+                    "$ref": "#/definitions/v1.ExternalIDRequest"
+                },
                 "name": {
                     "type": "string",
                     "example": "Morning run"
@@ -1695,6 +1757,28 @@
                 "error": {
                     "type": "string",
                     "example": "email already registered"
+                }
+            }
+        },
+        "v1.ExternalIDExistsResponse": {
+            "type": "object",
+            "properties": {
+                "exists": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "v1.ExternalIDRequest": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "CYCLING 2026.07.30 16.26 Strava.csv"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "health-sync/strava"
                 }
             }
         },
@@ -2263,6 +2347,9 @@
                     "items": {
                         "$ref": "#/definitions/v1.WorkoutEquipmentItem"
                     }
+                },
+                "external_id": {
+                    "$ref": "#/definitions/v1.ExternalIDRequest"
                 },
                 "has_map_preview": {
                     "type": "boolean",

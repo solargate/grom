@@ -916,4 +916,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stravaImportInProgress => 'Another import is already in progress';
+
+  @override
+  String get healthSyncGoogleDrive => 'Health Sync + Google Drive';
+
+  @override
+  String get healthSyncImportDescriptionBefore => 'You can use the ';
+
+  @override
+  String get healthSyncImportDescriptionLink => 'Health Sync';
+
+  @override
+  String get healthSyncImportDescriptionAfter =>
+      ' app to sync workouts from various services to your Google Drive. Workouts stored in Google Drive can be imported into Grom.';
+
+  @override
+  String get healthSyncPlayStoreUrl =>
+      'https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync';
+
+  @override
+  String get healthSyncSyncToggle => 'Health Sync + Google Drive sync';
+
+  @override
+  String get healthSyncFolderLabel => 'Health Sync folder';
+
+  @override
+  String get healthSyncSync => 'Sync';
+
+  @override
+  String get healthSyncSynchronizing => 'Synchronizing…';
+
+  @override
+  String healthSyncImported(int count) {
+    return 'Imported $count workouts';
+  }
+
+  @override
+  String get healthSyncNoNewWorkouts => 'No new workouts found';
+
+  @override
+  String get healthSyncFolderNotFound =>
+      'Health Sync folder not found on Google Drive';
+
+  @override
+  String get healthSyncFolderEmpty => 'Health Sync folder is empty';
+
+  @override
+  String get healthSyncFolderNameRequired => 'Enter a Health Sync folder name';
+
+  @override
+  String get healthSyncFindFolder => 'Find Health Sync folder';
+
+  @override
+  String get healthSyncGoogleSignInCancelled => 'Google sign-in was cancelled';
+
+  @override
+  String get healthSyncGoogleSignInFailed => 'Google sign-in failed';
+
+  @override
+  String get healthSyncDriveAccessDenied => 'Google Drive access was denied';
+
+  @override
+  String healthSyncSyncError(String message) {
+    return 'Health Sync import failed: $message';
+  }
 }

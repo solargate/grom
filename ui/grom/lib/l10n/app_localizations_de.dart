@@ -925,4 +925,71 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get stravaImportInProgress => 'Ein Import läuft bereits';
+
+  @override
+  String get healthSyncGoogleDrive => 'Health Sync + Google Drive';
+
+  @override
+  String get healthSyncImportDescriptionBefore => 'Sie können die ';
+
+  @override
+  String get healthSyncImportDescriptionLink => 'Health Sync';
+
+  @override
+  String get healthSyncImportDescriptionAfter =>
+      '-App nutzen, um Trainingseinheiten aus verschiedenen Diensten mit Google Drive zu synchronisieren. Diese Trainingseinheiten aus Google Drive können in Grom importiert werden.';
+
+  @override
+  String get healthSyncPlayStoreUrl =>
+      'https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync';
+
+  @override
+  String get healthSyncSyncToggle =>
+      'Health Sync + Google Drive Synchronisation';
+
+  @override
+  String get healthSyncFolderLabel => 'Health Sync Ordner';
+
+  @override
+  String get healthSyncSync => 'Synchronisieren';
+
+  @override
+  String get healthSyncSynchronizing => 'Synchronisierung…';
+
+  @override
+  String healthSyncImported(int count) {
+    return '$count Trainingseinheiten importiert';
+  }
+
+  @override
+  String get healthSyncNoNewWorkouts =>
+      'Keine neuen Trainingseinheiten gefunden';
+
+  @override
+  String get healthSyncFolderNotFound =>
+      'Health Sync Ordner in Google Drive nicht gefunden';
+
+  @override
+  String get healthSyncFolderEmpty => 'Health Sync Ordner ist leer';
+
+  @override
+  String get healthSyncFolderNameRequired =>
+      'Geben Sie einen Health Sync Ordnernamen ein';
+
+  @override
+  String get healthSyncFindFolder => 'Health Sync-Ordner suchen';
+
+  @override
+  String get healthSyncGoogleSignInCancelled => 'Google-Anmeldung abgebrochen';
+
+  @override
+  String get healthSyncGoogleSignInFailed => 'Google-Anmeldung fehlgeschlagen';
+
+  @override
+  String get healthSyncDriveAccessDenied => 'Google Drive Zugriff verweigert';
+
+  @override
+  String healthSyncSyncError(String message) {
+    return 'Health Sync Import fehlgeschlagen: $message';
+  }
 }

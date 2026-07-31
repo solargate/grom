@@ -143,6 +143,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
 		workoutGroup.POST("", a.createWorkout)
 		workoutGroup.POST("/parse-track", a.parseTrack)
+		workoutGroup.GET("/external", a.checkWorkoutExternalID)
 		workoutGroup.GET("/:id/track", a.getWorkoutTrack)
 		workoutGroup.GET("/:id/speed", a.getWorkoutSpeed)
 		workoutGroup.GET("/:id/heartrate", a.getWorkoutHeartRate)

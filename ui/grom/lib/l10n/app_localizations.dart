@@ -1810,6 +1810,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Another import is already in progress'**
   String get stravaImportInProgress;
+
+  /// No description provided for @healthSyncGoogleDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync + Google Drive'**
+  String get healthSyncGoogleDrive;
+
+  /// No description provided for @healthSyncImportDescriptionBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'You can use the '**
+  String get healthSyncImportDescriptionBefore;
+
+  /// No description provided for @healthSyncImportDescriptionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync'**
+  String get healthSyncImportDescriptionLink;
+
+  /// No description provided for @healthSyncImportDescriptionAfter.
+  ///
+  /// In en, this message translates to:
+  /// **' app to sync workouts from various services to your Google Drive. Workouts stored in Google Drive can be imported into Grom.'**
+  String get healthSyncImportDescriptionAfter;
+
+  /// No description provided for @healthSyncPlayStoreUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync'**
+  String get healthSyncPlayStoreUrl;
+
+  /// No description provided for @healthSyncSyncToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync + Google Drive sync'**
+  String get healthSyncSyncToggle;
+
+  /// No description provided for @healthSyncFolderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync folder'**
+  String get healthSyncFolderLabel;
+
+  /// No description provided for @healthSyncSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get healthSyncSync;
+
+  /// No description provided for @healthSyncSynchronizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing…'**
+  String get healthSyncSynchronizing;
+
+  /// No description provided for @healthSyncImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} workouts'**
+  String healthSyncImported(int count);
+
+  /// No description provided for @healthSyncNoNewWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'No new workouts found'**
+  String get healthSyncNoNewWorkouts;
+
+  /// No description provided for @healthSyncFolderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync folder not found on Google Drive'**
+  String get healthSyncFolderNotFound;
+
+  /// No description provided for @healthSyncFolderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync folder is empty'**
+  String get healthSyncFolderEmpty;
+
+  /// No description provided for @healthSyncFolderNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a Health Sync folder name'**
+  String get healthSyncFolderNameRequired;
+
+  /// No description provided for @healthSyncFindFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Health Sync folder'**
+  String get healthSyncFindFolder;
+
+  /// No description provided for @healthSyncGoogleSignInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled'**
+  String get healthSyncGoogleSignInCancelled;
+
+  /// No description provided for @healthSyncGoogleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get healthSyncGoogleSignInFailed;
+
+  /// No description provided for @healthSyncDriveAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive access was denied'**
+  String get healthSyncDriveAccessDenied;
+
+  /// No description provided for @healthSyncSyncError.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Sync import failed: {message}'**
+  String healthSyncSyncError(String message);
 }
 
 class _AppLocalizationsDelegate

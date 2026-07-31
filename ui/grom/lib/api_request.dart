@@ -382,6 +382,26 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<bool> hasExternalID({
+    required String token,
+    required String name,
+    required String id,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/v1/workouts/external').replace(
+        queryParameters: {'name': name, 'id': id},
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return json['exists'] as bool? ?? false;
+    }
+
+    throw _parseError(response);
+  }
+
   Future<ParsedTrackMetadata> parseTrack({
     required String token,
     required List<int> trackBytes,

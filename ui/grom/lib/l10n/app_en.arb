@@ -410,5 +410,34 @@
       "message": { "type": "String" }
     }
   },
-  "stravaImportInProgress": "Another import is already in progress"
+  "stravaImportInProgress": "Another import is already in progress",
+  "healthSyncGoogleDrive": "Health Sync + Google Drive",
+  "healthSyncImportDescriptionBefore": "You can use the ",
+  "healthSyncImportDescriptionLink": "Health Sync",
+  "healthSyncImportDescriptionAfter": " app to sync workouts from various services to your Google Drive. Workouts stored in Google Drive can be imported into Grom.",
+  "healthSyncPlayStoreUrl": "https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync",
+  "healthSyncSyncToggle": "Health Sync + Google Drive sync",
+  "healthSyncFolderLabel": "Health Sync folder",
+  "healthSyncSync": "Sync",
+  "healthSyncSynchronizing": "Synchronizing…",
+  "healthSyncImported": "Imported {count} workouts",
+  "@healthSyncImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "healthSyncNoNewWorkouts": "No new workouts found",
+  "healthSyncFolderNotFound": "Health Sync folder not found on Google Drive",
+  "healthSyncFolderEmpty": "Health Sync folder is empty",
+  "healthSyncFolderNameRequired": "Enter a Health Sync folder name",
+  "healthSyncFindFolder": "Find Health Sync folder",
+  "healthSyncGoogleSignInCancelled": "Google sign-in was cancelled",
+  "healthSyncGoogleSignInFailed": "Google sign-in failed",
+  "healthSyncDriveAccessDenied": "Google Drive access was denied",
+  "healthSyncSyncError": "Health Sync import failed: {message}",
+  "@healthSyncSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  }
 }

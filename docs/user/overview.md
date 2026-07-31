@@ -33,3 +33,7 @@ Follow other users on the same instance and browse a shared feed. When the opera
 ## Strava import
 
 From **Integration → Strava**, upload a [Strava bulk data export](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) ZIP. Grom imports activities, tracks, photos, and equipment. Column mapping and server-side behavior are documented in [Strava bulk import](../strava-bulk-import.md).
+
+## Health Sync + Google Drive (Android)
+
+On Android, **Integration** can enable Health Sync + Google Drive sync. Health Sync writes activity CSV/FIT/GPX files to Drive; Grom imports them from the Home sync button. Setup and OAuth notes: [Health Sync + Google Drive](../health-sync-google-drive.md).

@@ -28,6 +28,9 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 	if err := validateWorkout(workout); err != nil {
 		return nil, err
 	}
+	if err := svc.ensureExternalIDAvailable(nickname, workout); err != nil {
+		return nil, err
+	}
 
 	trackName, parsed, err := prepareTrackInput(track)
 	if err != nil {
