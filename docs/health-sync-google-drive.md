@@ -28,20 +28,6 @@ Track matching uses sport + date + time from the CSV filename: prefer `{date} {t
 
 Already-imported rows are skipped using `external_id` (`name` + CSV filename as `id`).
 
-## Google Cloud setup (APK builders)
-
-Reading a user’s Drive requires an OAuth Android client in Google Cloud. This is for whoever **builds** the Android app, not for self-hosted server operators.
-
-1. Create a Google Cloud project and enable **Google Drive API**.
-2. Configure the **OAuth consent screen** (External + Testing is fine for development; add test users).
-3. Add scope `https://www.googleapis.com/auth/drive.readonly`.
-4. Create an **Android** OAuth client with:
-   - Package name: `com.solargate.grom`
-   - SHA-1 of the signing keystore (`keytool` on the debug keystore, or `./gradlew signingReport` under `ui/grom/android`)
-5. Add a separate Android client for the **release** SHA-1 when publishing.
-
-Google matches the app by package name + SHA-1; you usually do not embed the Android client ID in Flutter code. Misconfigured SHA-1/package typically surfaces as Google Sign-In error code 10.
-
 ## Related
 
 - [User overview](user/overview.md)
