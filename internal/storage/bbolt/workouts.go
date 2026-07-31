@@ -44,6 +44,18 @@ func workoutDirPath(dataDir, nickname string, startDate time.Time, id string) st
 	return filepath.Join(data.UserDir(dataDir, nickname), "workouts", keys.WorkoutDirName(startDate, id))
 }
 
+func externalIDIndexKey(nickname string, ext *workouts.ExternalID) (string, bool) {
+	if ext == nil {
+		return "", false
+	}
+	name := strings.TrimSpace(ext.Name)
+	id := strings.TrimSpace(ext.ID)
+	if name == "" || id == "" {
+		return "", false
+	}
+	return nickname + "/" + name + "/" + id, true
+}
+
 func (s *WorkoutsStore) getByPrimaryKey(tx *bolt.Tx, primaryKey string) (*workouts.Workout, error) {
 	raw := tx.Bucket(bucketWorkouts).Get([]byte(primaryKey))
 	if raw == nil {
@@ -84,9 +96,8 @@ func (s *WorkoutsStore) putWorkout(tx *bolt.Tx, nickname string, w *workouts.Wor
 	if err := tx.Bucket(bucketIdxWorkoutsID).Put([]byte(w.ID), ref); err != nil {
 		return err
 	}
-	if sid := strings.TrimSpace(w.StravaActivityID); sid != "" {
-		stravaKey := []byte(nickname + "/" + sid)
-		if err := tx.Bucket(bucketIdxWorkoutsStrava).Put(stravaKey, []byte(w.ID)); err != nil {
+	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
+		if err := tx.Bucket(bucketIdxWorkoutsExternal).Put([]byte(key), []byte(w.ID)); err != nil {
 			return err
 		}
 	}
@@ -104,8 +115,8 @@ func (s *WorkoutsStore) deleteWorkoutMeta(tx *bolt.Tx, nickname string, w *worko
 	}
 	_ = tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey))
 	_ = tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID))
-	if sid := strings.TrimSpace(w.StravaActivityID); sid != "" {
-		_ = tx.Bucket(bucketIdxWorkoutsStrava).Delete([]byte(nickname + "/" + sid))
+	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
+		_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(key))
 	}
 	return nil
 }
@@ -270,8 +281,11 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 			if err := s.deleteWorkoutMeta(tx, nickname, old); err != nil {
 				return err
 			}
-		} else if sid := strings.TrimSpace(old.StravaActivityID); sid != "" && sid != strings.TrimSpace(workout.StravaActivityID) {
-			_ = tx.Bucket(bucketIdxWorkoutsStrava).Delete([]byte(nickname + "/" + sid))
+		} else if oldKey, ok := externalIDIndexKey(nickname, old.ExternalID); ok {
+			newKey, newOK := externalIDIndexKey(nickname, workout.ExternalID)
+			if !newOK || oldKey != newKey {
+				_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(oldKey))
+			}
 		}
 		return s.putWorkout(tx, nickname, workout)
 	})
@@ -450,14 +464,14 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 	return nil
 }
 
-func (s *WorkoutsStore) HasStravaActivityID(nickname, stravaActivityID string) (bool, error) {
-	stravaActivityID = strings.TrimSpace(stravaActivityID)
-	if stravaActivityID == "" {
+func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
+	key, ok := externalIDIndexKey(nickname, &workouts.ExternalID{Name: name, ID: id})
+	if !ok {
 		return false, nil
 	}
 	var found bool
 	err := s.db.View(func(tx *bolt.Tx) error {
-		found = tx.Bucket(bucketIdxWorkoutsStrava).Get([]byte(nickname+"/"+stravaActivityID)) != nil
+		found = tx.Bucket(bucketIdxWorkoutsExternal).Get([]byte(key)) != nil
 		return nil
 	})
 	return found, err

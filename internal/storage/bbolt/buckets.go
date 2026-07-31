@@ -12,7 +12,7 @@ var (
 	bucketIdxFollowsActivity = []byte("idx_follows_activity")
 	bucketWorkouts          = []byte("workouts")
 	bucketIdxWorkoutsID     = []byte("idx_workouts_id")
-	bucketIdxWorkoutsStrava = []byte("idx_workouts_strava")
+	bucketIdxWorkoutsExternal = []byte("idx_workouts_external")
 	bucketFedFollowers      = []byte("fed_followers")
 	bucketFedInbox          = []byte("fed_inbox")
 	bucketFedAuthors        = []byte("fed_authors")
@@ -34,7 +34,7 @@ var allBuckets = [][]byte{
 	bucketIdxFollowsActivity,
 	bucketWorkouts,
 	bucketIdxWorkoutsID,
-	bucketIdxWorkoutsStrava,
+	bucketIdxWorkoutsExternal,
 	bucketFedFollowers,
 	bucketFedInbox,
 	bucketFedAuthors,

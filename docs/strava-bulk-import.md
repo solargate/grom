@@ -25,7 +25,7 @@ Column numbers are **1-based**. Strava localizes CSV headers; Grom always uses i
 
 | Col | Strava (RU example) | Grom field | Notes |
 |-----|---------------------|------------|-------|
-| 1 | ID физической активности | `strava_activity_id` | Used for duplicate detection |
+| 1 | ID физической активности | `external_id.id` | With `external_id.name` = `strava`; used for duplicate detection |
 | 2 | Дата тренировки | `start_date` | Locale-aware date parsing |
 | 3 | Название тренировки | `name` | |
 | 4 | Тип активности | `sport_type` | Mapped to Grom sport type IDs |
@@ -106,4 +106,4 @@ Import results include:
 
 ## Duplicate import
 
-If a workout with the same `strava_activity_id` already exists for the user, the activity is skipped.
+If a workout with the same `external_id` (`name` = `strava` and matching `id`) already exists for the user, the activity is skipped.

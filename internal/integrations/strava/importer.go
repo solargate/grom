@@ -62,7 +62,7 @@ func (imp *Importer) ImportAll(nickname string, progress func(current, total int
 		}
 
 		if row.StravaActivityID != "" {
-			exists, err := imp.workoutStore.HasStravaActivityID(nickname, row.StravaActivityID)
+			exists, err := imp.workoutStore.HasExternalID(nickname, externalServiceStrava, row.StravaActivityID)
 			if err != nil {
 				result.Errors++
 				continue

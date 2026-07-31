@@ -12,6 +12,6 @@ type Repository interface {
 	ListPage(nickname string, cursor *Cursor, limit int) (items []Workout, hasMore bool, err error)
 	Delete(nickname, workoutID string) error
 	RemoveEquipmentFromAll(nickname, equipmentID string) error
-	HasStravaActivityID(nickname, stravaActivityID string) (bool, error)
+	HasExternalID(nickname, name, id string) (bool, error)
 	WorkoutDirName(nickname, workoutID string) (string, error)
 }

@@ -8,6 +8,12 @@ type WorkoutEquipment struct {
 	Type string `yaml:"type,omitempty" json:"type,omitempty"`
 }
 
+// ExternalID identifies a workout in an external service it was imported from.
+type ExternalID struct {
+	Name string `yaml:"name" json:"name"`
+	ID   string `yaml:"id" json:"id"`
+}
+
 type Workout struct {
 	ID                   string             `yaml:"id" json:"id"`
 	Name                 string             `yaml:"name" json:"name"`
@@ -42,8 +48,8 @@ type Workout struct {
 	CyclesTotal          *int               `yaml:"cycles_total,omitempty" json:"cycles_total,omitempty"`
 	SetsTotal            *int               `yaml:"sets_total,omitempty" json:"sets_total,omitempty"`
 	RepsTotal            *int               `yaml:"reps_total,omitempty" json:"reps_total,omitempty"`
-	StravaActivityID     string             `yaml:"strava_activity_id,omitempty" json:"strava_activity_id,omitempty"`
 	Track                string             `yaml:"track,omitempty" json:"track,omitempty"`
+	ExternalID           *ExternalID        `yaml:"external_id,omitempty" json:"external_id,omitempty"`
 	Equipment            []WorkoutEquipment `yaml:"equipment,omitempty" json:"equipment,omitempty"`
 	MediaFiles           []string           `yaml:"media_files,omitempty" json:"media_files,omitempty"`
 	HasMapPreview        bool               `yaml:"-" json:"has_map_preview"`

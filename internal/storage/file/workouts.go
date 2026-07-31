@@ -416,9 +416,10 @@ func (s *WorkoutsStore) findWorkoutDir(nickname, workoutID string) (string, erro
 	return "", workouts.ErrWorkoutNotFound
 }
 
-func (s *WorkoutsStore) HasStravaActivityID(nickname, stravaActivityID string) (bool, error) {
-	stravaActivityID = strings.TrimSpace(stravaActivityID)
-	if stravaActivityID == "" {
+func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
+	name = strings.TrimSpace(name)
+	id = strings.TrimSpace(id)
+	if name == "" || id == "" {
 		return false, nil
 	}
 
@@ -439,7 +440,10 @@ func (s *WorkoutsStore) HasStravaActivityID(nickname, stravaActivityID string) (
 		if err != nil {
 			continue
 		}
-		if workout.StravaActivityID == stravaActivityID {
+		if workout.ExternalID == nil {
+			continue
+		}
+		if strings.TrimSpace(workout.ExternalID.Name) == name && strings.TrimSpace(workout.ExternalID.ID) == id {
 			return true, nil
 		}
 	}

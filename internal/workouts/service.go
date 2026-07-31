@@ -124,8 +124,8 @@ func (s *Service) RemoveEquipmentFromAll(nickname, equipmentID string) error {
 	return s.repo.RemoveEquipmentFromAll(nickname, equipmentID)
 }
 
-func (s *Service) HasStravaActivityID(nickname, stravaActivityID string) (bool, error) {
-	return s.repo.HasStravaActivityID(nickname, stravaActivityID)
+func (s *Service) HasExternalID(nickname, name, id string) (bool, error) {
+	return s.repo.HasExternalID(nickname, name, id)
 }
 
 func (s *Service) Create(nickname string, workout *Workout) (*Workout, error) {
@@ -136,7 +136,7 @@ func (s *Service) Create(nickname string, workout *Workout) (*Workout, error) {
 }
 
 // Update applies editable metadata fields onto an existing workout.
-// Track, media, device, strava id, and track-derived stats not present on patch are preserved.
+// Track, media, device, external_id, and track-derived stats not present on patch are preserved.
 func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Workout, error) {
 	if patch == nil {
 		return nil, ErrInvalidWorkout

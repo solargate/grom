@@ -219,7 +219,7 @@ func TestWorkoutsStoreBeginCreateCleanupAndWriteMetadata(t *testing.T) {
 	defer cleanup()
 
 	created.Track = "track.gpx"
-	created.StravaActivityID = "strava-42"
+	created.ExternalID = &workouts.ExternalID{Name: "strava", ID: "strava-42"}
 	if err := store.WriteMetadata("alice", created); err != nil {
 		t.Fatal(err)
 	}
@@ -231,13 +231,17 @@ func TestWorkoutsStoreBeginCreateCleanupAndWriteMetadata(t *testing.T) {
 		t.Fatalf("track = %q", got.Track)
 	}
 
-	ok, err := store.HasStravaActivityID("alice", "strava-42")
+	ok, err := store.HasExternalID("alice", "strava", "strava-42")
 	if err != nil || !ok {
-		t.Fatalf("HasStravaActivityID = %v err=%v", ok, err)
+		t.Fatalf("HasExternalID = %v err=%v", ok, err)
 	}
-	ok, err = store.HasStravaActivityID("alice", "")
+	ok, err = store.HasExternalID("alice", "strava", "")
 	if err != nil || ok {
-		t.Fatalf("empty strava id should be false: %v %v", ok, err)
+		t.Fatalf("empty external id should be false: %v %v", ok, err)
+	}
+	ok, err = store.HasExternalID("alice", "", "strava-42")
+	if err != nil || ok {
+		t.Fatalf("empty external name should be false: %v %v", ok, err)
 	}
 	_ = dirName
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
+const externalServiceStrava = "strava"
+
 type ActivityRow struct {
 	StravaActivityID     string
 	StartDate            string
@@ -160,7 +162,7 @@ func (row ActivityRow) ToWorkout(hint localeHint) (*workouts.Workout, error) {
 		name = row.SportTypeRaw
 	}
 
-	return &workouts.Workout{
+	w := &workouts.Workout{
 		Name:                 name,
 		Description:          row.Description,
 		SportType:            sportType,
@@ -191,8 +193,11 @@ func (row ActivityRow) ToWorkout(hint localeHint) (*workouts.Workout, error) {
 		CyclesTotal:          row.CyclesTotal,
 		SetsTotal:            row.SetsTotal,
 		RepsTotal:            row.RepsTotal,
-		StravaActivityID:     row.StravaActivityID,
-	}, nil
+	}
+	if id := strings.TrimSpace(row.StravaActivityID); id != "" {
+		w.ExternalID = &workouts.ExternalID{Name: externalServiceStrava, ID: id}
+	}
+	return w, nil
 }
 
 // mpsToKmh converts Strava CSV speeds (metres per second) to km/h.
