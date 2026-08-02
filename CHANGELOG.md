@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Creating a workout without `equipment_ids` (JSON omit or multipart field absent) copies equipment from the previous workout of the same `sport_type`; an explicit empty list keeps the workout without equipment. Strava ZIP import is unchanged
 - Integration screen shows Strava export instructions with an inline link to the Strava download page before the import button
 - Android: Health Sync + Google Drive workout import (Integration toggle, Home sync button, Drive folder picker); `POST /workouts` accepts `external_id`; `GET /workouts/external` checks duplicates
 
 ### Changed
 
+- Create/update workout requests from the Flutter client always send `equipment_ids` (including `[]`) so clearing equipment is distinct from omitting the field
 - Workout `device` from FIT tracks drops the word "Strava" (e.g. Strava-reexported "Strava Wahoo ELEMNT" → "Wahoo ELEMNT"); track files are left unchanged
 - **Breaking:** workout metadata field `strava_activity_id` replaced by `external_id` (`name` + `id`); Strava bulk import sets `name` to `strava`. Recreate storage or re-import after upgrade (no migration).
 

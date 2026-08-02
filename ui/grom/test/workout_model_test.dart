@@ -86,4 +86,19 @@ void main() {
     expect(json['speed_avg_kmh'], 25);
     expect(json['equipment_ids'], ['bike-1', 'helmet-1']);
   });
+
+  test('CreateWorkoutDraft.toJson always includes equipment_ids', () {
+    final draft = CreateWorkoutDraft(
+      name: 'Easy run',
+      description: '',
+      sportType: 'Run',
+      startDate: DateTime.parse('2026-07-17T21:15:00Z'),
+      durationSeconds: 1800,
+      distanceKm: 5,
+    );
+
+    final json = draft.toJson();
+    expect(json.containsKey('equipment_ids'), isTrue);
+    expect(json['equipment_ids'], isEmpty);
+  });
 }

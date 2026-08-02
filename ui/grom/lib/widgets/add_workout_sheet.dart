@@ -624,8 +624,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
             'speed_max_kmh': draft.speedMaxKmh!.toStringAsFixed(2),
           if (draft.speedAvgKmh != null)
             'speed_avg_kmh': draft.speedAvgKmh!.toStringAsFixed(2),
-          if (draft.equipmentIds.isNotEmpty)
-            'equipment_ids': jsonEncode(draft.equipmentIds),
+          'equipment_ids': jsonEncode(draft.equipmentIds),
         };
 
         final hasTrack = _trackBytes != null && _trackFilename != null;

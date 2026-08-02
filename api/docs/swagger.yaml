@@ -1245,7 +1245,9 @@ paths:
       consumes:
       - application/json
       - multipart/form-data
-      description: Create a manual workout for the authenticated user
+      description: Create a manual workout for the authenticated user. When equipment_ids
+        is omitted, equipment is copied from the previous workout of the same sport_type.
+        An explicit empty equipment_ids list means no equipment.
       parameters:
       - description: Workout data (JSON)
         in: body
@@ -1276,6 +1278,11 @@ paths:
         in: formData
         name: distance
         type: number
+      - description: JSON array of equipment IDs; omit to copy from previous same
+          sport_type; [] for none
+        in: formData
+        name: equipment_ids
+        type: string
       - description: Track file FIT or GPX (multipart)
         in: formData
         name: track

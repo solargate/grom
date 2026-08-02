@@ -1033,6 +1033,183 @@ func TestWorkoutUpdateEquipmentDistanceAndForeignACL(t *testing.T) {
 	}
 }
 
+func TestCreateWorkoutCopiesEquipmentFromPreviousSameSport(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/equipment", map[string]any{
+		"type": "shoes",
+		"name": "Road shoes",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	eqID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Earlier run", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+		"equipment_ids": []string{eqID},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Ride with bike", "sport_type": "Ride", "start_date": "2026-07-08T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	ride := decodeObject(t, w)
+	if eqList, ok := ride["equipment"].([]any); ok && len(eqList) != 0 {
+		t.Fatalf("Ride should not copy Run equipment, got %#v", ride["equipment"])
+	}
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Later run", "sport_type": "Run", "start_date": "2026-07-09T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	equipment, _ := created["equipment"].([]any)
+	if len(equipment) != 1 {
+		t.Fatalf("expected equipment copied from previous Run, got %#v", created["equipment"])
+	}
+	item, _ := equipment[0].(map[string]any)
+	if item["id"] != eqID {
+		t.Fatalf("unexpected equipment: %#v", item)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/auth/me", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	me := decodeObject(t, w)
+	lastBySport, _ := me["last_equipment_by_sport"].(map[string]any)
+	runIDs, _ := lastBySport["Run"].([]any)
+	if len(runIDs) != 1 || runIDs[0] != eqID {
+		t.Fatalf("expected last_equipment_by_sport Run updated, got %#v", lastBySport)
+	}
+
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateWorkoutExplicitEmptyEquipmentSkipsDefault(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/equipment", map[string]any{
+		"type": "shoes",
+		"name": "Road shoes",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	eqID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Earlier run", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+		"equipment_ids": []string{eqID},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Barefoot", "sport_type": "Run", "start_date": "2026-07-09T10:00:00Z",
+		"equipment_ids": []string{},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	if eqList, ok := created["equipment"].([]any); ok && len(eqList) != 0 {
+		t.Fatalf("explicit empty equipment_ids should not copy previous, got %#v", created["equipment"])
+	}
+
+	w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token, map[string]string{
+		"name": "Barefoot multipart", "sport_type": "Run", "start_date": "2026-07-10T10:00:00Z",
+		"duration_seconds": "600", "distance": "1000",
+		"equipment_ids": "[]",
+	}, nil)
+	expectStatus(t, w, http.StatusCreated)
+	created = decodeObject(t, w)
+	if eqList, ok := created["equipment"].([]any); ok && len(eqList) != 0 {
+		t.Fatalf("multipart explicit [] should not copy previous, got %#v", created["equipment"])
+	}
+
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateWorkoutMultipartOmitsEquipmentUsesDefault(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/equipment", map[string]any{
+		"type": "shoes",
+		"name": "Trail shoes",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	eqID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Earlier run", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+		"equipment_ids": []string{eqID},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token, map[string]string{
+		"name": "Imported run", "sport_type": "Run", "start_date": "2026-07-11T10:00:00Z",
+		"duration_seconds": "1800", "distance": "5000",
+	}, nil)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	equipment, _ := created["equipment"].([]any)
+	if len(equipment) != 1 {
+		t.Fatalf("multipart omit should copy previous equipment, got %#v", created["equipment"])
+	}
+	item, _ := equipment[0].(map[string]any)
+	if item["id"] != eqID {
+		t.Fatalf("unexpected equipment: %#v", item)
+	}
+
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpdateWorkoutDoesNotCopyPreviousEquipment(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/equipment", map[string]any{
+		"type": "shoes",
+		"name": "Road shoes",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	eqID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Earlier run", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+		"equipment_ids": []string{eqID},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Later run", "sport_type": "Run", "start_date": "2026-07-09T10:00:00Z",
+		"equipment_ids": []string{eqID},
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	id, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+id, map[string]any{
+		"name": "Later run", "sport_type": "Run", "start_date": "2026-07-09T10:00:00Z",
+		"equipment_ids": []string{},
+	}, token)
+	expectStatus(t, w, http.StatusOK)
+	updated := decodeObject(t, w)
+	if eqList, ok := updated["equipment"].([]any); ok && len(eqList) != 0 {
+		t.Fatalf("update with empty equipment_ids should clear, got %#v", updated["equipment"])
+	}
+
+	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestFederatedAuthorAvatarAPI(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

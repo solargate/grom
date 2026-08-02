@@ -1005,7 +1005,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a manual workout for the authenticated user",
+                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is copied from the previous workout of the same sport_type. An explicit empty equipment_ids list means no equipment.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -1060,6 +1060,12 @@ const docTemplate = `{
                         "type": "number",
                         "description": "Distance meters (multipart)",
                         "name": "distance",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON array of equipment IDs; omit to copy from previous same sport_type; [] for none",
+                        "name": "equipment_ids",
                         "in": "formData"
                     },
                     {

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/solargate/grom/internal/auth"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/social"
@@ -35,7 +36,7 @@ type CreateWorkoutRequest struct {
 	Distance             float64            `json:"distance" example:"5200"`
 	SpeedMaxKmh          *float64           `json:"speed_max_kmh,omitempty" example:"32.5"`
 	SpeedAvgKmh          *float64           `json:"speed_avg_kmh,omitempty" example:"18.2"`
-	EquipmentIDs         []string           `json:"equipment_ids,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	EquipmentIDs         []string           `json:"equipment_ids" example:"550e8400-e29b-41d4-a716-446655440000"`
 	ExternalID           *ExternalIDRequest `json:"external_id,omitempty"`
 }
 
@@ -426,7 +427,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 
 // createWorkout godoc
 // @Summary      Create workout
-// @Description  Create a manual workout for the authenticated user
+// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is copied from the previous workout of the same sport_type. An explicit empty equipment_ids list means no equipment.
 // @Tags         workouts
 // @Accept       json
 // @Accept       mpfd
@@ -439,6 +440,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        start_date  formData  string  false  "Start date RFC3339 (multipart)"
 // @Param        duration_seconds  formData  int  false  "Duration seconds (multipart)"
 // @Param        distance  formData  number  false  "Distance meters (multipart)"
+// @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to copy from previous same sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
 // @Failure      400   {object}  ErrorResponse
@@ -458,8 +460,17 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	var req CreateWorkoutRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "failed to read request body"})
+		return
+	}
+	req, equipmentProvided, err := decodeCreateWorkoutJSON(body)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if err := binding.Validator.ValidateStruct(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -470,7 +481,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	equipmentItems, err := a.resolveWorkoutEquipment(nickname, req.EquipmentIDs)
+	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, req.SportType, req.EquipmentIDs, equipmentProvided)
 	if err != nil {
 		respondInternal(ctx, "failed to resolve equipment", err)
 		return
@@ -483,7 +494,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 	}
 
 	if userID, err := a.currentUserID(ctx); err == nil {
-		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+		a.saveLastEquipmentForSport(userID, req.SportType, resolvedIDs)
 	}
 
 	a.publishCreatedWorkout(nickname, workout)
@@ -497,6 +508,19 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		"has_track", workout.Track != "",
 	)
 	ctx.JSON(http.StatusCreated, toWorkoutResponse(workout))
+}
+
+func decodeCreateWorkoutJSON(body []byte) (CreateWorkoutRequest, bool, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return CreateWorkoutRequest{}, false, err
+	}
+	_, equipmentProvided := raw["equipment_ids"]
+	var req CreateWorkoutRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return CreateWorkoutRequest{}, false, err
+	}
+	return req, equipmentProvided, nil
 }
 
 func readPhotoFile(file *multipart.FileHeader) ([]byte, error) {
@@ -636,12 +660,13 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
+	_, equipmentProvided := ctx.GetPostForm("equipment_ids")
 	equipmentIDs, err := parseEquipmentIDsForm(form.EquipmentIDs)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid equipment_ids format"})
 		return
 	}
-	equipmentItems, err := a.resolveWorkoutEquipment(nickname, equipmentIDs)
+	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, form.SportType, equipmentIDs, equipmentProvided)
 	if err != nil {
 		respondInternal(ctx, "failed to resolve equipment", err)
 		return
@@ -709,7 +734,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 	}
 
 	if userID, err := a.currentUserID(ctx); err == nil {
-		a.saveLastEquipmentForSport(userID, form.SportType, equipmentIDs)
+		a.saveLastEquipmentForSport(userID, form.SportType, resolvedIDs)
 	}
 
 	a.publishCreatedWorkout(nickname, created)

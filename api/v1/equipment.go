@@ -280,6 +280,40 @@ func (a *App) resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([
 	return result, nil
 }
 
+// resolveEquipmentForCreate resolves equipment for a new workout.
+// When provided is false (equipment_ids omitted), IDs are taken from the
+// previous workout of the same sport type. When provided is true, equipmentIDs
+// are used as-is (including an explicit empty list).
+func (a *App) resolveEquipmentForCreate(nickname, sportType string, equipmentIDs []string, provided bool) ([]workouts.WorkoutEquipment, []string, error) {
+	ids := equipmentIDs
+	if !provided {
+		var err error
+		ids, err = a.Workouts.LastEquipmentIDsForSport(nickname, sportType)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	items, err := a.resolveWorkoutEquipment(nickname, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	return items, workoutEquipmentIDs(items), nil
+}
+
+func workoutEquipmentIDs(items []workouts.WorkoutEquipment) []string {
+	if len(items) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.ID == "" {
+			continue
+		}
+		ids = append(ids, item.ID)
+	}
+	return ids
+}
+
 func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs []string) {
 	_ = a.Users.SetLastEquipmentForSport(userID, sportType, equipmentIDs)
 }

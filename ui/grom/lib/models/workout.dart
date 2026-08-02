@@ -172,7 +172,7 @@ class CreateWorkoutDraft {
       'distance': distanceKm * 1000,
       if (speedMaxKmh != null) 'speed_max_kmh': speedMaxKmh,
       if (speedAvgKmh != null) 'speed_avg_kmh': speedAvgKmh,
-      if (equipmentIds.isNotEmpty) 'equipment_ids': equipmentIds,
+      'equipment_ids': equipmentIds,
     };
   }
 }
