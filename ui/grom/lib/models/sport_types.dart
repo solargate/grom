@@ -103,6 +103,18 @@ SportTypeInfo? sportTypeById(String id) {
   return null;
 }
 
+/// Default sport for a new workout: last known type if it is in the catalog,
+/// otherwise [defaultSportTypeId] (`Run`).
+String resolveDefaultSportTypeId(String? fromLastWorkout) {
+  if (fromLastWorkout == null || fromLastWorkout.isEmpty) {
+    return defaultSportTypeId;
+  }
+  if (sportTypeById(fromLastWorkout) == null) {
+    return defaultSportTypeId;
+  }
+  return fromLastWorkout;
+}
+
 String sportCategoryLabel(AppLocalizations l10n, SportCategory category) {
   switch (category) {
     case SportCategory.foot:

@@ -159,15 +159,40 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       return;
     }
 
+    final meFuture = _api.getMe(token);
+    final equipmentFuture = _api.listEquipment(token);
+    final lastOwnFuture =
+        _isEditing ? null : _api.listWorkouts(token, scope: 'own', limit: 1);
+
+    String? lastSportType;
+    if (lastOwnFuture != null) {
+      try {
+        final page = await lastOwnFuture;
+        if (page.items.isNotEmpty) {
+          lastSportType = page.items.first.sportType;
+        }
+      } catch (_) {
+        // Fall back to defaultSportTypeId below.
+      }
+    }
+
     try {
-      final me = await _api.getMe(token);
-      final equipment = await _api.listEquipment(token);
+      final me = await meFuture;
+      final equipment = await equipmentFuture;
       if (!mounted) return;
       setState(() {
         _userEquipment = equipment;
         _lastEquipmentBySport = me.lastEquipmentBySport;
         if (!_isEditing) {
-          _applyLastEquipmentForSport(_sportTypeId);
+          final resolved = resolveDefaultSportTypeId(lastSportType);
+          _sportTypeId = resolved;
+          _applyLastEquipmentForSport(resolved);
+          final l10n = AppLocalizations.of(context)!;
+          final autoName =
+              _nameSync.nameForSportChange(sportTypeLabel(l10n, resolved));
+          if (autoName != null) {
+            _setNameProgrammatically(autoName);
+          }
         } else {
           final existingIds = equipment.map((item) => item.id).toSet();
           _selectedEquipmentIds = _selectedEquipmentIds
@@ -176,7 +201,21 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         }
       });
     } catch (_) {
-      // Keep form usable without equipment presets.
+      // Keep form usable without equipment presets; still apply last sport.
+      if (!_isEditing && mounted) {
+        final resolved = resolveDefaultSportTypeId(lastSportType);
+        if (resolved != _sportTypeId) {
+          setState(() {
+            _sportTypeId = resolved;
+            final l10n = AppLocalizations.of(context)!;
+            final autoName =
+                _nameSync.nameForSportChange(sportTypeLabel(l10n, resolved));
+            if (autoName != null) {
+              _setNameProgrammatically(autoName);
+            }
+          });
+        }
+      }
     }
   }
 
