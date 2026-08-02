@@ -165,7 +165,7 @@ func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []by
 
 func deviceForTrack(trackName string, parsed *tracks.Data) string {
 	if trackName == tracks.TrackFileFIT && parsed != nil && parsed.Device != nil {
-		if device := strings.TrimSpace(*parsed.Device); device != "" {
+		if device := stripStravaFromDevice(strings.TrimSpace(*parsed.Device)); device != "" {
 			return device
 		}
 	}
