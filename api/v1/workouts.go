@@ -1202,6 +1202,125 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, contentType, data)
 }
 
+// addWorkoutMedia godoc
+// @Summary      Add workout photos
+// @Description  Append photos to the authenticated user's workout (original + preview). Max 20 photos per workout.
+// @Tags         workouts
+// @Accept       mpfd
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id      path      string  true  "Workout ID"
+// @Param        photos  formData  file    true  "Photo files (repeatable)"
+// @Success      200     {object}  WorkoutResponse
+// @Failure      400     {object}  ErrorResponse
+// @Failure      401     {object}  ErrorResponse
+// @Failure      404     {object}  ErrorResponse
+// @Failure      500     {object}  ErrorResponse
+// @Router       /workouts/{id}/media [post]
+func (a *App) addWorkoutMedia(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	workout, err := a.Workouts.Get(nickname, workoutID)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to load workout", err)
+		return
+	}
+
+	photos, err := readWorkoutPhotos(ctx)
+	if err != nil {
+		handleWorkoutMediaError(ctx, err)
+		return
+	}
+	if len(photos) == 0 {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "photos required"})
+		return
+	}
+
+	updated, err := a.Workouts.AddMedia(nickname, workout, photos)
+	if err != nil {
+		handleWorkoutMediaError(ctx, err)
+		return
+	}
+
+	a.publishUpdatedWorkout(nickname, updated)
+	slog.Info("workout media added",
+		"user", nickname,
+		"workout_id", updated.ID,
+		"photos", len(photos),
+		"media_count", len(updated.MediaFiles),
+	)
+	resp := toWorkoutResponse(updated)
+	resp.Owner = nickname
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// deleteWorkoutMedia godoc
+// @Summary      Delete workout photo
+// @Description  Remove one photo (original + preview) from the authenticated user's workout
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id        path  string  true  "Workout ID"
+// @Param        filename  path  string  true  "Photo filename"
+// @Success      200       {object}  WorkoutResponse
+// @Failure      400       {object}  ErrorResponse
+// @Failure      401       {object}  ErrorResponse
+// @Failure      404       {object}  ErrorResponse
+// @Failure      500       {object}  ErrorResponse
+// @Router       /workouts/{id}/media/{filename} [delete]
+func (a *App) deleteWorkoutMedia(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	workoutID := ctx.Param("id")
+	filename := ctx.Param("filename")
+	updated, err := a.Workouts.RemoveMedia(nickname, workoutID, filename)
+	if err != nil {
+		handleWorkoutMediaError(ctx, err)
+		return
+	}
+
+	a.publishUpdatedWorkout(nickname, updated)
+	slog.Info("workout media deleted",
+		"user", nickname,
+		"workout_id", updated.ID,
+		"filename", filename,
+		"media_count", len(updated.MediaFiles),
+	)
+	resp := toWorkoutResponse(updated)
+	resp.Owner = nickname
+	ctx.JSON(http.StatusOK, resp)
+}
+
+func handleWorkoutMediaError(ctx *gin.Context, err error) {
+	switch {
+	case errors.Is(err, workouts.ErrWorkoutNotFound):
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+	case errors.Is(err, workouts.ErrPhotoNotFound):
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "photo not found"})
+	case errors.Is(err, workouts.ErrInvalidPhotoName),
+		errors.Is(err, workouts.ErrInvalidPhoto),
+		errors.Is(err, workouts.ErrPhotoTooLarge),
+		errors.Is(err, workouts.ErrTooManyPhotos),
+		errors.Is(err, workouts.ErrInvalidWorkout):
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+	default:
+		respondInternal(ctx, "failed to update workout media", err)
+	}
+}
+
 // checkWorkoutExternalID godoc
 // @Summary      Check external workout id
 // @Description  Returns whether the authenticated user already has a workout with the given external_id name+id pair

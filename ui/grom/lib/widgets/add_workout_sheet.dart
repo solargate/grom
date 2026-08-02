@@ -96,10 +96,21 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   Map<String, List<String>> _lastEquipmentBySport = {};
   List<({String filename, Uint8List bytes})> _selectedPhotos = [];
   bool _isPickingPhotos = false;
+  List<String> _existingMediaFiles = [];
+  final Set<String> _pendingRemovePhotos = {};
+  String? _authToken;
 
   bool get _showRecordTab => isMobileClient && !_isEditing;
 
   bool get _isEditing => widget.workout != null;
+
+  List<String> get _keptExistingPhotos => [
+        for (final name in _existingMediaFiles)
+          if (!_pendingRemovePhotos.contains(name)) name,
+      ];
+
+  int get _photoCount =>
+      _keptExistingPhotos.length + _selectedPhotos.length;
 
   @override
   void initState() {
@@ -117,6 +128,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _speedAvgKmh = existing.speedAvgKmh;
       _selectedEquipmentIds =
           existing.equipment.map((item) => item.id).toList();
+      _existingMediaFiles = List<String>.from(existing.mediaFiles);
       if (existing.track.isNotEmpty) {
         _trackFilename = existing.track;
       }
@@ -129,6 +141,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _recorder.addListener(_onRecorderChanged);
     }
     _loadEquipmentData();
+    _loadAuthToken();
 
     final initialTrack = widget.initialTrack;
     if (initialTrack != null && !_isEditing) {
@@ -216,6 +229,48 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
           });
         }
       }
+    }
+  }
+
+  Future<void> _loadAuthToken() async {
+    final token = await AuthStorage.getToken();
+    if (!mounted || token == null) {
+      return;
+    }
+    setState(() => _authToken = token);
+  }
+
+  void _applyWorkoutSnapshot(Workout workout) {
+    _nameController.text = workout.name;
+    _descriptionController.text = workout.description;
+    _sportTypeId = workout.sportType;
+    _applyStartDateTime(workout.startDate.toLocal());
+    _durationSeconds = workout.durationSeconds;
+    _durationTotalSeconds = workout.durationTotalSeconds;
+    _distanceKm = workout.distanceKm;
+    _speedAvgKmh = workout.speedAvgKmh;
+    _speedMaxKmh = workout.speedMaxKmh;
+    _selectedEquipmentIds = workout.equipment.map((item) => item.id).toList();
+    _existingMediaFiles = List<String>.from(workout.mediaFiles);
+    _pendingRemovePhotos.clear();
+    _selectedPhotos = [];
+    if (workout.track.isNotEmpty) {
+      _trackFilename = workout.track;
+    } else {
+      _trackFilename = null;
+    }
+  }
+
+  Future<void> _reloadWorkoutAfterPartialSave(
+    String token,
+    String workoutId,
+  ) async {
+    try {
+      final latest = await _api.getWorkout(token: token, workoutId: workoutId);
+      if (!mounted) return;
+      setState(() => _applyWorkoutSnapshot(latest));
+    } catch (_) {
+      // Keep current form state if reload fails.
     }
   }
 
@@ -434,16 +489,21 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     if (_isPickingPhotos || _isSubmitting) {
       return;
     }
+    final remaining = kMaxPhotosPerWorkout - _photoCount;
+    if (remaining <= 0) {
+      return;
+    }
     setState(() => _isPickingPhotos = true);
     try {
       final picked = await pickWorkoutPhotos();
       if (!mounted || picked.isEmpty) {
         return;
       }
+      final toAdd = picked.take(remaining).toList();
       setState(() {
         _selectedPhotos = [
           ..._selectedPhotos,
-          ...picked.map((item) => (filename: item.filename, bytes: item.bytes)),
+          ...toAdd.map((item) => (filename: item.filename, bytes: item.bytes)),
         ];
       });
     } catch (e) {
@@ -462,6 +522,12 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         for (var i = 0; i < _selectedPhotos.length; i++)
           if (i != index) _selectedPhotos[i],
       ];
+    });
+  }
+
+  void _removeExistingPhoto(String filename) {
+    setState(() {
+      _pendingRemovePhotos.add(filename);
     });
   }
 
@@ -642,13 +708,33 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         equipmentIds: _selectedEquipmentIds,
       );
 
-      final Workout saved;
+      Workout saved;
       if (_isEditing) {
-        saved = await _api.updateWorkout(
-          token: token,
-          workoutId: widget.workout!.id,
-          body: draft.toJson(),
-        );
+        final workoutId = widget.workout!.id;
+        try {
+          saved = await _api.updateWorkout(
+            token: token,
+            workoutId: workoutId,
+            body: draft.toJson(),
+          );
+          for (final filename in _pendingRemovePhotos.toList()) {
+            saved = await _api.deleteWorkoutMedia(
+              token: token,
+              workoutId: workoutId,
+              filename: filename,
+            );
+          }
+          if (_selectedPhotos.isNotEmpty) {
+            saved = await _api.addWorkoutMedia(
+              token: token,
+              workoutId: workoutId,
+              photos: _selectedPhotos,
+            );
+          }
+        } catch (e) {
+          await _reloadWorkoutAfterPartialSave(token, workoutId);
+          rethrow;
+        }
       } else {
         final fields = {
           'name': draft.name,
@@ -723,13 +809,17 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       equipment: _userEquipment,
       selectedEquipmentIds: _selectedEquipmentIds,
       selectedPhotos: _selectedPhotos,
+      existingPhotoFilenames: _keptExistingPhotos,
+      existingPhotoPreviewUrl: _isEditing
+          ? (filename) => _api.mediaPreviewUrl(widget.workout!.id, filename)
+          : null,
+      authToken: _authToken ?? '',
       isSubmitting: _isSubmitting,
       isPickingFile: _isPickingFile,
       isParsingTrack: _isParsingTrack,
       isPickingPhotos: _isPickingPhotos,
       showTitle: showTitle,
       trackReadOnly: _isEditing,
-      hidePhotos: _isEditing,
       onPickSportType: _pickSportType,
       onPickDate: _pickDate,
       onPickTime: _pickTime,
@@ -739,6 +829,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       onRemoveEquipment: _removeEquipment,
       onPickPhotos: _pickPhotos,
       onRemovePhoto: _removePhoto,
+      onRemoveExistingPhoto: _isEditing ? _removeExistingPhoto : null,
       onPickTrack: _pickTrack,
       onRemoveTrack: _removeTrack,
       onCancel: _handleCancel,

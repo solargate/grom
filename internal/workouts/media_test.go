@@ -161,6 +161,78 @@ func TestStoreAddMedia(t *testing.T) {
 	}
 }
 
+func TestStoreRemoveMedia(t *testing.T) {
+	dir := t.TempDir()
+	store := file.NewWorkoutsStore(dir)
+	svc := newTestService(dir)
+
+	created, err := svc.Create("runner", &workouts.Workout{
+		Name:      "Morning",
+		SportType: "Run",
+		StartDate: mustTime(t, "2026-07-08T10:00:00Z"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	img := image.NewRGBA(image.Rect(0, 0, 32, 32))
+	var raw bytes.Buffer
+	if err := png.Encode(&raw, img); err != nil {
+		t.Fatal(err)
+	}
+	data := raw.Bytes()
+
+	withMedia, err := svc.AddMedia("runner", created, []workouts.MediaFileInput{
+		{Filename: "keep.png", Data: data},
+		{Filename: "drop.png", Data: data},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(withMedia.MediaFiles) != 2 {
+		t.Fatalf("expected 2 media files, got %#v", withMedia.MediaFiles)
+	}
+
+	dirName, err := store.WorkoutDirName("runner", created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blobs := blobfs.NewStore(dir)
+
+	updated, err := svc.RemoveMedia("runner", created.ID, "drop.png")
+	if err != nil {
+		t.Fatalf("RemoveMedia() error = %v", err)
+	}
+	if !updated.HasMedia || len(updated.MediaFiles) != 1 || updated.MediaFiles[0] != "keep.png" {
+		t.Fatalf("unexpected media after remove: %+v", updated)
+	}
+
+	dropOrig := keys.WorkoutMediaOriginal("runner", dirName, "drop.png")
+	dropPrev := keys.WorkoutMediaPreview("runner", dirName, "drop.png")
+	if ok, _ := blobs.Exists(context.Background(), dropOrig); ok {
+		t.Fatal("expected original blob deleted")
+	}
+	if ok, _ := blobs.Exists(context.Background(), dropPrev); ok {
+		t.Fatal("expected preview blob deleted")
+	}
+	keepOrig := keys.WorkoutMediaOriginal("runner", dirName, "keep.png")
+	if ok, _ := blobs.Exists(context.Background(), keepOrig); !ok {
+		t.Fatal("expected kept original blob")
+	}
+
+	if _, err := svc.RemoveMedia("runner", created.ID, "missing.png"); err != workouts.ErrPhotoNotFound {
+		t.Fatalf("RemoveMedia missing = %v, want ErrPhotoNotFound", err)
+	}
+
+	cleared, err := svc.RemoveMedia("runner", created.ID, "keep.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cleared.HasMedia || len(cleared.MediaFiles) != 0 {
+		t.Fatalf("expected no media left: %+v", cleared)
+	}
+}
+
 func mustTime(t *testing.T, value string) time.Time {
 	t.Helper()
 	parsed, err := time.Parse(time.RFC3339, value)

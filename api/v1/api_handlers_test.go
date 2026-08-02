@@ -202,6 +202,77 @@ func TestWorkoutMapPreviewAndMedia(t *testing.T) {
 	expectStatus(t, w, http.StatusOK)
 }
 
+func TestWorkoutMediaAddAndDelete(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	var photoBuf bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 32, 32))
+	if err := png.Encode(&photoBuf, img); err != nil {
+		t.Fatal(err)
+	}
+	photoBytes := photoBuf.Bytes()
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name":       "Media edit",
+		"sport_type": "Run",
+		"start_date": "2026-07-08T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	id, _ := created["id"].(string)
+
+	w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts/"+id+"/media", token, nil,
+		map[string][]filePart{
+			"photos": {
+				{filename: "a.png", data: photoBytes},
+				{filename: "b.png", data: photoBytes},
+			},
+		},
+	)
+	expectStatus(t, w, http.StatusOK)
+	withMedia := decodeObject(t, w)
+	if withMedia["has_media"] != true {
+		t.Fatalf("expected has_media: %#v", withMedia)
+	}
+	mediaFiles, _ := withMedia["media_files"].([]any)
+	if len(mediaFiles) != 2 {
+		t.Fatalf("expected 2 media files: %#v", withMedia["media_files"])
+	}
+	first, _ := mediaFiles[0].(string)
+	second, _ := mediaFiles[1].(string)
+
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+id+"/media/"+first, nil, token)
+	expectStatus(t, w, http.StatusOK)
+	afterDelete := decodeObject(t, w)
+	remaining, _ := afterDelete["media_files"].([]any)
+	if len(remaining) != 1 || remaining[0] != second {
+		t.Fatalf("expected only %q left: %#v", second, afterDelete["media_files"])
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/media/"+first+"/preview", nil, token)
+	expectStatus(t, w, http.StatusNotFound)
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/media/"+second+"/preview", nil, token)
+	expectStatus(t, w, http.StatusOK)
+
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+id+"/media/"+second, nil, token)
+	expectStatus(t, w, http.StatusOK)
+	cleared := decodeObject(t, w)
+	if cleared["has_media"] != false {
+		t.Fatalf("expected has_media false: %#v", cleared)
+	}
+	if files, _ := cleared["media_files"].([]any); len(files) != 0 {
+		t.Fatalf("expected empty media_files: %#v", cleared["media_files"])
+	}
+
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+id+"/media/missing.png", nil, token)
+	expectStatus(t, w, http.StatusNotFound)
+
+	w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts/"+id+"/media", token, nil, nil)
+	expectStatus(t, w, http.StatusBadRequest)
+}
+
 func TestAPIDocsRedirect(t *testing.T) {
 	ta := setupTestApp(t)
 	v1.RegisterAPIDocs(ta.router)
@@ -335,6 +406,133 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 
 	if _, err := ta.app.Federation.Inbox().Get("alice", "bob", "22222222"); !errors.Is(err, workouts.ErrWorkoutNotFound) {
 		t.Fatalf("expected deleted workout, err=%v", err)
+	}
+}
+
+func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
+	ta := setupFederationTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+
+	var photoA, photoB bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 24, 24))
+	if err := png.Encode(&photoA, img); err != nil {
+		t.Fatal(err)
+	}
+	if err := png.Encode(&photoB, img); err != nil {
+		t.Fatal(err)
+	}
+
+	createObj := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"type":     "Create",
+		"actor":    "https://remote.example/users/bob",
+		"object": map[string]any{
+			"id":              "https://remote.example/users/bob/workouts/33333333",
+			"type":            "Note",
+			"name":            "Remote with photos",
+			"sportType":       "Run",
+			"startDate":       "2026-07-08T11:00:00Z",
+			"durationSeconds": 900,
+			"distance":        2000.0,
+			"mediaItems": []any{
+				map[string]any{
+					"filename":  "keep.png",
+					"mediaType": "image/png",
+					"data":      base64.StdEncoding.EncodeToString(photoA.Bytes()),
+				},
+				map[string]any{
+					"filename":  "drop.png",
+					"mediaType": "image/png",
+					"data":      base64.StdEncoding.EncodeToString(photoB.Bytes()),
+				},
+			},
+		},
+	}
+	data, err := json.Marshal(createObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
+	req.Header.Set("Content-Type", "application/activity+json")
+	w := httptest.NewRecorder()
+	ta.router.ServeHTTP(w, req)
+	expectStatus(t, w, http.StatusAccepted)
+
+	got, err := ta.app.Federation.Inbox().Get("alice", "bob", "33333333")
+	if err != nil {
+		t.Fatalf("inbox Get: %v", err)
+	}
+	if len(got.MediaFiles) != 2 {
+		t.Fatalf("expected 2 media files, got %#v", got.MediaFiles)
+	}
+
+	preview, err := ta.app.Federation.Inbox().MediaPreview("alice", "bob", "33333333", "drop.png")
+	if err != nil || len(preview) == 0 {
+		t.Fatalf("expected drop.png preview before update, err=%v", err)
+	}
+
+	updateObj := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"type":     "Update",
+		"actor":    "https://remote.example/users/bob",
+		"object": map[string]any{
+			"id":              "https://remote.example/users/bob/workouts/33333333",
+			"type":            "Note",
+			"name":            "Remote with photos edited",
+			"sportType":       "Run",
+			"startDate":       "2026-07-08T11:00:00Z",
+			"durationSeconds": 950,
+			"distance":        2100.0,
+			"mediaItems": []any{
+				map[string]any{
+					"filename":  "keep.png",
+					"mediaType": "image/png",
+					"data":      base64.StdEncoding.EncodeToString(photoA.Bytes()),
+				},
+				map[string]any{
+					"filename":  "new.png",
+					"mediaType": "image/png",
+					"data":      base64.StdEncoding.EncodeToString(photoB.Bytes()),
+				},
+			},
+		},
+	}
+	data, err = json.Marshal(updateObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
+	req.Header.Set("Content-Type", "application/activity+json")
+	w = httptest.NewRecorder()
+	ta.router.ServeHTTP(w, req)
+	expectStatus(t, w, http.StatusAccepted)
+
+	got, err = ta.app.Federation.Inbox().Get("alice", "bob", "33333333")
+	if err != nil {
+		t.Fatalf("inbox Get after update: %v", err)
+	}
+	if got.Name != "Remote with photos edited" {
+		t.Fatalf("updated name = %q", got.Name)
+	}
+	if len(got.MediaFiles) != 2 {
+		t.Fatalf("expected 2 media files after update, got %#v", got.MediaFiles)
+	}
+	want := map[string]bool{"keep.png": true, "new.png": true}
+	for _, name := range got.MediaFiles {
+		if !want[name] {
+			t.Fatalf("unexpected media file %q in %#v", name, got.MediaFiles)
+		}
+		delete(want, name)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing media files: %#v", want)
+	}
+
+	if _, err := ta.app.Federation.Inbox().MediaPreview("alice", "bob", "33333333", "drop.png"); !errors.Is(err, workouts.ErrPhotoNotFound) {
+		t.Fatalf("expected drop.png removed, err=%v", err)
+	}
+	if preview, err := ta.app.Federation.Inbox().MediaPreview("alice", "bob", "33333333", "new.png"); err != nil || len(preview) == 0 {
+		t.Fatalf("expected new.png preview, err=%v", err)
 	}
 }
 
