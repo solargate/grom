@@ -1026,11 +1026,6 @@ func TestWorkoutUpdateEquipmentDistanceAndForeignACL(t *testing.T) {
 		"name": "Nope", "sport_type": "Run", "start_date": "2026-07-08T10:00:00Z",
 	}, bobToken)
 	expectStatus(t, w, http.StatusNotFound)
-
-	// Drain async equipment distance workers before TempDir cleanup.
-	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestCreateWorkoutCopiesEquipmentFromPreviousSameSport(t *testing.T) {
@@ -1082,10 +1077,6 @@ func TestCreateWorkoutCopiesEquipmentFromPreviousSameSport(t *testing.T) {
 	if len(runIDs) != 1 || runIDs[0] != eqID {
 		t.Fatalf("expected last_equipment_by_sport Run updated, got %#v", lastBySport)
 	}
-
-	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestCreateWorkoutExplicitEmptyEquipmentSkipsDefault(t *testing.T) {
@@ -1126,10 +1117,6 @@ func TestCreateWorkoutExplicitEmptyEquipmentSkipsDefault(t *testing.T) {
 	if eqList, ok := created["equipment"].([]any); ok && len(eqList) != 0 {
 		t.Fatalf("multipart explicit [] should not copy previous, got %#v", created["equipment"])
 	}
-
-	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestCreateWorkoutMultipartOmitsEquipmentUsesDefault(t *testing.T) {
@@ -1163,10 +1150,6 @@ func TestCreateWorkoutMultipartOmitsEquipmentUsesDefault(t *testing.T) {
 	item, _ := equipment[0].(map[string]any)
 	if item["id"] != eqID {
 		t.Fatalf("unexpected equipment: %#v", item)
-	}
-
-	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -1203,10 +1186,6 @@ func TestUpdateWorkoutDoesNotCopyPreviousEquipment(t *testing.T) {
 	updated := decodeObject(t, w)
 	if eqList, ok := updated["equipment"].([]any); ok && len(eqList) != 0 {
 		t.Fatalf("update with empty equipment_ids should clear, got %#v", updated["equipment"])
-	}
-
-	if err := ta.app.EquipmentDistance.RecalculateForIDs("alice", []string{eqID}); err != nil {
-		t.Fatal(err)
 	}
 }
 

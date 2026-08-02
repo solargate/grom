@@ -18,6 +18,7 @@ type Service struct {
 	equipment equipment.Repository
 	workouts  WorkoutLister
 	locks     sync.Map
+	wg        sync.WaitGroup
 }
 
 func NewService(equipment equipment.Repository, workouts WorkoutLister) *Service {
@@ -30,6 +31,11 @@ func NewService(equipment equipment.Repository, workouts WorkoutLister) *Service
 func (s *Service) lockFor(nickname string) *sync.Mutex {
 	mu, _ := s.locks.LoadOrStore(nickname, &sync.Mutex{})
 	return mu.(*sync.Mutex)
+}
+
+// Wait blocks until all scheduled recalculations finish.
+func (s *Service) Wait() {
+	s.wg.Wait()
 }
 
 // RecalculateForIDs sums workout distances per equipment ID and stores totals in meters.
@@ -73,16 +79,24 @@ func (s *Service) ScheduleRecalculateForIDs(nickname string, ids []string) {
 	if len(ids) == 0 {
 		return
 	}
-	go s.runLocked(nickname, func() error {
-		return s.RecalculateForIDs(nickname, ids)
-	}, "for_ids")
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runLocked(nickname, func() error {
+			return s.RecalculateForIDs(nickname, ids)
+		}, "for_ids")
+	}()
 }
 
 // ScheduleRecalculateAll runs RecalculateAll asynchronously for nickname.
 func (s *Service) ScheduleRecalculateAll(nickname string) {
-	go s.runLocked(nickname, func() error {
-		return s.RecalculateAll(nickname)
-	}, "all")
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runLocked(nickname, func() error {
+			return s.RecalculateAll(nickname)
+		}, "all")
+	}()
 }
 
 func (s *Service) runLocked(nickname string, fn func() error, scope string) {

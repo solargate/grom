@@ -114,3 +114,29 @@ func TestCollectWorkoutEquipmentIDsDedupes(t *testing.T) {
 		t.Fatalf("ids = %v, want [a b]", ids)
 	}
 }
+
+func TestScheduleRecalculateWaitDrainsWorkers(t *testing.T) {
+	dir := t.TempDir()
+	store := file.NewEquipmentStore(dir)
+	item, err := store.Create("athlete", &equipment.Equipment{Type: equipment.TypeShoes, Name: "Road"})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	svc := distance.NewService(store, stubWorkoutLister{
+		items: []workouts.Workout{{
+			Distance:  4200,
+			Equipment: []workouts.WorkoutEquipment{{ID: item.ID}},
+		}},
+	})
+	svc.ScheduleRecalculateForIDs("athlete", []string{item.ID})
+	svc.Wait()
+
+	got, err := store.FindByID("athlete", item.ID)
+	if err != nil {
+		t.Fatalf("FindByID: %v", err)
+	}
+	if got.Distance != 4200 {
+		t.Fatalf("distance = %v, want 4200", got.Distance)
+	}
+}

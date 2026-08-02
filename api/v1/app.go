@@ -87,6 +87,9 @@ func NewApp() (*App, error) {
 }
 
 func (a *App) Close() error {
+	if a.EquipmentDistance != nil {
+		a.EquipmentDistance.Wait()
+	}
 	if a.Backend == nil {
 		return nil
 	}
