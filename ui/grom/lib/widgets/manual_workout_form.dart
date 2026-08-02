@@ -9,6 +9,9 @@ import 'package:grom/models/sport_types.dart';
 
 import 'equipment_picker_field.dart';
 
+/// Matches server `workouts.MaxPhotosPerWorkout`.
+const kMaxPhotosPerWorkout = 20;
+
 class ManualWorkoutForm extends StatelessWidget {
   const ManualWorkoutForm({
     super.key,
@@ -25,13 +28,15 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.equipment,
     required this.selectedEquipmentIds,
     required this.selectedPhotos,
+    this.existingPhotoFilenames = const [],
+    this.existingPhotoPreviewUrl,
+    this.authToken = '',
     required this.isSubmitting,
     required this.isPickingFile,
     required this.isParsingTrack,
     required this.isPickingPhotos,
     required this.showTitle,
     this.trackReadOnly = false,
-    this.hidePhotos = false,
     required this.onPickSportType,
     required this.onPickDate,
     required this.onPickTime,
@@ -41,6 +46,7 @@ class ManualWorkoutForm extends StatelessWidget {
     required this.onRemoveEquipment,
     required this.onPickPhotos,
     required this.onRemovePhoto,
+    this.onRemoveExistingPhoto,
     required this.onPickTrack,
     required this.onRemoveTrack,
     required this.onCancel,
@@ -60,13 +66,15 @@ class ManualWorkoutForm extends StatelessWidget {
   final List<Equipment> equipment;
   final List<String> selectedEquipmentIds;
   final List<({String filename, Uint8List bytes})> selectedPhotos;
+  final List<String> existingPhotoFilenames;
+  final String Function(String filename)? existingPhotoPreviewUrl;
+  final String authToken;
   final bool isSubmitting;
   final bool isPickingFile;
   final bool isParsingTrack;
   final bool isPickingPhotos;
   final bool showTitle;
   final bool trackReadOnly;
-  final bool hidePhotos;
   final VoidCallback onPickSportType;
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
@@ -76,6 +84,7 @@ class ManualWorkoutForm extends StatelessWidget {
   final ValueChanged<String> onRemoveEquipment;
   final VoidCallback onPickPhotos;
   final ValueChanged<int> onRemovePhoto;
+  final ValueChanged<String>? onRemoveExistingPhoto;
   final VoidCallback onPickTrack;
   final VoidCallback onRemoveTrack;
   final VoidCallback onCancel;
@@ -220,16 +229,20 @@ class ManualWorkoutForm extends StatelessWidget {
               onRemove: onRemoveEquipment,
             ),
             const SizedBox(height: 16),
-            if (!hidePhotos) ...[
-              _WorkoutPhotosField(
-                photos: selectedPhotos,
-                isSubmitting: isSubmitting,
-                isPickingPhotos: isPickingPhotos,
-                onPickPhotos: onPickPhotos,
-                onRemovePhoto: onRemovePhoto,
-              ),
-              const SizedBox(height: 16),
-            ],
+            _WorkoutPhotosField(
+              existingFilenames: existingPhotoFilenames,
+              existingPreviewUrl: existingPhotoPreviewUrl,
+              authToken: authToken,
+              photos: selectedPhotos,
+              canAddPhotos: existingPhotoFilenames.length + selectedPhotos.length <
+                  kMaxPhotosPerWorkout,
+              isSubmitting: isSubmitting,
+              isPickingPhotos: isPickingPhotos,
+              onPickPhotos: onPickPhotos,
+              onRemovePhoto: onRemovePhoto,
+              onRemoveExistingPhoto: onRemoveExistingPhoto,
+            ),
+            const SizedBox(height: 16),
             if (!trackReadOnly || trackFilename != null) ...[
               _TrackPickerField(
                 trackFilename: trackFilename,
@@ -276,28 +289,44 @@ class ManualWorkoutForm extends StatelessWidget {
 
 class _WorkoutPhotosField extends StatelessWidget {
   const _WorkoutPhotosField({
+    required this.existingFilenames,
+    required this.existingPreviewUrl,
+    required this.authToken,
     required this.photos,
+    required this.canAddPhotos,
     required this.isSubmitting,
     required this.isPickingPhotos,
     required this.onPickPhotos,
     required this.onRemovePhoto,
+    this.onRemoveExistingPhoto,
   });
 
+  final List<String> existingFilenames;
+  final String Function(String filename)? existingPreviewUrl;
+  final String authToken;
   final List<({String filename, Uint8List bytes})> photos;
+  final bool canAddPhotos;
   final bool isSubmitting;
   final bool isPickingPhotos;
   final VoidCallback onPickPhotos;
   final ValueChanged<int> onRemovePhoto;
+  final ValueChanged<String>? onRemoveExistingPhoto;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final totalCount = existingFilenames.length + photos.length;
+    final headers = authToken.isEmpty
+        ? null
+        : {'Authorization': 'Bearer $authToken'};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton.tonalIcon(
-          onPressed: (isSubmitting || isPickingPhotos) ? null : onPickPhotos,
+          onPressed: (isSubmitting || isPickingPhotos || !canAddPhotos)
+              ? null
+              : onPickPhotos,
           icon: isPickingPhotos
               ? const SizedBox(
                   width: 20,
@@ -307,48 +336,105 @@ class _WorkoutPhotosField extends StatelessWidget {
               : const Icon(Icons.add_photo_alternate_outlined),
           label: Text(l10n.addPhotos),
         ),
-        if (photos.isNotEmpty) ...[
+        if (totalCount > 0) ...[
           const SizedBox(height: 8),
-          Text(l10n.photosSelected(photos.length)),
+          Text(l10n.photosSelected(totalCount)),
           const SizedBox(height: 8),
           SizedBox(
             height: 72,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: photos.length,
+              itemCount: totalCount,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final photo = photos[index];
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(
-                        photo.bytes,
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: -8,
-                      right: -8,
-                      child: IconButton(
-                        tooltip: l10n.removePhoto,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: isSubmitting
-                            ? null
-                            : () => onRemovePhoto(index),
-                        icon: const Icon(Icons.cancel, size: 20),
-                      ),
-                    ),
-                  ],
+                if (index < existingFilenames.length) {
+                  final filename = existingFilenames[index];
+                  final url = existingPreviewUrl?.call(filename);
+                  return _PhotoThumb(
+                    isSubmitting: isSubmitting,
+                    onRemove: onRemoveExistingPhoto == null
+                        ? null
+                        : () => onRemoveExistingPhoto!(filename),
+                    removeTooltip: l10n.removePhoto,
+                    child: url == null || url.isEmpty
+                        ? const ColoredBox(
+                            color: Color(0xFFE0E0E0),
+                            child: Icon(Icons.broken_image_outlined),
+                          )
+                        : Image.network(
+                            url,
+                            headers: headers,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const ColoredBox(
+                                color: Color(0xFFE0E0E0),
+                                child: Icon(Icons.broken_image_outlined),
+                              );
+                            },
+                          ),
+                  );
+                }
+                final photo = photos[index - existingFilenames.length];
+                final newIndex = index - existingFilenames.length;
+                return _PhotoThumb(
+                  isSubmitting: isSubmitting,
+                  onRemove: () => onRemovePhoto(newIndex),
+                  removeTooltip: l10n.removePhoto,
+                  child: Image.memory(
+                    photo.bytes,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                  ),
                 );
               },
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({
+    required this.child,
+    required this.isSubmitting,
+    required this.removeTooltip,
+    this.onRemove,
+  });
+
+  final Widget child;
+  final bool isSubmitting;
+  final String removeTooltip;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: 72,
+            height: 72,
+            child: child,
+          ),
+        ),
+        if (onRemove != null)
+          Positioned(
+            top: -8,
+            right: -8,
+            child: IconButton(
+              tooltip: removeTooltip,
+              visualDensity: VisualDensity.compact,
+              onPressed: isSubmitting ? null : onRemove,
+              icon: const Icon(Icons.cancel, size: 20),
+            ),
+          ),
       ],
     );
   }

@@ -153,6 +153,8 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.GET("/:id/map-preview", a.getWorkoutMapPreview)
 		workoutGroup.GET("/:id/media/:filename/preview", a.getWorkoutMediaPreview)
 		workoutGroup.GET("/:id/media/:filename", a.getWorkoutMediaOriginal)
+		workoutGroup.POST("/:id/media", a.addWorkoutMedia)
+		workoutGroup.DELETE("/:id/media/:filename", a.deleteWorkoutMedia)
 		workoutGroup.GET("/:id", a.getWorkout)
 		workoutGroup.PUT("/:id", a.updateWorkout)
 		workoutGroup.DELETE("/:id", a.deleteWorkout)

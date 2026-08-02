@@ -313,6 +313,56 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<Workout> addWorkoutMedia({
+    required String token,
+    required String workoutId,
+    required List<({String filename, List<int> bytes})> photos,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _uri('/api/v1/workouts/$workoutId/media'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    for (final photo in photos) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'photos',
+          photo.bytes,
+          filename: photo.filename,
+        ),
+      );
+    }
+
+    final streamed = await _client.send(request);
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<Workout> deleteWorkoutMedia({
+    required String token,
+    required String workoutId,
+    required String filename,
+  }) async {
+    final encoded = Uri.encodeComponent(filename);
+    final response = await _client.delete(
+      _uri('/api/v1/workouts/$workoutId/media/$encoded'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Workout.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Workout> getWorkout({
     required String token,
     required String workoutId,

@@ -217,6 +217,50 @@ func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFil
 	return &result, nil
 }
 
+// RemoveMedia deletes one photo (original + preview) from a workout and updates metadata.
+func (svc *Service) RemoveMedia(nickname, workoutID, filename string) (*Workout, error) {
+	workout, err := svc.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	safeName, err := SanitizeMediaFilename(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	idx := -1
+	for i, name := range workout.MediaFiles {
+		if name == safeName {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return nil, ErrPhotoNotFound
+	}
+
+	dirName, err := svc.repo.WorkoutDirName(nickname, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	_ = svc.blobs.Delete(ctx, keys.WorkoutMediaOriginal(nickname, dirName, safeName))
+	_ = svc.blobs.Delete(ctx, keys.WorkoutMediaPreview(nickname, dirName, safeName))
+
+	workout.MediaFiles = append(workout.MediaFiles[:idx], workout.MediaFiles[idx+1:]...)
+	workout.HasMedia = len(workout.MediaFiles) > 0
+
+	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
+		return nil, err
+	}
+
+	svc.enrichWorkout(nickname, workout)
+	result := *workout
+	return &result, nil
+}
+
 func (svc *Service) MediaOriginal(nickname, workoutID, filename string) ([]byte, string, error) {
 	if _, err := svc.repo.Get(nickname, workoutID); err != nil {
 		return nil, "", err

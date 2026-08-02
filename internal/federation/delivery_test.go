@@ -142,10 +142,15 @@ func TestDeliverWorkoutUpdate(t *testing.T) {
 		StartDate:       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
 		DurationSeconds: 3600,
 		Distance:        10000,
+		MediaFiles:      []string{"shot.png"},
+		HasMedia:        true,
+	}
+	media := []workouts.MediaFileInput{
+		{Filename: "shot.png", Data: []byte{0x89, 0x50, 0x4e, 0x47}},
 	}
 
 	delivery := &Delivery{client: server.Client()}
-	if err := delivery.DeliverWorkoutUpdate("bob", workout, []string{server.URL}, nil, nil); err != nil {
+	if err := delivery.DeliverWorkoutUpdate("bob", workout, []string{server.URL}, nil, media); err != nil {
 		t.Fatalf("DeliverWorkoutUpdate() error = %v", err)
 	}
 	if len(received) != 1 {
@@ -168,7 +173,11 @@ func TestDeliverWorkoutUpdate(t *testing.T) {
 	if !ok {
 		t.Fatalf("mediaItems type = %T", object["mediaItems"])
 	}
-	if len(mediaItems) != 0 {
-		t.Fatalf("expected empty mediaItems, got %#v", mediaItems)
+	if len(mediaItems) != 1 {
+		t.Fatalf("expected 1 mediaItems, got %#v", mediaItems)
+	}
+	item, ok := mediaItems[0].(map[string]any)
+	if !ok || item["filename"] != "shot.png" {
+		t.Fatalf("unexpected media item: %#v", mediaItems[0])
 	}
 }
