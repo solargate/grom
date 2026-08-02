@@ -253,7 +253,7 @@ class _IntegrationPageState extends State<IntegrationPage> {
             children: [
               TextSpan(text: l10n.stravaImportDescriptionBefore),
               TextSpan(
-                text: l10n.stravaDownloadArchiveUrl,
+                text: l10n.stravaImportDescriptionLink,
                 style: TextStyle(
                   color: theme.colorScheme.primary,
                   decoration: TextDecoration.underline,

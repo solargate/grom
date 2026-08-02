@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Integration screen shows Strava export instructions with a link to download the account archive before the import button
+- Integration screen shows Strava export instructions with an inline link to the Strava download page before the import button
 - Android: Health Sync + Google Drive workout import (Integration toggle, Home sync button, Drive folder picker); `POST /workouts` accepts `external_id`; `GET /workouts/external` checks duplicates
 
 ### Changed

@@ -1759,8 +1759,14 @@ abstract class AppLocalizations {
   /// No description provided for @stravaImportDescriptionBefore.
   ///
   /// In en, this message translates to:
-  /// **'You can download an archive of your workouts from the Strava website ('**
+  /// **'You can download an archive of your workouts from the '**
   String get stravaImportDescriptionBefore;
+
+  /// No description provided for @stravaImportDescriptionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava website'**
+  String get stravaImportDescriptionLink;
 
   /// No description provided for @stravaDownloadArchiveUrl.
   ///
@@ -1771,7 +1777,7 @@ abstract class AppLocalizations {
   /// No description provided for @stravaImportDescriptionAfter.
   ///
   /// In en, this message translates to:
-  /// **'). Upload the resulting ZIP archive to Grom. All workouts will be imported with tracks, equipment, and photos.'**
+  /// **'. Upload the resulting ZIP archive to Grom. All workouts will be imported with tracks, equipment, and photos.'**
   String get stravaImportDescriptionAfter;
 
   /// No description provided for @importStravaArchive.

@@ -884,7 +884,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stravaImportDescriptionBefore =>
-      'You can download an archive of your workouts from the Strava website (';
+      'You can download an archive of your workouts from the ';
+
+  @override
+  String get stravaImportDescriptionLink => 'Strava website';
 
   @override
   String get stravaDownloadArchiveUrl =>
@@ -892,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stravaImportDescriptionAfter =>
-      '). Upload the resulting ZIP archive to Grom. All workouts will be imported with tracks, equipment, and photos.';
+      '. Upload the resulting ZIP archive to Grom. All workouts will be imported with tracks, equipment, and photos.';
 
   @override
   String get importStravaArchive => 'Import Strava archive';
