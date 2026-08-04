@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-04
+
 ### Added
 
 - Edit workout: add and remove photos (original + preview); `POST/DELETE /api/v1/workouts/{id}/media` with federation Update delivery
@@ -130,7 +132,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.4.1...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/solargate/grom/releases/tag/0.5.0
 [0.4.1]: https://github.com/solargate/grom/releases/tag/0.4.1
 [0.4.0]: https://github.com/solargate/grom/releases/tag/0.4.0
 [0.3.0]: https://github.com/solargate/grom/releases/tag/0.3.0
