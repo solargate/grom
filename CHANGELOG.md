@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration screen shows Strava export instructions with an inline link to the Strava download page before the import button
 - Android: Health Sync + Google Drive workout import (Integration toggle, Home sync button, Drive folder picker); `POST /workouts` accepts `external_id`; `GET /workouts/external` checks duplicates
 
+### Fixed
+
+- Android workout list: add 4px gaps under the map preview and photo strip so media is not flush against the map or card edge
+
 ### Changed
 
 - Workout photo picker is disabled once 20 photos are selected (create and edit)

@@ -8,6 +8,7 @@ import '../models/workout.dart';
 import 'workout_map_preview.dart';
 
 const kWorkoutMediaVisibleCount = 7;
+const kWorkoutMediaGap = 4.0;
 
 class WorkoutMediaStrip extends StatefulWidget {
   const WorkoutMediaStrip({
@@ -78,7 +79,8 @@ class _WorkoutMediaStripState extends State<WorkoutMediaStrip> {
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.workout.mediaFiles.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 4),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: kWorkoutMediaGap),
                 itemBuilder: (context, index) {
                   final filename = widget.workout.mediaFiles[index];
                   return _WorkoutMediaThumb(

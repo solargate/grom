@@ -52,9 +52,20 @@ class WorkoutCard extends StatelessWidget {
   Widget _buildContent(BuildContext context, ThemeData theme) {
     final api = ApiRequest();
     final owner = workout.ownerNickname;
-    final mediaPadding = compact
-        ? EdgeInsets.zero
-        : const EdgeInsets.fromLTRB(16, 0, 16, 16);
+    final EdgeInsets mapPadding;
+    final EdgeInsets mediaPadding;
+    if (compact) {
+      mapPadding = EdgeInsets.only(
+        bottom: workout.hasMedia ? 0 : kWorkoutMediaGap,
+      );
+      mediaPadding = EdgeInsets.only(
+        top: workout.hasMapPreview ? kWorkoutMediaGap : 0,
+        bottom: kWorkoutMediaGap,
+      );
+    } else {
+      mapPadding = const EdgeInsets.fromLTRB(16, 0, 16, 16);
+      mediaPadding = const EdgeInsets.fromLTRB(16, 0, 16, 16);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,7 +83,7 @@ class WorkoutCard extends StatelessWidget {
         ),
         if (workout.hasMapPreview)
           Padding(
-            padding: mediaPadding,
+            padding: mapPadding,
             child: WorkoutMapPreview(
               child: Image.network(
                 api.mapPreviewUrl(workout.id, owner: owner),
