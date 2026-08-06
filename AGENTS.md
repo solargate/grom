@@ -149,11 +149,12 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`); newly allocated IDs are unique across all local users on the instance.
 2. **Tracks:** parse/enrich via `internal/tracks`; attach through workout service, not by writing files from handlers alone.
 3. **Social feed** merges local workouts with federated inbox content (`workouts.FeedService` + federation adapters).
-4. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
-5. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
-6. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
-7. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
-8. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
+4. **Workout likes:** cannot like own workouts; API `GET/POST/DELETE /workouts/{id}/likes` (optional `owner` query like get workout). Responses expose `likes_count`, `liked_by_me`, `can_like`. Local likes via `workouts.LikesRepository`; file: `likes.yaml` per workout, federated cache/outbox under `federation/`; bbolt: `workout_likes` / `fed_workout_likes` / `like_activities`. Federated like/unlike delivers ActivityPub `Like` / `Undo`; inbox applies remote likes and caches `likesCount` / `likedUsers` from Create objects. UI: `WorkoutLikeBar` on list cards and detail.
+5. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
+6. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
+7. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
+8. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
+9. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
 
 ## Agent do / don't
 
