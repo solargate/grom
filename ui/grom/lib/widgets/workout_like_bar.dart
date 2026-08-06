@@ -489,12 +489,12 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                           children: [
                             Text(user.handle),
                             const SizedBox(height: 4),
-                            Text(comment.text),
-                            const SizedBox(height: 2),
                             Text(
                               dateFormat.format(comment.datetime.toLocal()),
                               style: theme.textTheme.bodySmall,
                             ),
+                            const SizedBox(height: 2),
+                            Text(comment.text),
                           ],
                         ),
                         isThreeLine: true,
