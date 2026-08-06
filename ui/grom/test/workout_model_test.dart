@@ -101,4 +101,69 @@ void main() {
     expect(json.containsKey('equipment_ids'), isTrue);
     expect(json['equipment_ids'], isEmpty);
   });
+
+  test('Workout.fromJson reads likes summary fields', () {
+    final withLikes = Workout.fromJson({
+      'id': 'workout-3',
+      'name': 'Liked run',
+      'sport_type': 'Run',
+      'start_date': '2026-07-17T06:30:00Z',
+      'duration_seconds': 1800,
+      'distance': 5000,
+      'likes_count': 3,
+      'liked_by_me': true,
+      'can_like': true,
+    });
+    expect(withLikes.likesCount, 3);
+    expect(withLikes.likedByMe, isTrue);
+    expect(withLikes.canLike, isTrue);
+
+    final defaults = Workout.fromJson({
+      'id': 'workout-4',
+      'name': 'Plain run',
+      'sport_type': 'Run',
+      'start_date': '2026-07-17T06:30:00Z',
+      'duration_seconds': 1800,
+      'distance': 5000,
+    });
+    expect(defaults.likesCount, 0);
+    expect(defaults.likedByMe, isFalse);
+    expect(defaults.canLike, isFalse);
+  });
+
+  test('WorkoutLikeState and WorkoutLikesResponse parse API payloads', () {
+    final state = WorkoutLikeState.fromJson({
+      'count': 2,
+      'liked_by_me': true,
+    });
+    expect(state.count, 2);
+    expect(state.likedByMe, isTrue);
+
+    final emptyState = WorkoutLikeState.fromJson(<String, dynamic>{});
+    expect(emptyState.count, 0);
+    expect(emptyState.likedByMe, isFalse);
+
+    final likes = WorkoutLikesResponse.fromJson({
+      'count': 1,
+      'users': [
+        {
+          'handle': 'alice@localhost',
+          'nickname': 'alice',
+          'name': 'Alice',
+          'is_local': true,
+          'has_avatar': true,
+          'avatar_url': '/api/v1/users/alice/avatar',
+        },
+      ],
+    });
+    expect(likes.count, 1);
+    expect(likes.users, hasLength(1));
+    expect(likes.users.single.handle, 'alice@localhost');
+    expect(likes.users.single.hasAvatar, isTrue);
+    expect(likes.users.single.avatarUrl, '/api/v1/users/alice/avatar');
+
+    final noUsers = WorkoutLikesResponse.fromJson({'count': 0});
+    expect(noUsers.count, 0);
+    expect(noUsers.users, isEmpty);
+  });
 }
