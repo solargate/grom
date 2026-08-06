@@ -52,6 +52,8 @@ type Workout struct {
 	ExternalID           *ExternalID        `yaml:"external_id,omitempty" json:"external_id,omitempty"`
 	Equipment            []WorkoutEquipment `yaml:"equipment,omitempty" json:"equipment,omitempty"`
 	MediaFiles           []string           `yaml:"media_files,omitempty" json:"media_files,omitempty"`
+	LikesCount           int                `yaml:"likes_count,omitempty" json:"likes_count,omitempty"`
+	LikedUsers           []WorkoutLikeUser  `yaml:"liked_users,omitempty" json:"liked_users,omitempty"`
 	HasMapPreview        bool               `yaml:"-" json:"has_map_preview"`
 	HasMedia             bool               `yaml:"-" json:"has_media"`
 }

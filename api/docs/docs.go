@@ -2508,6 +2508,9 @@ const docTemplate = `{
                     "type": "number",
                     "example": 415
                 },
+                "can_like": {
+                    "type": "boolean"
+                },
                 "description": {
                     "type": "string",
                     "example": "Easy session"
@@ -2560,6 +2563,12 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "38472901"
+                },
+                "liked_by_me": {
+                    "type": "boolean"
+                },
+                "likes_count": {
+                    "type": "integer"
                 },
                 "media_files": {
                     "type": "array",

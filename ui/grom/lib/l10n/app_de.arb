@@ -114,6 +114,18 @@
   "workoutSaved": "Training gespeichert",
   "failedToSaveWorkout": "Training konnte nicht gespeichert werden",
   "failedToLoadWorkouts": "Trainings konnten nicht geladen werden",
+  "failedToLoadWorkoutLikes": "Workout-Likes konnten nicht geladen werden",
+  "failedToUpdateWorkoutLike": "Workout-Like konnte nicht aktualisiert werden",
+  "workoutLikeAction": "Training liken",
+  "workoutNoLikesYet": "Noch keine Likes",
+  "workoutLikesTitle": "Likes ({count})",
+  "@workoutLikesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "retry": "Erneut versuchen",
   "expandMap": "Karte vergrößern",
   "addPhotos": "Fotos hinzufügen",

@@ -14,6 +14,7 @@ import (
 type Backend interface {
 	Users() users.Repository
 	Workouts() *workouts.Service
+	Likes() workouts.LikesRepository
 	Equipment() equipment.Repository
 	Social() social.Repository
 	Federation() federation.Storage

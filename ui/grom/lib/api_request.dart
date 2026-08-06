@@ -118,7 +118,8 @@ class ApiRequest {
     if (base == null || base.isEmpty) {
       return Uri.parse(path);
     }
-    return Uri.parse(base).resolve(path.startsWith('/') ? path.substring(1) : path);
+    return Uri.parse(base)
+        .resolve(path.startsWith('/') ? path.substring(1) : path);
   }
 
   Uri _uri(String path) => resolveUri(path);
@@ -288,9 +289,11 @@ class ApiRequest {
       if (base == null || base.isEmpty) {
         return avatarUrl;
       }
-      return Uri.parse(base).resolve(
-        avatarUrl.startsWith('/') ? avatarUrl.substring(1) : avatarUrl,
-      ).toString();
+      return Uri.parse(base)
+          .resolve(
+            avatarUrl.startsWith('/') ? avatarUrl.substring(1) : avatarUrl,
+          )
+          .toString();
     }
     if (!hasAvatar) {
       return '';
@@ -411,6 +414,66 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
+    throw _parseError(response);
+  }
+
+  Future<WorkoutLikesResponse> getWorkoutLikes({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/likes');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutLikesResponse.fromJson(json);
+    }
+    throw _parseError(response);
+  }
+
+  Future<WorkoutLikeState> likeWorkout({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/likes');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.post(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutLikeState.fromJson(json);
+    }
+    throw _parseError(response);
+  }
+
+  Future<WorkoutLikeState> unlikeWorkout({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/likes');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.delete(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutLikeState.fromJson(json);
+    }
     throw _parseError(response);
   }
 
@@ -689,7 +752,8 @@ class ApiRequest {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as List<dynamic>;
       return json
-          .map((item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
+          .map(
+              (item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
           .toList();
     }
 

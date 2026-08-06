@@ -114,6 +114,18 @@
   "workoutSaved": "Тренировка сохранена",
   "failedToSaveWorkout": "Не удалось сохранить тренировку",
   "failedToLoadWorkouts": "Не удалось загрузить тренировки",
+  "failedToLoadWorkoutLikes": "Не удалось загрузить лайки тренировки",
+  "failedToUpdateWorkoutLike": "Не удалось обновить лайк тренировки",
+  "workoutLikeAction": "Лайкнуть тренировку",
+  "workoutNoLikesYet": "Пока нет лайков",
+  "workoutLikesTitle": "Лайки ({count})",
+  "@workoutLikesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "retry": "Повторить",
   "expandMap": "Расширить карту",
   "addPhotos": "Добавить фотографии",

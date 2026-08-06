@@ -513,6 +513,8 @@ definitions:
       calories:
         example: 415
         type: number
+      can_like:
+        type: boolean
       description:
         example: Easy session
         type: string
@@ -552,6 +554,10 @@ definitions:
       id:
         example: "38472901"
         type: string
+      liked_by_me:
+        type: boolean
+      likes_count:
+        type: integer
       media_files:
         items:
           type: string

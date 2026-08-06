@@ -139,6 +139,60 @@ func (d *Delivery) DeliverUndo(follow *social.Follow) error {
 	return nil
 }
 
+func remoteActorURLFromHandle(handle string) string {
+	idx := strings.LastIndex(handle, "@")
+	if idx <= 0 || idx >= len(handle)-1 {
+		return ""
+	}
+	nickname := handle[:idx]
+	domain := handle[idx+1:]
+	return fmt.Sprintf("https://%s/users/%s", domain, nickname)
+}
+
+func (d *Delivery) DeliverWorkoutLike(actorNickname, targetHandle, objectID string) (string, error) {
+	targetActor := remoteActorURLFromHandle(targetHandle)
+	if targetActor == "" {
+		return "", fmt.Errorf("invalid target handle")
+	}
+	activityID := fmt.Sprintf("%s/activities/%s", actorURL(actorNickname), uuid.NewString())
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       activityID,
+		"type":     "Like",
+		"actor":    actorURL(actorNickname),
+		"object":   objectID,
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	if err := d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity); err != nil {
+		return "", err
+	}
+	return activityID, nil
+}
+
+func (d *Delivery) DeliverWorkoutUndoLike(actorNickname, targetHandle, objectID, likeActivityID string) error {
+	targetActor := remoteActorURLFromHandle(targetHandle)
+	if targetActor == "" {
+		return fmt.Errorf("invalid target handle")
+	}
+	if likeActivityID == "" {
+		likeActivityID = fmt.Sprintf("%s/activities/%s", actorURL(actorNickname), uuid.NewString())
+	}
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       fmt.Sprintf("%s/undos/%s", actorURL(actorNickname), uuid.NewString()),
+		"type":     "Undo",
+		"actor":    actorURL(actorNickname),
+		"object": map[string]any{
+			"id":     likeActivityID,
+			"type":   "Like",
+			"actor":  actorURL(actorNickname),
+			"object": objectID,
+		},
+		"to": []string{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	return d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity)
+}
+
 func (d *Delivery) ResolveRemote(parsed social.ParsedHandle) (*social.UserSearchResult, error) {
 	if !config.Cfg.Federation.Enabled {
 		return nil, social.ErrRemoteNotReady
@@ -245,6 +299,22 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 	}
 	if workout.Calories != nil && *workout.Calories > 0 {
 		object["calories"] = *workout.Calories
+	}
+	if workout.LikesCount > 0 {
+		object["likesCount"] = workout.LikesCount
+	}
+	if len(workout.LikedUsers) > 0 {
+		users := make([]map[string]any, 0, len(workout.LikedUsers))
+		for _, user := range workout.LikedUsers {
+			users = append(users, map[string]any{
+				"handle":    user.Handle,
+				"nickname":  user.Nickname,
+				"name":      user.Name,
+				"is_local":  user.IsLocal,
+				"avatarUrl": user.AvatarURL,
+			})
+		}
+		object["likedUsers"] = users
 	}
 	if workout.Track != "" && len(trackData) > 0 {
 		object["trackData"] = base64.StdEncoding.EncodeToString(trackData)

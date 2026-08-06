@@ -490,6 +490,36 @@ abstract class AppLocalizations {
   /// **'Failed to load workouts'**
   String get failedToLoadWorkouts;
 
+  /// No description provided for @failedToLoadWorkoutLikes.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load workout likes'**
+  String get failedToLoadWorkoutLikes;
+
+  /// No description provided for @failedToUpdateWorkoutLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update workout like'**
+  String get failedToUpdateWorkoutLike;
+
+  /// No description provided for @workoutLikeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Like workout'**
+  String get workoutLikeAction;
+
+  /// No description provided for @workoutNoLikesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No likes yet'**
+  String get workoutNoLikesYet;
+
+  /// No description provided for @workoutLikesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes ({count})'**
+  String workoutLikesTitle(String count);
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:

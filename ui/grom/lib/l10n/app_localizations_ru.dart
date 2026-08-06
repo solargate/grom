@@ -219,6 +219,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get failedToLoadWorkouts => 'Не удалось загрузить тренировки';
 
   @override
+  String get failedToLoadWorkoutLikes =>
+      'Не удалось загрузить лайки тренировки';
+
+  @override
+  String get failedToUpdateWorkoutLike => 'Не удалось обновить лайк тренировки';
+
+  @override
+  String get workoutLikeAction => 'Лайкнуть тренировку';
+
+  @override
+  String get workoutNoLikesYet => 'Пока нет лайков';
+
+  @override
+  String workoutLikesTitle(String count) {
+    return 'Лайки ($count)';
+  }
+
+  @override
   String get retry => 'Повторить';
 
   @override

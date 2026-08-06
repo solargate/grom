@@ -133,6 +133,9 @@ type WorkoutResponse struct {
 	HasMapPreview        bool                   `json:"has_map_preview" example:"true"`
 	HasMedia             bool                   `json:"has_media" example:"true"`
 	MediaFiles           []string               `json:"media_files,omitempty"`
+	LikesCount           int                    `json:"likes_count"`
+	LikedByMe            bool                   `json:"liked_by_me"`
+	CanLike              bool                   `json:"can_like"`
 	Author               *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
@@ -211,6 +214,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		HasMapPreview:        workout.HasMapPreview,
 		HasMedia:             workout.HasMedia,
 		MediaFiles:           workout.MediaFiles,
+		LikesCount:           workout.LikesCount,
 	}
 }
 
@@ -1086,7 +1090,9 @@ func (a *App) getWorkout(ctx *gin.Context) {
 
 	workout, err := a.Workouts.Get(owner, workoutID)
 	if err == nil {
-		ctx.JSON(http.StatusOK, a.toLocalWorkoutResponse(owner, workout))
+		resp := a.toLocalWorkoutResponse(owner, workout)
+		a.applyLikesSummaryToLocalWorkout(nickname, owner, workout, &resp)
+		ctx.JSON(http.StatusOK, resp)
 		return
 	}
 	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
@@ -1107,7 +1113,9 @@ func (a *App) getWorkout(ctx *gin.Context) {
 		respondInternal(ctx, "failed to load workout", err)
 		return
 	}
-	ctx.JSON(http.StatusOK, toFeedWorkoutResponse(item))
+	resp := toFeedWorkoutResponse(item)
+	a.applyLikesSummary(nickname, item, &resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 func (a *App) toLocalWorkoutResponse(ownerNickname string, workout *workouts.Workout) WorkoutResponse {
@@ -1467,7 +1475,9 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 		HasMore:    page.HasMore,
 	}
 	for i := range page.Items {
-		response.Items = append(response.Items, toFeedWorkoutResponse(&page.Items[i]))
+		resp := toFeedWorkoutResponse(&page.Items[i])
+		a.applyLikesSummary(nickname, &page.Items[i], &resp)
+		response.Items = append(response.Items, resp)
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -1511,6 +1521,7 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 		respondInternal(ctx, "failed to delete workout", err)
 		return
 	}
+	_ = a.Likes.DeleteLocal(nickname, workoutID)
 
 	a.publishDeletedWorkout(nickname, workoutID)
 	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)
