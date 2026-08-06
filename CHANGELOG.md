@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-06
+
 ### Added
 
 - Per-user `profile` preferences (`last_sport_type`, `last_equipment_by_sport`): file driver `users/<nickname>/profile.yaml`, bbolt bucket `user_profiles`; `GET /api/v1/profile`
@@ -153,7 +155,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/solargate/grom/releases/tag/0.6.0
 [0.5.0]: https://github.com/solargate/grom/releases/tag/0.5.0
 [0.4.1]: https://github.com/solargate/grom/releases/tag/0.4.1
 [0.4.0]: https://github.com/solargate/grom/releases/tag/0.4.0
