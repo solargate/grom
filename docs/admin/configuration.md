@@ -47,15 +47,15 @@ go run . --config config-examples/config.prod.tls.yaml
 Notes:
 
 - Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
-- With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`; local workouts accept incoming likes from other instances. Same-instance likes work without federation.
+- With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`, and comments as `Create`/`Delete` Note (`inReplyTo`); local workouts accept incoming likes and comments from other instances. Same-instance likes and comments work without federation.
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
 
 ## Storage drivers
 
 `file` is fine for tests and very small instances (YAML metadata on disk is easy to inspect). For a normal or production install, prefer `bbolt` — metadata lives in a Bolt DB while tracks, photos, and other blobs stay on the filesystem.
 
-| Driver | Metadata | Charts (speed / heart rate) | Workout likes | Blobs (tracks, photos, avatars, keys) |
-|--------|----------|-----------------------------|---------------|----------------------------------------|
+| Driver | Metadata | Charts (speed / heart rate) | Workout likes / comments | Blobs (tracks, photos, avatars, keys) |
+|--------|----------|-----------------------------|--------------------------|----------------------------------------|
 | `file` (default) | YAML under `storage.location` (`users.yaml`, per-user `equipment.yaml`, `profile.yaml`, workout YAML, …) | `speed-chart.json` and `heartrate-chart.json` in each workout dir | `likes.yaml` and `comments.yaml` next to each local workout; federated like/comment cache and outbox activity IDs under the viewer’s `federation/` tree | Same tree |
 | `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`); includes `user_profiles` bucket for UI preferences | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments`, and `comment_activities` | Same filesystem layout under `storage.location` |
 

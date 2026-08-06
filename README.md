@@ -6,7 +6,7 @@
 >
 > Configuration formats, APIs, storage layouts, and other interfaces may and will change without a stable migration path. Expect bugs. Use at your own risk.
 
-Self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like their activities, and browse a social feed — all on infrastructure you control.
+Self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like and comment on their activities, and browse a social feed — all on infrastructure you control.
 
 The server is a single Go binary; the Flutter client ships as an embedded web UI and as an Android app.
 
@@ -17,6 +17,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Equipment** — track bikes, shoes, and other gear linked to workouts
 - **Social feed** — follow users and see their workouts in one timeline
 - **Workout likes** — like others’ activities, see counts and who liked; federated `Like` / `Undo` when ActivityPub is enabled
+- **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
 - **Federation** — optional ActivityPub so instances can follow each other across the network
 - **Strava import** — bulk-import a Strava data export ZIP
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
@@ -42,7 +43,7 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 ## Documentation
 
 - **[Docs index](docs/README.md)** — user and admin guides
-- [User overview](docs/user/overview.md) — client screens (workouts, likes, recording, equipment)
+- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, recording, equipment)
 - [Install and run](docs/admin/install.md) — build and start the server
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging
 - API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))
