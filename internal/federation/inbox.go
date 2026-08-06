@@ -286,6 +286,7 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 			Likes: workout.LikesCount,
 			Users: workout.LikedUsers,
 		})
+		p.ensureRemoteInteractionAvatars(viewerNickname, likes.Users)
 		if likes.Likes == 0 && len(likes.Users) == 0 {
 			_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, workout.ID)
 		} else if err := p.likes.PutFederated(viewerNickname, ownerHandle, workout.ID, &likes); err != nil {
@@ -297,6 +298,11 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 			CommentsNum: workout.CommentsCount,
 			Comments:    workout.Comments,
 		})
+		commentUsers := make([]workouts.WorkoutLikeUser, 0, len(comments.Comments))
+		for _, c := range comments.Comments {
+			commentUsers = append(commentUsers, c.User)
+		}
+		p.ensureRemoteInteractionAvatars(viewerNickname, commentUsers)
 		if comments.CommentsNum == 0 {
 			_ = p.comments.DeleteFederated(viewerNickname, ownerHandle, workout.ID)
 		} else if err := p.comments.PutFederated(viewerNickname, ownerHandle, workout.ID, &comments); err != nil {
@@ -304,6 +310,25 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 		}
 	}
 	return nil
+}
+
+func (p *InboxProcessor) ensureRemoteInteractionAvatars(viewerNickname string, authors []workouts.WorkoutLikeUser) {
+	if p.inboxStore == nil || viewerNickname == "" {
+		return
+	}
+	for _, u := range authors {
+		if u.Handle == "" || HandleIsLocal(u.Handle) {
+			continue
+		}
+		avatarURL := u.AvatarURL
+		if avatarURL == "" {
+			avatarURL = publicAvatarURLForHandle(u.Handle, u.Nickname)
+		}
+		if avatarURL == "" {
+			continue
+		}
+		_ = p.inboxStore.EnsureAuthor(viewerNickname, u.Handle, u.Nickname, u.Name, avatarURL, false)
+	}
 }
 
 func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []byte, []workouts.MediaFileInput, error) {
@@ -385,13 +410,7 @@ func parseFederatedLikedUsers(items []any) []workouts.WorkoutLikeUser {
 		if !ok {
 			continue
 		}
-		users = append(users, workouts.WorkoutLikeUser{
-			Handle:    stringValue(obj, "handle"),
-			Nickname:  stringValue(obj, "nickname"),
-			Name:      stringValue(obj, "name"),
-			IsLocal:   boolValue(obj, "is_local"),
-			AvatarURL: firstString(obj, "avatarUrl", "avatar_url"),
-		})
+		users = append(users, parseFederatedLikeUser(obj))
 	}
 	return workouts.NormalizeWorkoutLikes(&workouts.WorkoutLikes{Users: users}).Users
 }
@@ -406,13 +425,7 @@ func parseFederatedComments(items []any) []workouts.WorkoutComment {
 		userMap, _ := m["user"].(map[string]any)
 		user := workouts.WorkoutLikeUser{}
 		if userMap != nil {
-			user = workouts.WorkoutLikeUser{
-				Handle:    stringValue(userMap, "handle"),
-				Nickname:  stringValue(userMap, "nickname"),
-				Name:      stringValue(userMap, "name"),
-				IsLocal:   boolValue(userMap, "is_local"),
-				AvatarURL: firstString(userMap, "avatarUrl", "avatar_url"),
-			}
+			user = parseFederatedLikeUser(userMap)
 		}
 		var dt time.Time
 		if raw := stringValue(m, "datetime"); raw != "" {
@@ -440,11 +453,6 @@ func firstString(m map[string]any, keys ...string) string {
 	return ""
 }
 
-func boolValue(object map[string]any, key string) bool {
-	v, _ := object[key].(bool)
-	return v
-}
-
 func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]any) error {
 	if p.likes == nil {
 		return nil
@@ -464,17 +472,26 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 		Name:     OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
 		IsLocal:  false,
 	}
-	if p.inboxStore != nil && p.delivery != nil {
+	if p.delivery != nil {
 		parsed := social.ParsedHandle{
 			Nickname: actorUser.Nickname,
 			Domain:   domainFromHandle(handle),
 			Handle:   handle,
 		}
 		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
-			actorUser.Name = ExtractActorName(fetched)
-			actorUser.AvatarURL = ExtractIconURL(fetched)
-			_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
+			if name := ExtractActorName(fetched); name != "" {
+				actorUser.Name = name
+			}
+			if icon := ExtractIconURL(fetched); icon != "" {
+				actorUser.AvatarURL = icon
+			}
 		}
+	}
+	if actorUser.AvatarURL == "" {
+		actorUser.AvatarURL = publicAvatarURLForHandle(handle, actorUser.Nickname)
+	}
+	if p.inboxStore != nil && actorUser.AvatarURL != "" {
+		_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
 	}
 	likes, err := p.likes.GetLocal(targetNickname, workoutID)
 	if err != nil {
@@ -518,17 +535,26 @@ func (p *InboxProcessor) handleCommentCreate(targetNickname string, activity, ob
 		Name:     OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
 		IsLocal:  false,
 	}
-	if p.inboxStore != nil && p.delivery != nil {
+	if p.delivery != nil {
 		parsed := social.ParsedHandle{
 			Nickname: actorUser.Nickname,
 			Domain:   domainFromHandle(handle),
 			Handle:   handle,
 		}
 		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
-			actorUser.Name = ExtractActorName(fetched)
-			actorUser.AvatarURL = ExtractIconURL(fetched)
-			_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
+			if name := ExtractActorName(fetched); name != "" {
+				actorUser.Name = name
+			}
+			if icon := ExtractIconURL(fetched); icon != "" {
+				actorUser.AvatarURL = icon
+			}
 		}
+	}
+	if actorUser.AvatarURL == "" {
+		actorUser.AvatarURL = publicAvatarURLForHandle(handle, actorUser.Nickname)
+	}
+	if p.inboxStore != nil && actorUser.AvatarURL != "" {
+		_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
 	}
 	var dt time.Time
 	if raw := stringValue(object, "published"); raw != "" {

@@ -375,8 +375,8 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 				"handle":    user.Handle,
 				"nickname":  user.Nickname,
 				"name":      user.Name,
-				"is_local":  user.IsLocal,
-				"avatarUrl": user.AvatarURL,
+				"is_local":  HandleIsLocal(user.Handle),
+				"avatarUrl": ExportLikeUserAvatarURL(user),
 			})
 		}
 		object["likedUsers"] = users
@@ -395,8 +395,8 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 					"handle":    c.User.Handle,
 					"nickname":  c.User.Nickname,
 					"name":      c.User.Name,
-					"is_local":  c.User.IsLocal,
-					"avatarUrl": c.User.AvatarURL,
+					"is_local":  HandleIsLocal(c.User.Handle),
+					"avatarUrl": ExportLikeUserAvatarURL(c.User),
 				},
 			}
 			if c.NoteID != "" {

@@ -350,6 +350,7 @@ func (a *App) toWorkoutCommentsResponse(viewerNickname, viewerHandle, ownerNickn
 }
 
 func (a *App) toWorkoutCommentResponse(viewerNickname, viewerHandle, ownerNickname, ownerHandle string, c workouts.WorkoutComment) WorkoutCommentResponse {
+	isLocal := a.likeUserIsLocal(c.User)
 	hasAvatar, avatarURL := a.likeAvatarFields(viewerNickname, c.User)
 	if avatarURL == "" && c.User.AvatarURL != "" {
 		hasAvatar = true
@@ -361,7 +362,7 @@ func (a *App) toWorkoutCommentResponse(viewerNickname, viewerHandle, ownerNickna
 			Handle:    c.User.Handle,
 			Nickname:  c.User.Nickname,
 			Name:      c.User.Name,
-			IsLocal:   c.User.IsLocal,
+			IsLocal:   isLocal,
 			HasAvatar: hasAvatar,
 			AvatarURL: avatarURL,
 		},

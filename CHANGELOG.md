@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Federated workout comment/like avatars: recompute `is_local` from handle domain (ignore origin flag), store/export public avatar URLs, lazy-cache remote author avatars when listing, and warm avatar cache from workout comment/like snapshots
 - `grom migrate-storage` now copies workout likes (local, federated cache, and outbound Like activity ids) between `file` and `bbolt`
 - `grom migrate-storage` copies workout comments (local, federated cache, and outbound Create Note activity ids) between `file` and `bbolt`
 

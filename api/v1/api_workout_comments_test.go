@@ -179,6 +179,56 @@ func TestWorkoutCommentAuthorDeleteAndCanDeleteFlags(t *testing.T) {
 	}
 }
 
+func TestWorkoutCommentIncludesAvatar(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	ta.register(t, "bob", "bob@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+	bobToken, _ := ta.login(t, "bob@example.com", "password12")
+
+	pngData := readTestdata(t, "images/avatar-square.png")
+	w := ta.doMultipart(t, http.MethodPut, "/api/v1/auth/me/avatar", aliceToken, nil,
+		map[string][]filePart{"avatar": {{filename: "avatar.png", data: pngData}}})
+	expectStatus(t, w, http.StatusOK)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "bob"}, aliceToken)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name":             "Bob run",
+		"sport_type":       "Run",
+		"start_date":       "2026-07-08T10:00:00Z",
+		"duration_seconds": 1800,
+		"distance":         5000,
+	}, bobToken)
+	expectStatus(t, w, http.StatusCreated)
+	workoutID, _ := decodeObject(t, w)["id"].(string)
+	path := "/api/v1/workouts/" + workoutID + "/comments?owner=bob"
+
+	w = ta.doJSON(t, http.MethodPost, path, map[string]string{"text": "with avatar"}, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	comment, _ := decodeObject(t, w)["comment"].(map[string]any)
+	user, _ := comment["user"].(map[string]any)
+	if user["has_avatar"] != true {
+		t.Fatalf("expected has_avatar: %#v", user)
+	}
+	avatarURL, _ := user["avatar_url"].(string)
+	if avatarURL == "" {
+		t.Fatalf("expected avatar_url: %#v", user)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, path, nil, bobToken)
+	expectStatus(t, w, http.StatusOK)
+	comments, _ := decodeObject(t, w)["comments"].([]any)
+	if len(comments) != 1 {
+		t.Fatalf("list: %#v", decodeObject(t, w))
+	}
+	listedUser, _ := comments[0].(map[string]any)["user"].(map[string]any)
+	if listedUser["has_avatar"] != true || listedUser["avatar_url"] == "" {
+		t.Fatalf("listed user avatar: %#v", listedUser)
+	}
+}
+
 func TestWorkoutCommentErrors(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
