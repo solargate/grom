@@ -639,12 +639,15 @@ func (p *InboxProcessor) handleCommentDelete(viewerNickname string, activity map
 	}
 
 	// Federated cache (viewer had commented / received Update snapshot).
-	actorURI, _ := activity["actor"].(string)
-	ownerHandle := actorToHandle(actorURI)
-	if ownerHandle == "" && inReplyTo != "" {
-		// inReplyTo is workout URL; owner is not necessarily the Delete actor
-		// (owner may delete someone else's comment). Infer owner from workout URL host/path.
+	// Prefer workout owner from inReplyTo: Delete actor may be the comment author,
+	// not the workout owner (and owner may delete someone else's comment).
+	ownerHandle := ""
+	if inReplyTo != "" {
 		ownerHandle = ownerHandleFromWorkoutURL(inReplyTo)
+	}
+	if ownerHandle == "" {
+		actorURI, _ := activity["actor"].(string)
+		ownerHandle = actorToHandle(actorURI)
 	}
 	if ownerHandle == "" {
 		return nil

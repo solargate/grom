@@ -169,4 +169,82 @@ void main() {
     expect(noUsers.count, 0);
     expect(noUsers.users, isEmpty);
   });
+
+  test('WorkoutComment models parse API payloads', () {
+    final comment = WorkoutComment.fromJson({
+      'id': 'c1',
+      'datetime': '2026-08-06T12:00:00Z',
+      'text': 'Nice pace!',
+      'can_delete': true,
+      'user': {
+        'handle': 'alice@localhost',
+        'nickname': 'alice',
+        'name': 'Alice',
+        'is_local': true,
+        'has_avatar': false,
+      },
+    });
+    expect(comment.id, 'c1');
+    expect(comment.text, 'Nice pace!');
+    expect(comment.canDelete, isTrue);
+    expect(comment.user.handle, 'alice@localhost');
+    expect(comment.datetime.toUtc().toIso8601String(), '2026-08-06T12:00:00.000Z');
+
+    final missingUser = WorkoutComment.fromJson({
+      'id': 'c2',
+      'text': 'orphan',
+    });
+    expect(missingUser.user.handle, '');
+    expect(missingUser.canDelete, isFalse);
+    expect(missingUser.datetime.millisecondsSinceEpoch, 0);
+
+    final list = WorkoutCommentsResponse.fromJson({
+      'count': 1,
+      'comments': [
+        {
+          'id': 'c1',
+          'datetime': '2026-08-06T12:00:00Z',
+          'text': 'hi',
+          'can_delete': false,
+          'user': {
+            'handle': 'bob@localhost',
+            'nickname': 'bob',
+            'name': 'Bob',
+            'is_local': true,
+          },
+        },
+        'skip-me',
+      ],
+    });
+    expect(list.count, 1);
+    expect(list.comments, hasLength(1));
+    expect(list.comments.single.text, 'hi');
+
+    final emptyList = WorkoutCommentsResponse.fromJson({'count': 0});
+    expect(emptyList.count, 0);
+    expect(emptyList.comments, isEmpty);
+
+    final created = WorkoutCommentCreateResponse.fromJson({
+      'count': 2,
+      'comment': {
+        'id': 'c3',
+        'datetime': '2026-08-06T13:00:00Z',
+        'text': 'Thanks!',
+        'can_delete': true,
+        'user': {
+          'handle': 'alice@localhost',
+          'nickname': 'alice',
+          'name': 'Alice',
+          'is_local': true,
+        },
+      },
+    });
+    expect(created.count, 2);
+    expect(created.comment.id, 'c3');
+    expect(created.comment.text, 'Thanks!');
+
+    final missingComment = WorkoutCommentCreateResponse.fromJson({'count': 0});
+    expect(missingComment.count, 0);
+    expect(missingComment.comment.id, '');
+  });
 }
