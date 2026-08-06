@@ -54,6 +54,8 @@ type Workout struct {
 	MediaFiles           []string           `yaml:"media_files,omitempty" json:"media_files,omitempty"`
 	LikesCount           int                `yaml:"likes_count,omitempty" json:"likes_count,omitempty"`
 	LikedUsers           []WorkoutLikeUser  `yaml:"liked_users,omitempty" json:"liked_users,omitempty"`
+	CommentsCount        int                `yaml:"comments_count,omitempty" json:"comments_count,omitempty"`
+	Comments             []WorkoutComment   `yaml:"comments,omitempty" json:"comments,omitempty"`
 	HasMapPreview        bool               `yaml:"-" json:"has_map_preview"`
 	HasMedia             bool               `yaml:"-" json:"has_media"`
 }

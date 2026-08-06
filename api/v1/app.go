@@ -23,6 +23,7 @@ type App struct {
 	Users             users.Repository
 	Workouts          *workouts.Service
 	Likes             workouts.LikesRepository
+	Comments          workouts.CommentsRepository
 	Equipment         equipment.Repository
 	EquipmentDistance *distance.Service
 	Social            *social.Service
@@ -54,6 +55,7 @@ func NewApp() (*App, error) {
 		Users:             backend.Users(),
 		Workouts:          workoutSvc,
 		Likes:             backend.Likes(),
+		Comments:          backend.Comments(),
 		Equipment:         backend.Equipment(),
 		EquipmentDistance: distance.NewService(backend.Equipment(), workoutSvc),
 		Social:            socialSvc,
@@ -82,6 +84,7 @@ func NewApp() (*App, error) {
 			app.Federation.Followers(),
 		)
 		app.federationInboxProc.SetLikes(app.Likes, app.publishWorkoutLikesUpdate)
+		app.federationInboxProc.SetComments(app.Comments, app.publishWorkoutCommentsUpdate)
 		slog.Info("federation enabled",
 			"domain", config.Cfg.Federation.Domain,
 			"auto_accept_follows", config.Cfg.Federation.AutoAcceptFollows,
@@ -170,6 +173,9 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.GET("/:id/likes", a.getWorkoutLikes)
 		workoutGroup.POST("/:id/likes", a.likeWorkout)
 		workoutGroup.DELETE("/:id/likes", a.unlikeWorkout)
+		workoutGroup.GET("/:id/comments", a.getWorkoutComments)
+		workoutGroup.POST("/:id/comments", a.createWorkoutComment)
+		workoutGroup.DELETE("/:id/comments/:commentId", a.deleteWorkoutComment)
 		workoutGroup.POST("/:id/media", a.addWorkoutMedia)
 		workoutGroup.DELETE("/:id/media/:filename", a.deleteWorkoutMedia)
 		workoutGroup.GET("/:id", a.getWorkout)

@@ -19,14 +19,16 @@ import (
 )
 
 type InboxProcessor struct {
-	users          users.Repository
-	social         *social.Service
-	delivery       *Delivery
-	inboxStore     InboxRepository
-	likes          workouts.LikesRepository
-	followersStore FollowersRepository
-	onWorkoutLike  func(ownerNickname, workoutID string)
-	autoAccept     bool
+	users             users.Repository
+	social            *social.Service
+	delivery          *Delivery
+	inboxStore        InboxRepository
+	likes             workouts.LikesRepository
+	comments          workouts.CommentsRepository
+	followersStore    FollowersRepository
+	onWorkoutLike     func(ownerNickname, workoutID string)
+	onWorkoutComment  func(ownerNickname, workoutID string)
+	autoAccept        bool
 }
 
 func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, delivery *Delivery, inboxStore InboxRepository, followersStore FollowersRepository) *InboxProcessor {
@@ -43,6 +45,11 @@ func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, de
 func (p *InboxProcessor) SetLikes(likes workouts.LikesRepository, onWorkoutLike func(ownerNickname, workoutID string)) {
 	p.likes = likes
 	p.onWorkoutLike = onWorkoutLike
+}
+
+func (p *InboxProcessor) SetComments(comments workouts.CommentsRepository, onWorkoutComment func(ownerNickname, workoutID string)) {
+	p.comments = comments
+	p.onWorkoutComment = onWorkoutComment
 }
 
 func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
@@ -219,6 +226,11 @@ func (p *InboxProcessor) handleAccept(viewerNickname string, activity map[string
 }
 
 func (p *InboxProcessor) handleCreate(viewerNickname string, activity map[string]any) error {
+	if object, ok := activity["object"].(map[string]any); ok {
+		if typ, _ := object["type"].(string); typ == "Note" && stringValue(object, "inReplyTo") != "" {
+			return p.handleCommentCreate(viewerNickname, activity, object)
+		}
+	}
 	return p.handleWorkoutActivity(viewerNickname, activity, false)
 }
 
@@ -274,13 +286,49 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 			Likes: workout.LikesCount,
 			Users: workout.LikedUsers,
 		})
+		p.ensureRemoteInteractionAvatars(viewerNickname, likes.Users)
 		if likes.Likes == 0 && len(likes.Users) == 0 {
 			_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, workout.ID)
 		} else if err := p.likes.PutFederated(viewerNickname, ownerHandle, workout.ID, &likes); err != nil {
 			return err
 		}
 	}
+	if p.comments != nil {
+		comments := workouts.NormalizeWorkoutComments(&workouts.WorkoutComments{
+			CommentsNum: workout.CommentsCount,
+			Comments:    workout.Comments,
+		})
+		commentUsers := make([]workouts.WorkoutLikeUser, 0, len(comments.Comments))
+		for _, c := range comments.Comments {
+			commentUsers = append(commentUsers, c.User)
+		}
+		p.ensureRemoteInteractionAvatars(viewerNickname, commentUsers)
+		if comments.CommentsNum == 0 {
+			_ = p.comments.DeleteFederated(viewerNickname, ownerHandle, workout.ID)
+		} else if err := p.comments.PutFederated(viewerNickname, ownerHandle, workout.ID, &comments); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (p *InboxProcessor) ensureRemoteInteractionAvatars(viewerNickname string, authors []workouts.WorkoutLikeUser) {
+	if p.inboxStore == nil || viewerNickname == "" {
+		return
+	}
+	for _, u := range authors {
+		if u.Handle == "" || HandleIsLocal(u.Handle) {
+			continue
+		}
+		avatarURL := u.AvatarURL
+		if avatarURL == "" {
+			avatarURL = publicAvatarURLForHandle(u.Handle, u.Nickname)
+		}
+		if avatarURL == "" {
+			continue
+		}
+		_ = p.inboxStore.EnsureAuthor(viewerNickname, u.Handle, u.Nickname, u.Name, avatarURL, false)
+	}
 }
 
 func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []byte, []workouts.MediaFileInput, error) {
@@ -300,6 +348,12 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 	}
 	if likedUsers, ok := object["likedUsers"].([]any); ok {
 		workout.LikedUsers = parseFederatedLikedUsers(likedUsers)
+	}
+	if count, ok := optionalPositiveInt(object, "commentsCount"); ok {
+		workout.CommentsCount = count
+	}
+	if comments, ok := object["comments"].([]any); ok {
+		workout.Comments = parseFederatedComments(comments)
 	}
 	if start := stringValue(object, "startDate"); start != "" {
 		if t, err := time.Parse(time.RFC3339, start); err == nil {
@@ -356,20 +410,47 @@ func parseFederatedLikedUsers(items []any) []workouts.WorkoutLikeUser {
 		if !ok {
 			continue
 		}
-		users = append(users, workouts.WorkoutLikeUser{
-			Handle:    stringValue(obj, "handle"),
-			Nickname:  stringValue(obj, "nickname"),
-			Name:      stringValue(obj, "name"),
-			IsLocal:   boolValue(obj, "is_local"),
-			AvatarURL: stringValue(obj, "avatarUrl"),
-		})
+		users = append(users, parseFederatedLikeUser(obj))
 	}
 	return workouts.NormalizeWorkoutLikes(&workouts.WorkoutLikes{Users: users}).Users
 }
 
-func boolValue(object map[string]any, key string) bool {
-	v, _ := object[key].(bool)
-	return v
+func parseFederatedComments(items []any) []workouts.WorkoutComment {
+	comments := make([]workouts.WorkoutComment, 0, len(items))
+	for _, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		userMap, _ := m["user"].(map[string]any)
+		user := workouts.WorkoutLikeUser{}
+		if userMap != nil {
+			user = parseFederatedLikeUser(userMap)
+		}
+		var dt time.Time
+		if raw := stringValue(m, "datetime"); raw != "" {
+			if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+				dt = parsed
+			}
+		}
+		comments = append(comments, workouts.WorkoutComment{
+			ID:       stringValue(m, "id"),
+			User:     user,
+			Datetime: dt,
+			Text:     stringValue(m, "text"),
+			NoteID:   firstString(m, "noteId", "note_id"),
+		})
+	}
+	return workouts.NormalizeWorkoutComments(&workouts.WorkoutComments{Comments: comments}).Comments
+}
+
+func firstString(m map[string]any, keys ...string) string {
+	for _, k := range keys {
+		if v := stringValue(m, k); v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]any) error {
@@ -391,17 +472,26 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 		Name:     OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
 		IsLocal:  false,
 	}
-	if p.inboxStore != nil && p.delivery != nil {
+	if p.delivery != nil {
 		parsed := social.ParsedHandle{
 			Nickname: actorUser.Nickname,
 			Domain:   domainFromHandle(handle),
 			Handle:   handle,
 		}
 		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
-			actorUser.Name = ExtractActorName(fetched)
-			actorUser.AvatarURL = ExtractIconURL(fetched)
-			_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
+			if name := ExtractActorName(fetched); name != "" {
+				actorUser.Name = name
+			}
+			if icon := ExtractIconURL(fetched); icon != "" {
+				actorUser.AvatarURL = icon
+			}
 		}
+	}
+	if actorUser.AvatarURL == "" {
+		actorUser.AvatarURL = publicAvatarURLForHandle(handle, actorUser.Nickname)
+	}
+	if p.inboxStore != nil && actorUser.AvatarURL != "" {
+		_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
 	}
 	likes, err := p.likes.GetLocal(targetNickname, workoutID)
 	if err != nil {
@@ -417,7 +507,97 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 	return nil
 }
 
+func (p *InboxProcessor) handleCommentCreate(targetNickname string, activity, object map[string]any) error {
+	if p.comments == nil {
+		return nil
+	}
+	inReplyTo := stringValue(object, "inReplyTo")
+	workoutID := workoutIDFromObject(map[string]any{"id": inReplyTo})
+	if workoutID == "" {
+		return nil
+	}
+	noteID := stringValue(object, "id")
+	if noteID == "" {
+		return nil
+	}
+	text := strings.TrimSpace(stringValue(object, "content"))
+	if text == "" {
+		return nil
+	}
+	actorURI, _ := activity["actor"].(string)
+	handle := actorToHandle(actorURI)
+	if handle == "" {
+		return nil
+	}
+	actorUser := workouts.WorkoutLikeUser{
+		Handle:   handle,
+		Nickname: OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
+		Name:     OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
+		IsLocal:  false,
+	}
+	if p.delivery != nil {
+		parsed := social.ParsedHandle{
+			Nickname: actorUser.Nickname,
+			Domain:   domainFromHandle(handle),
+			Handle:   handle,
+		}
+		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
+			if name := ExtractActorName(fetched); name != "" {
+				actorUser.Name = name
+			}
+			if icon := ExtractIconURL(fetched); icon != "" {
+				actorUser.AvatarURL = icon
+			}
+		}
+	}
+	if actorUser.AvatarURL == "" {
+		actorUser.AvatarURL = publicAvatarURLForHandle(handle, actorUser.Nickname)
+	}
+	if p.inboxStore != nil && actorUser.AvatarURL != "" {
+		_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
+	}
+	var dt time.Time
+	if raw := stringValue(object, "published"); raw != "" {
+		if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+			dt = parsed
+		}
+	}
+	if dt.IsZero() {
+		dt = time.Now().UTC()
+	}
+	// Prefer Note id suffix as stable comment id when it looks like a UUID path.
+	commentID := noteID
+	if idx := strings.LastIndex(noteID, "/notes/"); idx >= 0 {
+		commentID = noteID[idx+len("/notes/"):]
+	}
+	if commentID == "" {
+		commentID = uuid.NewString()
+	}
+	comments, err := p.comments.GetLocal(targetNickname, workoutID)
+	if err != nil {
+		return err
+	}
+	updated := workouts.AddWorkoutComment(comments, workouts.WorkoutComment{
+		ID:       commentID,
+		User:     actorUser,
+		Datetime: dt,
+		Text:     text,
+		NoteID:   noteID,
+	})
+	if err := p.comments.PutLocal(targetNickname, workoutID, &updated); err != nil {
+		return err
+	}
+	if p.onWorkoutComment != nil {
+		p.onWorkoutComment(targetNickname, workoutID)
+	}
+	return nil
+}
+
 func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string]any) error {
+	if noteID, inReplyTo, ok := noteDeleteTarget(activity["object"]); ok {
+		return p.handleCommentDelete(viewerNickname, activity, noteID, inReplyTo)
+	}
+
 	if p.inboxStore == nil {
 		return nil
 	}
@@ -437,7 +617,95 @@ func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string
 	if p.likes != nil {
 		_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, workoutID)
 	}
+	if p.comments != nil {
+		_ = p.comments.DeleteFederated(viewerNickname, ownerHandle, workoutID)
+	}
 	return nil
+}
+
+func noteDeleteTarget(raw any) (noteID, inReplyTo string, ok bool) {
+	switch object := raw.(type) {
+	case string:
+		if strings.Contains(object, "/notes/") {
+			return object, "", true
+		}
+	case map[string]any:
+		typ, _ := object["type"].(string)
+		id := stringValue(object, "id")
+		if typ == "Note" || strings.Contains(id, "/notes/") {
+			return id, stringValue(object, "inReplyTo"), id != ""
+		}
+	}
+	return "", "", false
+}
+
+func (p *InboxProcessor) handleCommentDelete(viewerNickname string, activity map[string]any, noteID, inReplyTo string) error {
+	if p.comments == nil || noteID == "" {
+		return nil
+	}
+	workoutID := workoutIDFromObject(map[string]any{"id": inReplyTo})
+	if workoutID == "" {
+		// Local owner path: try removing from local comments if workout id unknown —
+		// only when this actor targeted our local store via prior Create.
+		return nil
+	}
+
+	// Prefer local workout comments (we are the workout owner).
+	if comments, err := p.comments.GetLocal(viewerNickname, workoutID); err == nil {
+		if workouts.FindCommentByNoteID(comments, noteID) != nil {
+			updated := workouts.RemoveWorkoutCommentByNoteID(comments, noteID)
+			if err := p.comments.PutLocal(viewerNickname, workoutID, &updated); err != nil {
+				return err
+			}
+			if p.onWorkoutComment != nil {
+				p.onWorkoutComment(viewerNickname, workoutID)
+			}
+			return nil
+		}
+	}
+
+	// Federated cache (viewer had commented / received Update snapshot).
+	// Prefer workout owner from inReplyTo: Delete actor may be the comment author,
+	// not the workout owner (and owner may delete someone else's comment).
+	ownerHandle := ""
+	if inReplyTo != "" {
+		ownerHandle = ownerHandleFromWorkoutURL(inReplyTo)
+	}
+	if ownerHandle == "" {
+		actorURI, _ := activity["actor"].(string)
+		ownerHandle = actorToHandle(actorURI)
+	}
+	if ownerHandle == "" {
+		return nil
+	}
+	cached, err := p.comments.GetFederated(viewerNickname, ownerHandle, workoutID)
+	if err != nil {
+		return err
+	}
+	updated := workouts.RemoveWorkoutCommentByNoteID(cached, noteID)
+	if updated.CommentsNum == 0 {
+		return p.comments.DeleteFederated(viewerNickname, ownerHandle, workoutID)
+	}
+	return p.comments.PutFederated(viewerNickname, ownerHandle, workoutID, &updated)
+}
+
+func ownerHandleFromWorkoutURL(workoutURL string) string {
+	// https://domain/users/nick/workouts/id → nick@domain
+	workoutURL = strings.TrimSuffix(workoutURL, "/")
+	if !strings.HasPrefix(workoutURL, "https://") {
+		return ""
+	}
+	rest := strings.TrimPrefix(workoutURL, "https://")
+	parts := strings.Split(rest, "/")
+	if len(parts) < 4 || parts[1] != "users" {
+		return ""
+	}
+	domain := parts[0]
+	nick := parts[2]
+	if domain == "" || nick == "" {
+		return ""
+	}
+	return nick + "@" + domain
 }
 
 func workoutIDFromDeleteObject(raw any) string {

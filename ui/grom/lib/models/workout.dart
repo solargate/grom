@@ -66,6 +66,91 @@ class WorkoutLikesResponse {
   }
 }
 
+class WorkoutComment {
+  WorkoutComment({
+    required this.id,
+    required this.user,
+    required this.datetime,
+    required this.text,
+    this.canDelete = false,
+  });
+
+  final String id;
+  final WorkoutLikeUser user;
+  final DateTime datetime;
+  final String text;
+  final bool canDelete;
+
+  factory WorkoutComment.fromJson(Map<String, dynamic> json) {
+    final userJson = json['user'];
+    return WorkoutComment(
+      id: json['id'] as String? ?? '',
+      user: userJson is Map<String, dynamic>
+          ? WorkoutLikeUser.fromJson(userJson)
+          : WorkoutLikeUser(
+              handle: '',
+              nickname: '',
+              name: '',
+              isLocal: false,
+            ),
+      datetime: DateTime.tryParse(json['datetime'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      text: json['text'] as String? ?? '',
+      canDelete: json['can_delete'] as bool? ?? false,
+    );
+  }
+}
+
+class WorkoutCommentsResponse {
+  WorkoutCommentsResponse({required this.count, required this.comments});
+
+  final int count;
+  final List<WorkoutComment> comments;
+
+  factory WorkoutCommentsResponse.fromJson(Map<String, dynamic> json) {
+    final raw = json['comments'];
+    final comments = <WorkoutComment>[];
+    if (raw is List) {
+      for (final item in raw) {
+        if (item is Map<String, dynamic>) {
+          comments.add(WorkoutComment.fromJson(item));
+        }
+      }
+    }
+    return WorkoutCommentsResponse(
+      count: json['count'] as int? ?? comments.length,
+      comments: comments,
+    );
+  }
+}
+
+class WorkoutCommentCreateResponse {
+  WorkoutCommentCreateResponse({required this.count, required this.comment});
+
+  final int count;
+  final WorkoutComment comment;
+
+  factory WorkoutCommentCreateResponse.fromJson(Map<String, dynamic> json) {
+    final commentJson = json['comment'];
+    return WorkoutCommentCreateResponse(
+      count: json['count'] as int? ?? 0,
+      comment: commentJson is Map<String, dynamic>
+          ? WorkoutComment.fromJson(commentJson)
+          : WorkoutComment(
+              id: '',
+              user: WorkoutLikeUser(
+                handle: '',
+                nickname: '',
+                name: '',
+                isLocal: false,
+              ),
+              datetime: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+              text: '',
+            ),
+    );
+  }
+}
+
 class WorkoutEquipmentItem {
   WorkoutEquipmentItem({
     required this.id,
@@ -115,6 +200,7 @@ class Workout {
     this.likesCount = 0,
     this.likedByMe = false,
     this.canLike = false,
+    this.commentsCount = 0,
   });
 
   final String id;
@@ -144,6 +230,7 @@ class Workout {
   final int likesCount;
   final bool likedByMe;
   final bool canLike;
+  final int commentsCount;
 
   double get distanceKm => distance / 1000;
 
@@ -196,6 +283,7 @@ class Workout {
       likesCount: json['likes_count'] as int? ?? 0,
       likedByMe: json['liked_by_me'] as bool? ?? false,
       canLike: json['can_like'] as bool? ?? false,
+      commentsCount: json['comments_count'] as int? ?? 0,
     );
   }
 
@@ -203,6 +291,7 @@ class Workout {
     int? likesCount,
     bool? likedByMe,
     bool? canLike,
+    int? commentsCount,
   }) {
     return Workout(
       id: id,
@@ -232,6 +321,7 @@ class Workout {
       likesCount: likesCount ?? this.likesCount,
       likedByMe: likedByMe ?? this.likedByMe,
       canLike: canLike ?? this.canLike,
+      commentsCount: commentsCount ?? this.commentsCount,
     );
   }
 

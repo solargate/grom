@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-user `profile` preferences (`last_sport_type`, `last_equipment_by_sport`): file driver `users/<nickname>/profile.yaml`, bbolt bucket `user_profiles`; `GET /api/v1/profile`
 - Creating a workout without `equipment_ids` uses equipment from the user's profile for that `sport_type` (explicit `[]` still means none)
 - Workout likes with counts and liker lists in the list/detail UI; local + federated `Like`/`Undo`, file `likes.yaml`, bbolt likes buckets, and `GET/POST/DELETE /api/v1/workouts/{id}/likes`
+- Workout comments (add/list/delete) on own and others' workouts; file `comments.yaml`, bbolt comment buckets, `GET/POST/DELETE /api/v1/workouts/{id}/comments`, federated `Create`/`Delete` Note with `inReplyTo`, and comments snapshot on Workout Update; UI comment control next to likes
 
 ### Changed
 
@@ -22,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Federated workout comment/like avatars: recompute `is_local` from handle domain (ignore origin flag), store/export public avatar URLs, lazy-cache remote author avatars when listing, and warm avatar cache from workout comment/like snapshots
 - `grom migrate-storage` now copies workout likes (local, federated cache, and outbound Like activity ids) between `file` and `bbolt`
+- `grom migrate-storage` copies workout comments (local, federated cache, and outbound Create Note activity ids) between `file` and `bbolt`
 
 ## [0.5.0] - 2026-08-04
 

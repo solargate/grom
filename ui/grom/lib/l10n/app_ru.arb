@@ -126,6 +126,24 @@
       }
     }
   },
+  "failedToLoadWorkoutComments": "Не удалось загрузить комментарии",
+  "failedToAddWorkoutComment": "Не удалось добавить комментарий",
+  "failedToDeleteWorkoutComment": "Не удалось удалить комментарий",
+  "workoutCommentAction": "Комментарии",
+  "workoutNoCommentsYet": "Пока нет комментариев",
+  "workoutCommentsTitle": "Комментарии ({count})",
+  "@workoutCommentsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutCommentHint": "Напишите комментарий",
+  "addWorkoutCommentAction": "Добавить комментарий",
+  "deleteWorkoutCommentAction": "Удалить комментарий",
+  "deleteWorkoutCommentTitle": "Удалить комментарий?",
+  "deleteWorkoutCommentConfirm": "Удалить этот комментарий?",
   "retry": "Повторить",
   "expandMap": "Расширить карту",
   "addPhotos": "Добавить фотографии",

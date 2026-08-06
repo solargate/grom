@@ -136,6 +136,7 @@ type WorkoutResponse struct {
 	LikesCount           int                    `json:"likes_count" example:"5"`
 	LikedByMe            bool                   `json:"liked_by_me" example:"false"`
 	CanLike              bool                   `json:"can_like" example:"true"`
+	CommentsCount        int                    `json:"comments_count" example:"2"`
 	Author               *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
@@ -215,6 +216,7 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		HasMedia:             workout.HasMedia,
 		MediaFiles:           workout.MediaFiles,
 		LikesCount:           workout.LikesCount,
+		CommentsCount:        workout.CommentsCount,
 	}
 }
 
@@ -1092,6 +1094,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 	if err == nil {
 		resp := a.toLocalWorkoutResponse(owner, workout)
 		a.applyLikesSummaryToLocalWorkout(nickname, owner, workout, &resp)
+		a.applyCommentsSummaryToLocalWorkout(nickname, owner, workout, &resp)
 		ctx.JSON(http.StatusOK, resp)
 		return
 	}
@@ -1115,6 +1118,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 	}
 	resp := toFeedWorkoutResponse(item)
 	a.applyLikesSummary(nickname, item, &resp)
+	a.applyCommentsSummary(nickname, item, &resp)
 	ctx.JSON(http.StatusOK, resp)
 }
 
@@ -1477,6 +1481,7 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	for i := range page.Items {
 		resp := toFeedWorkoutResponse(&page.Items[i])
 		a.applyLikesSummary(nickname, &page.Items[i], &resp)
+		a.applyCommentsSummary(nickname, &page.Items[i], &resp)
 		response.Items = append(response.Items, resp)
 	}
 
@@ -1522,6 +1527,7 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 		return
 	}
 	_ = a.Likes.DeleteLocal(nickname, workoutID)
+	_ = a.Comments.DeleteLocal(nickname, workoutID)
 
 	a.publishDeletedWorkout(nickname, workoutID)
 	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)

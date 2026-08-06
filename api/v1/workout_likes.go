@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/solargate/grom/internal/avatars"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -205,11 +206,16 @@ func (a *App) currentLikeActor(ctx *gin.Context) (workouts.WorkoutLikeUser, erro
 	if err != nil {
 		return workouts.WorkoutLikeUser{}, err
 	}
+	avatarURL := ""
+	if avatars.HasStore(a.Blobs, user.Nickname) {
+		avatarURL = avatars.PublicURL(publicDomain(), user.Nickname)
+	}
 	return workouts.WorkoutLikeUser{
-		Handle:   a.Social.LocalHandle(user.Nickname),
-		Nickname: user.Nickname,
-		Name:     user.Name,
-		IsLocal:  true,
+		Handle:    a.Social.LocalHandle(user.Nickname),
+		Nickname:  user.Nickname,
+		Name:      user.Name,
+		IsLocal:   true,
+		AvatarURL: avatarURL,
 	}, nil
 }
 
@@ -250,6 +256,7 @@ func (a *App) ownerHandleForLikeOwner(ownerNickname string, item *workouts.FeedW
 func (a *App) toWorkoutLikeUserResponses(viewerNickname, _ string, users []workouts.WorkoutLikeUser) []WorkoutLikeUserResponse {
 	result := make([]WorkoutLikeUserResponse, 0, len(users))
 	for _, user := range users {
+		isLocal := a.likeUserIsLocal(user)
 		hasAvatar, avatarURL := a.likeAvatarFields(viewerNickname, user)
 		if avatarURL == "" && user.AvatarURL != "" {
 			hasAvatar = true
@@ -259,7 +266,7 @@ func (a *App) toWorkoutLikeUserResponses(viewerNickname, _ string, users []worko
 			Handle:    user.Handle,
 			Nickname:  user.Nickname,
 			Name:      user.Name,
-			IsLocal:   user.IsLocal,
+			IsLocal:   isLocal,
 			HasAvatar: hasAvatar,
 			AvatarURL: avatarURL,
 		})
@@ -267,19 +274,61 @@ func (a *App) toWorkoutLikeUserResponses(viewerNickname, _ string, users []worko
 	return result
 }
 
-func (a *App) likeAvatarFields(viewerNickname string, user workouts.WorkoutLikeUser) (bool, string) {
-	if user.IsLocal {
-		return a.localAvatarFieldsForUser(user.Nickname)
-	}
-	if a.Federation.Inbox() != nil {
-		if hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, user.Handle); hasAvatar || avatarURL != "" {
-			return hasAvatar, avatarURL
+func (a *App) likeUserIsLocal(user workouts.WorkoutLikeUser) bool {
+	if user.Handle != "" {
+		parsed, err := a.Social.ParseHandle(user.Handle)
+		if err == nil {
+			return parsed.IsLocal
 		}
 	}
-	if user.AvatarURL != "" {
-		return true, user.AvatarURL
+	return user.IsLocal
+}
+
+func (a *App) likeAvatarFields(viewerNickname string, user workouts.WorkoutLikeUser) (bool, string) {
+	if a.likeUserIsLocal(user) {
+		return a.localAvatarFieldsForUser(user.Nickname)
 	}
-	return false, ""
+	if a.Federation.Inbox() == nil {
+		if strings.HasPrefix(user.AvatarURL, "http://") || strings.HasPrefix(user.AvatarURL, "https://") {
+			return true, user.AvatarURL
+		}
+		return false, ""
+	}
+	if hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, user.Handle); hasAvatar || avatarURL != "" {
+		return hasAvatar, avatarURL
+	}
+
+	remoteURL := user.AvatarURL
+	if !strings.HasPrefix(remoteURL, "http://") && !strings.HasPrefix(remoteURL, "https://") {
+		remoteURL = ""
+	}
+	name := user.Name
+	if remoteURL == "" && a.federationDelivery != nil {
+		parsed, err := a.Social.ParseHandle(user.Handle)
+		if err == nil && !parsed.IsLocal {
+			if remote, resolveErr := a.federationDelivery.ResolveRemote(parsed); resolveErr == nil {
+				remoteURL = remote.AvatarURL
+				if name == "" {
+					name = remote.Name
+				}
+			}
+		}
+	}
+	if remoteURL == "" {
+		return false, ""
+	}
+	_ = a.Federation.Inbox().EnsureAuthor(
+		viewerNickname,
+		user.Handle,
+		user.Nickname,
+		name,
+		remoteURL,
+		false,
+	)
+	if hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, user.Handle); hasAvatar || avatarURL != "" {
+		return hasAvatar, avatarURL
+	}
+	return true, remoteURL
 }
 
 func remoteWorkoutObjectID(ownerHandle, ownerNickname, workoutID string) string {
@@ -304,6 +353,10 @@ func (a *App) publishWorkoutLikesUpdate(ownerNickname, workoutID string) {
 	}
 	workout.LikesCount = likes.Likes
 	workout.LikedUsers = likes.Users
+	if comments, err := a.Comments.GetLocal(ownerNickname, workoutID); err == nil {
+		workout.CommentsCount = comments.CommentsNum
+		workout.Comments = comments.Comments
+	}
 	a.publishUpdatedWorkout(ownerNickname, workout)
 }
 

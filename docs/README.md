@@ -8,7 +8,7 @@ English documentation for Grom. The [root README](../README.md) is a short entry
 
 | Goal | Page |
 |------|------|
-| See what the client can do (workouts, likes, recording, equipment) | [User overview](user/overview.md) |
+| See what the client can do (workouts, likes, comments, recording, equipment) | [User overview](user/overview.md) |
 | Use Grom in a browser (same UI as Android) | Open the server base URL after [install](admin/install.md); see [User overview](user/overview.md) |
 | Import a Strava export (UI + how import works) | [Strava bulk import](strava-bulk-import.md) |
 | Import Health Sync activities from Google Drive (Android) | [Health Sync + Google Drive](health-sync-google-drive.md) |

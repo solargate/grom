@@ -340,6 +340,146 @@ func TestMigratePreservesLikes(t *testing.T) {
 	}
 }
 
+func TestMigratePreservesComments(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123"); err != nil {
+		t.Fatal(err)
+	}
+	localWorkout, err := fileBackend.Workouts().Create("alice", &workouts.Workout{
+		Name: "Run", SportType: "Run",
+		StartDate: time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	localComments := &workouts.WorkoutComments{Comments: []workouts.WorkoutComment{
+		{
+			ID: "c1",
+			User: workouts.WorkoutLikeUser{
+				Handle: "bob@localhost", Nickname: "bob", Name: "Bob", IsLocal: true,
+			},
+			Datetime: time.Date(2026, 8, 6, 12, 0, 0, 0, time.UTC),
+			Text:     "Nice!",
+			NoteID:   "https://localhost/users/bob/notes/c1",
+		},
+	}}
+	if err := fileBackend.Comments().PutLocal("alice", localWorkout.ID, localComments); err != nil {
+		t.Fatal(err)
+	}
+
+	ownerHandle := "bob@remote.test"
+	fedWorkoutID := "38472901"
+	fedComments := &workouts.WorkoutComments{Comments: []workouts.WorkoutComment{
+		{
+			ID: "c2",
+			User: workouts.WorkoutLikeUser{
+				Handle: "alice@localhost", Nickname: "alice", Name: "Alice", IsLocal: true,
+			},
+			Datetime: time.Date(2026, 8, 6, 13, 0, 0, 0, time.UTC),
+			Text:     "hi",
+			NoteID:   "https://localhost/users/alice/notes/c2",
+		},
+	}}
+	if err := fileBackend.Comments().PutFederated("alice", ownerHandle, fedWorkoutID, fedComments); err != nil {
+		t.Fatal(err)
+	}
+
+	noteID := "https://localhost/users/alice/notes/c2"
+	activityID := "https://localhost/users/alice/activities/comment-1"
+	if err := fileBackend.Comments().PutCommentActivityID("alice", noteID, activityID); err != nil {
+		t.Fatal(err)
+	}
+
+	ownerKey := "bob_remote.test"
+	inboxDir := filepath.Join(dir, "users", "alice", "federation", "inbox", "workouts", ownerKey)
+	if err := os.MkdirAll(inboxDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(inboxDir, "author.yaml"), []byte("nickname: bob\nhandle: bob@remote.test\nname: Bob\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(inboxDir, fedWorkoutID+".yaml"), []byte("id: \"38472901\"\nname: Remote Ride\nsport_type: Ride\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend.Close()
+
+	result, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Verify: true, Force: true,
+	})
+	if err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+	if result.LocalComments != 1 || result.FedComments != 1 || result.CommentActivities != 1 {
+		t.Fatalf("comments result: %+v", result)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotLocal, err := boltBackend.Comments().GetLocal("alice", localWorkout.ID)
+	if err != nil || gotLocal.CommentsNum != 1 || gotLocal.Comments[0].Text != "Nice!" {
+		t.Fatalf("bbolt local comments: %#v err=%v", gotLocal, err)
+	}
+	gotFed, err := boltBackend.Comments().GetFederated("alice", ownerHandle, fedWorkoutID)
+	if err != nil || gotFed.CommentsNum != 1 {
+		t.Fatalf("bbolt fed comments: %#v err=%v", gotFed, err)
+	}
+	gotActivity, err := boltBackend.Comments().GetCommentActivityID("alice", noteID)
+	if err != nil || gotActivity != activityID {
+		t.Fatalf("bbolt activity id: %q err=%v", gotActivity, err)
+	}
+	_ = boltBackend.Close()
+
+	_ = os.Remove(filepath.Join(dir, "users", "alice", "workouts",
+		keys.WorkoutDirName(localWorkout.StartDate, localWorkout.ID), "comments.yaml"))
+	_ = os.RemoveAll(filepath.Join(inboxDir, "comments"))
+	_ = os.RemoveAll(filepath.Join(dir, "users", "alice", "federation", "outbox", "comments"))
+
+	result2, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg, Verify: true,
+	})
+	if err != nil {
+		t.Fatalf("bbolt→file: %v", err)
+	}
+	if result2.LocalComments != 1 || result2.FedComments != 1 || result2.CommentActivities != 1 {
+		t.Fatalf("round-trip comments result: %+v", result2)
+	}
+
+	fileCfg := cfg
+	fileCfg.Driver = config.StorageDriverFile
+	fileBackend2, err := storage.Open(fileCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fileBackend2.Close()
+	gotLocal, err = fileBackend2.Comments().GetLocal("alice", localWorkout.ID)
+	if err != nil || gotLocal.CommentsNum != 1 || gotLocal.Comments[0].Text != "Nice!" {
+		t.Fatalf("round-trip local comments: %#v err=%v", gotLocal, err)
+	}
+	gotFed, err = fileBackend2.Comments().GetFederated("alice", ownerHandle, fedWorkoutID)
+	if err != nil || gotFed.CommentsNum != 1 {
+		t.Fatalf("round-trip fed comments: %#v err=%v", gotFed, err)
+	}
+	gotActivity, err = fileBackend2.Comments().GetCommentActivityID("alice", noteID)
+	if err != nil || gotActivity != activityID {
+		t.Fatalf("round-trip activity id: %q err=%v", gotActivity, err)
+	}
+}
+
 func TestMigrateLegacyLikeActivityID(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.StorageConfig{

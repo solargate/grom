@@ -237,6 +237,41 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get failedToLoadWorkoutComments => 'Не удалось загрузить комментарии';
+
+  @override
+  String get failedToAddWorkoutComment => 'Не удалось добавить комментарий';
+
+  @override
+  String get failedToDeleteWorkoutComment => 'Не удалось удалить комментарий';
+
+  @override
+  String get workoutCommentAction => 'Комментарии';
+
+  @override
+  String get workoutNoCommentsYet => 'Пока нет комментариев';
+
+  @override
+  String workoutCommentsTitle(String count) {
+    return 'Комментарии ($count)';
+  }
+
+  @override
+  String get workoutCommentHint => 'Напишите комментарий';
+
+  @override
+  String get addWorkoutCommentAction => 'Добавить комментарий';
+
+  @override
+  String get deleteWorkoutCommentAction => 'Удалить комментарий';
+
+  @override
+  String get deleteWorkoutCommentTitle => 'Удалить комментарий?';
+
+  @override
+  String get deleteWorkoutCommentConfirm => 'Удалить этот комментарий?';
+
+  @override
   String get retry => 'Повторить';
 
   @override

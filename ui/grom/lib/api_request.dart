@@ -477,6 +477,72 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<WorkoutCommentsResponse> getWorkoutComments({
+    required String token,
+    required String workoutId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/comments');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutCommentsResponse.fromJson(json);
+    }
+    throw _parseError(response);
+  }
+
+  Future<WorkoutCommentCreateResponse> createWorkoutComment({
+    required String token,
+    required String workoutId,
+    required String text,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/comments');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.post(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'text': text}),
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutCommentCreateResponse.fromJson(json);
+    }
+    throw _parseError(response);
+  }
+
+  Future<int> deleteWorkoutComment({
+    required String token,
+    required String workoutId,
+    required String commentId,
+    String? owner,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/comments/$commentId');
+    if (owner != null && owner.isNotEmpty) {
+      uri = uri.replace(queryParameters: {'owner': owner});
+    }
+    final response = await _client.delete(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return json['count'] as int? ?? 0;
+    }
+    throw _parseError(response);
+  }
+
   Future<Workout> createWorkoutMultipart({
     required String token,
     required Map<String, String> fields,

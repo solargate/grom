@@ -239,6 +239,44 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get failedToLoadWorkoutComments =>
+      'Kommentare konnten nicht geladen werden';
+
+  @override
+  String get failedToAddWorkoutComment =>
+      'Kommentar konnte nicht hinzugefügt werden';
+
+  @override
+  String get failedToDeleteWorkoutComment =>
+      'Kommentar konnte nicht gelöscht werden';
+
+  @override
+  String get workoutCommentAction => 'Kommentare';
+
+  @override
+  String get workoutNoCommentsYet => 'Noch keine Kommentare';
+
+  @override
+  String workoutCommentsTitle(String count) {
+    return 'Kommentare ($count)';
+  }
+
+  @override
+  String get workoutCommentHint => 'Kommentar schreiben';
+
+  @override
+  String get addWorkoutCommentAction => 'Kommentar hinzufügen';
+
+  @override
+  String get deleteWorkoutCommentAction => 'Kommentar löschen';
+
+  @override
+  String get deleteWorkoutCommentTitle => 'Kommentar löschen?';
+
+  @override
+  String get deleteWorkoutCommentConfirm => 'Diesen Kommentar löschen?';
+
+  @override
   String get retry => 'Erneut versuchen';
 
   @override
