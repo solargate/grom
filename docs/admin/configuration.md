@@ -56,12 +56,12 @@ Notes:
 
 | Driver | Metadata | Charts (speed / heart rate) | Workout likes | Blobs (tracks, photos, avatars, keys) |
 |--------|----------|-----------------------------|---------------|----------------------------------------|
-| `file` (default) | YAML under `storage.location` (`users.yaml`, per-user `equipment.yaml`, `profile.yaml`, workout YAML, …) | `speed-chart.json` and `heartrate-chart.json` in each workout dir | `likes.yaml` next to each local workout; federated like cache and outbox like activity IDs under the viewer’s `federation/` tree | Same tree |
-| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`); includes `user_profiles` bucket for UI preferences | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Buckets `workout_likes`, `fed_workout_likes`, and `like_activities` | Same filesystem layout under `storage.location` |
+| `file` (default) | YAML under `storage.location` (`users.yaml`, per-user `equipment.yaml`, `profile.yaml`, workout YAML, …) | `speed-chart.json` and `heartrate-chart.json` in each workout dir | `likes.yaml` and `comments.yaml` next to each local workout; federated like/comment cache and outbox activity IDs under the viewer’s `federation/` tree | Same tree |
+| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`); includes `user_profiles` bucket for UI preferences | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments`, and `comment_activities` | Same filesystem layout under `storage.location` |
 
 `postgres` is reserved in config but not implemented.
 
-Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes (local, federated cache, and outbound Like activity ids) are copied so they remain readable after switching drivers:
+Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes and comments (local, federated cache, and outbound activity ids) are copied so they remain readable after switching drivers:
 
 ```bash
 grom migrate-storage --config config.yaml --from file --to bbolt --verify

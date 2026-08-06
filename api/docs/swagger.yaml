@@ -30,6 +30,14 @@ definitions:
     - name
     - type
     type: object
+  v1.CreateWorkoutCommentRequest:
+    properties:
+      text:
+        example: Great workout!
+        type: string
+    required:
+    - text
+    type: object
   v1.CreateWorkoutRequest:
     properties:
       description:
@@ -455,6 +463,68 @@ definitions:
         example: bob
         type: string
     type: object
+  v1.WorkoutCommentCreateResponse:
+    properties:
+      comment:
+        $ref: '#/definitions/v1.WorkoutCommentResponse'
+      count:
+        example: 2
+        type: integer
+    type: object
+  v1.WorkoutCommentDeleteResponse:
+    properties:
+      count:
+        example: 1
+        type: integer
+    type: object
+  v1.WorkoutCommentResponse:
+    properties:
+      can_delete:
+        example: true
+        type: boolean
+      datetime:
+        example: "2026-08-06T12:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      text:
+        example: Great workout!
+        type: string
+      user:
+        $ref: '#/definitions/v1.WorkoutCommentUserResponse'
+    type: object
+  v1.WorkoutCommentUserResponse:
+    properties:
+      avatar_url:
+        example: /api/v1/users/alice/avatar
+        type: string
+      handle:
+        example: alice@grom.example
+        type: string
+      has_avatar:
+        example: true
+        type: boolean
+      is_local:
+        example: true
+        type: boolean
+      name:
+        example: Alice
+        type: string
+      nickname:
+        example: alice
+        type: string
+    type: object
+  v1.WorkoutCommentsResponse:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/v1.WorkoutCommentResponse'
+        type: array
+      count:
+        example: 2
+        type: integer
+    type: object
   v1.WorkoutEquipmentItem:
     properties:
       id:
@@ -556,6 +626,9 @@ definitions:
       can_like:
         example: true
         type: boolean
+      comments_count:
+        example: 2
+        type: integer
       description:
         example: Easy session
         type: string
@@ -1501,6 +1574,140 @@ paths:
       security:
       - BearerAuth: []
       summary: Update workout
+      tags:
+      - workouts
+  /workouts/{id}/comments:
+    get:
+      description: Return comments on a workout ordered by datetime ascending. Use
+        owner query for followed users' workouts.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutCommentsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List workout comments
+      tags:
+      - workouts
+    post:
+      consumes:
+      - application/json
+      description: Comment on a workout (own or another user's, local or federated).
+        Max 1000 characters; empty text rejected.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      - description: Comment text
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.CreateWorkoutCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutCommentCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add workout comment
+      tags:
+      - workouts
+  /workouts/{id}/comments/{commentId}:
+    delete:
+      description: Delete a comment. Allowed for the comment author or the workout
+        owner.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: commentId
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutCommentDeleteResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete workout comment
       tags:
       - workouts
   /workouts/{id}/heartrate:

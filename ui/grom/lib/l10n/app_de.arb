@@ -126,6 +126,24 @@
       }
     }
   },
+  "failedToLoadWorkoutComments": "Kommentare konnten nicht geladen werden",
+  "failedToAddWorkoutComment": "Kommentar konnte nicht hinzugefügt werden",
+  "failedToDeleteWorkoutComment": "Kommentar konnte nicht gelöscht werden",
+  "workoutCommentAction": "Kommentare",
+  "workoutNoCommentsYet": "Noch keine Kommentare",
+  "workoutCommentsTitle": "Kommentare ({count})",
+  "@workoutCommentsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutCommentHint": "Kommentar schreiben",
+  "addWorkoutCommentAction": "Kommentar hinzufügen",
+  "deleteWorkoutCommentAction": "Kommentar löschen",
+  "deleteWorkoutCommentTitle": "Kommentar löschen?",
+  "deleteWorkoutCommentConfirm": "Diesen Kommentar löschen?",
   "retry": "Erneut versuchen",
   "expandMap": "Karte vergrößern",
   "addPhotos": "Fotos hinzufügen",

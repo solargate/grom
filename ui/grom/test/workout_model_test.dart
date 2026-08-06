@@ -113,10 +113,12 @@ void main() {
       'likes_count': 3,
       'liked_by_me': true,
       'can_like': true,
+      'comments_count': 4,
     });
     expect(withLikes.likesCount, 3);
     expect(withLikes.likedByMe, isTrue);
     expect(withLikes.canLike, isTrue);
+    expect(withLikes.commentsCount, 4);
 
     final defaults = Workout.fromJson({
       'id': 'workout-4',
@@ -129,6 +131,7 @@ void main() {
     expect(defaults.likesCount, 0);
     expect(defaults.likedByMe, isFalse);
     expect(defaults.canLike, isFalse);
+    expect(defaults.commentsCount, 0);
   });
 
   test('WorkoutLikeState and WorkoutLikesResponse parse API payloads', () {

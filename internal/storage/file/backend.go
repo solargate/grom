@@ -19,6 +19,7 @@ type Backend struct {
 	workoutRepo *WorkoutsStore
 	workouts    *workouts.Service
 	likes       workouts.LikesRepository
+	comments    workouts.CommentsRepository
 	equipment   equipment.Repository
 	social      social.Repository
 	fed         federation.Storage
@@ -49,6 +50,7 @@ func Open(location string) (*Backend, error) {
 
 	workoutRepo := NewWorkoutsStore(location)
 	likesStore := NewWorkoutLikesStore(location)
+	commentsStore := NewWorkoutCommentsStore(location)
 	equipmentStore := NewEquipmentStore(location)
 	workoutSvc := workouts.NewService(workoutRepo, blobStore, speedCharts, heartRateCharts)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
@@ -59,6 +61,7 @@ func Open(location string) (*Backend, error) {
 		workoutRepo: workoutRepo,
 		workouts:    workoutSvc,
 		likes:       likesStore,
+		comments:    commentsStore,
 		equipment:   equipmentStore,
 		social:      socialStore,
 		fed:         federation.NewStorage(followersStore, inboxStore),
@@ -66,14 +69,15 @@ func Open(location string) (*Backend, error) {
 	}, nil
 }
 
-func (b *Backend) Users() users.Repository         { return b.users }
-func (b *Backend) Workouts() *workouts.Service     { return b.workouts }
-func (b *Backend) Likes() workouts.LikesRepository { return b.likes }
-func (b *Backend) WorkoutsRepo() *WorkoutsStore    { return b.workoutRepo }
-func (b *Backend) Equipment() equipment.Repository { return b.equipment }
-func (b *Backend) Social() social.Repository       { return b.social }
-func (b *Backend) Federation() federation.Storage  { return b.fed }
-func (b *Backend) Blobs() blob.Store               { return b.blobs }
+func (b *Backend) Users() users.Repository               { return b.users }
+func (b *Backend) Workouts() *workouts.Service           { return b.workouts }
+func (b *Backend) Likes() workouts.LikesRepository       { return b.likes }
+func (b *Backend) Comments() workouts.CommentsRepository { return b.comments }
+func (b *Backend) WorkoutsRepo() *WorkoutsStore          { return b.workoutRepo }
+func (b *Backend) Equipment() equipment.Repository       { return b.equipment }
+func (b *Backend) Social() social.Repository             { return b.social }
+func (b *Backend) Federation() federation.Storage        { return b.fed }
+func (b *Backend) Blobs() blob.Store                     { return b.blobs }
 
 func (b *Backend) Close() error { return nil }
 

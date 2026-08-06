@@ -6,11 +6,11 @@ This page is a short tour of the main screens (screenshots below are from Androi
 
 ## Workouts
 
-Your home feed lists activities with type, date, device, distance/time (and pace or elevation when relevant), plus a map preview when a GPS track is attached. Each card shows a like control: thumb up to like or unlike someone else’s workout, and the like count. Tap the count to open the list of people who liked it (avatar, name, handle). You cannot like your own workouts; the button stays disabled on yours.
+Your home feed lists activities with type, date, device, distance/time (and pace or elevation when relevant), plus a map preview when a GPS track is attached. Each card shows a social bar under the map and photos: likes on the left (thumb up to like or unlike someone else’s workout; tap the count for likers) and comments on the right (count + comment icon). You cannot like your own workouts; the like button stays disabled on yours. Anyone can comment on their own or others’ workouts. Tap the comment control to open the thread, add a comment (up to 1000 characters), or delete a comment you wrote (workout owners can also delete any comment on their workout).
 
 ![Workout list on Android](../screenshots/workout-list.jpg)
 
-Open a workout for the full card: interactive map (when a track is present), photo gallery, the same like bar as in the list, a speed-over-distance chart with average and maximum speed, and a heart-rate chart (distance when GPS is present, otherwise elapsed minutes) with average and maximum heart rate. Tap a chart to see values at that point.
+Open a workout for the full card: interactive map (when a track is present), photo gallery, the same social bar as in the list, a speed-over-distance chart with average and maximum speed, and a heart-rate chart (distance when GPS is present, otherwise elapsed minutes) with average and maximum heart rate. Tap a chart to see values at that point.
 
 You can create workouts manually, import GPX/FIT tracks, attach photos, and link equipment. When editing a workout you can add or remove photos (up to 20). On create, the workout name defaults to the localized sport type and follows sport changes until you edit it. On Android you can also record a live GPS track (see below).
 
@@ -28,9 +28,9 @@ Manage bikes, shoes, and other gear. Items are grouped by category; distance tot
 
 ## Social and federation
 
-Follow other users on the same instance and browse a shared feed. Like workouts from people you follow (local or federated); counts and liker lists appear on list and detail screens.
+Follow other users on the same instance and browse a shared feed. Like and comment on workouts from people you follow (local or federated); counts appear on list and detail screens.
 
-When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Incoming likes from other instances update the local workout’s like list the same way.
+When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way.
 
 ## Strava import
 

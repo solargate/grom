@@ -20,6 +20,9 @@ var (
 	bucketWorkoutLikes        = []byte("workout_likes")
 	bucketFedWorkoutLikes     = []byte("fed_workout_likes")
 	bucketLikeActivities      = []byte("like_activities")
+	bucketWorkoutComments     = []byte("workout_comments")
+	bucketFedWorkoutComments  = []byte("fed_workout_comments")
+	bucketCommentActivities   = []byte("comment_activities")
 	bucketSpeedCharts         = []byte("speed_charts")
 	bucketFedSpeedCharts      = []byte("fed_speed_charts")
 	bucketHeartRateCharts     = []byte("heart_rate_charts")
@@ -46,6 +49,9 @@ var allBuckets = [][]byte{
 	bucketWorkoutLikes,
 	bucketFedWorkoutLikes,
 	bucketLikeActivities,
+	bucketWorkoutComments,
+	bucketFedWorkoutComments,
+	bucketCommentActivities,
 	bucketSpeedCharts,
 	bucketFedSpeedCharts,
 	bucketHeartRateCharts,

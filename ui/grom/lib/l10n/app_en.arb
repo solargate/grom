@@ -126,6 +126,24 @@
       }
     }
   },
+  "failedToLoadWorkoutComments": "Failed to load workout comments",
+  "failedToAddWorkoutComment": "Failed to add comment",
+  "failedToDeleteWorkoutComment": "Failed to delete comment",
+  "workoutCommentAction": "Comments",
+  "workoutNoCommentsYet": "No comments yet",
+  "workoutCommentsTitle": "Comments ({count})",
+  "@workoutCommentsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutCommentHint": "Write a comment",
+  "addWorkoutCommentAction": "Add comment",
+  "deleteWorkoutCommentAction": "Delete comment",
+  "deleteWorkoutCommentTitle": "Delete comment?",
+  "deleteWorkoutCommentConfirm": "Delete this comment?",
   "retry": "Retry",
   "expandMap": "Expand map",
   "addPhotos": "Add photos",

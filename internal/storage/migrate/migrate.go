@@ -29,23 +29,26 @@ type Options struct {
 }
 
 type Result struct {
-	Users            int
-	Equipment        int
-	Follows          int
-	Workouts         int
-	FedFollowers     int
-	FedAuthors       int
-	FedInboxWorkouts int
-	LocalLikes       int
-	FedLikes         int
-	LikeActivities   int
+	Users              int
+	Equipment          int
+	Follows            int
+	Workouts           int
+	FedFollowers       int
+	FedAuthors         int
+	FedInboxWorkouts   int
+	LocalLikes         int
+	FedLikes           int
+	LikeActivities     int
+	LocalComments      int
+	FedComments        int
+	CommentActivities  int
 }
 
 // Run copies metadata from one storage driver to another. Track/media/avatar
 // blob files under storage.location are shared and not copied. Speed and
 // heart-rate charts are converted between file JSON blobs and bbolt binary
-// buckets. Workout likes (local, federated cache, and outbound Like activity
-// ids) are copied so they remain readable after switching drivers.
+// buckets. Workout likes and comments (local, federated cache, and outbound
+// activity ids) are copied so they remain readable after switching drivers.
 func Run(opts Options) (*Result, error) {
 	if opts.From == opts.To {
 		return nil, fmt.Errorf("from and to drivers must differ")
@@ -189,6 +192,16 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 			if likes != nil && likes.Likes > 0 {
 				result.LocalLikes++
 			}
+			if err := copyLocalComments(src, dst, u.Nickname, &w); err != nil {
+				return result, fmt.Errorf("copy comments for workout %s: %w", w.ID, err)
+			}
+			comments, err := src.Comments().GetLocal(u.Nickname, w.ID)
+			if err != nil {
+				return result, fmt.Errorf("count comments for workout %s: %w", w.ID, err)
+			}
+			if comments != nil && comments.CommentsNum > 0 {
+				result.LocalComments++
+			}
 			result.Workouts++
 		}
 
@@ -254,6 +267,18 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 	}
 	result.LikeActivities = likeActivities
 
+	fedComments, err := copyFederatedComments(src, dst)
+	if err != nil {
+		return result, fmt.Errorf("copy federated comments: %w", err)
+	}
+	result.FedComments = fedComments
+
+	commentActivities, err := copyCommentActivities(src, dst)
+	if err != nil {
+		return result, fmt.Errorf("copy comment activities: %w", err)
+	}
+	result.CommentActivities = commentActivities
+
 	return result, nil
 }
 
@@ -313,6 +338,21 @@ func countAll(backend storage.Backend, location string) (*Result, error) {
 		return nil, err
 	}
 	result.LikeActivities = likeActivities
+	localComments, err := countLocalComments(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.LocalComments = localComments
+	fedComments, err := countFederatedComments(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.FedComments = fedComments
+	commentActivities, err := countCommentActivities(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.CommentActivities = commentActivities
 	return result, nil
 }
 

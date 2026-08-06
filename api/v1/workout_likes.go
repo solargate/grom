@@ -304,6 +304,10 @@ func (a *App) publishWorkoutLikesUpdate(ownerNickname, workoutID string) {
 	}
 	workout.LikesCount = likes.Likes
 	workout.LikedUsers = likes.Users
+	if comments, err := a.Comments.GetLocal(ownerNickname, workoutID); err == nil {
+		workout.CommentsCount = comments.CommentsNum
+		workout.Comments = comments.Comments
+	}
 	a.publishUpdatedWorkout(ownerNickname, workout)
 }
 

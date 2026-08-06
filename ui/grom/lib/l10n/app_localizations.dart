@@ -520,6 +520,72 @@ abstract class AppLocalizations {
   /// **'Likes ({count})'**
   String workoutLikesTitle(String count);
 
+  /// No description provided for @failedToLoadWorkoutComments.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load workout comments'**
+  String get failedToLoadWorkoutComments;
+
+  /// No description provided for @failedToAddWorkoutComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add comment'**
+  String get failedToAddWorkoutComment;
+
+  /// No description provided for @failedToDeleteWorkoutComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete comment'**
+  String get failedToDeleteWorkoutComment;
+
+  /// No description provided for @workoutCommentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get workoutCommentAction;
+
+  /// No description provided for @workoutNoCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet'**
+  String get workoutNoCommentsYet;
+
+  /// No description provided for @workoutCommentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments ({count})'**
+  String workoutCommentsTitle(String count);
+
+  /// No description provided for @workoutCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment'**
+  String get workoutCommentHint;
+
+  /// No description provided for @addWorkoutCommentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add comment'**
+  String get addWorkoutCommentAction;
+
+  /// No description provided for @deleteWorkoutCommentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get deleteWorkoutCommentAction;
+
+  /// No description provided for @deleteWorkoutCommentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment?'**
+  String get deleteWorkoutCommentTitle;
+
+  /// No description provided for @deleteWorkoutCommentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this comment?'**
+  String get deleteWorkoutCommentConfirm;
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:

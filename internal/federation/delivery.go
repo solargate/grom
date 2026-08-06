@@ -193,6 +193,71 @@ func (d *Delivery) DeliverWorkoutUndoLike(actorNickname, targetHandle, objectID,
 	return d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity)
 }
 
+func (d *Delivery) DeliverWorkoutComment(actorNickname, targetHandle, workoutObjectID, noteID, text string, published time.Time) (string, error) {
+	targetActor := remoteActorURLFromHandle(targetHandle)
+	if targetActor == "" {
+		return "", fmt.Errorf("invalid target handle")
+	}
+	if noteID == "" {
+		return "", fmt.Errorf("note id required")
+	}
+	if published.IsZero() {
+		published = time.Now().UTC()
+	}
+	actor := actorURL(actorNickname)
+	activityID := fmt.Sprintf("%s/activities/%s", actor, uuid.NewString())
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       activityID,
+		"type":     "Create",
+		"actor":    actor,
+		"object": map[string]any{
+			"id":           noteID,
+			"type":         "Note",
+			"attributedTo": actor,
+			"content":      text,
+			"published":    published.UTC().Format(time.RFC3339),
+			"inReplyTo":    workoutObjectID,
+			"to":           []string{"https://www.w3.org/ns/activitystreams#Public"},
+		},
+		"to": []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
+	}
+	if err := d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity); err != nil {
+		return "", err
+	}
+	return activityID, nil
+}
+
+func (d *Delivery) DeliverWorkoutCommentDelete(actorNickname, targetHandle, noteID string) error {
+	return d.DeliverWorkoutCommentDeleteWithReply(actorNickname, targetHandle, noteID, "")
+}
+
+func (d *Delivery) DeliverWorkoutCommentDeleteWithReply(actorNickname, targetHandle, noteID, inReplyTo string) error {
+	targetActor := remoteActorURLFromHandle(targetHandle)
+	if targetActor == "" {
+		return fmt.Errorf("invalid target handle")
+	}
+	if noteID == "" {
+		return fmt.Errorf("note id required")
+	}
+	object := map[string]any{
+		"id":   noteID,
+		"type": "Note",
+	}
+	if inReplyTo != "" {
+		object["inReplyTo"] = inReplyTo
+	}
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       fmt.Sprintf("%s/deletes/%s", actorURL(actorNickname), uuid.NewString()),
+		"type":     "Delete",
+		"actor":    actorURL(actorNickname),
+		"object":   object,
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
+	}
+	return d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity)
+}
+
 func (d *Delivery) ResolveRemote(parsed social.ParsedHandle) (*social.UserSearchResult, error) {
 	if !config.Cfg.Federation.Enabled {
 		return nil, social.ErrRemoteNotReady
@@ -315,6 +380,31 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 			})
 		}
 		object["likedUsers"] = users
+	}
+	if workout.CommentsCount > 0 {
+		object["commentsCount"] = workout.CommentsCount
+	}
+	if len(workout.Comments) > 0 {
+		comments := make([]map[string]any, 0, len(workout.Comments))
+		for _, c := range workout.Comments {
+			entry := map[string]any{
+				"id":       c.ID,
+				"datetime": c.Datetime.UTC().Format(time.RFC3339),
+				"text":     c.Text,
+				"user": map[string]any{
+					"handle":    c.User.Handle,
+					"nickname":  c.User.Nickname,
+					"name":      c.User.Name,
+					"is_local":  c.User.IsLocal,
+					"avatarUrl": c.User.AvatarURL,
+				},
+			}
+			if c.NoteID != "" {
+				entry["noteId"] = c.NoteID
+			}
+			comments = append(comments, entry)
+		}
+		object["comments"] = comments
 	}
 	if workout.Track != "" && len(trackData) > 0 {
 		object["trackData"] = base64.StdEncoding.EncodeToString(trackData)
