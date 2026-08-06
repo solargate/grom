@@ -50,6 +50,11 @@ func (m *memUsers) UpdateProfile(string, string) (*users.User, error) {
 }
 func (m *memUsers) SetLastEquipmentForSport(string, string, []string) error { return nil }
 func (m *memUsers) RemoveEquipmentFromLastSets(string, string) error        { return nil }
+func (m *memUsers) GetProfile(string) (*users.Profile, error) {
+	return &users.Profile{}, nil
+}
+func (m *memUsers) PutProfile(string, users.Profile) error     { return nil }
+func (m *memUsers) SetLastSportType(string, string) error      { return nil }
 
 type memFollows struct {
 	mu      sync.Mutex

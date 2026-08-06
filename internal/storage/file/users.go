@@ -256,64 +256,6 @@ func (s *UsersStore) UpdateProfile(userID, name string) (*users.User, error) {
 	return nil, users.ErrUserNotFound
 }
 
-func (s *UsersStore) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i := range s.users {
-		if s.users[i].ID != userID {
-			continue
-		}
-		if s.users[i].LastEquipmentBySport == nil {
-			s.users[i].LastEquipmentBySport = make(map[string][]string)
-		}
-		if len(equipmentIDs) == 0 {
-			delete(s.users[i].LastEquipmentBySport, sportType)
-		} else {
-			copied := make([]string, len(equipmentIDs))
-			copy(copied, equipmentIDs)
-			s.users[i].LastEquipmentBySport[sportType] = copied
-		}
-		return s.save()
-	}
-	return users.ErrUserNotFound
-}
-
-func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i := range s.users {
-		if s.users[i].ID != userID {
-			continue
-		}
-		if len(s.users[i].LastEquipmentBySport) == 0 {
-			return nil
-		}
-		changed := false
-		for sportType, ids := range s.users[i].LastEquipmentBySport {
-			filtered := make([]string, 0, len(ids))
-			for _, id := range ids {
-				if id != equipmentID {
-					filtered = append(filtered, id)
-				} else {
-					changed = true
-				}
-			}
-			if len(filtered) == 0 {
-				delete(s.users[i].LastEquipmentBySport, sportType)
-			} else if changed {
-				s.users[i].LastEquipmentBySport[sportType] = filtered
-			}
-		}
-		if changed {
-			return s.save()
-		}
-		return nil
-	}
-	return users.ErrUserNotFound
-}
-
 // Import writes a user record as-is (used by storage migration).
 func (s *UsersStore) Import(user users.User) error {
 	s.mu.Lock()

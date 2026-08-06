@@ -36,6 +36,8 @@ type App struct {
 
 	stravaOnce sync.Once
 	stravaJobs *strava.JobManager
+
+	profileRefreshWG sync.WaitGroup
 }
 
 func NewApp() (*App, error) {
@@ -87,6 +89,7 @@ func NewApp() (*App, error) {
 }
 
 func (a *App) Close() error {
+	a.profileRefreshWG.Wait()
 	if a.EquipmentDistance != nil {
 		a.EquipmentDistance.Wait()
 	}
@@ -110,6 +113,12 @@ func (a *App) stravaJobManager() *strava.JobManager {
 			a.Equipment,
 			a.publishCreatedWorkout,
 			a.EquipmentDistance,
+			func(userID, nickname string, workout *workouts.Workout) {
+				a.touchLastEquipmentFromWorkout(userID, workout)
+			},
+			func(userID, nickname string) {
+				a.scheduleRefreshLastSportType(nickname, userID)
+			},
 		)
 	})
 	return a.stravaJobs
@@ -132,6 +141,8 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		authGroup.PATCH("/me", auth.AuthRequired(), a.updateMe)
 		authGroup.PUT("/me/avatar", auth.AuthRequired(), a.uploadMyAvatar)
 		authGroup.DELETE("/me/avatar", auth.AuthRequired(), a.deleteMyAvatar)
+
+		apiV1.GET("/profile", auth.AuthRequired(), a.getProfile)
 
 		apiV1.GET("/users/search", auth.AuthRequired(), a.searchUsers)
 		apiV1.GET("/users/:nickname/avatar", auth.AuthRequired(), a.getUserAvatar)

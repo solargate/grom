@@ -3,6 +3,7 @@ package bbolt
 var (
 	bucketMeta              = []byte("meta")
 	bucketUsers             = []byte("users")
+	bucketUserProfiles      = []byte("user_profiles")
 	bucketIdxUsersEmail     = []byte("idx_users_email")
 	bucketIdxUsersNick      = []byte("idx_users_nick")
 	bucketEquipment         = []byte("equipment")
@@ -25,6 +26,7 @@ var (
 var allBuckets = [][]byte{
 	bucketMeta,
 	bucketUsers,
+	bucketUserProfiles,
 	bucketIdxUsersEmail,
 	bucketIdxUsersNick,
 	bucketEquipment,

@@ -138,16 +138,6 @@ func (s *Service) Create(nickname string, workout *Workout) (*Workout, error) {
 	return s.repo.Create(nickname, workout)
 }
 
-// LastEquipmentIDsForSport returns equipment IDs from the user's most recent
-// workout of the given sport type (metadata only; catalog enrichment not applied).
-func (s *Service) LastEquipmentIDsForSport(nickname, sportType string) ([]string, error) {
-	items, err := s.repo.List(nickname)
-	if err != nil {
-		return nil, err
-	}
-	return LastEquipmentIDsForSport(items, sportType), nil
-}
-
 func (s *Service) ensureExternalIDAvailable(nickname string, workout *Workout) error {
 	if workout == nil || workout.ExternalID == nil {
 		return nil

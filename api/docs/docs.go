@@ -628,6 +628,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns UI/service preferences (last sport type, last equipment by sport). Not part of public user identity.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Get current user profile preferences",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/server-info": {
             "get": {
                 "description": "Get server info",
@@ -1005,7 +1042,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is copied from the previous workout of the same sport_type. An explicit empty equipment_ids list means no equipment.",
+                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -1064,7 +1101,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "JSON array of equipment IDs; omit to copy from previous same sport_type; [] for none",
+                        "description": "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none",
                         "name": "equipment_ids",
                         "in": "formData"
                     },
@@ -2145,6 +2182,23 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "last_equipment_by_sport": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "last_sport_type": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.RegisterRequest": {
             "type": "object",
             "required": [
@@ -2301,15 +2355,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "last_equipment_by_sport": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
                 },
                 "name": {
                     "type": "string",

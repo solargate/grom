@@ -282,15 +282,19 @@ func (a *App) resolveWorkoutEquipment(nickname string, equipmentIDs []string) ([
 
 // resolveEquipmentForCreate resolves equipment for a new workout.
 // When provided is false (equipment_ids omitted), IDs are taken from the
-// previous workout of the same sport type. When provided is true, equipmentIDs
-// are used as-is (including an explicit empty list).
-func (a *App) resolveEquipmentForCreate(nickname, sportType string, equipmentIDs []string, provided bool) ([]workouts.WorkoutEquipment, []string, error) {
+// user's profile last_equipment_by_sport for the sport type. When provided is
+// true, equipmentIDs are used as-is (including an explicit empty list).
+func (a *App) resolveEquipmentForCreate(nickname, userID, sportType string, equipmentIDs []string, provided bool) ([]workouts.WorkoutEquipment, []string, error) {
 	ids := equipmentIDs
 	if !provided {
-		var err error
-		ids, err = a.Workouts.LastEquipmentIDsForSport(nickname, sportType)
+		profile, err := a.Users.GetProfile(userID)
 		if err != nil {
 			return nil, nil, err
+		}
+		if profile != nil && profile.LastEquipmentBySport != nil {
+			ids = profile.LastEquipmentBySport[sportType]
+		} else {
+			ids = nil
 		}
 	}
 	items, err := a.resolveWorkoutEquipment(nickname, ids)
@@ -312,10 +316,6 @@ func workoutEquipmentIDs(items []workouts.WorkoutEquipment) []string {
 		ids = append(ids, item.ID)
 	}
 	return ids
-}
-
-func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs []string) {
-	_ = a.Users.SetLastEquipmentForSport(userID, sportType, equipmentIDs)
 }
 
 func (a *App) scheduleEquipmentDistanceRecalc(nickname string, items []workouts.WorkoutEquipment) {

@@ -8,36 +8,33 @@ import (
 )
 
 type userRecord struct {
-	ID                   string              `json:"id"`
-	Nickname             string              `json:"nickname"`
-	Name                 string              `json:"name,omitempty"`
-	Email                string              `json:"email"`
-	PasswordHash         string              `json:"password_hash"`
-	CreatedAt            time.Time           `json:"created_at"`
-	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
+	ID           string    `json:"id"`
+	Nickname     string    `json:"nickname"`
+	Name         string    `json:"name,omitempty"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"password_hash"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 func userToRecord(u users.User) userRecord {
 	return userRecord{
-		ID:                   u.ID,
-		Nickname:             u.Nickname,
-		Name:                 u.Name,
-		Email:                u.Email,
-		PasswordHash:         u.PasswordHash,
-		CreatedAt:            u.CreatedAt,
-		LastEquipmentBySport: u.LastEquipmentBySport,
+		ID:           u.ID,
+		Nickname:     u.Nickname,
+		Name:         u.Name,
+		Email:        u.Email,
+		PasswordHash: u.PasswordHash,
+		CreatedAt:    u.CreatedAt,
 	}
 }
 
 func recordToUser(r userRecord) users.User {
 	return users.User{
-		ID:                   r.ID,
-		Nickname:             r.Nickname,
-		Name:                 r.Name,
-		Email:                r.Email,
-		PasswordHash:         r.PasswordHash,
-		CreatedAt:            r.CreatedAt,
-		LastEquipmentBySport: r.LastEquipmentBySport,
+		ID:           r.ID,
+		Nickname:     r.Nickname,
+		Name:         r.Name,
+		Email:        r.Email,
+		PasswordHash: r.PasswordHash,
+		CreatedAt:    r.CreatedAt,
 	}
 }
 

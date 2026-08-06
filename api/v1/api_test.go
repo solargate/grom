@@ -799,10 +799,10 @@ func TestCreateWorkoutCopiesEquipmentFromPreviousSameSport(t *testing.T) {
 		t.Fatalf("unexpected equipment: %#v", item)
 	}
 
-	w = ta.doJSON(t, http.MethodGet, "/api/v1/auth/me", nil, token)
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
 	expectStatus(t, w, http.StatusOK)
-	me := decodeObject(t, w)
-	lastBySport, _ := me["last_equipment_by_sport"].(map[string]any)
+	profile := decodeObject(t, w)
+	lastBySport, _ := profile["last_equipment_by_sport"].(map[string]any)
 	runIDs, _ := lastBySport["Run"].([]any)
 	if len(runIDs) != 1 || runIDs[0] != eqID {
 		t.Fatalf("expected last_equipment_by_sport Run updated, got %#v", lastBySport)
@@ -846,6 +846,49 @@ func TestCreateWorkoutExplicitEmptyEquipmentSkipsDefault(t *testing.T) {
 	created = decodeObject(t, w)
 	if eqList, ok := created["equipment"].([]any); ok && len(eqList) != 0 {
 		t.Fatalf("multipart explicit [] should not copy previous, got %#v", created["equipment"])
+	}
+}
+
+func TestProfileLastSportTypeTracksNewestByStartDate(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, user := ta.login(t, "alice@example.com", "password12")
+	userID, _ := user["id"].(string)
+	nickname, _ := user["nickname"].(string)
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Older ride", "sport_type": "Ride", "start_date": "2026-07-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Newer run", "sport_type": "Run", "start_date": "2026-07-10T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType: %v", err)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile := decodeObject(t, w)
+	if profile["last_sport_type"] != "Run" {
+		t.Fatalf("expected last_sport_type Run, got %#v", profile["last_sport_type"])
+	}
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Imported old walk", "sport_type": "Walk", "start_date": "2026-06-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	if profile["last_sport_type"] != "Run" {
+		t.Fatalf("older import must not win, got %#v", profile["last_sport_type"])
 	}
 }
 

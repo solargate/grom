@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Per-user `profile` preferences (`last_sport_type`, `last_equipment_by_sport`): file driver `users/<nickname>/profile.yaml`, bbolt bucket `user_profiles`; `GET /api/v1/profile`
+- Creating a workout without `equipment_ids` uses equipment from the user's profile for that `sport_type` (explicit `[]` still means none)
+
+### Changed
+
+- **Breaking:** `last_equipment_by_sport` removed from user identity responses (`/auth/me`, login, register); clients should use `GET /api/v1/profile`
+- New workout form defaults sport and equipment from `GET /api/v1/profile` (no extra own-workouts list for last sport)
+- `last_sport_type` is the sport of the chronologically newest workout (`start_date`, then id); refreshed asynchronously after create/update/delete, and once at the end of a Strava import job
+
 ## [0.5.0] - 2026-08-04
 
 ### Added

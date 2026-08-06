@@ -30,7 +30,7 @@ void main() {
     expect(defaults.federationEnabled, isFalse);
   });
 
-  test('UserInfo.fromJson reads optional avatar and last equipment', () {
+  test('UserInfo.fromJson reads optional avatar fields', () {
     final user = UserInfo.fromJson({
       'id': '1',
       'nickname': 'alice',
@@ -38,22 +38,25 @@ void main() {
       'email': 'alice@example.com',
       'has_avatar': true,
       'avatar_url': '/api/v1/users/alice/avatar',
+    });
+    expect(user.hasAvatar, isTrue);
+    expect(user.avatarUrl, '/api/v1/users/alice/avatar');
+  });
+
+  test('UserProfile.fromJson reads last sport and equipment', () {
+    final profile = UserProfile.fromJson({
+      'last_sport_type': 'Ride',
       'last_equipment_by_sport': {
         'Run': ['eq-1', 'eq-2'],
         'Ride': ['bike-1'],
       },
     });
-    expect(user.hasAvatar, isTrue);
-    expect(user.avatarUrl, '/api/v1/users/alice/avatar');
-    expect(user.lastEquipmentBySport['Run'], ['eq-1', 'eq-2']);
-    expect(user.lastEquipmentBySport['Ride'], ['bike-1']);
+    expect(profile.lastSportType, 'Ride');
+    expect(profile.lastEquipmentBySport['Run'], ['eq-1', 'eq-2']);
+    expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
 
-    final empty = UserInfo.fromJson({
-      'id': '2',
-      'nickname': 'bob',
-      'name': 'Bob',
-      'email': 'bob@example.com',
-    });
+    final empty = UserProfile.fromJson({});
+    expect(empty.lastSportType, isNull);
     expect(empty.lastEquipmentBySport, isEmpty);
   });
 

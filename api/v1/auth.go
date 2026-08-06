@@ -24,13 +24,12 @@ type LoginRequest struct {
 }
 
 type UserResponse struct {
-	ID                   string              `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Nickname             string              `json:"nickname" example:"solarwind"`
-	Name                 string              `json:"name" example:"Alexander Cheryomukhin"`
-	Email                string              `json:"email" example:"solarwind.palm@gmail.com"`
-	HasAvatar            bool                `json:"has_avatar" example:"true"`
-	AvatarURL            string              `json:"avatar_url,omitempty" example:"/api/v1/users/solarwind/avatar"`
-	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
+	ID        string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Nickname  string `json:"nickname" example:"solarwind"`
+	Name      string `json:"name" example:"Alexander Cheryomukhin"`
+	Email     string `json:"email" example:"solarwind.palm@gmail.com"`
+	HasAvatar bool   `json:"has_avatar" example:"true"`
+	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/solarwind/avatar"`
 }
 
 type LoginResponse struct {
@@ -46,13 +45,12 @@ type ErrorResponse struct {
 func (a *App) toUserResponse(user *users.User) UserResponse {
 	hasAvatar, avatarURL := a.localAvatarFieldsForUser(user.Nickname)
 	return UserResponse{
-		ID:                   user.ID,
-		Nickname:             user.Nickname,
-		Name:                 user.Name,
-		Email:                user.Email,
-		HasAvatar:            hasAvatar,
-		AvatarURL:            avatarURL,
-		LastEquipmentBySport: user.LastEquipmentBySport,
+		ID:        user.ID,
+		Nickname:  user.Nickname,
+		Name:      user.Name,
+		Email:     user.Email,
+		HasAvatar: hasAvatar,
+		AvatarURL: avatarURL,
 	}
 }
 

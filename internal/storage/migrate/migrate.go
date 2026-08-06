@@ -142,6 +142,16 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 		}
 		result.Users++
 
+		profile, err := src.Users().GetProfile(u.ID)
+		if err != nil {
+			return result, fmt.Errorf("get profile %s: %w", u.Nickname, err)
+		}
+		if profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0) {
+			if err := dst.Users().PutProfile(u.ID, *profile); err != nil {
+				return result, fmt.Errorf("import profile %s: %w", u.Nickname, err)
+			}
+		}
+
 		eq, err := src.Equipment().List(u.Nickname)
 		if err != nil {
 			return result, fmt.Errorf("list equipment %s: %w", u.Nickname, err)

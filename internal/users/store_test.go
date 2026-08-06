@@ -28,11 +28,11 @@ func TestSetLastEquipmentForSport(t *testing.T) {
 		t.Fatalf("SetLastEquipmentForSport() error = %v", err)
 	}
 
-	loaded, err := store.FindByID(user.ID)
+	profile, err := store.GetProfile(user.ID)
 	if err != nil {
-		t.Fatalf("FindByID() error = %v", err)
+		t.Fatalf("GetProfile() error = %v", err)
 	}
-	got := loaded.LastEquipmentBySport["Run"]
+	got := profile.LastEquipmentBySport["Run"]
 	if len(got) != 2 || got[0] != "eq-1" || got[1] != "eq-2" {
 		t.Fatalf("unexpected last equipment: %#v", got)
 	}
@@ -57,14 +57,14 @@ func TestRemoveEquipmentFromLastSets(t *testing.T) {
 		t.Fatalf("RemoveEquipmentFromLastSets() error = %v", err)
 	}
 
-	loaded, err := store.FindByID(user.ID)
+	profile, err := store.GetProfile(user.ID)
 	if err != nil {
-		t.Fatalf("FindByID() error = %v", err)
+		t.Fatalf("GetProfile() error = %v", err)
 	}
-	if got := loaded.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
+	if got := profile.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
 		t.Fatalf("unexpected Run equipment: %#v", got)
 	}
-	if got := loaded.LastEquipmentBySport["Ride"]; len(got) != 1 || got[0] != "eq-3" {
+	if got := profile.LastEquipmentBySport["Ride"]; len(got) != 1 || got[0] != "eq-3" {
 		t.Fatalf("unexpected Ride equipment: %#v", got)
 	}
 }
@@ -81,11 +81,29 @@ func TestSetLastEquipmentForSportClearsEmpty(t *testing.T) {
 	if err := store.SetLastEquipmentForSport(user.ID, "Run", nil); err != nil {
 		t.Fatal(err)
 	}
-	loaded, err := store.FindByID(user.ID)
+	profile, err := store.GetProfile(user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := loaded.LastEquipmentBySport["Run"]; ok {
-		t.Fatalf("expected Run key removed, got %#v", loaded.LastEquipmentBySport)
+	if _, ok := profile.LastEquipmentBySport["Run"]; ok {
+		t.Fatalf("expected Run key removed, got %#v", profile.LastEquipmentBySport)
+	}
+}
+
+func TestSetLastSportType(t *testing.T) {
+	store := newTestStore(t)
+	user, err := store.Create("athlete", "Athlete", "athlete@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetLastSportType(user.ID, "Ride"); err != nil {
+		t.Fatal(err)
+	}
+	profile, err := store.GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.LastSportType != "Ride" {
+		t.Fatalf("got %q, want Ride", profile.LastSportType)
 	}
 }

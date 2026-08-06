@@ -172,30 +172,27 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       return;
     }
 
-    final meFuture = _api.getMe(token);
+    final profileFuture = _isEditing ? null : _api.getProfile(token);
     final equipmentFuture = _api.listEquipment(token);
-    final lastOwnFuture =
-        _isEditing ? null : _api.listWorkouts(token, scope: 'own', limit: 1);
 
     String? lastSportType;
-    if (lastOwnFuture != null) {
+    Map<String, List<String>> lastEquipmentBySport = {};
+    if (profileFuture != null) {
       try {
-        final page = await lastOwnFuture;
-        if (page.items.isNotEmpty) {
-          lastSportType = page.items.first.sportType;
-        }
+        final profile = await profileFuture;
+        lastSportType = profile.lastSportType;
+        lastEquipmentBySport = profile.lastEquipmentBySport;
       } catch (_) {
-        // Fall back to defaultSportTypeId below.
+        // Fall back to defaultSportTypeId / empty equipment below.
       }
     }
 
     try {
-      final me = await meFuture;
       final equipment = await equipmentFuture;
       if (!mounted) return;
       setState(() {
         _userEquipment = equipment;
-        _lastEquipmentBySport = me.lastEquipmentBySport;
+        _lastEquipmentBySport = lastEquipmentBySport;
         if (!_isEditing) {
           final resolved = resolveDefaultSportTypeId(lastSportType);
           _sportTypeId = resolved;
@@ -214,11 +211,12 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         }
       });
     } catch (_) {
-      // Keep form usable without equipment presets; still apply last sport.
+      // Keep form usable without equipment catalog; still apply last sport.
       if (!_isEditing && mounted) {
         final resolved = resolveDefaultSportTypeId(lastSportType);
         if (resolved != _sportTypeId) {
           setState(() {
+            _lastEquipmentBySport = lastEquipmentBySport;
             _sportTypeId = resolved;
             final l10n = AppLocalizations.of(context)!;
             final autoName =

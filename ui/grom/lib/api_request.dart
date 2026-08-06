@@ -46,7 +46,6 @@ class UserInfo {
     required this.email,
     this.hasAvatar = false,
     this.avatarUrl,
-    this.lastEquipmentBySport = const {},
   });
 
   final String id;
@@ -55,9 +54,29 @@ class UserInfo {
   final String email;
   final bool hasAvatar;
   final String? avatarUrl;
-  final Map<String, List<String>> lastEquipmentBySport;
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
+    return UserInfo(
+      id: json['id'] as String,
+      nickname: json['nickname'] as String,
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String,
+      hasAvatar: json['has_avatar'] as bool? ?? false,
+      avatarUrl: json['avatar_url'] as String?,
+    );
+  }
+}
+
+class UserProfile {
+  UserProfile({
+    this.lastSportType,
+    this.lastEquipmentBySport = const {},
+  });
+
+  final String? lastSportType;
+  final Map<String, List<String>> lastEquipmentBySport;
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
     final lastEquipmentRaw = json['last_equipment_by_sport'];
     final lastEquipment = <String, List<String>>{};
     if (lastEquipmentRaw is Map<String, dynamic>) {
@@ -69,13 +88,9 @@ class UserInfo {
         }
       }
     }
-    return UserInfo(
-      id: json['id'] as String,
-      nickname: json['nickname'] as String,
-      name: json['name'] as String? ?? '',
-      email: json['email'] as String,
-      hasAvatar: json['has_avatar'] as bool? ?? false,
-      avatarUrl: json['avatar_url'] as String?,
+    final sport = json['last_sport_type'] as String?;
+    return UserProfile(
+      lastSportType: (sport == null || sport.isEmpty) ? null : sport,
       lastEquipmentBySport: lastEquipment,
     );
   }
@@ -176,6 +191,20 @@ class ApiRequest {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return UserInfo.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<UserProfile> getProfile(String token) async {
+    final response = await _client.get(
+      _uri('/api/v1/profile'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserProfile.fromJson(json);
     }
 
     throw _parseError(response);

@@ -427,7 +427,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 
 // createWorkout godoc
 // @Summary      Create workout
-// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is copied from the previous workout of the same sport_type. An explicit empty equipment_ids list means no equipment.
+// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment.
 // @Tags         workouts
 // @Accept       json
 // @Accept       mpfd
@@ -440,7 +440,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        start_date  formData  string  false  "Start date RFC3339 (multipart)"
 // @Param        duration_seconds  formData  int  false  "Duration seconds (multipart)"
 // @Param        distance  formData  number  false  "Distance meters (multipart)"
-// @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to copy from previous same sport_type; [] for none"
+// @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
 // @Failure      400   {object}  ErrorResponse
@@ -453,10 +453,15 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
+	userID, err := a.currentUserID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
 
 	contentType := ctx.GetHeader("Content-Type")
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		a.createWorkoutMultipart(ctx, nickname)
+		a.createWorkoutMultipart(ctx, nickname, userID)
 		return
 	}
 
@@ -481,7 +486,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, req.SportType, req.EquipmentIDs, equipmentProvided)
+	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, userID, req.SportType, req.EquipmentIDs, equipmentProvided)
 	if err != nil {
 		respondInternal(ctx, "failed to resolve equipment", err)
 		return
@@ -493,9 +498,8 @@ func (a *App) createWorkout(ctx *gin.Context) {
 		return
 	}
 
-	if userID, err := a.currentUserID(ctx); err == nil {
-		a.saveLastEquipmentForSport(userID, req.SportType, resolvedIDs)
-	}
+	a.saveLastEquipmentForSport(userID, req.SportType, resolvedIDs)
+	a.scheduleRefreshLastSportType(nickname, userID)
 
 	a.publishCreatedWorkout(nickname, workout)
 
@@ -647,7 +651,7 @@ func (a *App) publishDeletedWorkout(nickname, workoutID string) {
 	_ = a.federationDelivery.DeliverWorkoutDelete(nickname, workoutID, inboxes)
 }
 
-func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
+func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) {
 	var form CreateWorkoutForm
 	if err := ctx.ShouldBind(&form); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -666,7 +670,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid equipment_ids format"})
 		return
 	}
-	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, form.SportType, equipmentIDs, equipmentProvided)
+	equipmentItems, resolvedIDs, err := a.resolveEquipmentForCreate(nickname, userID, form.SportType, equipmentIDs, equipmentProvided)
 	if err != nil {
 		respondInternal(ctx, "failed to resolve equipment", err)
 		return
@@ -733,8 +737,9 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname string) {
 		return
 	}
 
-	if userID, err := a.currentUserID(ctx); err == nil {
+	if userID != "" {
 		a.saveLastEquipmentForSport(userID, form.SportType, resolvedIDs)
+		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 
 	a.publishCreatedWorkout(nickname, created)
@@ -1509,6 +1514,9 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 
 	a.publishDeletedWorkout(nickname, workoutID)
 	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)
+	if userID, err := a.currentUserID(ctx); err == nil {
+		a.scheduleRefreshLastSportType(nickname, userID)
+	}
 	slog.Info("workout deleted", "user", nickname, "workout_id", workoutID)
 	ctx.Status(http.StatusNoContent)
 }
@@ -1562,6 +1570,7 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 
 	if userID, err := a.currentUserID(ctx); err == nil {
 		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 
 	a.publishUpdatedWorkout(nickname, updated)

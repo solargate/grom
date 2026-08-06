@@ -235,58 +235,6 @@ func (s *UsersStore) UpdateProfile(userID, name string) (*users.User, error) {
 	return result, err
 }
 
-func (s *UsersStore) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		u, err := s.getByID(tx, userID)
-		if err != nil {
-			return err
-		}
-		if u.LastEquipmentBySport == nil {
-			u.LastEquipmentBySport = make(map[string][]string)
-		}
-		if len(equipmentIDs) == 0 {
-			delete(u.LastEquipmentBySport, sportType)
-		} else {
-			copied := make([]string, len(equipmentIDs))
-			copy(copied, equipmentIDs)
-			u.LastEquipmentBySport[sportType] = copied
-		}
-		return s.putUser(tx, *u)
-	})
-}
-
-func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		u, err := s.getByID(tx, userID)
-		if err != nil {
-			return err
-		}
-		if len(u.LastEquipmentBySport) == 0 {
-			return nil
-		}
-		changed := false
-		for sportType, ids := range u.LastEquipmentBySport {
-			filtered := make([]string, 0, len(ids))
-			for _, id := range ids {
-				if id != equipmentID {
-					filtered = append(filtered, id)
-				} else {
-					changed = true
-				}
-			}
-			if len(filtered) == 0 {
-				delete(u.LastEquipmentBySport, sportType)
-			} else if changed {
-				u.LastEquipmentBySport[sportType] = filtered
-			}
-		}
-		if !changed {
-			return nil
-		}
-		return s.putUser(tx, *u)
-	})
-}
-
 // PutExisting writes a user record without hashing (used by migration).
 func (s *UsersStore) PutExisting(u users.User) error {
 	if err := ensureUserDir(s.dataDir, u.Nickname); err != nil {

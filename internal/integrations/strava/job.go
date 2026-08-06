@@ -37,11 +37,13 @@ type JobStatus struct {
 }
 
 type JobManager struct {
-	tempDir            string
-	workoutStore       *workouts.Service
-	equipmentStore     equipment.Repository
-	onPublish          PublishWorkoutFunc
-	equipmentDistance  *distance.Service
+	tempDir           string
+	workoutStore      *workouts.Service
+	equipmentStore    equipment.Repository
+	onPublish         PublishWorkoutFunc
+	onImported        OnImportedWorkoutFunc
+	onComplete        OnImportCompleteFunc
+	equipmentDistance *distance.Service
 
 	mu   sync.Mutex
 	jobs map[string]*userJob
@@ -55,12 +57,22 @@ type userJob struct {
 	Status   JobStatus
 }
 
-func NewJobManager(tempDir string, workoutStore *workouts.Service, equipmentStore equipment.Repository, onPublish PublishWorkoutFunc, equipmentDistance *distance.Service) *JobManager {
+func NewJobManager(
+	tempDir string,
+	workoutStore *workouts.Service,
+	equipmentStore equipment.Repository,
+	onPublish PublishWorkoutFunc,
+	equipmentDistance *distance.Service,
+	onImported OnImportedWorkoutFunc,
+	onComplete OnImportCompleteFunc,
+) *JobManager {
 	return &JobManager{
 		tempDir:           tempDir,
 		workoutStore:      workoutStore,
 		equipmentStore:    equipmentStore,
 		onPublish:         onPublish,
+		onImported:        onImported,
+		onComplete:        onComplete,
 		equipmentDistance: equipmentDistance,
 		jobs:              make(map[string]*userJob),
 	}
@@ -167,8 +179,8 @@ func (m *JobManager) runImport(job *userJob) {
 	job.Status.ImportProgress = 0
 	m.persist(job)
 
-	importer := NewImporter(m.workoutStore, m.equipmentStore, archive, m.onPublish)
-	result, err := importer.ImportAll(job.Nickname, func(current, total int) {
+	importer := NewImporter(m.workoutStore, m.equipmentStore, archive, m.onPublish, m.onImported, m.onComplete)
+	result, err := importer.ImportAll(job.UserID, job.Nickname, func(current, total int) {
 		job.Status.ImportCurrent = current
 		job.Status.ImportTotal = total
 		if total > 0 {

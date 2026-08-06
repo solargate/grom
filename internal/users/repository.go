@@ -8,6 +8,10 @@ type Repository interface {
 	ListAll() ([]User, error)
 	Create(nickname, name, email, password string) (*User, error)
 	UpdateProfile(userID, name string) (*User, error)
+
+	GetProfile(userID string) (*Profile, error)
+	PutProfile(userID string, profile Profile) error
+	SetLastSportType(userID, sportType string) error
 	SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error
 	RemoveEquipmentFromLastSets(userID, equipmentID string) error
 }

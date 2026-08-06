@@ -6,6 +6,7 @@ import (
 
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/social"
+	"github.com/solargate/grom/internal/users"
 )
 
 func TestEquipmentStoreCRUD(t *testing.T) {
@@ -52,10 +53,56 @@ func TestEquipmentStoreCRUD(t *testing.T) {
 	}
 }
 
+func TestUserProfileStore(t *testing.T) {
+	b := openTestBackend(t)
+	store := b.Users()
+
+	user, err := store.Create("alice", "Alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	empty, err := store.GetProfile(user.ID)
+	if err != nil || empty.LastSportType != "" || len(empty.LastEquipmentBySport) != 0 {
+		t.Fatalf("empty profile: %#v err=%v", empty, err)
+	}
+
+	if err := store.SetLastSportType(user.ID, "Ride"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetLastEquipmentForSport(user.ID, "Run", []string{"eq-1"}); err != nil {
+		t.Fatal(err)
+	}
+
+	profile, err := store.GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.LastSportType != "Ride" {
+		t.Fatalf("sport: %q", profile.LastSportType)
+	}
+	if got := profile.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
+		t.Fatalf("equipment: %#v", got)
+	}
+
+	if err := store.PutProfile(user.ID, users.Profile{
+		LastSportType: "Walk",
+		LastEquipmentBySport: map[string][]string{
+			"Walk": {"eq-2"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	profile, err = store.GetProfile(user.ID)
+	if err != nil || profile.LastSportType != "Walk" {
+		t.Fatalf("after put: %#v err=%v", profile, err)
+	}
+}
+
 func TestSocialStoreCreateListAndStatus(t *testing.T) {
 	b := openTestBackend(t)
-	users := b.Users()
-	alice, err := users.Create("alice", "Alice", "alice@example.com", "password123")
+	usersStore := b.Users()
+	alice, err := usersStore.Create("alice", "Alice", "alice@example.com", "password123")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,6 +15,12 @@ import (
 
 type PublishWorkoutFunc func(nickname string, workout *workouts.Workout)
 
+// OnImportedWorkoutFunc is called after each successfully imported workout.
+type OnImportedWorkoutFunc func(userID, nickname string, workout *workouts.Workout)
+
+// OnImportCompleteFunc is called once after ImportAll finishes (even if some rows failed).
+type OnImportCompleteFunc func(userID, nickname string)
+
 type ImportResult struct {
 	Imported     int `json:"imported"`
 	Skipped      int `json:"skipped"`
@@ -28,18 +34,29 @@ type Importer struct {
 	equipmentStore equipment.Repository
 	archive        *Archive
 	onPublish      PublishWorkoutFunc
+	onImported     OnImportedWorkoutFunc
+	onComplete     OnImportCompleteFunc
 }
 
-func NewImporter(workoutStore *workouts.Service, equipmentStore equipment.Repository, archive *Archive, onPublish PublishWorkoutFunc) *Importer {
+func NewImporter(
+	workoutStore *workouts.Service,
+	equipmentStore equipment.Repository,
+	archive *Archive,
+	onPublish PublishWorkoutFunc,
+	onImported OnImportedWorkoutFunc,
+	onComplete OnImportCompleteFunc,
+) *Importer {
 	return &Importer{
 		workoutStore:   workoutStore,
 		equipmentStore: equipmentStore,
 		archive:        archive,
 		onPublish:      onPublish,
+		onImported:     onImported,
+		onComplete:     onComplete,
 	}
 }
 
-func (imp *Importer) ImportAll(nickname string, progress func(current, total int)) (ImportResult, error) {
+func (imp *Importer) ImportAll(userID, nickname string, progress func(current, total int)) (ImportResult, error) {
 	csvData, err := imp.archive.ReadFile("activities.csv")
 	if err != nil {
 		return ImportResult{}, err
@@ -73,34 +90,40 @@ func (imp *Importer) ImportAll(nickname string, progress func(current, total int
 			}
 		}
 
-		missing, err := imp.importOne(nickname, row, hint, equipmentResolver)
+		created, missing, err := imp.importOne(nickname, row, hint, equipmentResolver)
 		result.MediaMissing += missing
 		if err != nil {
 			result.Errors++
 			continue
 		}
+		if imp.onImported != nil && created != nil {
+			imp.onImported(userID, nickname, created)
+		}
 		result.Imported++
+	}
+	if imp.onComplete != nil {
+		imp.onComplete(userID, nickname)
 	}
 	return result, nil
 }
 
-func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint, resolver *EquipmentResolver) (int, error) {
+func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint, resolver *EquipmentResolver) (*workouts.Workout, int, error) {
 	workout, err := row.ToWorkout(hint)
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
 	if row.EquipmentName != "" {
 		items, err := resolver.Resolve(row.EquipmentName)
 		if err != nil {
-			return 0, err
+			return nil, 0, err
 		}
 		workout.Equipment = toWorkoutEquipment(items)
 	}
 
 	created, err := imp.workoutStore.Create(nickname, workout)
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
 	if row.TrackFile != "" {
@@ -108,7 +131,7 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 		if err == nil && trackInput != nil {
 			created, err = imp.workoutStore.AttachTrack(nickname, created, trackInput)
 			if err != nil {
-				return 0, err
+				return nil, 0, err
 			}
 		}
 	}
@@ -119,12 +142,12 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 		mediaFiles, missing, err := imp.loadPhotos(photos)
 		mediaMissing = missing
 		if err != nil {
-			return mediaMissing, err
+			return nil, mediaMissing, err
 		}
 		if len(mediaFiles) > 0 {
 			created, err = imp.workoutStore.AddMedia(nickname, created, mediaFiles)
 			if err != nil {
-				return mediaMissing, err
+				return nil, mediaMissing, err
 			}
 		}
 	}
@@ -132,7 +155,7 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 	if imp.onPublish != nil {
 		imp.onPublish(nickname, created)
 	}
-	return mediaMissing, nil
+	return created, mediaMissing, nil
 }
 
 func (imp *Importer) loadTrack(relativePath string) (*workouts.TrackInput, error) {
