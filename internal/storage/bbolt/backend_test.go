@@ -247,3 +247,41 @@ func TestFederationFollowersAndInboxMeta(t *testing.T) {
 		t.Fatalf("got=%#v", got)
 	}
 }
+
+func TestWorkoutsHasExternalID(t *testing.T) {
+	b := openTestBackend(t)
+	repo := b.WorkoutsRepo()
+
+	created, err := repo.Create("alice", &workouts.Workout{
+		Name:      "Ride",
+		SportType: "Ride",
+		StartDate: time.Date(2026, 7, 5, 14, 30, 0, 0, time.UTC),
+		ExternalID: &workouts.ExternalID{
+			Name: "strava",
+			ID:   "strava-42",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.ExternalID == nil || created.ExternalID.ID != "strava-42" {
+		t.Fatalf("external_id not persisted: %#v", created.ExternalID)
+	}
+
+	ok, err := repo.HasExternalID("alice", "strava", "strava-42")
+	if err != nil || !ok {
+		t.Fatalf("HasExternalID = %v err=%v", ok, err)
+	}
+	ok, err = repo.HasExternalID("alice", "strava", "")
+	if err != nil || ok {
+		t.Fatalf("empty external id should be false: %v %v", ok, err)
+	}
+	ok, err = repo.HasExternalID("alice", "", "strava-42")
+	if err != nil || ok {
+		t.Fatalf("empty external name should be false: %v %v", ok, err)
+	}
+	ok, err = repo.HasExternalID("alice", "strava", "missing")
+	if err != nil || ok {
+		t.Fatalf("missing id should be false: %v %v", ok, err)
+	}
+}

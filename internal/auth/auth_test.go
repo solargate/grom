@@ -65,7 +65,6 @@ func TestValidateTokenRejectsTampered(t *testing.T) {
 
 func TestValidateTokenRejectsExpired(t *testing.T) {
 	withTestAuthConfig(t)
-	config.Cfg.Auth.JWTTTLHours = 0
 
 	claims := auth.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{

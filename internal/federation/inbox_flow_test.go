@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -489,3 +490,66 @@ func TestInboxProcessorHandleDeleteRemovesBlobs(t *testing.T) {
 		t.Fatal("expected track blob removed after delete")
 	}
 }
+
+func TestInboxProcessorAutoAcceptFollows(t *testing.T) {
+	prev := config.Cfg
+	t.Cleanup(func() { config.Cfg = prev })
+	config.Cfg.Federation.Domain = "grom.test"
+	config.Cfg.Federation.AutoAcceptFollows = true
+	config.Cfg.Federation.Enabled = true
+
+	var gotAccept map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || !strings.HasSuffix(r.URL.Path, "/inbox") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal(body, &gotAccept); err != nil {
+			t.Fatal(err)
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	dir := t.TempDir()
+	store := newTestInboxStore(dir)
+	followers := newMemFollowers()
+	usersStore := &memUsers{byID: map[string]*users.User{
+		"alice-id": {ID: "alice-id", Nickname: "alice", Name: "Alice"},
+	}}
+	socialSvc := social.NewService(usersStore, newMemFollows(), blobfs.NewStore(dir))
+	delivery := &Delivery{client: server.Client()}
+	processor := NewInboxProcessor(usersStore, socialSvc, delivery, store, followers)
+
+	actor := server.URL + "/users/bob"
+	followBody := fmt.Sprintf(`{"type":"Follow","id":"%s/follows/1","actor":"%s","object":"https://grom.test/users/alice"}`, server.URL, actor)
+	if err := processor.Handle("alice", strings.NewReader(followBody)); err != nil {
+		t.Fatalf("Follow: %v", err)
+	}
+
+	list, err := followers.List("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("expected 1 inbound follower, got %d", len(list))
+	}
+	if gotAccept == nil {
+		t.Fatal("expected Accept delivery")
+	}
+	if gotAccept["type"] != "Accept" {
+		t.Fatalf("type = %v", gotAccept["type"])
+	}
+	if gotAccept["actor"] != "https://grom.test/users/alice" {
+		t.Fatalf("actor = %v", gotAccept["actor"])
+	}
+	object, _ := gotAccept["object"].(map[string]any)
+	if object["id"] != server.URL+"/follows/1" || object["type"] != "Follow" {
+		t.Fatalf("unexpected Accept object: %#v", object)
+	}
+}
+

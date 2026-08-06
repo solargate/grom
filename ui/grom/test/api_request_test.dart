@@ -40,11 +40,21 @@ void main() {
       'avatar_url': '/api/v1/users/alice/avatar',
       'last_equipment_by_sport': {
         'Run': ['eq-1', 'eq-2'],
+        'Ride': ['bike-1'],
       },
     });
     expect(user.hasAvatar, isTrue);
     expect(user.avatarUrl, '/api/v1/users/alice/avatar');
     expect(user.lastEquipmentBySport['Run'], ['eq-1', 'eq-2']);
+    expect(user.lastEquipmentBySport['Ride'], ['bike-1']);
+
+    final empty = UserInfo.fromJson({
+      'id': '2',
+      'nickname': 'bob',
+      'name': 'Bob',
+      'email': 'bob@example.com',
+    });
+    expect(empty.lastEquipmentBySport, isEmpty);
   });
 
   test('ApiException keeps status code', () {
@@ -352,6 +362,47 @@ void main() {
       id: 'CYCLING 2026.07.30 16.26 Strava.csv',
     );
     expect(exists, isTrue);
+  });
+
+  test('createWorkoutMultipart sends external_id fields', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient.streaming((request, bodyStream) async {
+      expect(request.url.path, '/api/v1/workouts');
+      expect(request.method, 'POST');
+      expect(request, isA<http.MultipartRequest>());
+      final multipart = request as http.MultipartRequest;
+      expect(multipart.fields['external_id_name'], 'health-sync/strava');
+      expect(multipart.fields['external_id_id'], 'CYCLING 2026.07.30 16.26 Strava.csv');
+      expect(multipart.fields['sport_type'], 'Ride');
+      await bodyStream.drain();
+      final body = jsonEncode({
+        'id': 'wid-1',
+        'name': 'Synced',
+        'description': '',
+        'sport_type': 'Ride',
+        'start_date': '2026-07-30T16:26:00Z',
+        'duration_seconds': 0,
+        'distance': 0,
+      });
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(body)),
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final workout = await ApiRequest(client: client).createWorkoutMultipart(
+      token: 'tok',
+      fields: {
+        'name': 'Synced',
+        'sport_type': 'Ride',
+        'start_date': '2026-07-30T16:26:00Z',
+        'external_id_name': 'health-sync/strava',
+        'external_id_id': 'CYCLING 2026.07.30 16.26 Strava.csv',
+      },
+    );
+    expect(workout.id, 'wid-1');
+    expect(workout.sportType, 'Ride');
   });
 
   test('getWorkoutSpeed maps API errors', () async {

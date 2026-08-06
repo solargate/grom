@@ -18,6 +18,7 @@ class WorkoutFeedList extends StatefulWidget {
     required this.onWorkoutTap,
     required this.onPhotoTap,
     this.onAuthTokenLoaded,
+    this.api,
   });
 
   final String nickname;
@@ -28,6 +29,7 @@ class WorkoutFeedList extends StatefulWidget {
   final ValueChanged<Workout> onWorkoutTap;
   final void Function(Workout workout, int photoIndex) onPhotoTap;
   final ValueChanged<String>? onAuthTokenLoaded;
+  final ApiRequest? api;
 
   @override
   State<WorkoutFeedList> createState() => WorkoutFeedListState();
@@ -36,7 +38,7 @@ class WorkoutFeedList extends StatefulWidget {
 class WorkoutFeedListState extends State<WorkoutFeedList> {
   static const _pageLimit = 20;
 
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api ?? ApiRequest();
 
   List<Workout> _workouts = [];
   bool _isLoading = false;

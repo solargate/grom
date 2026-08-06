@@ -288,18 +288,23 @@ class HealthSyncService extends ChangeNotifier {
   }
 
   HealthSyncResult _resultFromDriveError(GoogleDriveException error) {
-    if (error.error == GoogleDriveError.cancelled) {
-      return const HealthSyncResult(kind: HealthSyncResultKind.signInCancelled);
-    }
-    if (error.error == GoogleDriveError.signInFailed) {
-      return const HealthSyncResult(kind: HealthSyncResultKind.signInFailed);
-    }
-    if (error.error == GoogleDriveError.accessDenied) {
-      return const HealthSyncResult(kind: HealthSyncResultKind.accessDenied);
-    }
-    return HealthSyncResult(
-      kind: HealthSyncResultKind.error,
-      message: error.message ?? 'unsupported platform',
-    );
+    return healthSyncResultFromDriveError(error);
   }
+}
+
+/// Maps [GoogleDriveException] to a [HealthSyncResult] for UI handling.
+HealthSyncResult healthSyncResultFromDriveError(GoogleDriveException error) {
+  if (error.error == GoogleDriveError.cancelled) {
+    return const HealthSyncResult(kind: HealthSyncResultKind.signInCancelled);
+  }
+  if (error.error == GoogleDriveError.signInFailed) {
+    return const HealthSyncResult(kind: HealthSyncResultKind.signInFailed);
+  }
+  if (error.error == GoogleDriveError.accessDenied) {
+    return const HealthSyncResult(kind: HealthSyncResultKind.accessDenied);
+  }
+  return HealthSyncResult(
+    kind: HealthSyncResultKind.error,
+    message: error.message ?? 'unsupported platform',
+  );
 }
