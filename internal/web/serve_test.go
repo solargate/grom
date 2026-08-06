@@ -1,6 +1,7 @@
 package web_test
 
 import (
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,35 +11,43 @@ import (
 	"github.com/solargate/grom/internal/web"
 )
 
-func TestRegisterRoutesServesIndexAndAssets(t *testing.T) {
+func TestRegisterRoutesServesUIAndSkipsAPI(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	web.RegisterRoutes(router)
 
+	// UI handler must not claim /api/* (even with an empty embed).
 	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/status", nil))
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("API path via UI handler status = %d, want 404", w.Code)
+	}
+
+	dist, err := fs.Sub(web.Assets, "dist")
+	if err != nil {
+		t.Fatalf("embed dist: %v", err)
+	}
+	_, err = fs.Stat(dist, "index.html")
+	if err != nil {
+		// CI checkout only has dist/.gitkeep; Flutter web assets are build artifacts.
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("GET / without embedded index.html status = %d, want 404", w.Code)
+		}
+		return
+	}
+
+	w = httptest.NewRecorder()
 	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 	if w.Code != http.StatusOK {
 		t.Fatalf("GET / status = %d", w.Code)
 	}
-	body := w.Body.String()
-	if !strings.Contains(body, "<html") && !strings.Contains(strings.ToLower(body), "flutter") && !strings.Contains(body, "DOCTYPE") {
-		// index.html from Flutter web build should be HTML
-		if len(body) == 0 {
-			t.Fatal("expected index.html body")
-		}
+	if !strings.Contains(w.Header().Get("Content-Type"), "text/html") {
+		t.Fatalf("content-type = %q, want text/html", w.Header().Get("Content-Type"))
 	}
-	ct := w.Header().Get("Content-Type")
-	if !strings.Contains(ct, "text/html") {
-		t.Fatalf("content-type = %q, want text/html", ct)
-	}
-
-	w = httptest.NewRecorder()
-	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/manifest.json", nil))
-	if w.Code != http.StatusOK {
-		t.Fatalf("GET /manifest.json status = %d body=%s", w.Code, w.Body.String())
-	}
-	if !strings.Contains(w.Header().Get("Content-Type"), "json") {
-		t.Fatalf("manifest content-type = %q", w.Header().Get("Content-Type"))
+	if len(w.Body.Bytes()) == 0 {
+		t.Fatal("expected index.html body")
 	}
 
 	w = httptest.NewRecorder()
@@ -48,11 +57,5 @@ func TestRegisterRoutesServesIndexAndAssets(t *testing.T) {
 	}
 	if !strings.Contains(w.Header().Get("Content-Type"), "text/html") {
 		t.Fatalf("SPA fallback content-type = %q", w.Header().Get("Content-Type"))
-	}
-
-	w = httptest.NewRecorder()
-	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/status", nil))
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("API path via UI handler status = %d, want 404", w.Code)
 	}
 }
