@@ -2,6 +2,7 @@ package bbolt
 
 import (
 	"fmt"
+	"strings"
 
 	bolt "go.etcd.io/bbolt"
 
@@ -13,6 +14,21 @@ import (
 type WorkoutLikesStore struct {
 	db       *bolt.DB
 	workouts *WorkoutsStore
+}
+
+// FederatedLikeEntry is a federated likes cache record (migration).
+type FederatedLikeEntry struct {
+	ViewerNickname string
+	OwnerHandle    string
+	WorkoutID      string
+	Likes          workouts.WorkoutLikes
+}
+
+// LikeActivityEntry maps an outbound Like activity id (migration).
+type LikeActivityEntry struct {
+	ActorNickname string
+	ObjectID      string
+	ActivityID    string
 }
 
 func NewWorkoutLikesStore(db *bolt.DB, workoutStore *WorkoutsStore) *WorkoutLikesStore {
@@ -158,6 +174,55 @@ func (s *WorkoutLikesStore) DeleteLikeActivityID(actorNickname, objectID string)
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket(bucketLikeActivities).Delete(likeActivityKey(actorNickname, objectID))
 	})
+}
+
+// ListAllFederated returns every federated likes cache record (migration).
+func (s *WorkoutLikesStore) ListAllFederated() ([]FederatedLikeEntry, error) {
+	var out []FederatedLikeEntry
+	err := s.db.View(func(tx *bolt.Tx) error {
+		return tx.Bucket(bucketFedWorkoutLikes).ForEach(func(k, v []byte) error {
+			parts := strings.SplitN(string(k), "/", 3)
+			if len(parts) != 3 {
+				return nil
+			}
+			var likes workouts.WorkoutLikes
+			if err := unmarshalJSON(v, &likes); err != nil {
+				return fmt.Errorf("parse federated likes: %w", err)
+			}
+			norm := workouts.NormalizeWorkoutLikes(&likes)
+			if norm.Likes == 0 {
+				return nil
+			}
+			out = append(out, FederatedLikeEntry{
+				ViewerNickname: parts[0],
+				OwnerHandle:    federation.OwnerHandleFromKey(parts[1]),
+				WorkoutID:      parts[2],
+				Likes:          norm,
+			})
+			return nil
+		})
+	})
+	return out, err
+}
+
+// ListAllLikeActivities returns every outbound Like activity id (migration).
+func (s *WorkoutLikesStore) ListAllLikeActivities() ([]LikeActivityEntry, error) {
+	var out []LikeActivityEntry
+	err := s.db.View(func(tx *bolt.Tx) error {
+		return tx.Bucket(bucketLikeActivities).ForEach(func(k, v []byte) error {
+			parts := strings.SplitN(string(k), "|", 2)
+			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+				return nil
+			}
+			out = append(out, LikeActivityEntry{
+				ActorNickname: parts[0],
+				ObjectID:      parts[1],
+				ActivityID:    string(v),
+			})
+			return nil
+		})
+	})
+	return out, err
 }
 
 var _ workouts.LikesRepository = (*WorkoutLikesStore)(nil)

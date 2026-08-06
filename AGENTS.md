@@ -44,7 +44,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/federation/` | ActivityPub inbox/outbox, delivery, keys, avatar cache |
 | `internal/tracks/` | GPX/FIT parse, stats, export, simplify |
 | `internal/storage/` | `Backend` interface; `file` and `bbolt` drivers (postgres not implemented) |
-| `internal/storage/migrate/` | Metadata copy between `file` ↔ `bbolt` |
+| `internal/storage/migrate/` | Metadata copy between `file` ↔ `bbolt` (includes charts + likes) |
 | `internal/storage/blob/` | Blob keys + FS blob store |
 | `internal/integrations/strava/` | Strava ZIP bulk import jobs |
 | `internal/avatars/` | Avatar processing |
@@ -149,7 +149,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`); newly allocated IDs are unique across all local users on the instance.
 2. **Tracks:** parse/enrich via `internal/tracks`; attach through workout service, not by writing files from handlers alone.
 3. **Social feed** merges local workouts with federated inbox content (`workouts.FeedService` + federation adapters).
-4. **Workout likes:** cannot like own workouts; API `GET/POST/DELETE /workouts/{id}/likes` (optional `owner` query like get workout). Responses expose `likes_count`, `liked_by_me`, `can_like`. Local likes via `workouts.LikesRepository`; file: `likes.yaml` per workout, federated cache/outbox under `federation/`; bbolt: `workout_likes` / `fed_workout_likes` / `like_activities`. Federated like/unlike delivers ActivityPub `Like` / `Undo`; inbox applies remote likes and caches `likesCount` / `likedUsers` from Create objects. UI: `WorkoutLikeBar` on list cards and detail.
+4. **Workout likes:** cannot like own workouts; API `GET/POST/DELETE /workouts/{id}/likes` (optional `owner` query like get workout). Responses expose `likes_count`, `liked_by_me`, `can_like`. Local likes via `workouts.LikesRepository`; file: `likes.yaml` per workout, federated cache/outbox under `federation/`; bbolt: `workout_likes` / `fed_workout_likes` / `like_activities`. `grom migrate-storage` copies local likes, federated like cache, and outbound Like activity ids between drivers. Federated like/unlike delivers ActivityPub `Like` / `Undo`; inbox applies remote likes and caches `likesCount` / `likedUsers` from Create objects. UI: `WorkoutLikeBar` on list cards and detail.
 5. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
 6. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
 7. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.

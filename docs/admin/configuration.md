@@ -61,7 +61,7 @@ Notes:
 
 `postgres` is reserved in config but not implemented.
 
-Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets so they remain readable after switching drivers:
+Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes (local, federated cache, and outbound Like activity ids) are copied so they remain readable after switching drivers:
 
 ```bash
 grom migrate-storage --config config.yaml --from file --to bbolt --verify

@@ -36,12 +36,16 @@ type Result struct {
 	FedFollowers     int
 	FedAuthors       int
 	FedInboxWorkouts int
+	LocalLikes       int
+	FedLikes         int
+	LikeActivities   int
 }
 
 // Run copies metadata from one storage driver to another. Track/media/avatar
 // blob files under storage.location are shared and not copied. Speed and
 // heart-rate charts are converted between file JSON blobs and bbolt binary
-// buckets so they remain readable after switching drivers.
+// buckets. Workout likes (local, federated cache, and outbound Like activity
+// ids) are copied so they remain readable after switching drivers.
 func Run(opts Options) (*Result, error) {
 	if opts.From == opts.To {
 		return nil, fmt.Errorf("from and to drivers must differ")
@@ -175,6 +179,16 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 			if err := copyLocalCharts(src, dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("copy charts for workout %s: %w", w.ID, err)
 			}
+			if err := copyLocalLikes(src, dst, u.Nickname, &w); err != nil {
+				return result, fmt.Errorf("copy likes for workout %s: %w", w.ID, err)
+			}
+			likes, err := src.Likes().GetLocal(u.Nickname, w.ID)
+			if err != nil {
+				return result, fmt.Errorf("count likes for workout %s: %w", w.ID, err)
+			}
+			if likes != nil && likes.Likes > 0 {
+				result.LocalLikes++
+			}
 			result.Workouts++
 		}
 
@@ -228,6 +242,18 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 		}
 	}
 
+	fedLikes, err := copyFederatedLikes(src, dst)
+	if err != nil {
+		return result, fmt.Errorf("copy federated likes: %w", err)
+	}
+	result.FedLikes = fedLikes
+
+	likeActivities, err := copyLikeActivities(src, dst, authors, inbox)
+	if err != nil {
+		return result, fmt.Errorf("copy like activities: %w", err)
+	}
+	result.LikeActivities = likeActivities
+
 	return result, nil
 }
 
@@ -272,6 +298,21 @@ func countAll(backend storage.Backend, location string) (*Result, error) {
 			result.FedInboxWorkouts += len(list)
 		}
 	}
+	localLikes, err := countLocalLikes(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.LocalLikes = localLikes
+	fedLikes, err := countFederatedLikes(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.FedLikes = fedLikes
+	likeActivities, err := countLikeActivities(backend, authors, inbox)
+	if err != nil {
+		return nil, err
+	}
+	result.LikeActivities = likeActivities
 	return result, nil
 }
 

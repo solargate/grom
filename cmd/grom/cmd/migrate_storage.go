@@ -24,8 +24,9 @@ var migrateStorageCmd = &cobra.Command{
 
 Blob files (tracks, photos, avatars, keys) under storage.location are shared and
 not copied. Speed and heart-rate charts are converted between file JSON blobs and
-bbolt binary buckets. After a successful migration, set storage.driver in your
-config to the target driver and restart the server.
+bbolt binary buckets. Workout likes (local likes.yaml / buckets, federated like
+cache, and outbound Like activity ids) are copied. After a successful migration,
+set storage.driver in your config to the target driver and restart the server.
 
 Stop the server before running this command.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -44,9 +45,10 @@ Stop the server before running this command.`,
 		if err != nil {
 			return fmt.Errorf("migrate-storage failed: %w", err)
 		}
-		fmt.Printf("Migrated metadata: users=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d\n",
+		fmt.Printf("Migrated metadata: users=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d local_likes=%d fed_likes=%d like_activities=%d\n",
 			result.Users, result.Equipment, result.Follows, result.Workouts,
-			result.FedFollowers, result.FedAuthors, result.FedInboxWorkouts)
+			result.FedFollowers, result.FedAuthors, result.FedInboxWorkouts,
+			result.LocalLikes, result.FedLikes, result.LikeActivities)
 		if migrateDryRun {
 			fmt.Println("(dry-run: no changes written)")
 		} else {
