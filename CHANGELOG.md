@@ -11,12 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Per-user `profile` preferences (`last_sport_type`, `last_equipment_by_sport`): file driver `users/<nickname>/profile.yaml`, bbolt bucket `user_profiles`; `GET /api/v1/profile`
 - Creating a workout without `equipment_ids` uses equipment from the user's profile for that `sport_type` (explicit `[]` still means none)
+- Workout likes with counts and liker lists in the list/detail UI; local + federated `Like`/`Undo`, file `likes.yaml`, bbolt likes buckets, and `GET/POST/DELETE /api/v1/workouts/{id}/likes`
 
 ### Changed
 
 - **Breaking:** `last_equipment_by_sport` removed from user identity responses (`/auth/me`, login, register); clients should use `GET /api/v1/profile`
 - New workout form defaults sport and equipment from `GET /api/v1/profile` (no extra own-workouts list for last sport)
 - `last_sport_type` is the sport of the chronologically newest workout (`start_date`, then id); refreshed asynchronously after create/update/delete, and once at the end of a Strava import job
+- File-driver outbound Like activity ids are stored as YAML (`object_id` + `activity_id`); plain-text activity-id-only files are still read and migrate via inbox reconstruction
+
+### Fixed
+
+- `grom migrate-storage` now copies workout likes (local, federated cache, and outbound Like activity ids) between `file` and `bbolt`
 
 ## [0.5.0] - 2026-08-04
 

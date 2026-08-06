@@ -23,7 +23,9 @@ type InboxProcessor struct {
 	social         *social.Service
 	delivery       *Delivery
 	inboxStore     InboxRepository
+	likes          workouts.LikesRepository
 	followersStore FollowersRepository
+	onWorkoutLike  func(ownerNickname, workoutID string)
 	autoAccept     bool
 }
 
@@ -36,6 +38,11 @@ func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, de
 		followersStore: followersStore,
 		autoAccept:     config.Cfg.Federation.AutoAcceptFollows,
 	}
+}
+
+func (p *InboxProcessor) SetLikes(likes workouts.LikesRepository, onWorkoutLike func(ownerNickname, workoutID string)) {
+	p.likes = likes
+	p.onWorkoutLike = onWorkoutLike
 }
 
 func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
@@ -58,6 +65,8 @@ func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
 		err = p.handleUpdate(nickname, activity)
 	case "Delete":
 		err = p.handleDelete(nickname, activity)
+	case "Like":
+		err = p.handleLike(nickname, activity)
 	case "Undo":
 		err = p.handleUndo(nickname, activity)
 	default:
@@ -143,11 +152,14 @@ func (p *InboxProcessor) cacheInboundFollowerAvatar(targetNickname, handle strin
 }
 
 func (p *InboxProcessor) handleUndo(targetNickname string, activity map[string]any) error {
-	if p.followersStore == nil {
+	object, ok := activity["object"].(map[string]any)
+	if !ok {
 		return nil
 	}
-	object, ok := activity["object"].(map[string]any)
-	if !ok || object["type"] != "Follow" {
+	if object["type"] == "Like" {
+		return p.handleUndoLike(targetNickname, activity, object)
+	}
+	if p.followersStore == nil || object["type"] != "Follow" {
 		return nil
 	}
 	followerActor, _ := object["actor"].(string)
@@ -158,6 +170,40 @@ func (p *InboxProcessor) handleUndo(targetNickname string, activity map[string]a
 		return nil
 	}
 	return p.followersStore.Remove(targetNickname, followerActor)
+}
+
+func (p *InboxProcessor) handleUndoLike(targetNickname string, activity, object map[string]any) error {
+	if p.likes == nil {
+		return nil
+	}
+	actorURI, _ := activity["actor"].(string)
+	handle := actorToHandle(actorURI)
+	if handle == "" {
+		handle, _ = object["actor"].(string)
+		handle = actorToHandle(handle)
+	}
+	if handle == "" {
+		return nil
+	}
+	workoutID := workoutIDFromDeleteObject(object["object"])
+	if workoutID == "" {
+		workoutID = workoutIDFromDeleteObject(object)
+	}
+	if workoutID == "" {
+		return nil
+	}
+	likes, err := p.likes.GetLocal(targetNickname, workoutID)
+	if err != nil {
+		return err
+	}
+	updated := workouts.RemoveWorkoutLikeUser(likes, handle)
+	if err := p.likes.PutLocal(targetNickname, workoutID, &updated); err != nil {
+		return err
+	}
+	if p.onWorkoutLike != nil {
+		p.onWorkoutLike(targetNickname, workoutID)
+	}
+	return nil
 }
 
 func (p *InboxProcessor) handleAccept(viewerNickname string, activity map[string]any) error {
@@ -215,9 +261,26 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 	}
 
 	if replace {
-		return p.inboxStore.Replace(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc)
+		if err := p.inboxStore.Replace(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc); err != nil {
+			return err
+		}
+	} else {
+		if err := p.inboxStore.Save(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc); err != nil {
+			return err
+		}
 	}
-	return p.inboxStore.Save(viewerNickname, ownerHandle, workout, trackData, mediaFiles, actorDoc)
+	if p.likes != nil {
+		likes := workouts.NormalizeWorkoutLikes(&workouts.WorkoutLikes{
+			Likes: workout.LikesCount,
+			Users: workout.LikedUsers,
+		})
+		if likes.Likes == 0 && len(likes.Users) == 0 {
+			_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, workout.ID)
+		} else if err := p.likes.PutFederated(viewerNickname, ownerHandle, workout.ID, &likes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []byte, []workouts.MediaFileInput, error) {
@@ -231,6 +294,12 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 		DurationTotalSeconds: intValue(object, "durationTotalSeconds"),
 		Distance:             floatValue(object, "distance"),
 		Track:                stringValue(object, "track"),
+	}
+	if count, ok := optionalPositiveInt(object, "likesCount"); ok {
+		workout.LikesCount = count
+	}
+	if likedUsers, ok := object["likedUsers"].([]any); ok {
+		workout.LikedUsers = parseFederatedLikedUsers(likedUsers)
 	}
 	if start := stringValue(object, "startDate"); start != "" {
 		if t, err := time.Parse(time.RFC3339, start); err == nil {
@@ -280,6 +349,74 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 	return &workout, trackData, mediaFiles, nil
 }
 
+func parseFederatedLikedUsers(items []any) []workouts.WorkoutLikeUser {
+	users := make([]workouts.WorkoutLikeUser, 0, len(items))
+	for _, item := range items {
+		obj, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		users = append(users, workouts.WorkoutLikeUser{
+			Handle:    stringValue(obj, "handle"),
+			Nickname:  stringValue(obj, "nickname"),
+			Name:      stringValue(obj, "name"),
+			IsLocal:   boolValue(obj, "is_local"),
+			AvatarURL: stringValue(obj, "avatarUrl"),
+		})
+	}
+	return workouts.NormalizeWorkoutLikes(&workouts.WorkoutLikes{Users: users}).Users
+}
+
+func boolValue(object map[string]any, key string) bool {
+	v, _ := object[key].(bool)
+	return v
+}
+
+func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]any) error {
+	if p.likes == nil {
+		return nil
+	}
+	actorURI, _ := activity["actor"].(string)
+	handle := actorToHandle(actorURI)
+	if handle == "" {
+		return nil
+	}
+	workoutID := workoutIDFromDeleteObject(activity["object"])
+	if workoutID == "" {
+		return nil
+	}
+	actorUser := workouts.WorkoutLikeUser{
+		Handle:   handle,
+		Nickname: OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
+		Name:     OwnerNicknameFromKey(OwnerKeyFromHandle(handle)),
+		IsLocal:  false,
+	}
+	if p.inboxStore != nil && p.delivery != nil {
+		parsed := social.ParsedHandle{
+			Nickname: actorUser.Nickname,
+			Domain:   domainFromHandle(handle),
+			Handle:   handle,
+		}
+		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
+			actorUser.Name = ExtractActorName(fetched)
+			actorUser.AvatarURL = ExtractIconURL(fetched)
+			_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
+		}
+	}
+	likes, err := p.likes.GetLocal(targetNickname, workoutID)
+	if err != nil {
+		return err
+	}
+	updated := workouts.AddWorkoutLikeUser(likes, actorUser)
+	if err := p.likes.PutLocal(targetNickname, workoutID, &updated); err != nil {
+		return err
+	}
+	if p.onWorkoutLike != nil {
+		p.onWorkoutLike(targetNickname, workoutID)
+	}
+	return nil
+}
+
 func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string]any) error {
 	if p.inboxStore == nil {
 		return nil
@@ -294,7 +431,13 @@ func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string
 	if workoutID == "" {
 		return nil
 	}
-	return p.inboxStore.Delete(viewerNickname, ownerHandle, workoutID)
+	if err := p.inboxStore.Delete(viewerNickname, ownerHandle, workoutID); err != nil {
+		return err
+	}
+	if p.likes != nil {
+		_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, workoutID)
+	}
+	return nil
 }
 
 func workoutIDFromDeleteObject(raw any) string {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api_request.dart';
 import '../models/workout.dart';
 import 'workout_header_section.dart';
+import 'workout_like_bar.dart';
 import 'workout_map_preview.dart';
 import 'workout_media_strip.dart';
 
@@ -115,6 +116,10 @@ class WorkoutCard extends StatelessWidget {
               onPhotoTap: onPhotoTap,
             ),
           ),
+        WorkoutLikeBar(
+          workout: workout,
+          authToken: authToken,
+        ),
       ],
     );
   }

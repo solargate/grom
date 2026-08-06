@@ -10,6 +10,7 @@ import '../models/workout_speed.dart';
 import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
 import '../widgets/workout_heartrate_chart.dart';
+import '../widgets/workout_like_bar.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
 import '../widgets/workout_media_strip.dart';
@@ -363,6 +364,10 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                               onPhotoTap: _openPhotoViewer,
                             ),
                           ),
+                        WorkoutLikeBar(
+                          workout: widget.workout,
+                          authToken: widget.authToken,
+                        ),
                         if (_hasSpeedChart)
                           Padding(
                             padding: EdgeInsets.fromLTRB(

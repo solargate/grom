@@ -23,6 +23,7 @@ type Backend struct {
 	users       *UsersStore
 	workoutRepo *WorkoutsStore
 	workouts    *workouts.Service
+	likes       workouts.LikesRepository
 	equipment   *EquipmentStore
 	social      *SocialStore
 	fed         federation.Storage
@@ -60,6 +61,7 @@ func Open(dbPath, location string) (*Backend, error) {
 	socialStore := NewSocialStore(db)
 	equipmentStore := NewEquipmentStore(db)
 	workoutRepo := NewWorkoutsStore(db, location)
+	likesStore := NewWorkoutLikesStore(db, workoutRepo)
 	workoutSvc := workouts.NewService(workoutRepo, blobStore, speedCharts, heartRateCharts)
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
@@ -72,6 +74,7 @@ func Open(dbPath, location string) (*Backend, error) {
 		users:       userStore,
 		workoutRepo: workoutRepo,
 		workouts:    workoutSvc,
+		likes:       likesStore,
 		equipment:   equipmentStore,
 		social:      socialStore,
 		fed:         federation.NewStorage(followersStore, inboxStore),
@@ -98,6 +101,7 @@ func ensureBuckets(db *bolt.DB) error {
 
 func (b *Backend) Users() users.Repository         { return b.users }
 func (b *Backend) Workouts() *workouts.Service     { return b.workouts }
+func (b *Backend) Likes() workouts.LikesRepository { return b.likes }
 func (b *Backend) WorkoutsRepo() *WorkoutsStore    { return b.workoutRepo }
 func (b *Backend) Equipment() equipment.Repository { return b.equipment }
 func (b *Backend) Social() social.Repository       { return b.social }

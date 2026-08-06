@@ -114,6 +114,18 @@
   "workoutSaved": "Workout saved",
   "failedToSaveWorkout": "Failed to save workout",
   "failedToLoadWorkouts": "Failed to load workouts",
+  "failedToLoadWorkoutLikes": "Failed to load workout likes",
+  "failedToUpdateWorkoutLike": "Failed to update workout like",
+  "workoutLikeAction": "Like workout",
+  "workoutNoLikesYet": "No likes yet",
+  "workoutLikesTitle": "Likes ({count})",
+  "@workoutLikesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "retry": "Retry",
   "expandMap": "Expand map",
   "addPhotos": "Add photos",

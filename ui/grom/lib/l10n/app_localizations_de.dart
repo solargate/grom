@@ -220,6 +220,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get failedToLoadWorkouts => 'Trainings konnten nicht geladen werden';
 
   @override
+  String get failedToLoadWorkoutLikes =>
+      'Workout-Likes konnten nicht geladen werden';
+
+  @override
+  String get failedToUpdateWorkoutLike =>
+      'Workout-Like konnte nicht aktualisiert werden';
+
+  @override
+  String get workoutLikeAction => 'Training liken';
+
+  @override
+  String get workoutNoLikesYet => 'Noch keine Likes';
+
+  @override
+  String workoutLikesTitle(String count) {
+    return 'Likes ($count)';
+  }
+
+  @override
   String get retry => 'Erneut versuchen';
 
   @override

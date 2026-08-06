@@ -219,6 +219,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToLoadWorkouts => 'Failed to load workouts';
 
   @override
+  String get failedToLoadWorkoutLikes => 'Failed to load workout likes';
+
+  @override
+  String get failedToUpdateWorkoutLike => 'Failed to update workout like';
+
+  @override
+  String get workoutLikeAction => 'Like workout';
+
+  @override
+  String get workoutNoLikesYet => 'No likes yet';
+
+  @override
+  String workoutLikesTitle(String count) {
+    return 'Likes ($count)';
+  }
+
+  @override
   String get retry => 'Retry';
 
   @override

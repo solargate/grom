@@ -1,5 +1,71 @@
 import 'social.dart';
 
+class WorkoutLikeUser {
+  WorkoutLikeUser({
+    required this.handle,
+    required this.nickname,
+    required this.name,
+    required this.isLocal,
+    this.hasAvatar = false,
+    this.avatarUrl,
+  });
+
+  final String handle;
+  final String nickname;
+  final String name;
+  final bool isLocal;
+  final bool hasAvatar;
+  final String? avatarUrl;
+
+  factory WorkoutLikeUser.fromJson(Map<String, dynamic> json) {
+    return WorkoutLikeUser(
+      handle: json['handle'] as String,
+      nickname: json['nickname'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      isLocal: json['is_local'] as bool? ?? false,
+      hasAvatar: json['has_avatar'] as bool? ?? false,
+      avatarUrl: json['avatar_url'] as String?,
+    );
+  }
+}
+
+class WorkoutLikeState {
+  WorkoutLikeState({required this.count, required this.likedByMe});
+
+  final int count;
+  final bool likedByMe;
+
+  factory WorkoutLikeState.fromJson(Map<String, dynamic> json) {
+    return WorkoutLikeState(
+      count: json['count'] as int? ?? 0,
+      likedByMe: json['liked_by_me'] as bool? ?? false,
+    );
+  }
+}
+
+class WorkoutLikesResponse {
+  WorkoutLikesResponse({required this.count, required this.users});
+
+  final int count;
+  final List<WorkoutLikeUser> users;
+
+  factory WorkoutLikesResponse.fromJson(Map<String, dynamic> json) {
+    final rawUsers = json['users'];
+    final users = <WorkoutLikeUser>[];
+    if (rawUsers is List) {
+      for (final item in rawUsers) {
+        if (item is Map<String, dynamic>) {
+          users.add(WorkoutLikeUser.fromJson(item));
+        }
+      }
+    }
+    return WorkoutLikesResponse(
+      count: json['count'] as int? ?? users.length,
+      users: users,
+    );
+  }
+}
+
 class WorkoutEquipmentItem {
   WorkoutEquipmentItem({
     required this.id,
@@ -46,6 +112,9 @@ class Workout {
     this.mediaFiles = const [],
     this.author,
     this.equipment = const [],
+    this.likesCount = 0,
+    this.likedByMe = false,
+    this.canLike = false,
   });
 
   final String id;
@@ -72,10 +141,14 @@ class Workout {
   final List<String> mediaFiles;
   final WorkoutAuthor? author;
   final List<WorkoutEquipmentItem> equipment;
+  final int likesCount;
+  final bool likedByMe;
+  final bool canLike;
 
   double get distanceKm => distance / 1000;
 
-  String get ownerNickname => owner.isNotEmpty ? owner : (author?.nickname ?? '');
+  String get ownerNickname =>
+      owner.isNotEmpty ? owner : (author?.nickname ?? '');
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     WorkoutAuthor? author;
@@ -120,6 +193,45 @@ class Workout {
           const [],
       author: author,
       equipment: equipment,
+      likesCount: json['likes_count'] as int? ?? 0,
+      likedByMe: json['liked_by_me'] as bool? ?? false,
+      canLike: json['can_like'] as bool? ?? false,
+    );
+  }
+
+  Workout copyWith({
+    int? likesCount,
+    bool? likedByMe,
+    bool? canLike,
+  }) {
+    return Workout(
+      id: id,
+      name: name,
+      description: description,
+      sportType: sportType,
+      startDate: startDate,
+      durationSeconds: durationSeconds,
+      distance: distance,
+      durationTotalSeconds: durationTotalSeconds,
+      tempAvgKmm: tempAvgKmm,
+      speedMaxKmh: speedMaxKmh,
+      speedAvgKmh: speedAvgKmh,
+      elevationGain: elevationGain,
+      heartRateAvg: heartRateAvg,
+      heartRateMax: heartRateMax,
+      stepsTotal: stepsTotal,
+      calories: calories,
+      owner: owner,
+      device: device,
+      track: track,
+      hasMapPreview: hasMapPreview,
+      hasMedia: hasMedia,
+      mediaFiles: mediaFiles,
+      author: author,
+      equipment: equipment,
+      likesCount: likesCount ?? this.likesCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+      canLike: canLike ?? this.canLike,
     );
   }
 
