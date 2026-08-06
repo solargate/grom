@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
+import '../platform/is_mobile_client.dart';
 import 'user_avatar.dart';
 import 'workout_map_preview.dart';
 
@@ -229,8 +230,19 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
 
     // Match map preview / media strip: same max width, left-aligned, so
     // comments sit on the right edge of that media block (not the screen).
+    final EdgeInsets barPadding = isMobileClient
+        ? const EdgeInsets.fromLTRB(16, 0, 16, 0)
+        : const EdgeInsets.fromLTRB(16, 0, 16, 16);
+    final ButtonStyle? iconButtonStyle = isMobileClient
+        ? IconButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          )
+        : null;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: barPadding,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final displayWidth = math.min(
@@ -245,6 +257,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                 children: [
                   IconButton(
                     onPressed: widget.workout.canLike ? _toggleLike : null,
+                    style: iconButtonStyle,
                     icon: _isSaving
                         ? const SizedBox(
                             width: 20,
@@ -290,6 +303,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                   ),
                   IconButton(
                     onPressed: _showComments,
+                    style: iconButtonStyle,
                     icon: Icon(
                       Icons.comment_outlined,
                       color: theme.colorScheme.onSurfaceVariant,
