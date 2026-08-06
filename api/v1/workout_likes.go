@@ -11,24 +11,37 @@ import (
 )
 
 type WorkoutLikeStateResponse struct {
-	Count     int  `json:"count"`
-	LikedByMe bool `json:"liked_by_me"`
+	Count     int  `json:"count" example:"5"`
+	LikedByMe bool `json:"liked_by_me" example:"true"`
 }
 
 type WorkoutLikeUserResponse struct {
-	Handle    string `json:"handle"`
-	Nickname  string `json:"nickname"`
-	Name      string `json:"name"`
-	IsLocal   bool   `json:"is_local"`
-	HasAvatar bool   `json:"has_avatar"`
-	AvatarURL string `json:"avatar_url,omitempty"`
+	Handle    string `json:"handle" example:"alice@grom.example"`
+	Nickname  string `json:"nickname" example:"alice"`
+	Name      string `json:"name" example:"Alice"`
+	IsLocal   bool   `json:"is_local" example:"true"`
+	HasAvatar bool   `json:"has_avatar" example:"true"`
+	AvatarURL string `json:"avatar_url,omitempty" example:"/api/v1/users/alice/avatar"`
 }
 
 type WorkoutLikesResponse struct {
-	Count int                       `json:"count"`
+	Count int                       `json:"count" example:"5"`
 	Users []WorkoutLikeUserResponse `json:"users"`
 }
 
+// getWorkoutLikes godoc
+// @Summary      List workout likes
+// @Description  Return users who liked a workout (avatar, name, handle). Use owner query for followed users' workouts (same as get workout).
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutLikesResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id}/likes [get]
 func (a *App) getWorkoutLikes(ctx *gin.Context) {
 	viewerNickname, err := a.currentUserNickname(ctx)
 	if err != nil {
@@ -58,10 +71,38 @@ func (a *App) getWorkoutLikes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, WorkoutLikesResponse{Count: likes.Likes, Users: users})
 }
 
+// likeWorkout godoc
+// @Summary      Like workout
+// @Description  Like another user's workout (local or federated). Cannot like your own workout. Idempotent if already liked.
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutLikeStateResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id}/likes [post]
 func (a *App) likeWorkout(ctx *gin.Context) {
 	a.mutateWorkoutLike(ctx, true)
 }
 
+// unlikeWorkout godoc
+// @Summary      Unlike workout
+// @Description  Remove the current user's like from a workout (local or federated). Idempotent if not liked.
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutLikeStateResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /workouts/{id}/likes [delete]
 func (a *App) unlikeWorkout(ctx *gin.Context) {
 	a.mutateWorkoutLike(ctx, false)
 }

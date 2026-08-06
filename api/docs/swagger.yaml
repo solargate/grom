@@ -495,6 +495,46 @@ definitions:
         example: "2026-07-05T14:30:01Z"
         type: string
     type: object
+  v1.WorkoutLikeStateResponse:
+    properties:
+      count:
+        example: 5
+        type: integer
+      liked_by_me:
+        example: true
+        type: boolean
+    type: object
+  v1.WorkoutLikeUserResponse:
+    properties:
+      avatar_url:
+        example: /api/v1/users/alice/avatar
+        type: string
+      handle:
+        example: alice@grom.example
+        type: string
+      has_avatar:
+        example: true
+        type: boolean
+      is_local:
+        example: true
+        type: boolean
+      name:
+        example: Alice
+        type: string
+      nickname:
+        example: alice
+        type: string
+    type: object
+  v1.WorkoutLikesResponse:
+    properties:
+      count:
+        example: 5
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/v1.WorkoutLikeUserResponse'
+        type: array
+    type: object
   v1.WorkoutListResponse:
     properties:
       has_more:
@@ -514,6 +554,7 @@ definitions:
         example: 415
         type: number
       can_like:
+        example: true
         type: boolean
       description:
         example: Easy session
@@ -555,8 +596,10 @@ definitions:
         example: "38472901"
         type: string
       liked_by_me:
+        example: false
         type: boolean
       likes_count:
+        example: 5
         type: integer
       media_files:
         items:
@@ -1498,6 +1541,126 @@ paths:
       security:
       - BearerAuth: []
       summary: Get workout heart-rate series
+      tags:
+      - workouts
+  /workouts/{id}/likes:
+    delete:
+      description: Remove the current user's like from a workout (local or federated).
+        Idempotent if not liked.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutLikeStateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unlike workout
+      tags:
+      - workouts
+    get:
+      description: Return users who liked a workout (avatar, name, handle). Use owner
+        query for followed users' workouts (same as get workout).
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutLikesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List workout likes
+      tags:
+      - workouts
+    post:
+      description: Like another user's workout (local or federated). Cannot like your
+        own workout. Idempotent if already liked.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutLikeStateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Like workout
       tags:
       - workouts
   /workouts/{id}/map-preview:

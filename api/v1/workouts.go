@@ -133,9 +133,9 @@ type WorkoutResponse struct {
 	HasMapPreview        bool                   `json:"has_map_preview" example:"true"`
 	HasMedia             bool                   `json:"has_media" example:"true"`
 	MediaFiles           []string               `json:"media_files,omitempty"`
-	LikesCount           int                    `json:"likes_count"`
-	LikedByMe            bool                   `json:"liked_by_me"`
-	CanLike              bool                   `json:"can_like"`
+	LikesCount           int                    `json:"likes_count" example:"5"`
+	LikedByMe            bool                   `json:"liked_by_me" example:"false"`
+	CanLike              bool                   `json:"can_like" example:"true"`
 	Author               *WorkoutAuthorResponse `json:"author,omitempty"`
 }
 
