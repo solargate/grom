@@ -101,7 +101,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterServerUrl => 'Enter server URL';
 
   @override
-  String get enterValidServerUrl => 'Enter a valid URL (https://...)';
+  String get enterValidServerUrl => 'Enter a valid server host or URL';
+
+  @override
+  String get serverUrlHint => 'example.com';
 
   @override
   String get language => 'Language';

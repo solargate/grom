@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Cleartext HTTP is allowed so the mobile client can reach local / LAN
+         Grom instances without TLS. Prefer HTTPS when available. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

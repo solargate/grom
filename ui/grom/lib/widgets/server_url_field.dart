@@ -20,7 +20,7 @@ class ServerUrlField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: l10n.serverUrlLabel,
         border: const OutlineInputBorder(),
-        hintText: 'https://example.com',
+        hintText: l10n.serverUrlHint,
       ),
       keyboardType: TextInputType.url,
       textInputAction: TextInputAction.next,

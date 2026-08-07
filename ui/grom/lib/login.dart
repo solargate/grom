@@ -5,6 +5,7 @@ import 'api_request.dart';
 import 'auth_storage.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
+import 'server_url_resolver.dart';
 import 'widgets/server_url_field.dart';
 
 class LoginForm extends StatefulWidget {
@@ -64,7 +65,11 @@ class _LoginFormState extends State<LoginForm> {
 
     try {
       if (isMobileClient) {
-        await ServerStorage.saveBaseUrl(_serverUrlController.text);
+        final resolved = await resolveServerBaseUrl(_serverUrlController.text);
+        if (mounted) {
+          _serverUrlController.text = resolved;
+        }
+        await ServerStorage.saveBaseUrl(resolved);
       }
 
       final result = await _api.login(

@@ -101,7 +101,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterServerUrl => 'Введите URL сервера';
 
   @override
-  String get enterValidServerUrl => 'Введите корректный URL (https://...)';
+  String get enterValidServerUrl => 'Введите корректный хост или URL сервера';
+
+  @override
+  String get serverUrlHint => 'example.com';
 
   @override
   String get language => 'Язык';

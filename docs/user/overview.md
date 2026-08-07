@@ -2,6 +2,8 @@
 
 Grom’s Flutter client runs as a **web UI** and as an **Android** app. The web UI is served by the same `grom` process: open the server’s base URL in a browser (for example `http://localhost:8080/` with the default dev config). The screens and flows match the Android app; live GPS recording is Android-only. UI strings are available in English, Russian, and German.
 
+On **Android** (and later iOS), sign-in and registration ask for a **server URL**. You can enter a bare host such as `grom.example.com` (no `https://` required). On submit the app probes `GET /api/v1/status` over HTTPS, then HTTP, writes the resolved URL into the field, and continues. If you already type `http://` / `https://` or an explicit port, that value is used as-is. **HTTP is supported for local / LAN instances** without TLS; prefer HTTPS for anything reachable on the public internet.
+
 This page is a short tour of the main screens (screenshots below are from Android). Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin). For the HTTP API, see Swagger at `/api/docs/` on a running server.
 
 ## Workouts

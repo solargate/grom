@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Mobile login/register: when the server field has no scheme or port, probe `GET /api/v1/status` over HTTPS then HTTP, update the field with the resolved URL (TLS/certificate errors still select HTTPS; if both fail, default to HTTPS as before)
+- Android release allows cleartext HTTP so the client can reach local/LAN instances without TLS; iOS `Info.plist` sets `NSAllowsLocalNetworking` for the same local-HTTP case
+
+### Changed
+
+- Server URL field hint and validation copy no longer require typing `https://`
+
 ### Fixed
 
 - Comment/like lists no longer crash when showing users without an avatar (`UserAvatar` only sets `onBackgroundImageError` when a network image is present)
