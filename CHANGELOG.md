@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Comment/like lists no longer crash when showing users without an avatar (`UserAvatar` only sets `onBackgroundImageError` when a network image is present)
+
 ## [0.6.0] - 2026-08-06
 
 ### Added

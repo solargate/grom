@@ -80,11 +80,13 @@ class _UserAvatarState extends State<UserAvatar> {
       backgroundImage: !showPlaceholder
           ? NetworkImage(displayUrl, headers: imageHeaders)
           : null,
-      onBackgroundImageError: (_, __) {
-        if (mounted) {
-          setState(() => _imageFailed = true);
-        }
-      },
+      onBackgroundImageError: !showPlaceholder
+          ? (_, __) {
+              if (mounted) {
+                setState(() => _imageFailed = true);
+              }
+            }
+          : null,
       child: showPlaceholder
           ? Icon(
               Icons.person,

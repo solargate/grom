@@ -146,3 +146,22 @@ func TestWorkoutLikesStoreFederatedAndActivityID(t *testing.T) {
 		t.Fatalf("idempotent activity delete: %v", err)
 	}
 }
+
+func TestWorkoutLikesStoreReadsLegacyPlainTextActivityID(t *testing.T) {
+	dir := t.TempDir()
+	likesStore := NewWorkoutLikesStore(dir)
+	objectID := "https://remote.test/users/bob/workouts/38472901"
+	activityID := "https://localhost/users/alice/activities/legacy-plain"
+
+	if err := likesStore.PutLikeActivityID("alice", objectID, "https://localhost/users/alice/activities/yaml"); err != nil {
+		t.Fatal(err)
+	}
+	path := likesStore.likeActivityPath("alice", objectID)
+	if err := os.WriteFile(path, []byte(activityID), 0600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := likesStore.GetLikeActivityID("alice", objectID)
+	if err != nil || got != activityID {
+		t.Fatalf("legacy plain text activity id = %q err=%v", got, err)
+	}
+}

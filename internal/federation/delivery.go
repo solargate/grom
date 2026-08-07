@@ -41,6 +41,15 @@ func (d *Delivery) Client() *http.Client {
 	return d.client
 }
 
+// SetClient replaces the HTTP client used for outbound ActivityPub delivery.
+// Intended for tests that capture or stub remote inbox POSTs.
+func (d *Delivery) SetClient(client *http.Client) {
+	if d == nil || client == nil {
+		return
+	}
+	d.client = client
+}
+
 func (d *Delivery) DeliverFollow(follow *social.Follow) error {
 	follower, err := d.userStore.FindByID(follow.FollowerID)
 	if err != nil {

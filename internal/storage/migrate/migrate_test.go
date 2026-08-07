@@ -12,6 +12,7 @@ import (
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/storage/keys"
 	"github.com/solargate/grom/internal/storage/migrate"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -583,5 +584,103 @@ func TestMigrateDryRun(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "grom.db")); err == nil {
 		t.Fatal("dry-run should not create bbolt db")
+	}
+}
+
+func TestMigratePreservesUserProfile(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := fileBackend.Users().PutProfile(user.ID, users.Profile{
+		LastSportType: "Ride",
+		LastEquipmentBySport: map[string][]string{
+			"Run":  {"eq-1"},
+			"Ride": {"bike-1", "bike-2"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend.Close()
+
+	if _, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Verify: true,
+	}); err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotUser, err := boltBackend.Users().FindByNickname("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile, err := boltBackend.Users().GetProfile(gotUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.LastSportType != "Ride" {
+		t.Fatalf("sport = %q", profile.LastSportType)
+	}
+	if got := profile.LastEquipmentBySport["Ride"]; len(got) != 2 || got[0] != "bike-1" {
+		t.Fatalf("equipment: %#v", profile.LastEquipmentBySport)
+	}
+	_ = boltBackend.Close()
+
+	if err := os.RemoveAll(filepath.Join(dir, "users", "alice", "profile.yaml")); err != nil && !os.IsNotExist(err) {
+		// profile may live next to user; clear via empty put after reopen is enough below
+		_ = err
+	}
+	// Force bbolt→file to rewrite profile by wiping file profile if present.
+	fileBackend2, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	alice2, err := fileBackend2.Users().FindByNickname("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend2.Users().PutProfile(alice2.ID, users.Profile{})
+	_ = fileBackend2.Close()
+
+	if _, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg, Verify: true,
+	}); err != nil {
+		t.Fatalf("bbolt→file: %v", err)
+	}
+
+	fileBackend3, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fileBackend3.Close()
+	alice3, err := fileBackend3.Users().FindByNickname("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	roundTrip, err := fileBackend3.Users().GetProfile(alice3.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if roundTrip.LastSportType != "Ride" {
+		t.Fatalf("round-trip sport = %q", roundTrip.LastSportType)
+	}
+	if got := roundTrip.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
+		t.Fatalf("round-trip equipment: %#v", roundTrip.LastEquipmentBySport)
 	}
 }

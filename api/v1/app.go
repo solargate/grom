@@ -2,6 +2,7 @@ package v1
 
 import (
 	"log/slog"
+	"net/http"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -103,6 +104,20 @@ func (a *App) Close() error {
 		return nil
 	}
 	return a.Backend.Close()
+}
+
+// SetFederationHTTPClient replaces the client used for ActivityPub delivery and
+// federated avatar fetches. Intended for tests.
+func (a *App) SetFederationHTTPClient(client *http.Client) {
+	if a == nil || client == nil {
+		return
+	}
+	if a.federationDelivery != nil {
+		a.federationDelivery.SetClient(client)
+	}
+	if a.Federation != nil && a.Federation.Inbox() != nil {
+		a.Federation.Inbox().SetHTTPClient(client)
+	}
 }
 
 func (a *App) newFeedService() *workouts.FeedService {

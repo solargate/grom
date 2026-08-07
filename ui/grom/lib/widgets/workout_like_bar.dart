@@ -15,17 +15,21 @@ class WorkoutLikeBar extends StatefulWidget {
     super.key,
     required this.workout,
     required this.authToken,
+    this.api,
   });
 
   final Workout workout;
   final String authToken;
+
+  /// Optional injectable client for tests; production uses a default [ApiRequest].
+  final ApiRequest? api;
 
   @override
   State<WorkoutLikeBar> createState() => _WorkoutLikeBarState();
 }
 
 class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api ?? ApiRequest();
 
   late int _likesCount = widget.workout.likesCount;
   late bool _likedByMe = widget.workout.likedByMe;
@@ -192,6 +196,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
         showDragHandle: true,
         builder: (sheetContext) {
           return _CommentsSheet(
+            api: _api,
             authToken: widget.authToken,
             workoutId: widget.workout.id,
             owner: _owner,
@@ -323,6 +328,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
 
 class _CommentsSheet extends StatefulWidget {
   const _CommentsSheet({
+    required this.api,
     required this.authToken,
     required this.workoutId,
     required this.owner,
@@ -330,6 +336,7 @@ class _CommentsSheet extends StatefulWidget {
     required this.onCountChanged,
   });
 
+  final ApiRequest api;
   final String authToken;
   final String workoutId;
   final String? owner;
@@ -341,7 +348,7 @@ class _CommentsSheet extends StatefulWidget {
 }
 
 class _CommentsSheetState extends State<_CommentsSheet> {
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api;
   final TextEditingController _controller = TextEditingController();
   late List<WorkoutComment> _comments = List.of(widget.initial.comments);
   late int _count = widget.initial.count;

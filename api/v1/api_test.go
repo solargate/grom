@@ -54,6 +54,22 @@ func TestAuthRegisterLoginMe(t *testing.T) {
 	if me["nickname"] != "alice" || me["email"] != "alice@example.com" {
 		t.Fatalf("unexpected me body: %#v", me)
 	}
+	if _, ok := me["last_equipment_by_sport"]; ok {
+		t.Fatalf("auth/me must not expose last_equipment_by_sport: %#v", me)
+	}
+	if _, ok := me["last_sport_type"]; ok {
+		t.Fatalf("auth/me must not expose last_sport_type: %#v", me)
+	}
+	if _, ok := registered["last_equipment_by_sport"]; ok {
+		t.Fatalf("register must not expose last_equipment_by_sport: %#v", registered)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile := decodeObject(t, w)
+	if profile["last_sport_type"] != nil && profile["last_sport_type"] != "" {
+		t.Fatalf("empty profile last_sport_type: %#v", profile)
+	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/auth/me", nil, "")
 	expectStatus(t, w, http.StatusUnauthorized)
@@ -889,6 +905,31 @@ func TestProfileLastSportTypeTracksNewestByStartDate(t *testing.T) {
 	profile = decodeObject(t, w)
 	if profile["last_sport_type"] != "Run" {
 		t.Fatalf("older import must not win, got %#v", profile["last_sport_type"])
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&limit=20", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items, _, _ := decodeWorkoutPage(t, w)
+	var newerID string
+	for _, item := range items {
+		if item["name"] == "Newer run" {
+			newerID, _ = item["id"].(string)
+			break
+		}
+	}
+	if newerID == "" {
+		t.Fatal("expected newer run in list")
+	}
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+newerID, nil, token)
+	expectStatus(t, w, http.StatusNoContent)
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType after delete: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	if profile["last_sport_type"] != "Ride" {
+		t.Fatalf("after deleting newest, expected Ride, got %#v", profile["last_sport_type"])
 	}
 }
 

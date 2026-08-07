@@ -427,4 +427,147 @@ void main() {
       ),
     );
   });
+
+  test('getProfile requests /api/v1/profile', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/profile');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode({
+          'last_sport_type': 'Ride',
+          'last_equipment_by_sport': {
+            'Ride': ['bike-1'],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final profile = await ApiRequest(client: client).getProfile('tok');
+    expect(profile.lastSportType, 'Ride');
+    expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
+  });
+
+  test('like and unlike workout send owner query', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final methods = <String>[];
+    final client = MockClient((request) async {
+      methods.add(request.method);
+      expect(request.url.path, '/api/v1/workouts/wid/likes');
+      expect(request.url.queryParameters['owner'], 'bob');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode({'count': methods.length == 1 ? 1 : 0, 'liked_by_me': methods.length == 1}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final api = ApiRequest(client: client);
+    final liked = await api.likeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
+    expect(liked.count, 1);
+    expect(liked.likedByMe, isTrue);
+    final unliked = await api.unlikeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
+    expect(unliked.count, 0);
+    expect(unliked.likedByMe, isFalse);
+    expect(methods, ['POST', 'DELETE']);
+  });
+
+  test('getWorkoutLikes parses users list', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/workouts/wid/likes');
+      expect(request.url.queryParameters['owner'], 'bob');
+      return http.Response(
+        jsonEncode({
+          'count': 1,
+          'users': [
+            {
+              'handle': 'alice@localhost',
+              'nickname': 'alice',
+              'name': 'Alice',
+              'is_local': true,
+              'has_avatar': false,
+            },
+          ],
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final likes = await ApiRequest(client: client).getWorkoutLikes(
+      token: 'tok',
+      workoutId: 'wid',
+      owner: 'bob',
+    );
+    expect(likes.count, 1);
+    expect(likes.users.single.nickname, 'alice');
+  });
+
+  test('create and delete workout comments', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      if (request.method == 'GET') {
+        expect(request.url.path, '/api/v1/workouts/wid/comments');
+        expect(request.url.queryParameters['owner'], 'bob');
+        return http.Response(
+          jsonEncode({'count': 0, 'comments': <dynamic>[]}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST') {
+        expect(request.url.path, '/api/v1/workouts/wid/comments');
+        expect(jsonDecode(request.body)['text'], 'Nice!');
+        return http.Response(
+          jsonEncode({
+            'count': 1,
+            'comment': {
+              'id': 'c1',
+              'datetime': '2026-08-06T12:00:00Z',
+              'text': 'Nice!',
+              'can_delete': true,
+              'user': {
+                'handle': 'alice@localhost',
+                'nickname': 'alice',
+                'name': 'Alice',
+                'is_local': true,
+                'has_avatar': false,
+              },
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      expect(request.method, 'DELETE');
+      expect(request.url.path, '/api/v1/workouts/wid/comments/c1');
+      expect(request.url.queryParameters['owner'], 'bob');
+      return http.Response(
+        jsonEncode({'count': 0}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final api = ApiRequest(client: client);
+    final listed = await api.getWorkoutComments(token: 'tok', workoutId: 'wid', owner: 'bob');
+    expect(listed.count, 0);
+    final created = await api.createWorkoutComment(
+      token: 'tok',
+      workoutId: 'wid',
+      text: 'Nice!',
+      owner: 'bob',
+    );
+    expect(created.count, 1);
+    expect(created.comment.id, 'c1');
+    final count = await api.deleteWorkoutComment(
+      token: 'tok',
+      workoutId: 'wid',
+      commentId: 'c1',
+      owner: 'bob',
+    );
+    expect(count, 0);
+  });
 }
