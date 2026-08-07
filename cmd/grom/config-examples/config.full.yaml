@@ -54,6 +54,29 @@ auth:
   jwt_secret: "REPLACE_WITH_STRONG_SECRET"
   # Optional. JWT lifetime in hours. Default: 24.
   jwt_ttl_hours: 24
+  reset:
+    # Required when mailer.driver is log or smtp. Public base URL for reset links (no trailing slash).
+    public_base_url: "https://grom.example.com"
+    # Optional. Reset token lifetime in minutes. Default: 60.
+    token_ttl_minutes: 60
+
+mailer:
+  # Optional. Outbound email driver: off | log | smtp. Default: off.
+  # log writes messages to the server log (dev). smtp uses an external SMTP relay (no local MTA).
+  driver: off
+  # Required when driver is log or smtp. Sender address, e.g. "Grom <noreply@example.com>".
+  from: ""
+  smtp:
+    # Required when driver is smtp.
+    host: ""
+    # Required when driver is smtp. Common: 587 (STARTTLS) or 465 (implicit TLS).
+    port: 587
+    # Optional. SMTP username (leave empty for open local catchers).
+    username: ""
+    # Optional. SMTP password.
+    password: ""
+    # Optional. starttls | tls | none. Default: starttls (or tls when port is 465).
+    encryption: starttls
 
 storage:
   # Optional. Storage backend driver: file | bbolt | postgres. Default: file.

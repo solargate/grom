@@ -731,6 +731,27 @@ definitions:
         example: "2026-07-05T14:30:01Z"
         type: string
     type: object
+  v1.forgotPasswordRequest:
+    properties:
+      email:
+        example: solarwind.palm@gmail.com
+        type: string
+    required:
+    - email
+    type: object
+  v1.resetPasswordRequest:
+    properties:
+      password:
+        example: secret123
+        minLength: 8
+        type: string
+      token:
+        example: abc123
+        type: string
+    required:
+    - password
+    - token
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -874,6 +895,71 @@ paths:
       security:
       - BearerAuth: []
       summary: Upload current user avatar
+      tags:
+      - auth
+  /auth/password/forgot:
+    post:
+      consumes:
+      - application/json
+      description: Sends a password reset email if the account exists. Always returns
+        204 when reset is enabled (except rate limits).
+      parameters:
+      - description: Account email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.forgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - auth
+  /auth/password/reset:
+    post:
+      consumes:
+      - application/json
+      description: Sets a new password using a one-time token from the reset email
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.resetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Reset password with token
       tags:
       - auth
   /auth/register:

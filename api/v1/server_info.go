@@ -29,7 +29,8 @@ func (a *App) checkStatus(ctx *gin.Context) {
 // @Router       /server-info [get]
 func (a *App) getServerInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"name":               config.Cfg.Server.Name,
-		"federation_enabled": config.Cfg.Federation.Enabled,
+		"name":                   config.Cfg.Server.Name,
+		"federation_enabled":     config.Cfg.Federation.Enabled,
+		"password_reset_enabled": config.Cfg.PasswordResetEnabled(),
 	})
 }

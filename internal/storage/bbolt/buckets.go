@@ -27,6 +27,7 @@ var (
 	bucketFedSpeedCharts      = []byte("fed_speed_charts")
 	bucketHeartRateCharts     = []byte("heart_rate_charts")
 	bucketFedHeartRateCharts  = []byte("fed_heart_rate_charts")
+	bucketResetTokens         = []byte("reset_tokens")
 )
 
 var allBuckets = [][]byte{
@@ -56,6 +57,7 @@ var allBuckets = [][]byte{
 	bucketFedSpeedCharts,
 	bucketHeartRateCharts,
 	bucketFedHeartRateCharts,
+	bucketResetTokens,
 }
 
 const schemaVersion = "1"

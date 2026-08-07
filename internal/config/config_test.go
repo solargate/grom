@@ -309,6 +309,59 @@ func TestFinalizeConfig_LoggingInvalid(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_MailerDefaultsOff(t *testing.T) {
+	cfg := baseCfg()
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Mailer.Driver != "off" {
+		t.Fatalf("driver = %q", cfg.Mailer.Driver)
+	}
+	if cfg.PasswordResetEnabled() {
+		t.Fatal("expected password reset disabled")
+	}
+	if cfg.Auth.Reset.TokenTTLMinutes != 60 {
+		t.Fatalf("ttl = %d", cfg.Auth.Reset.TokenTTLMinutes)
+	}
+}
+
+func TestFinalizeConfig_MailerLogRequiresFromAndBaseURL(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Mailer.Driver = "log"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected error")
+	}
+	cfg.Mailer.From = "Grom <noreply@example.com>"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected public_base_url error")
+	}
+	cfg.Auth.Reset.PublicBaseURL = "https://grom.example.com/"
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Auth.Reset.PublicBaseURL != "https://grom.example.com" {
+		t.Fatalf("base url = %q", cfg.Auth.Reset.PublicBaseURL)
+	}
+	if !cfg.PasswordResetEnabled() {
+		t.Fatal("expected enabled")
+	}
+}
+
+func TestFinalizeConfig_MailerSMTP(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Mailer.Driver = "smtp"
+	cfg.Mailer.From = "noreply@example.com"
+	cfg.Auth.Reset.PublicBaseURL = "https://example.com"
+	cfg.Mailer.SMTP.Host = "smtp.example.com"
+	cfg.Mailer.SMTP.Port = 587
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Mailer.SMTP.Encryption != "starttls" {
+		t.Fatalf("encryption = %q", cfg.Mailer.SMTP.Encryption)
+	}
+}
+
 func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)

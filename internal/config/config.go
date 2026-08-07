@@ -67,7 +67,14 @@ type Config struct {
 	Auth struct {
 		JWTSecret   string `mapstructure:"jwt_secret" yaml:"jwt_secret"`
 		JWTTTLHours int    `mapstructure:"jwt_ttl_hours" yaml:"jwt_ttl_hours"`
+		Reset       struct {
+			// PublicBaseURL is the instance base URL used in password-reset email links (no trailing slash).
+			PublicBaseURL string `mapstructure:"public_base_url" yaml:"public_base_url"`
+			// TokenTTLMinutes is how long a reset token remains valid. Default: 60.
+			TokenTTLMinutes int `mapstructure:"token_ttl_minutes" yaml:"token_ttl_minutes"`
+		} `mapstructure:"reset" yaml:"reset"`
 	} `mapstructure:"auth" yaml:"auth"`
+	Mailer MailerConfig `mapstructure:"mailer" yaml:"mailer"`
 	Federation struct {
 		Enabled               bool   `mapstructure:"enabled" yaml:"enabled"`
 		Domain                string `mapstructure:"domain" yaml:"domain"`
@@ -90,6 +97,50 @@ type LoggingConfig struct {
 	Level string `mapstructure:"level" yaml:"level"`
 	// Format is text or json. Default: json.
 	Format string `mapstructure:"format" yaml:"format"`
+}
+
+// MailerDriver selects how outbound email is delivered.
+type MailerDriver string
+
+const (
+	MailerDriverOff  MailerDriver = "off"
+	MailerDriverLog  MailerDriver = "log"
+	MailerDriverSMTP MailerDriver = "smtp"
+)
+
+// MailerEncryption selects SMTP transport security.
+type MailerEncryption string
+
+const (
+	MailerEncryptionSTARTTLS MailerEncryption = "starttls"
+	MailerEncryptionTLS      MailerEncryption = "tls"
+	MailerEncryptionNone     MailerEncryption = "none"
+)
+
+// MailerConfig controls outbound email (password reset and future notifications).
+type MailerConfig struct {
+	// Driver is off, log, or smtp. Default: off.
+	Driver string `mapstructure:"driver" yaml:"driver"`
+	// From is the sender address, e.g. "Grom <noreply@example.com>".
+	From string `mapstructure:"from" yaml:"from"`
+	SMTP struct {
+		Host       string `mapstructure:"host" yaml:"host"`
+		Port       int    `mapstructure:"port" yaml:"port"`
+		Username   string `mapstructure:"username" yaml:"username"`
+		Password   string `mapstructure:"password" yaml:"password"`
+		Encryption string `mapstructure:"encryption" yaml:"encryption"` // starttls | tls | none
+	} `mapstructure:"smtp" yaml:"smtp"`
+}
+
+// MailerEnabled reports whether outbound email delivery is configured.
+func (c *Config) MailerEnabled() bool {
+	d := strings.ToLower(strings.TrimSpace(c.Mailer.Driver))
+	return d == string(MailerDriverLog) || d == string(MailerDriverSMTP)
+}
+
+// PasswordResetEnabled reports whether password reset via email is available.
+func (c *Config) PasswordResetEnabled() bool {
+	return c.MailerEnabled() && strings.TrimSpace(c.Auth.Reset.PublicBaseURL) != ""
 }
 
 var Cfg Config
@@ -124,6 +175,13 @@ func FinalizeConfig(cfg *Config) error {
 	}
 	if cfg.Auth.JWTTTLHours <= 0 {
 		cfg.Auth.JWTTTLHours = 24
+	}
+	if cfg.Auth.Reset.TokenTTLMinutes <= 0 {
+		cfg.Auth.Reset.TokenTTLMinutes = 60
+	}
+	cfg.Auth.Reset.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.Auth.Reset.PublicBaseURL), "/")
+	if err := finalizeMailer(&cfg.Mailer, cfg.Auth.Reset.PublicBaseURL); err != nil {
+		return err
 	}
 	if cfg.Federation.DeliveryWorkers <= 0 {
 		cfg.Federation.DeliveryWorkers = 2
@@ -277,6 +335,59 @@ func FinalizeConfig(cfg *Config) error {
 		cfg.Server.TLS.Autocert.ResolvedCacheDir = resolvedCacheDir
 	}
 
+	return nil
+}
+
+func finalizeMailer(cfg *MailerConfig, publicBaseURL string) error {
+	driver := strings.ToLower(strings.TrimSpace(cfg.Driver))
+	if driver == "" {
+		driver = string(MailerDriverOff)
+	}
+	switch MailerDriver(driver) {
+	case MailerDriverOff, MailerDriverLog, MailerDriverSMTP:
+		cfg.Driver = driver
+	default:
+		return fmt.Errorf("mailer.driver must be one of off, log, smtp (got %q)", cfg.Driver)
+	}
+
+	if MailerDriver(driver) == MailerDriverOff {
+		return nil
+	}
+
+	cfg.From = strings.TrimSpace(cfg.From)
+	if cfg.From == "" {
+		return fmt.Errorf("mailer.from is required when mailer.driver is %s", driver)
+	}
+	if publicBaseURL == "" {
+		return fmt.Errorf("auth.reset.public_base_url is required when mailer.driver is %s", driver)
+	}
+
+	if MailerDriver(driver) != MailerDriverSMTP {
+		return nil
+	}
+
+	cfg.SMTP.Host = strings.TrimSpace(cfg.SMTP.Host)
+	if cfg.SMTP.Host == "" {
+		return fmt.Errorf("mailer.smtp.host is required when mailer.driver is smtp")
+	}
+	if cfg.SMTP.Port <= 0 {
+		return fmt.Errorf("mailer.smtp.port is required when mailer.driver is smtp")
+	}
+
+	enc := strings.ToLower(strings.TrimSpace(cfg.SMTP.Encryption))
+	if enc == "" {
+		if cfg.SMTP.Port == 465 {
+			enc = string(MailerEncryptionTLS)
+		} else {
+			enc = string(MailerEncryptionSTARTTLS)
+		}
+	}
+	switch MailerEncryption(enc) {
+	case MailerEncryptionSTARTTLS, MailerEncryptionTLS, MailerEncryptionNone:
+		cfg.SMTP.Encryption = enc
+	default:
+		return fmt.Errorf("mailer.smtp.encryption must be one of starttls, tls, none (got %q)", cfg.SMTP.Encryption)
+	}
 	return nil
 }
 

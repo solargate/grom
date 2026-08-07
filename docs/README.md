@@ -18,7 +18,7 @@ English documentation for Grom. The [root README](../README.md) is a short entry
 | Goal | Page |
 |------|------|
 | Build and run the server | [Install and run](admin/install.md) |
-| Configure TLS, storage, federation, logging | [Configuration](admin/configuration.md) |
+| Configure TLS, storage, federation, logging, mailer / password reset | [Configuration](admin/configuration.md) |
 
 ### Reference
 

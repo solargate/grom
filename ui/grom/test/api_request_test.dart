@@ -21,13 +21,16 @@ void main() {
     final info = ServerInfo.fromJson({
       'name': 'Home Lab',
       'federation_enabled': true,
+      'password_reset_enabled': true,
     });
     expect(info.name, 'Home Lab');
     expect(info.federationEnabled, isTrue);
+    expect(info.passwordResetEnabled, isTrue);
 
     final defaults = ServerInfo.fromJson({});
     expect(defaults.name, 'Grom Home');
     expect(defaults.federationEnabled, isFalse);
+    expect(defaults.passwordResetEnabled, isFalse);
   });
 
   test('UserInfo.fromJson reads optional avatar fields', () {
@@ -201,7 +204,11 @@ void main() {
     final okClient = MockClient((request) async {
       expect(request.url.path, '/api/v1/server-info');
       return http.Response(
-        jsonEncode({'name': 'Lab', 'federation_enabled': true}),
+        jsonEncode({
+          'name': 'Lab',
+          'federation_enabled': true,
+          'password_reset_enabled': true,
+        }),
         200,
         headers: {'content-type': 'application/json'},
       );
@@ -209,6 +216,7 @@ void main() {
     final ok = await ApiRequest(client: okClient).getServerInfo();
     expect(ok.name, 'Lab');
     expect(ok.federationEnabled, isTrue);
+    expect(ok.passwordResetEnabled, isTrue);
 
     final failClient = MockClient((request) async {
       return http.Response('nope', 500);

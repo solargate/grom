@@ -10,6 +10,18 @@ federation:
 auth:
   jwt_secret: "REPLACE_WITH_STRONG_SECRET"
   jwt_ttl_hours: 24
+  # reset:
+  #   public_base_url: "https://grom.example.com"
+
+mailer:
+  driver: off
+  # from: "Grom <noreply@example.com>"
+  # smtp:
+  #   host: smtp.example.com
+  #   port: 587
+  #   username: ""
+  #   password: ""
+  #   encryption: starttls
 
 storage:
   location: /var/lib/grom/data

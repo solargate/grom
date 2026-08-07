@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Password reset via email: `POST /api/v1/auth/password/forgot` and `/reset`, opaque tokens (`reset_tokens.yaml` / bbolt `reset_tokens`), `mailer` config (log/smtp via go-mail, no local MTA), `auth.reset.public_base_url`, in-memory rate limits, and `password_reset_enabled` on `/server-info`
+- Web UI reset page (`/reset-password`) and Forgot password flow on the login screen (mobile opens the email link in a browser)
 - Mobile login/register: when the server field has no scheme or port, probe `GET /api/v1/status` over HTTPS then HTTP, update the field with the resolved URL (TLS/certificate errors still select HTTPS; if both fail, default to HTTPS as before)
 - Android release allows cleartext HTTP so the client can reach local/LAN instances without TLS; iOS `Info.plist` sets `NSAllowsLocalNetworking` for the same local-HTTP case
 

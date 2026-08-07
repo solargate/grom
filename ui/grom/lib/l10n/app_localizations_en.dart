@@ -95,6 +95,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordsDoNotMatch => 'Passwords do not match';
 
   @override
+  String get forgotPasswordLink => 'Forgot password?';
+
+  @override
+  String get forgotPasswordTitle => 'Reset password';
+
+  @override
+  String get forgotPasswordHint =>
+      'Enter your account email. If it is registered, we will send a reset link. Open the link in a browser to choose a new password.';
+
+  @override
+  String get forgotPasswordSubmit => 'Send reset link';
+
+  @override
+  String get forgotPasswordCheckEmail =>
+      'If an account exists for that email, a reset link has been sent. Open it in a browser, then sign in here.';
+
+  @override
+  String get forgotPasswordFailed => 'Failed to request password reset';
+
+  @override
+  String get resetPasswordTitle => 'Choose a new password';
+
+  @override
+  String get resetPasswordHint => 'Enter a new password for your account.';
+
+  @override
+  String get resetPasswordSubmit => 'Update password';
+
+  @override
+  String get resetPasswordSuccess => 'Password updated. Please sign in.';
+
+  @override
+  String get resetPasswordFailed => 'Failed to reset password';
+
+  @override
+  String get resetPasswordInvalidToken =>
+      'This reset link is missing or invalid.';
+
+  @override
   String get serverUrlLabel => 'Server URL *';
 
   @override

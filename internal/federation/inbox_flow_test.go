@@ -48,6 +48,7 @@ func (m *memUsers) Create(string, string, string, string) (*users.User, error) {
 func (m *memUsers) UpdateProfile(string, string) (*users.User, error) {
 	return nil, errors.New("not implemented")
 }
+func (m *memUsers) UpdatePassword(string, string) error { return errors.New("not implemented") }
 func (m *memUsers) SetLastEquipmentForSport(string, string, []string) error { return nil }
 func (m *memUsers) RemoveEquipmentFromLastSets(string, string) error        { return nil }
 func (m *memUsers) GetProfile(string) (*users.Profile, error) {

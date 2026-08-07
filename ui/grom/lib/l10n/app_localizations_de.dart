@@ -96,6 +96,49 @@ class AppLocalizationsDe extends AppLocalizations {
   String get passwordsDoNotMatch => 'Passwörter stimmen nicht überein';
 
   @override
+  String get forgotPasswordLink => 'Passwort vergessen?';
+
+  @override
+  String get forgotPasswordTitle => 'Passwort zurücksetzen';
+
+  @override
+  String get forgotPasswordHint =>
+      'Geben Sie die E-Mail Ihres Kontos ein. Falls sie registriert ist, senden wir einen Reset-Link. Öffnen Sie den Link im Browser, um ein neues Passwort zu wählen.';
+
+  @override
+  String get forgotPasswordSubmit => 'Reset-Link senden';
+
+  @override
+  String get forgotPasswordCheckEmail =>
+      'Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet. Öffnen Sie ihn im Browser und melden Sie sich danach hier an.';
+
+  @override
+  String get forgotPasswordFailed =>
+      'Passwort-Reset konnte nicht angefordert werden';
+
+  @override
+  String get resetPasswordTitle => 'Neues Passwort wählen';
+
+  @override
+  String get resetPasswordHint =>
+      'Geben Sie ein neues Passwort für Ihr Konto ein.';
+
+  @override
+  String get resetPasswordSubmit => 'Passwort speichern';
+
+  @override
+  String get resetPasswordSuccess =>
+      'Passwort aktualisiert. Bitte melden Sie sich an.';
+
+  @override
+  String get resetPasswordFailed =>
+      'Passwort konnte nicht zurückgesetzt werden';
+
+  @override
+  String get resetPasswordInvalidToken =>
+      'Dieser Reset-Link fehlt oder ist ungültig.';
+
+  @override
   String get serverUrlLabel => 'Server-URL *';
 
   @override

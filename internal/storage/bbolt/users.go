@@ -235,6 +235,21 @@ func (s *UsersStore) UpdateProfile(userID, name string) (*users.User, error) {
 	return result, err
 }
 
+func (s *UsersStore) UpdatePassword(userID, passwordHash string) error {
+	passwordHash = strings.TrimSpace(passwordHash)
+	if passwordHash == "" {
+		return fmt.Errorf("password hash is required")
+	}
+	return s.db.Update(func(tx *bolt.Tx) error {
+		u, err := s.getByID(tx, userID)
+		if err != nil {
+			return err
+		}
+		u.PasswordHash = passwordHash
+		return s.putUser(tx, *u)
+	})
+}
+
 // PutExisting writes a user record without hashing (used by migration).
 func (s *UsersStore) PutExisting(u users.User) error {
 	if err := ensureUserDir(s.dataDir, u.Nickname); err != nil {

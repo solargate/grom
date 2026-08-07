@@ -34,7 +34,8 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `cmd/grom/` | Main binary; example configs in `config-examples/` |
 | `api/v1/` | Gin handlers, route registration, DTO/response types |
 | `api/docs/` | `swag`-generated OpenAPI (`make doc`) |
-| `internal/auth/` | JWT + password hashing + `AuthRequired` middleware |
+| `internal/auth/` | JWT + password hashing + `AuthRequired` middleware; password reset under `internal/auth/reset/` |
+| `internal/mailer/` | Outbound email (`off` / `log` / `smtp` via go-mail) |
 | `internal/config/` | Viper YAML config; global `config.Cfg` |
 | `internal/logging/` | `slog` setup from `logging.level` / `logging.format` |
 | `internal/users/` | User repository + models |

@@ -3,6 +3,7 @@ import 'package:grom/l10n/app_localizations.dart';
 
 import 'api_request.dart';
 import 'auth_storage.dart';
+import 'forgot_password.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
 import 'server_url_resolver.dart';
@@ -32,12 +33,15 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _isSubmitting = false;
   bool _obscurePassword = true;
+  bool _passwordResetEnabled = false;
 
   @override
   void initState() {
     super.initState();
     if (isMobileClient) {
       _loadSavedServerUrl();
+    } else {
+      _loadPasswordResetFlag();
     }
   }
 
@@ -45,6 +49,18 @@ class _LoginFormState extends State<LoginForm> {
     final url = await ServerStorage.getBaseUrl();
     if (url != null && mounted) {
       _serverUrlController.text = url;
+    }
+    await _loadPasswordResetFlag();
+  }
+
+  Future<void> _loadPasswordResetFlag() async {
+    try {
+      final info = await _api.getServerInfo();
+      if (mounted) {
+        setState(() => _passwordResetEnabled = info.passwordResetEnabled);
+      }
+    } catch (_) {
+      // Keep forgot link hidden when server-info is unavailable.
     }
   }
 
@@ -70,6 +86,7 @@ class _LoginFormState extends State<LoginForm> {
           _serverUrlController.text = resolved;
         }
         await ServerStorage.saveBaseUrl(resolved);
+        await _loadPasswordResetFlag();
       }
 
       final result = await _api.login(
@@ -160,7 +177,25 @@ class _LoginFormState extends State<LoginForm> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          if (_passwordResetEnabled)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : () {
+                        Navigator.push<void>(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                child: Text(l10n.forgotPasswordLink),
+              ),
+            )
+          else
+            const SizedBox(height: 24),
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting

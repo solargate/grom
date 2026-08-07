@@ -25,15 +25,18 @@ class ServerInfo {
   ServerInfo({
     required this.name,
     this.federationEnabled = false,
+    this.passwordResetEnabled = false,
   });
 
   final String name;
   final bool federationEnabled;
+  final bool passwordResetEnabled;
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) {
     return ServerInfo(
       name: json['name'] as String? ?? 'Grom Home',
       federationEnabled: json['federation_enabled'] as bool? ?? false,
+      passwordResetEnabled: json['password_reset_enabled'] as bool? ?? false,
     );
   }
 }
@@ -131,6 +134,40 @@ class ApiRequest {
       return ServerInfo.fromJson(json);
     }
     return ServerInfo(name: 'Grom Home');
+  }
+
+  Future<void> forgotPassword({required String email}) async {
+    final response = await _client.post(
+      _uri('/api/v1/auth/password/forgot'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String password,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/v1/auth/password/reset'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'token': token,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw _parseError(response);
   }
 
   Future<UserInfo> register({
