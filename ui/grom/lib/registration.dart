@@ -5,6 +5,7 @@ import 'api_request.dart';
 import 'login.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
+import 'server_url_resolver.dart';
 import 'widgets/server_url_field.dart';
 
 class RegistrationForm extends StatefulWidget {
@@ -71,7 +72,11 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
     try {
       if (isMobileClient) {
-        await ServerStorage.saveBaseUrl(_serverUrlController.text);
+        final resolved = await resolveServerBaseUrl(_serverUrlController.text);
+        if (mounted) {
+          _serverUrlController.text = resolved;
+        }
+        await ServerStorage.saveBaseUrl(resolved);
       }
 
       await _api.register(

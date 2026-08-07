@@ -277,8 +277,14 @@ abstract class AppLocalizations {
   /// No description provided for @enterValidServerUrl.
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid URL (https://...)'**
+  /// **'Enter a valid server host or URL'**
   String get enterValidServerUrl;
+
+  /// No description provided for @serverUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'example.com'**
+  String get serverUrlHint;
 
   /// No description provided for @language.
   ///

@@ -66,6 +66,8 @@ cd cmd/grom
 
 Open the **web UI** in a browser at the server’s base URL (same Flutter client as Android — for example `http://localhost:8080/` with `config.dev.notls.yaml`). Register a user, then sign in. See [User overview](../user/overview.md).
 
+The **Android** app (and later iOS) can connect to that same instance: enter the host on the login screen (scheme optional). Cleartext **HTTP is allowed for local/LAN** installs without TLS; use HTTPS when exposing the server beyond the local network. See [User overview](../user/overview.md) for how the client resolves `http` vs `https`.
+
 **API docs (Swagger UI):** `http://<host>:<port>/api/docs/` (for example `http://localhost:8080/api/docs/`). Generated OpenAPI sources also live under `api/docs/` in the repository.
 
 CLI help:
