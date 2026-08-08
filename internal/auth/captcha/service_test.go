@@ -75,6 +75,34 @@ func TestVerify_MissingAndInvalid(t *testing.T) {
 	}
 }
 
+func TestVerify_Expired(t *testing.T) {
+	svc := testService(true)
+	expired := time.Now().Add(-time.Minute)
+	counter := 10
+	challenge, err := altcha.CreateChallenge(altcha.CreateChallengeOptions{
+		Algorithm:           "PBKDF2/SHA-256",
+		DeriveKey:           altcha.DeriveKeyPBKDF2(),
+		HMACSignatureSecret: "test-hmac-secret-for-captcha!!",
+		Cost:                10,
+		KeyLength:           32,
+		Counter:             &counter,
+		ExpiresAt:           &expired,
+	})
+	if err != nil {
+		t.Fatalf("CreateChallenge: %v", err)
+	}
+	payload, err := captcha.EncodePayload(altcha.Payload{
+		Challenge: challenge,
+		Solution:  altcha.Solution{Counter: 0, DerivedKey: "unused"},
+	})
+	if err != nil {
+		t.Fatalf("EncodePayload: %v", err)
+	}
+	if err := svc.Verify(payload); err != captcha.ErrExpired {
+		t.Fatalf("expired = %v, want ErrExpired", err)
+	}
+}
+
 func TestVerify_HMACFallbackSecret(t *testing.T) {
 	svc := captcha.NewService(captcha.Config{
 		Enabled:     true,
