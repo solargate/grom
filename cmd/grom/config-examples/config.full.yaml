@@ -59,6 +59,15 @@ auth:
     public_base_url: "https://grom.example.com"
     # Optional. Reset token lifetime in minutes. Default: 60.
     token_ttl_minutes: 60
+  captcha:
+    # Optional. Require ALTCHA proof-of-work on register, login, and password forgot. Default: false.
+    enabled: false
+    # Optional. HMAC secret for challenge signatures. When empty, auth.jwt_secret is used.
+    hmac_secret: ""
+    # Optional. PBKDF2 iteration cost for PoW. Default: 1000.
+    cost: 1000
+    # Optional. Challenge lifetime in seconds. Default: 300.
+    expires_seconds: 300
 
 mailer:
   # Optional. Outbound email driver: off | log | smtp. Default: off.

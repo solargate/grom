@@ -178,6 +178,9 @@ definitions:
     type: object
   v1.LoginRequest:
     properties:
+      altcha:
+        example: ""
+        type: string
       email:
         example: solarwind.palm@gmail.com
         type: string
@@ -302,6 +305,9 @@ definitions:
     type: object
   v1.RegisterRequest:
     properties:
+      altcha:
+        example: ""
+        type: string
       email:
         example: solarwind.palm@gmail.com
         type: string
@@ -733,6 +739,9 @@ definitions:
     type: object
   v1.forgotPasswordRequest:
     properties:
+      altcha:
+        example: ""
+        type: string
       email:
         example: solarwind.palm@gmail.com
         type: string
@@ -992,6 +1001,26 @@ paths:
       summary: Register new user
       tags:
       - auth
+  /captcha/challenge:
+    get:
+      description: Returns a proof-of-work challenge when auth.captcha.enabled is
+        true
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      summary: Get ALTCHA challenge
+      tags:
+      - captcha
   /equipment:
     get:
       description: Return equipment catalog for the authenticated user

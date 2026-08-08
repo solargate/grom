@@ -47,6 +47,8 @@
   "forgotPasswordSubmit": "Reset-Link senden",
   "forgotPasswordCheckEmail": "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet. Öffnen Sie ihn im Browser und melden Sie sich danach hier an.",
   "forgotPasswordFailed": "Passwort-Reset konnte nicht angefordert werden",
+  "captchaRequired": "Bitte die Captcha-Prüfung abschließen",
+  "captchaNotRobot": "Ich bin kein Roboter",
   "resetPasswordTitle": "Neues Passwort wählen",
   "resetPasswordHint": "Geben Sie ein neues Passwort für Ihr Konto ein.",
   "resetPasswordSubmit": "Passwort speichern",

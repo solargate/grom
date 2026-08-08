@@ -8,6 +8,8 @@ On **Android** (and later iOS), sign-in and registration ask for a **server URL*
 
 If the operator enables outbound email (`mailer` in server config), the sign-in screen shows **Forgot password?**. Enter your account email; the server always responds the same way whether or not the address is registered. Check your inbox for a reset link and open it in a **browser** (the web UI at `/reset-password`). After you set a new password, sign in again in the app or on the web. Password reset is unavailable when the server reports `password_reset_enabled: false`.
 
+When the operator enables captcha (`auth.captcha.enabled`), sign-in, registration, and forgot-password show an **I'm not a robot** checkbox. Tick it and wait for the local proof-of-work check to finish before submitting (it may take a moment on slower devices). Setting a new password from the email reset link does not require captcha.
+
 This page is a short tour of the main screens (screenshots below are from Android). Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin). For the HTTP API, see Swagger at `/api/docs/` on a running server.
 
 ## Workouts

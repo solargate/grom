@@ -309,6 +309,24 @@ func TestFinalizeConfig_LoggingInvalid(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_CaptchaDefaultsAndHMAC(t *testing.T) {
+	cfg := baseCfg()
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.CaptchaEnabled() {
+		t.Fatal("expected captcha off")
+	}
+	if cfg.CaptchaHMACSecret() != cfg.Auth.JWTSecret {
+		t.Fatalf("hmac fallback = %q", cfg.CaptchaHMACSecret())
+	}
+	cfg.Auth.Captcha.Enabled = true
+	cfg.Auth.Captcha.HMACSecret = " dedicated-captcha-secret "
+	if got := cfg.CaptchaHMACSecret(); got != "dedicated-captcha-secret" {
+		t.Fatalf("hmac = %q", got)
+	}
+}
+
 func TestFinalizeConfig_MailerDefaultsOff(t *testing.T) {
 	cfg := baseCfg()
 	if err := config.FinalizeConfig(&cfg); err != nil {
@@ -319,6 +337,15 @@ func TestFinalizeConfig_MailerDefaultsOff(t *testing.T) {
 	}
 	if cfg.PasswordResetEnabled() {
 		t.Fatal("expected password reset disabled")
+	}
+	if cfg.CaptchaEnabled() {
+		t.Fatal("expected captcha disabled")
+	}
+	if cfg.Auth.Captcha.Cost != 1000 {
+		t.Fatalf("captcha cost = %d", cfg.Auth.Captcha.Cost)
+	}
+	if cfg.Auth.Captcha.ExpiresSeconds != 300 {
+		t.Fatalf("captcha expires = %d", cfg.Auth.Captcha.ExpiresSeconds)
 	}
 	if cfg.Auth.Reset.TokenTTLMinutes != 60 {
 		t.Fatalf("ttl = %d", cfg.Auth.Reset.TokenTTLMinutes)

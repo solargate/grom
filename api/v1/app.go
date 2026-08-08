@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/auth/captcha"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
@@ -35,6 +36,7 @@ type App struct {
 	Blobs             blob.Store
 	Mailer            mailer.Mailer
 	PasswordReset     *reset.Service
+	Captcha           *captcha.Service
 	Location          string
 	TempDir           string
 
@@ -78,6 +80,13 @@ func NewApp() (*App, error) {
 		)
 	}
 
+	captchaSvc := captcha.NewService(captcha.Config{
+		Enabled:    config.Cfg.CaptchaEnabled(),
+		HMACSecret: config.Cfg.CaptchaHMACSecret(),
+		Cost:       config.Cfg.Auth.Captcha.Cost,
+		Expires:    time.Duration(config.Cfg.Auth.Captcha.ExpiresSeconds) * time.Second,
+	})
+
 	app := &App{
 		Backend:           backend,
 		Users:             backend.Users(),
@@ -91,6 +100,7 @@ func NewApp() (*App, error) {
 		Blobs:             backend.Blobs(),
 		Mailer:            mail,
 		PasswordReset:     passwordReset,
+		Captcha:           captchaSvc,
 		Location:          config.Cfg.Storage.ResolvedLocation,
 		TempDir:           config.Cfg.Storage.ResolvedTempDir,
 	}
@@ -183,6 +193,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 	{
 		apiV1.GET("/status", a.checkStatus)
 		apiV1.GET("/server-info", a.getServerInfo)
+		apiV1.GET("/captcha/challenge", a.getCaptchaChallenge)
 
 		authGroup := apiV1.Group("/auth")
 		authGroup.POST("/register", a.register)

@@ -26,17 +26,20 @@ class ServerInfo {
     required this.name,
     this.federationEnabled = false,
     this.passwordResetEnabled = false,
+    this.captchaEnabled = false,
   });
 
   final String name;
   final bool federationEnabled;
   final bool passwordResetEnabled;
+  final bool captchaEnabled;
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) {
     return ServerInfo(
       name: json['name'] as String? ?? 'Grom Home',
       federationEnabled: json['federation_enabled'] as bool? ?? false,
       passwordResetEnabled: json['password_reset_enabled'] as bool? ?? false,
+      captchaEnabled: json['captcha_enabled'] as bool? ?? false,
     );
   }
 }
@@ -136,11 +139,18 @@ class ApiRequest {
     return ServerInfo(name: 'Grom Home');
   }
 
-  Future<void> forgotPassword({required String email}) async {
+  Future<void> forgotPassword({
+    required String email,
+    String? altcha,
+  }) async {
+    final body = <String, dynamic>{'email': email};
+    if (altcha != null && altcha.isNotEmpty) {
+      body['altcha'] = altcha;
+    }
     final response = await _client.post(
       _uri('/api/v1/auth/password/forgot'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email}),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 204) {
@@ -175,16 +185,21 @@ class ApiRequest {
     required String name,
     required String email,
     required String password,
+    String? altcha,
   }) async {
+    final body = <String, dynamic>{
+      'nickname': nickname,
+      'name': name,
+      'email': email,
+      'password': password,
+    };
+    if (altcha != null && altcha.isNotEmpty) {
+      body['altcha'] = altcha;
+    }
     final response = await _client.post(
       _uri('/api/v1/auth/register'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'nickname': nickname,
-        'name': name,
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 201) {
@@ -198,14 +213,19 @@ class ApiRequest {
   Future<LoginResult> login({
     required String email,
     required String password,
+    String? altcha,
   }) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'password': password,
+    };
+    if (altcha != null && altcha.isNotEmpty) {
+      body['altcha'] = altcha;
+    }
     final response = await _client.post(
       _uri('/api/v1/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200) {

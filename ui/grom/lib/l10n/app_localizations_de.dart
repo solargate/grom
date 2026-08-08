@@ -117,6 +117,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Passwort-Reset konnte nicht angefordert werden';
 
   @override
+  String get captchaRequired => 'Bitte die Captcha-Prüfung abschließen';
+
+  @override
+  String get captchaNotRobot => 'Ich bin kein Roboter';
+
+  @override
   String get resetPasswordTitle => 'Neues Passwort wählen';
 
   @override

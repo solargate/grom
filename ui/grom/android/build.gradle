@@ -12,6 +12,20 @@ subprojects {
         if (plugins.hasPlugin('com.android.library') ||
             plugins.hasPlugin('com.android.application')) {
             android {
+                // altcha_widget (and its deps: just_audio / audio_session / flutter_timezone)
+                // ship with compileSdk 34 but require API 35+ AAR metadata.
+                if (compileSdkVersion instanceof Integer) {
+                    if (compileSdkVersion < 35) {
+                        compileSdkVersion 35
+                    }
+                } else if (compileSdkVersion instanceof String) {
+                    def match = (compileSdkVersion =~ /(?:android-)?(\d+)/)
+                    if (match.find() && match.group(1).toInteger() < 35) {
+                        compileSdkVersion 35
+                    }
+                } else {
+                    compileSdkVersion 35
+                }
                 compileOptions {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17

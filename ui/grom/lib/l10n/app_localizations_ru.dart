@@ -115,6 +115,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forgotPasswordFailed => 'Не удалось запросить сброс пароля';
 
   @override
+  String get captchaRequired => 'Пройдите проверку «я не робот»';
+
+  @override
+  String get captchaNotRobot => 'Я не робот';
+
+  @override
   String get resetPasswordTitle => 'Новый пароль';
 
   @override

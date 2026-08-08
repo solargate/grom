@@ -5,6 +5,7 @@ import 'api_request.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
 import 'server_url_resolver.dart';
+import 'widgets/altcha_field.dart';
 import 'widgets/server_url_field.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
@@ -36,12 +37,16 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   final _emailController = TextEditingController();
   final _serverUrlController = TextEditingController();
   bool _isSubmitting = false;
+  bool _captchaEnabled = false;
+  String? _altchaPayload;
 
   @override
   void initState() {
     super.initState();
     if (isMobileClient) {
       _loadSavedServerUrl();
+    } else {
+      _loadCaptchaFlag();
     }
   }
 
@@ -49,6 +54,23 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
     final url = await ServerStorage.getBaseUrl();
     if (url != null && mounted) {
       _serverUrlController.text = url;
+    }
+    await _loadCaptchaFlag();
+  }
+
+  Future<void> _loadCaptchaFlag() async {
+    try {
+      final info = await _api.getServerInfo();
+      if (mounted) {
+        setState(() {
+          _captchaEnabled = info.captchaEnabled;
+          if (!_captchaEnabled) {
+            _altchaPayload = null;
+          }
+        });
+      }
+    } catch (_) {
+      // Keep captcha hidden when server-info is unavailable.
     }
   }
 
@@ -74,9 +96,23 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
           _serverUrlController.text = resolved;
         }
         await ServerStorage.saveBaseUrl(resolved);
+        await _loadCaptchaFlag();
       }
 
-      await _api.forgotPassword(email: _emailController.text.trim());
+      if (_captchaEnabled &&
+          (_altchaPayload == null || _altchaPayload!.isEmpty)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.captchaRequired)),
+          );
+        }
+        return;
+      }
+
+      await _api.forgotPassword(
+        email: _emailController.text.trim(),
+        altcha: _altchaPayload,
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,11 +121,13 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
+      setState(() => _altchaPayload = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
       );
     } catch (_) {
       if (!mounted) return;
+      setState(() => _altchaPayload = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.forgotPasswordFailed)),
       );
@@ -136,6 +174,13 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             },
           ),
           const SizedBox(height: 24),
+          AltchaField(
+            enabled: _captchaEnabled,
+            challengeUrl: captchaChallengeUrl(_api),
+            onPayloadChanged: (payload) {
+              setState(() => _altchaPayload = payload);
+            },
+          ),
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting

@@ -1,3 +1,4 @@
+import 'package:altcha_widget/altcha_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -10,6 +11,7 @@ import 'platform/is_mobile_client.dart';
 import 'reset_password.dart';
 import 'server_storage.dart';
 import 'services/track_recording_bootstrap.dart';
+import 'widgets/altcha_field.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +82,9 @@ class _GromAppState extends State<GromApp> {
       locale: _locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
+        AltchaLocalizationsDelegate(
+          customTranslations: altchaCustomTranslations,
+        ),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

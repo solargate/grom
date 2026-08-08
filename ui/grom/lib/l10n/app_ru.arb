@@ -47,6 +47,8 @@
   "forgotPasswordSubmit": "Отправить ссылку",
   "forgotPasswordCheckEmail": "Если аккаунт с таким email есть, ссылка для сброса отправлена. Откройте её в браузере, затем войдите здесь.",
   "forgotPasswordFailed": "Не удалось запросить сброс пароля",
+  "captchaRequired": "Пройдите проверку «я не робот»",
+  "captchaNotRobot": "Я не робот",
   "resetPasswordTitle": "Новый пароль",
   "resetPasswordHint": "Введите новый пароль для аккаунта.",
   "resetPasswordSubmit": "Сохранить пароль",
