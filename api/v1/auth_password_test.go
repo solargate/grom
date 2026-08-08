@@ -96,4 +96,68 @@ func TestPasswordResetDisabled(t *testing.T) {
 		"email": "a@b.c",
 	}, "")
 	expectStatus(t, w, http.StatusServiceUnavailable)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/reset", map[string]string{
+		"token":    "any-token-value",
+		"password": "password12",
+	}, "")
+	expectStatus(t, w, http.StatusServiceUnavailable)
+}
+
+func TestPasswordReset_RateLimited(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Auth.Reset.PublicBaseURL = "https://grom.example.com"
+		cfg.Mailer.Driver = "log"
+		cfg.Mailer.From = "Grom <noreply@example.com>"
+	})
+
+	for i := 0; i < 3; i++ {
+		w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/forgot", map[string]string{
+			"email": "rate@example.com",
+		}, "")
+		expectStatus(t, w, http.StatusNoContent)
+	}
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/forgot", map[string]string{
+		"email": "rate@example.com",
+	}, "")
+	expectStatus(t, w, http.StatusTooManyRequests)
+	if w.Header().Get("Retry-After") == "" {
+		t.Fatal("expected Retry-After header")
+	}
+}
+
+func TestForgotPassword_BadRequest(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Auth.Reset.PublicBaseURL = "https://grom.example.com"
+		cfg.Mailer.Driver = "log"
+		cfg.Mailer.From = "Grom <noreply@example.com>"
+	})
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/forgot", map[string]string{
+		"email": "not-an-email",
+	}, "")
+	expectStatus(t, w, http.StatusBadRequest)
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/forgot", map[string]string{}, "")
+	expectStatus(t, w, http.StatusBadRequest)
+}
+
+func TestResetPassword_WeakPassword(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Auth.Reset.PublicBaseURL = "https://grom.example.com"
+		cfg.Mailer.Driver = "log"
+		cfg.Mailer.From = "Grom <noreply@example.com>"
+	})
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/password/reset", map[string]string{
+		"token":    "some-token",
+		"password": "short",
+	}, "")
+	expectStatus(t, w, http.StatusBadRequest)
 }

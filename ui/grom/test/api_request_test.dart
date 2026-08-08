@@ -270,6 +270,90 @@ void main() {
     }
   });
 
+  test('forgotPassword posts email and accepts 204', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/v1/auth/password/forgot');
+      expect(request.headers['Content-Type'], 'application/json');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['email'], 'alice@example.com');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).forgotPassword(email: 'alice@example.com');
+  });
+
+  test('forgotPassword maps 429 and 503 to ApiException', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+
+    final limited = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'too many requests, try again later'}),
+        429,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: limited).forgotPassword(email: 'alice@example.com');
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'too many requests, try again later');
+      expect(e.statusCode, 429);
+    }
+
+    final disabled = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'password reset is not configured'}),
+        503,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: disabled).forgotPassword(email: 'alice@example.com');
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'password reset is not configured');
+      expect(e.statusCode, 503);
+    }
+  });
+
+  test('resetPassword posts token and password and accepts 204', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/v1/auth/password/reset');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['token'], 'reset-tok');
+      expect(body['password'], 'newpassword1');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).resetPassword(
+      token: 'reset-tok',
+      password: 'newpassword1',
+    );
+  });
+
+  test('resetPassword maps invalid token error', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'invalid or expired reset token'}),
+        400,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: client).resetPassword(
+        token: 'bad',
+        password: 'newpassword1',
+      );
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'invalid or expired reset token');
+      expect(e.statusCode, 400);
+    }
+  });
+
   test('getStravaImportStatus returns decoded map', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {

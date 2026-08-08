@@ -3,6 +3,7 @@ package reset_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -202,6 +203,145 @@ func TestConfirmResetWeakPassword(t *testing.T) {
 	}
 }
 
+func TestRequestReset_MailFailureRollsBackToken(t *testing.T) {
+	u := &users.User{ID: "u1", Email: "alice@example.com"}
+	tokens := &memTokens{}
+	mail := &memMailer{err: errors.New("smtp down")}
+	svc := reset.NewService(newMemUsers(u), tokens, mail, reset.Config{
+		PublicBaseURL: "https://grom.example.com",
+		TokenTTL:      time.Hour,
+		Enabled:       true,
+	})
+
+	err := svc.RequestReset(context.Background(), "alice@example.com")
+	if err == nil {
+		t.Fatal("expected mailer error")
+	}
+	tokens.mu.Lock()
+	n := len(tokens.byHash)
+	tokens.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("expected token rollback, got %d tokens", n)
+	}
+}
+
+func TestRequestReset_ReplacesPreviousToken(t *testing.T) {
+	hash, err := auth.HashPassword("oldpassword")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := &users.User{ID: "u1", Email: "alice@example.com", PasswordHash: hash}
+	tokens := &memTokens{}
+	mail := &memMailer{}
+	svc := reset.NewService(newMemUsers(u), tokens, mail, reset.Config{
+		PublicBaseURL: "https://grom.example.com/",
+		TokenTTL:      time.Hour,
+		Enabled:       true,
+	})
+
+	if err := svc.RequestReset(context.Background(), "alice@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	first := tokenFromMail(t, mail.last())
+	if !strings.Contains(mail.last().Text, "https://grom.example.com/reset-password?token=") {
+		t.Fatalf("expected trimmed base URL in link: %s", mail.last().Text)
+	}
+
+	if err := svc.RequestReset(context.Background(), "alice@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	second := tokenFromMail(t, mail.last())
+	if first == second {
+		t.Fatal("expected a new token on second request")
+	}
+
+	if err := svc.ConfirmReset(context.Background(), first, "newpassword"); !errors.Is(err, reset.ErrInvalidToken) {
+		t.Fatalf("old token: %v", err)
+	}
+	if err := svc.ConfirmReset(context.Background(), second, "newpassword"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConfirmReset_ExpiredToken(t *testing.T) {
+	u := &users.User{ID: "u1", Email: "alice@example.com"}
+	tokens := &memTokens{}
+	mail := &memMailer{}
+	svc := reset.NewService(newMemUsers(u), tokens, mail, reset.Config{
+		PublicBaseURL: "https://grom.example.com",
+		TokenTTL:      time.Hour,
+		Enabled:       true,
+	})
+	if err := svc.RequestReset(context.Background(), "alice@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	raw := tokenFromMail(t, mail.last())
+
+	tokens.mu.Lock()
+	for h, rec := range tokens.byHash {
+		rec.ExpiresAt = time.Now().UTC().Add(-time.Minute)
+		tokens.byHash[h] = rec
+	}
+	tokens.mu.Unlock()
+
+	if err := svc.ConfirmReset(context.Background(), raw, "newpassword"); !errors.Is(err, reset.ErrInvalidToken) {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestService_NotConfigured(t *testing.T) {
+	svc := reset.NewService(newMemUsers(&users.User{ID: "u1", Email: "a@b.c"}), &memTokens{}, &memMailer{}, reset.Config{
+		PublicBaseURL: "http://localhost",
+		Enabled:       false,
+	})
+	if err := svc.RequestReset(context.Background(), "a@b.c"); !errors.Is(err, reset.ErrNotConfigured) {
+		t.Fatalf("request: %v", err)
+	}
+	if err := svc.ConfirmReset(context.Background(), "tok", "password12"); !errors.Is(err, reset.ErrNotConfigured) {
+		t.Fatalf("confirm: %v", err)
+	}
+}
+
+func TestRequestReset_EmptyEmail(t *testing.T) {
+	mail := &memMailer{}
+	svc := reset.NewService(newMemUsers(&users.User{ID: "u1", Email: "a@b.c"}), &memTokens{}, mail, reset.Config{
+		PublicBaseURL: "http://localhost",
+		Enabled:       true,
+	})
+	if err := svc.RequestReset(context.Background(), "  "); err != nil {
+		t.Fatal(err)
+	}
+	if mail.last().Subject != "" {
+		t.Fatal("expected no mail for empty email")
+	}
+}
+
+func TestConfirmReset_EmptyToken(t *testing.T) {
+	svc := reset.NewService(newMemUsers(&users.User{ID: "u1", Email: "a@b.c"}), &memTokens{}, &memMailer{}, reset.Config{
+		PublicBaseURL: "http://localhost",
+		Enabled:       true,
+	})
+	if err := svc.ConfirmReset(context.Background(), "  ", "password12"); !errors.Is(err, reset.ErrInvalidToken) {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func tokenFromMail(t *testing.T, msg mailer.Message) string {
+	t.Helper()
+	idx := strings.Index(msg.Text, "token=")
+	if idx < 0 {
+		t.Fatalf("token missing in text: %s", msg.Text)
+	}
+	raw := strings.TrimSpace(msg.Text[idx+len("token="):])
+	if i := strings.IndexAny(raw, "\n\r "); i >= 0 {
+		raw = raw[:i]
+	}
+	if raw == "" {
+		t.Fatal("empty token")
+	}
+	return raw
+}
+
 func TestLimiterForgot(t *testing.T) {
 	l := reset.NewLimiter()
 	for i := 0; i < 3; i++ {
@@ -213,5 +353,41 @@ func TestLimiterForgot(t *testing.T) {
 	ok, retry := l.AllowForgot("1.2.3.4", "a@b.c")
 	if ok || retry <= 0 {
 		t.Fatalf("expected email limit, ok=%v retry=%v", ok, retry)
+	}
+}
+
+func TestLimiterForgotIP(t *testing.T) {
+	l := reset.NewLimiter()
+	for i := 0; i < 10; i++ {
+		ok, _ := l.AllowForgot("9.9.9.9", fmt.Sprintf("user%d@example.com", i))
+		if !ok {
+			t.Fatalf("request %d limited", i)
+		}
+	}
+	ok, retry := l.AllowForgot("9.9.9.9", "other@example.com")
+	if ok || retry <= 0 {
+		t.Fatalf("expected IP limit, ok=%v retry=%v", ok, retry)
+	}
+	ok, _ = l.AllowForgot("8.8.8.8", "other@example.com")
+	if !ok {
+		t.Fatal("different IP should be allowed")
+	}
+}
+
+func TestLimiterReset(t *testing.T) {
+	l := reset.NewLimiter()
+	for i := 0; i < 20; i++ {
+		ok, _ := l.AllowReset("1.2.3.4")
+		if !ok {
+			t.Fatalf("request %d limited", i)
+		}
+	}
+	ok, retry := l.AllowReset("1.2.3.4")
+	if ok || retry <= 0 {
+		t.Fatalf("expected reset IP limit, ok=%v retry=%v", ok, retry)
+	}
+	ok, _ = l.AllowReset("5.5.5.5")
+	if !ok {
+		t.Fatal("different IP should be allowed")
 	}
 }

@@ -362,6 +362,37 @@ func TestFinalizeConfig_MailerSMTP(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_MailerInvalidDriver(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Mailer.Driver = "ses"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestFinalizeConfig_MailerSMTPValidation(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Mailer.Driver = "smtp"
+	cfg.Mailer.From = "noreply@example.com"
+	cfg.Auth.Reset.PublicBaseURL = "https://example.com"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected host error")
+	}
+	cfg.Mailer.SMTP.Host = "smtp.example.com"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected port error")
+	}
+	cfg.Mailer.SMTP.Port = 587
+	cfg.Mailer.SMTP.Encryption = "ssl"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected encryption error")
+	}
+	cfg.Mailer.SMTP.Encryption = "tls"
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)

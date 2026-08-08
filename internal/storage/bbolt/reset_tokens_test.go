@@ -1,4 +1,4 @@
-package file_test
+package bbolt_test
 
 import (
 	"errors"
@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/solargate/grom/internal/auth/reset"
-	"github.com/solargate/grom/internal/storage/file"
 )
 
 func TestResetTokenStore(t *testing.T) {
-	dir := t.TempDir()
-	store := file.NewResetTokenStore(dir)
+	b := openTestBackend(t)
+	store := b.ResetTokens()
 	now := time.Now().UTC()
 	rec := reset.TokenRecord{
 		TokenHash: "abc",
