@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-08
+
 ### Added
 
 - Optional ALTCHA captcha (`auth.captcha`, default off): proof-of-work on register, login, and password forgot; `GET /api/v1/captcha/challenge`, `captcha_enabled` on `/server-info`, Flutter checkbox widget
@@ -171,7 +173,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/solargate/grom/releases/tag/0.7.0
 [0.6.0]: https://github.com/solargate/grom/releases/tag/0.6.0
 [0.5.0]: https://github.com/solargate/grom/releases/tag/0.5.0
 [0.4.1]: https://github.com/solargate/grom/releases/tag/0.4.1
