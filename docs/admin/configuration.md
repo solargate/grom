@@ -15,6 +15,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | `storage.driver` / `location` / `temp_dir` | `file` (default; tests / tiny instances) or `bbolt` (recommended for normal installs); data root and temp dirs |
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
+| `auth.reset` / `mailer` | Password reset email (`public_base_url`, SMTP or log driver) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
@@ -70,6 +71,44 @@ grom migrate-storage --config config.yaml --from bbolt --to file --verify
 ```
 
 Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
+
+Password-reset tokens (`reset_tokens.yaml` / bbolt `reset_tokens`) are short-lived and are **not** copied by migrate-storage; in-flight reset links become invalid after a migrate.
+
+## Mailer and password reset
+
+Outbound email is optional. When `mailer.driver` is `off` (default), password reset is disabled and `GET /api/v1/server-info` reports `password_reset_enabled: false`.
+
+| Setting | Purpose |
+|---------|---------|
+| `auth.reset.public_base_url` | Base URL embedded in reset links (no trailing slash). Required when mailer is on. |
+| `auth.reset.token_ttl_minutes` | Token lifetime (default `60`) |
+| `mailer.driver` | `off`, `log` (write to server log — useful in dev), or `smtp` |
+| `mailer.from` | Sender address |
+| `mailer.smtp.host` / `port` | SMTP relay (required when `driver` is `smtp`). Common ports: `587` (STARTTLS), `465` (implicit TLS) |
+| `mailer.smtp.username` / `password` | Optional SMTP credentials |
+| `mailer.smtp.encryption` | `starttls` (default; also default for port 587), `tls` (default when port is `465`), or `none` |
+
+There is **no** local MTA / `sendmail` dependency: the process speaks SMTP (via [go-mail](https://github.com/wneessen/go-mail)) to an external provider (Gmail app password, SES, Mailgun, etc.) or logs the message when `driver: log`.
+
+Password-reset endpoints use an in-memory fixed-window rate limiter (15-minute window): forgot — 10 requests per client IP and 3 per email; confirm reset — 20 per client IP. Limits use Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Grom does not yet expose a trusted-proxies setting, so treat forwarded headers as untrusted unless your reverse proxy strips or overwrites them.
+
+Example (production SMTP on port 587):
+
+```yaml
+auth:
+  jwt_secret: "..."
+  reset:
+    public_base_url: "https://grom.example.com"
+mailer:
+  driver: smtp
+  from: "Grom <noreply@grom.example.com>"
+  smtp:
+    host: smtp.example.com
+    port: 587
+    username: "apikey"
+    password: "secret"
+    encryption: starttls
+```
 
 ## See also
 

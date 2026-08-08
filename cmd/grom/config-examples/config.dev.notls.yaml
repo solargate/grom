@@ -10,6 +10,13 @@ federation:
 auth:
   jwt_secret: "change-me-in-production-min-32-chars!!"
   jwt_ttl_hours: 24
+  reset:
+    public_base_url: "http://localhost:8080"
+
+mailer:
+  # log: reset emails appear in server logs (copy the link for local testing).
+  driver: log
+  from: "Grom <noreply@localhost>"
 
 storage:
   location: data

@@ -17,6 +17,12 @@ federation:
 auth:
   jwt_secret: "change-me-in-production-min-32-chars!!"
   jwt_ttl_hours: 24
+  reset:
+    public_base_url: "https://192.168.1.251:8443"
+
+mailer:
+  driver: log
+  from: "Grom <noreply@localhost>"
 
 storage:
   location: data

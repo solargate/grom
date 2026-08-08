@@ -4,14 +4,17 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/equipment/distance"
 	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/integrations/strava"
+	"github.com/solargate/grom/internal/mailer"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/storage/blob"
@@ -30,6 +33,8 @@ type App struct {
 	Social            *social.Service
 	Federation        federation.Storage
 	Blobs             blob.Store
+	Mailer            mailer.Mailer
+	PasswordReset     *reset.Service
 	Location          string
 	TempDir           string
 
@@ -51,6 +56,28 @@ func NewApp() (*App, error) {
 
 	socialSvc := social.NewService(backend.Users(), backend.Social(), backend.Blobs())
 	workoutSvc := backend.Workouts()
+
+	mail, err := mailer.New(config.Cfg.Mailer)
+	if err != nil {
+		_ = backend.Close()
+		return nil, err
+	}
+
+	var passwordReset *reset.Service
+	if config.Cfg.PasswordResetEnabled() {
+		passwordReset = reset.NewService(
+			backend.Users(),
+			backend.ResetTokens(),
+			mail,
+			reset.Config{
+				PublicBaseURL: config.Cfg.Auth.Reset.PublicBaseURL,
+				TokenTTL:      time.Duration(config.Cfg.Auth.Reset.TokenTTLMinutes) * time.Minute,
+				ServerName:    config.Cfg.Server.Name,
+				Enabled:       true,
+			},
+		)
+	}
+
 	app := &App{
 		Backend:           backend,
 		Users:             backend.Users(),
@@ -62,6 +89,8 @@ func NewApp() (*App, error) {
 		Social:            socialSvc,
 		Federation:        backend.Federation(),
 		Blobs:             backend.Blobs(),
+		Mailer:            mail,
+		PasswordReset:     passwordReset,
 		Location:          config.Cfg.Storage.ResolvedLocation,
 		TempDir:           config.Cfg.Storage.ResolvedTempDir,
 	}
@@ -158,6 +187,8 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		authGroup := apiV1.Group("/auth")
 		authGroup.POST("/register", a.register)
 		authGroup.POST("/login", a.login)
+		authGroup.POST("/password/forgot", a.forgotPassword)
+		authGroup.POST("/password/reset", a.resetPassword)
 		authGroup.GET("/me", auth.AuthRequired(), a.getMe)
 		authGroup.PATCH("/me", auth.AuthRequired(), a.updateMe)
 		authGroup.PUT("/me/avatar", auth.AuthRequired(), a.uploadMyAvatar)

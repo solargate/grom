@@ -32,6 +32,9 @@ func TestServerInfoAndStatus(t *testing.T) {
 	if info["federation_enabled"] != false {
 		t.Fatalf("expected federation_enabled=false, got %#v", info)
 	}
+	if info["password_reset_enabled"] != false {
+		t.Fatalf("expected password_reset_enabled=false, got %#v", info)
+	}
 }
 
 func TestUpdateMeAndDeleteAvatar(t *testing.T) {

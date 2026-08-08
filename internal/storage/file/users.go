@@ -256,6 +256,24 @@ func (s *UsersStore) UpdateProfile(userID, name string) (*users.User, error) {
 	return nil, users.ErrUserNotFound
 }
 
+func (s *UsersStore) UpdatePassword(userID, passwordHash string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	passwordHash = strings.TrimSpace(passwordHash)
+	if passwordHash == "" {
+		return fmt.Errorf("password hash is required")
+	}
+	for i := range s.users {
+		if s.users[i].ID != userID {
+			continue
+		}
+		s.users[i].PasswordHash = passwordHash
+		return s.save()
+	}
+	return users.ErrUserNotFound
+}
+
 // Import writes a user record as-is (used by storage migration).
 func (s *UsersStore) Import(user users.User) error {
 	s.mu.Lock()

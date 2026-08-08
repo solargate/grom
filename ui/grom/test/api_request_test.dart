@@ -21,13 +21,16 @@ void main() {
     final info = ServerInfo.fromJson({
       'name': 'Home Lab',
       'federation_enabled': true,
+      'password_reset_enabled': true,
     });
     expect(info.name, 'Home Lab');
     expect(info.federationEnabled, isTrue);
+    expect(info.passwordResetEnabled, isTrue);
 
     final defaults = ServerInfo.fromJson({});
     expect(defaults.name, 'Grom Home');
     expect(defaults.federationEnabled, isFalse);
+    expect(defaults.passwordResetEnabled, isFalse);
   });
 
   test('UserInfo.fromJson reads optional avatar fields', () {
@@ -201,7 +204,11 @@ void main() {
     final okClient = MockClient((request) async {
       expect(request.url.path, '/api/v1/server-info');
       return http.Response(
-        jsonEncode({'name': 'Lab', 'federation_enabled': true}),
+        jsonEncode({
+          'name': 'Lab',
+          'federation_enabled': true,
+          'password_reset_enabled': true,
+        }),
         200,
         headers: {'content-type': 'application/json'},
       );
@@ -209,6 +216,7 @@ void main() {
     final ok = await ApiRequest(client: okClient).getServerInfo();
     expect(ok.name, 'Lab');
     expect(ok.federationEnabled, isTrue);
+    expect(ok.passwordResetEnabled, isTrue);
 
     final failClient = MockClient((request) async {
       return http.Response('nope', 500);
@@ -259,6 +267,90 @@ void main() {
     } on ApiException catch (e) {
       expect(e.message, 'invalid credentials');
       expect(e.statusCode, 401);
+    }
+  });
+
+  test('forgotPassword posts email and accepts 204', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/v1/auth/password/forgot');
+      expect(request.headers['Content-Type'], 'application/json');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['email'], 'alice@example.com');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).forgotPassword(email: 'alice@example.com');
+  });
+
+  test('forgotPassword maps 429 and 503 to ApiException', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+
+    final limited = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'too many requests, try again later'}),
+        429,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: limited).forgotPassword(email: 'alice@example.com');
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'too many requests, try again later');
+      expect(e.statusCode, 429);
+    }
+
+    final disabled = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'password reset is not configured'}),
+        503,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: disabled).forgotPassword(email: 'alice@example.com');
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'password reset is not configured');
+      expect(e.statusCode, 503);
+    }
+  });
+
+  test('resetPassword posts token and password and accepts 204', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/v1/auth/password/reset');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['token'], 'reset-tok');
+      expect(body['password'], 'newpassword1');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).resetPassword(
+      token: 'reset-tok',
+      password: 'newpassword1',
+    );
+  });
+
+  test('resetPassword maps invalid token error', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'invalid or expired reset token'}),
+        400,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: client).resetPassword(
+        token: 'bad',
+        password: 'newpassword1',
+      );
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.message, 'invalid or expired reset token');
+      expect(e.statusCode, 400);
     }
   });
 

@@ -95,6 +95,45 @@ class AppLocalizationsRu extends AppLocalizations {
   String get passwordsDoNotMatch => 'Пароли не совпадают';
 
   @override
+  String get forgotPasswordLink => 'Забыли пароль?';
+
+  @override
+  String get forgotPasswordTitle => 'Сброс пароля';
+
+  @override
+  String get forgotPasswordHint =>
+      'Введите email аккаунта. Если он зарегистрирован, мы отправим ссылку для сброса. Откройте её в браузере, чтобы задать новый пароль.';
+
+  @override
+  String get forgotPasswordSubmit => 'Отправить ссылку';
+
+  @override
+  String get forgotPasswordCheckEmail =>
+      'Если аккаунт с таким email есть, ссылка для сброса отправлена. Откройте её в браузере, затем войдите здесь.';
+
+  @override
+  String get forgotPasswordFailed => 'Не удалось запросить сброс пароля';
+
+  @override
+  String get resetPasswordTitle => 'Новый пароль';
+
+  @override
+  String get resetPasswordHint => 'Введите новый пароль для аккаунта.';
+
+  @override
+  String get resetPasswordSubmit => 'Сохранить пароль';
+
+  @override
+  String get resetPasswordSuccess => 'Пароль обновлён. Войдите в аккаунт.';
+
+  @override
+  String get resetPasswordFailed => 'Не удалось сбросить пароль';
+
+  @override
+  String get resetPasswordInvalidToken =>
+      'Ссылка для сброса отсутствует или недействительна.';
+
+  @override
   String get serverUrlLabel => 'URL сервера *';
 
   @override

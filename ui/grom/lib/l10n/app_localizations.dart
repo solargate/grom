@@ -262,6 +262,78 @@ abstract class AppLocalizations {
   /// **'Passwords do not match'**
   String get passwordsDoNotMatch;
 
+  /// No description provided for @forgotPasswordLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPasswordLink;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your account email. If it is registered, we will send a reset link. Open the link in a browser to choose a new password.'**
+  String get forgotPasswordHint;
+
+  /// No description provided for @forgotPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset link'**
+  String get forgotPasswordSubmit;
+
+  /// No description provided for @forgotPasswordCheckEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'If an account exists for that email, a reset link has been sent. Open it in a browser, then sign in here.'**
+  String get forgotPasswordCheckEmail;
+
+  /// No description provided for @forgotPasswordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to request password reset'**
+  String get forgotPasswordFailed;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a new password for your account.'**
+  String get resetPasswordHint;
+
+  /// No description provided for @resetPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Update password'**
+  String get resetPasswordSubmit;
+
+  /// No description provided for @resetPasswordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated. Please sign in.'**
+  String get resetPasswordSuccess;
+
+  /// No description provided for @resetPasswordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reset password'**
+  String get resetPasswordFailed;
+
+  /// No description provided for @resetPasswordInvalidToken.
+  ///
+  /// In en, this message translates to:
+  /// **'This reset link is missing or invalid.'**
+  String get resetPasswordInvalidToken;
+
   /// No description provided for @serverUrlLabel.
   ///
   /// In en, this message translates to:

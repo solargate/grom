@@ -8,6 +8,7 @@ type Repository interface {
 	ListAll() ([]User, error)
 	Create(nickname, name, email, password string) (*User, error)
 	UpdateProfile(userID, name string) (*User, error)
+	UpdatePassword(userID, passwordHash string) error
 
 	GetProfile(userID string) (*Profile, error)
 	PutProfile(userID string, profile Profile) error
