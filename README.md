@@ -43,9 +43,9 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 ## Documentation
 
 - **[Docs index](docs/README.md)** — user and admin guides
-- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, recording, equipment)
+- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment)
 - [Install and run](docs/admin/install.md) — build and start the server
-- [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset
+- [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset, captcha
 - API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))
 
 ## License

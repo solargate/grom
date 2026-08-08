@@ -1,6 +1,6 @@
 # Install and run
 
-Install Grom from a GitHub release or build from source. For configuration details (TLS, storage, federation, mailer / password reset), see [Configuration](configuration.md).
+Install Grom from a GitHub release or build from source. For configuration details (TLS, storage, federation, mailer / password reset, captcha), see [Configuration](configuration.md).
 
 ## Download from GitHub Releases
 
@@ -81,6 +81,7 @@ grom --version
 
 - Choose a TLS profile and storage driver (`bbolt` for normal installs; `file` is mainly for tests / tiny instances) — [Configuration](configuration.md)
 - Optionally enable password reset email (`mailer` + `auth.reset.public_base_url`) — [Configuration — Mailer and password reset](configuration.md#mailer-and-password-reset)
+- Optionally enable ALTCHA captcha on register/login/forgot (`auth.captcha.enabled`) — [Configuration — Auth captcha](configuration.md#auth-captcha-altcha)
 - Generate self-signed certs for local HTTPS — `grom gencerts` (see TLS section in configuration)
 - Product tour for the client — [User overview](../user/overview.md)
 - API reference in the browser — `/api/docs/` on the running server

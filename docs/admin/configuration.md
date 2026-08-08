@@ -16,7 +16,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 | `auth.reset` / `mailer` | Password reset email (`public_base_url`, SMTP or log driver) |
-| `auth.captcha` | Optional ALTCHA PoW on register/login/forgot (`enabled`, optional `hmac_secret` / `cost`) |
+| `auth.captcha` | Optional ALTCHA PoW on register/login/forgot (`enabled`, optional `hmac_secret` / `cost` / `expires_seconds`) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
@@ -93,30 +93,6 @@ There is **no** local MTA / `sendmail` dependency: the process speaks SMTP (via 
 
 Password-reset endpoints use an in-memory fixed-window rate limiter (15-minute window): forgot — 10 requests per client IP and 3 per email; confirm reset — 20 per client IP. Limits use Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Grom does not yet expose a trusted-proxies setting, so treat forwarded headers as untrusted unless your reverse proxy strips or overwrites them.
 
-## Auth captcha (ALTCHA)
-
-Optional self-hosted proof-of-work captcha (no external service). When enabled, register, login, and password-forgot require a solved ALTCHA payload; password reset with a token does not. The Flutter client shows a checkbox widget and fetches challenges from `GET /api/v1/captcha/challenge`. `GET /api/v1/server-info` reports `captcha_enabled`.
-
-| Setting | Purpose |
-|---------|---------|
-| `auth.captcha.enabled` | Require captcha on register/login/forgot. Default: `false`. |
-| `auth.captcha.hmac_secret` | HMAC key for challenge signatures. Optional; when empty, `auth.jwt_secret` is used. |
-| `auth.captcha.cost` | PBKDF2 iteration cost for PoW. Default: `1000`. |
-| `auth.captcha.expires_seconds` | Challenge lifetime. Default: `300`. |
-
-Challenge issuance is rate-limited in memory (60 requests per client IP per 15 minutes). Solved payloads are single-use until expiry.
-
-Example:
-
-```yaml
-auth:
-  jwt_secret: "..."
-  captcha:
-    enabled: true
-    # hmac_secret: "optional-separate-secret"
-    cost: 1000
-```
-
 Example (production SMTP on port 587):
 
 ```yaml
@@ -133,6 +109,40 @@ mailer:
     username: "apikey"
     password: "secret"
     encryption: starttls
+```
+
+## Auth captcha (ALTCHA)
+
+Optional self-hosted [ALTCHA](https://altcha.org/) proof-of-work captcha (no third-party service or API keys). When `auth.captcha.enabled` is `true`:
+
+- **Protected:** `POST /api/v1/auth/register`, `/auth/login`, and `/auth/password/forgot` — request body must include a solved `altcha` payload (base64 JSON).
+- **Not protected:** `POST /api/v1/auth/password/reset` (token from the email link is enough).
+- **Challenge:** `GET /api/v1/captcha/challenge` returns a PoW challenge (`200`). When captcha is off → `404`; when the IP hits the challenge rate limit → `429` with `Retry-After`.
+- **Client discovery:** `GET /api/v1/server-info` includes `captcha_enabled`. The Flutter web/Android UI shows an **I'm not a robot** checkbox and solves the challenge locally before submit.
+
+| Setting | Purpose |
+|---------|---------|
+| `auth.captcha.enabled` | Require captcha on register/login/forgot. Default: `false`. |
+| `auth.captcha.hmac_secret` | HMAC key for challenge signatures. Optional; when empty, `auth.jwt_secret` is used. Prefer a dedicated secret in production if you rotate JWT independently. |
+| `auth.captcha.cost` | PBKDF2 iteration cost for PoW. Default: `1000`. Higher values cost more CPU on the client. |
+| `auth.captcha.expires_seconds` | Challenge lifetime in seconds. Default: `300`. |
+
+Challenge issuance is rate-limited in memory (60 requests per client IP per 15-minute window). Solved payloads are single-use until expiry (replay rejected). Rate limits and the replay store are process-local — they reset on restart and are not shared across multiple Grom processes; for multi-instance deploys, terminate TLS/rate-limit at a single reverse proxy or keep captcha off until sticky sessions / shared store exist.
+
+Client IP resolution matches password reset: Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Without a trusted reverse proxy that overwrites those headers, treat them as untrusted.
+
+Verification failures return `400` with messages such as `captcha is required`, `invalid captcha`, `captcha expired`, or `captcha already used`.
+
+Example:
+
+```yaml
+auth:
+  jwt_secret: "..."
+  captcha:
+    enabled: true
+    # hmac_secret: "optional-separate-secret"
+    cost: 1000
+    expires_seconds: 300
 ```
 
 ## See also
