@@ -84,11 +84,13 @@ Outbound email is optional. When `mailer.driver` is `off` (default), password re
 | `auth.reset.token_ttl_minutes` | Token lifetime (default `60`) |
 | `mailer.driver` | `off`, `log` (write to server log — useful in dev), or `smtp` |
 | `mailer.from` | Sender address |
-| `mailer.smtp.*` | External SMTP relay (`host`, `port`, `username`, `password`, `encryption`) |
+| `mailer.smtp.host` / `port` | SMTP relay (required when `driver` is `smtp`). Common ports: `587` (STARTTLS), `465` (implicit TLS) |
+| `mailer.smtp.username` / `password` | Optional SMTP credentials |
+| `mailer.smtp.encryption` | `starttls` (default; also default for port 587), `tls` (default when port is `465`), or `none` |
 
 There is **no** local MTA / `sendmail` dependency: the process speaks SMTP (via [go-mail](https://github.com/wneessen/go-mail)) to an external provider (Gmail app password, SES, Mailgun, etc.) or logs the message when `driver: log`.
 
-Forgot-password requests are rate-limited in memory (per IP and per email). Behind a reverse proxy, configure Gin trusted proxies so `ClientIP` is correct.
+Password-reset endpoints use an in-memory fixed-window rate limiter (15-minute window): forgot — 10 requests per client IP and 3 per email; confirm reset — 20 per client IP. Limits use Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Grom does not yet expose a trusted-proxies setting, so treat forwarded headers as untrusted unless your reverse proxy strips or overwrites them.
 
 Example (production SMTP on port 587):
 
