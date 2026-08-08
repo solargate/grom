@@ -298,6 +298,18 @@ abstract class AppLocalizations {
   /// **'Failed to request password reset'**
   String get forgotPasswordFailed;
 
+  /// No description provided for @captchaRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the captcha check'**
+  String get captchaRequired;
+
+  /// No description provided for @captchaNotRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not a robot'**
+  String get captchaNotRobot;
+
   /// No description provided for @resetPasswordTitle.
   ///
   /// In en, this message translates to:

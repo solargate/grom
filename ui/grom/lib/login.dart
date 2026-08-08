@@ -7,6 +7,7 @@ import 'forgot_password.dart';
 import 'platform/is_mobile_client.dart';
 import 'server_storage.dart';
 import 'server_url_resolver.dart';
+import 'widgets/altcha_field.dart';
 import 'widgets/server_url_field.dart';
 
 class LoginForm extends StatefulWidget {
@@ -34,6 +35,8 @@ class _LoginFormState extends State<LoginForm> {
   bool _isSubmitting = false;
   bool _obscurePassword = true;
   bool _passwordResetEnabled = false;
+  bool _captchaEnabled = false;
+  String? _altchaPayload;
 
   @override
   void initState() {
@@ -41,7 +44,7 @@ class _LoginFormState extends State<LoginForm> {
     if (isMobileClient) {
       _loadSavedServerUrl();
     } else {
-      _loadPasswordResetFlag();
+      _loadServerFlags();
     }
   }
 
@@ -50,17 +53,23 @@ class _LoginFormState extends State<LoginForm> {
     if (url != null && mounted) {
       _serverUrlController.text = url;
     }
-    await _loadPasswordResetFlag();
+    await _loadServerFlags();
   }
 
-  Future<void> _loadPasswordResetFlag() async {
+  Future<void> _loadServerFlags() async {
     try {
       final info = await _api.getServerInfo();
       if (mounted) {
-        setState(() => _passwordResetEnabled = info.passwordResetEnabled);
+        setState(() {
+          _passwordResetEnabled = info.passwordResetEnabled;
+          _captchaEnabled = info.captchaEnabled;
+          if (!_captchaEnabled) {
+            _altchaPayload = null;
+          }
+        });
       }
     } catch (_) {
-      // Keep forgot link hidden when server-info is unavailable.
+      // Keep optional features hidden when server-info is unavailable.
     }
   }
 
@@ -78,6 +87,7 @@ class _LoginFormState extends State<LoginForm> {
     }
 
     setState(() => _isSubmitting = true);
+    final l10n = AppLocalizations.of(context)!;
 
     try {
       if (isMobileClient) {
@@ -86,12 +96,23 @@ class _LoginFormState extends State<LoginForm> {
           _serverUrlController.text = resolved;
         }
         await ServerStorage.saveBaseUrl(resolved);
-        await _loadPasswordResetFlag();
+        await _loadServerFlags();
+      }
+
+      if (_captchaEnabled &&
+          (_altchaPayload == null || _altchaPayload!.isEmpty)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.captchaRequired)),
+          );
+        }
+        return;
       }
 
       final result = await _api.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        altcha: _altchaPayload,
       );
 
       await AuthStorage.saveToken(result.token);
@@ -104,12 +125,13 @@ class _LoginFormState extends State<LoginForm> {
       }
     } on ApiException catch (e) {
       if (!mounted) return;
+      setState(() => _altchaPayload = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
       );
     } catch (_) {
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
+      setState(() => _altchaPayload = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.failedToSignIn)),
       );
@@ -196,6 +218,13 @@ class _LoginFormState extends State<LoginForm> {
             )
           else
             const SizedBox(height: 24),
+          AltchaField(
+            enabled: _captchaEnabled,
+            challengeUrl: captchaChallengeUrl(_api),
+            onPayloadChanged: (payload) {
+              setState(() => _altchaPayload = payload);
+            },
+          ),
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting

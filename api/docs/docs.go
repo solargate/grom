@@ -376,6 +376,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/captcha/challenge": {
+            "get": {
+                "description": "Returns a proof-of-work challenge when auth.captcha.enabled is true",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "captcha"
+                ],
+                "summary": "Get ALTCHA challenge",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/equipment": {
             "get": {
                 "security": [
@@ -2530,6 +2559,10 @@ const docTemplate = `{
                 "password"
             ],
             "properties": {
+                "altcha": {
+                    "type": "string",
+                    "example": ""
+                },
                 "email": {
                     "type": "string",
                     "example": "solarwind.palm@gmail.com"
@@ -2702,6 +2735,10 @@ const docTemplate = `{
                 "password"
             ],
             "properties": {
+                "altcha": {
+                    "type": "string",
+                    "example": ""
+                },
                 "email": {
                     "type": "string",
                     "example": "solarwind.palm@gmail.com"
@@ -3304,6 +3341,10 @@ const docTemplate = `{
                 "email"
             ],
             "properties": {
+                "altcha": {
+                    "type": "string",
+                    "example": ""
+                },
                 "email": {
                     "type": "string",
                     "example": "solarwind.palm@gmail.com"

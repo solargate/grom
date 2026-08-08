@@ -18,6 +18,8 @@ auth:
   jwt_ttl_hours: 24
   reset:
     public_base_url: "https://grom.example.com"
+  captcha:
+    enabled: false
 
 mailer:
   driver: smtp

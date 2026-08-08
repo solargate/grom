@@ -13,7 +13,8 @@ import (
 )
 
 type forgotPasswordRequest struct {
-	Email string `json:"email" binding:"required,email" example:"solarwind.palm@gmail.com"`
+	Email  string `json:"email" binding:"required,email" example:"solarwind.palm@gmail.com"`
+	Altcha string `json:"altcha,omitempty" example:""`
 }
 
 type resetPasswordRequest struct {
@@ -42,6 +43,9 @@ func (a *App) forgotPassword(ctx *gin.Context) {
 	var req forgotPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if !a.requireCaptcha(ctx, req.Altcha) {
 		return
 	}
 

@@ -16,6 +16,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 | `auth.reset` / `mailer` | Password reset email (`public_base_url`, SMTP or log driver) |
+| `auth.captcha` | Optional ALTCHA PoW on register/login/forgot (`enabled`, optional `hmac_secret` / `cost`) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
@@ -91,6 +92,30 @@ Outbound email is optional. When `mailer.driver` is `off` (default), password re
 There is **no** local MTA / `sendmail` dependency: the process speaks SMTP (via [go-mail](https://github.com/wneessen/go-mail)) to an external provider (Gmail app password, SES, Mailgun, etc.) or logs the message when `driver: log`.
 
 Password-reset endpoints use an in-memory fixed-window rate limiter (15-minute window): forgot — 10 requests per client IP and 3 per email; confirm reset — 20 per client IP. Limits use Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Grom does not yet expose a trusted-proxies setting, so treat forwarded headers as untrusted unless your reverse proxy strips or overwrites them.
+
+## Auth captcha (ALTCHA)
+
+Optional self-hosted proof-of-work captcha (no external service). When enabled, register, login, and password-forgot require a solved ALTCHA payload; password reset with a token does not. The Flutter client shows a checkbox widget and fetches challenges from `GET /api/v1/captcha/challenge`. `GET /api/v1/server-info` reports `captcha_enabled`.
+
+| Setting | Purpose |
+|---------|---------|
+| `auth.captcha.enabled` | Require captcha on register/login/forgot. Default: `false`. |
+| `auth.captcha.hmac_secret` | HMAC key for challenge signatures. Optional; when empty, `auth.jwt_secret` is used. |
+| `auth.captcha.cost` | PBKDF2 iteration cost for PoW. Default: `1000`. |
+| `auth.captcha.expires_seconds` | Challenge lifetime. Default: `300`. |
+
+Challenge issuance is rate-limited in memory (60 requests per client IP per 15 minutes). Solved payloads are single-use until expiry.
+
+Example:
+
+```yaml
+auth:
+  jwt_secret: "..."
+  captcha:
+    enabled: true
+    # hmac_secret: "optional-separate-secret"
+    cost: 1000
+```
 
 Example (production SMTP on port 587):
 

@@ -73,6 +73,7 @@ type Config struct {
 			// TokenTTLMinutes is how long a reset token remains valid. Default: 60.
 			TokenTTLMinutes int `mapstructure:"token_ttl_minutes" yaml:"token_ttl_minutes"`
 		} `mapstructure:"reset" yaml:"reset"`
+		Captcha CaptchaConfig `mapstructure:"captcha" yaml:"captcha"`
 	} `mapstructure:"auth" yaml:"auth"`
 	Mailer MailerConfig `mapstructure:"mailer" yaml:"mailer"`
 	Federation struct {
@@ -143,6 +144,31 @@ func (c *Config) PasswordResetEnabled() bool {
 	return c.MailerEnabled() && strings.TrimSpace(c.Auth.Reset.PublicBaseURL) != ""
 }
 
+// CaptchaConfig controls optional ALTCHA proof-of-work protection on auth forms.
+type CaptchaConfig struct {
+	// Enabled turns on captcha for register, login, and password forgot. Default: false.
+	Enabled bool `mapstructure:"enabled" yaml:"enabled"`
+	// HMACSecret signs challenges. Optional; when empty, auth.jwt_secret is used.
+	HMACSecret string `mapstructure:"hmac_secret" yaml:"hmac_secret"`
+	// Cost is the PBKDF2 iteration count for PoW. Default: 1000.
+	Cost int `mapstructure:"cost" yaml:"cost"`
+	// ExpiresSeconds is challenge lifetime. Default: 300.
+	ExpiresSeconds int `mapstructure:"expires_seconds" yaml:"expires_seconds"`
+}
+
+// CaptchaEnabled reports whether ALTCHA captcha is required on auth endpoints.
+func (c *Config) CaptchaEnabled() bool {
+	return c.Auth.Captcha.Enabled
+}
+
+// CaptchaHMACSecret returns the HMAC key used to sign/verify challenges.
+func (c *Config) CaptchaHMACSecret() string {
+	if s := strings.TrimSpace(c.Auth.Captcha.HMACSecret); s != "" {
+		return s
+	}
+	return c.Auth.JWTSecret
+}
+
 var Cfg Config
 
 func GetConfig(configPath string) {
@@ -180,6 +206,12 @@ func FinalizeConfig(cfg *Config) error {
 		cfg.Auth.Reset.TokenTTLMinutes = 60
 	}
 	cfg.Auth.Reset.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.Auth.Reset.PublicBaseURL), "/")
+	if cfg.Auth.Captcha.Cost <= 0 {
+		cfg.Auth.Captcha.Cost = 1000
+	}
+	if cfg.Auth.Captcha.ExpiresSeconds <= 0 {
+		cfg.Auth.Captcha.ExpiresSeconds = 300
+	}
 	if err := finalizeMailer(&cfg.Mailer, cfg.Auth.Reset.PublicBaseURL); err != nil {
 		return err
 	}

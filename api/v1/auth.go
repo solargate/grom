@@ -16,11 +16,13 @@ type RegisterRequest struct {
 	Name     string `json:"name" example:"Alexander Cheryomukhin"`
 	Email    string `json:"email" binding:"required,email" example:"solarwind.palm@gmail.com"`
 	Password string `json:"password" binding:"required,min=8" example:"secret123"`
+	Altcha   string `json:"altcha,omitempty" example:""`
 }
 
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email" example:"solarwind.palm@gmail.com"`
 	Password string `json:"password" binding:"required" example:"secret123"`
+	Altcha   string `json:"altcha,omitempty" example:""`
 }
 
 type UserResponse struct {
@@ -71,6 +73,9 @@ func (a *App) register(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
+	if !a.requireCaptcha(ctx, req.Altcha) {
+		return
+	}
 
 	user, err := a.Users.Create(req.Nickname, req.Name, req.Email, req.Password)
 	if err != nil {
@@ -110,6 +115,9 @@ func (a *App) login(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if !a.requireCaptcha(ctx, req.Altcha) {
 		return
 	}
 

@@ -115,6 +115,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPasswordFailed => 'Failed to request password reset';
 
   @override
+  String get captchaRequired => 'Complete the captcha check';
+
+  @override
+  String get captchaNotRobot => 'I\'m not a robot';
+
+  @override
   String get resetPasswordTitle => 'Choose a new password';
 
   @override

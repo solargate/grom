@@ -12,6 +12,8 @@ auth:
   jwt_ttl_hours: 24
   reset:
     public_base_url: "http://localhost:8080"
+  captcha:
+    enabled: false
 
 mailer:
   # log: reset emails appear in server logs (copy the link for local testing).

@@ -47,6 +47,8 @@
   "forgotPasswordSubmit": "Send reset link",
   "forgotPasswordCheckEmail": "If an account exists for that email, a reset link has been sent. Open it in a browser, then sign in here.",
   "forgotPasswordFailed": "Failed to request password reset",
+  "captchaRequired": "Complete the captcha check",
+  "captchaNotRobot": "I'm not a robot",
   "resetPasswordTitle": "Choose a new password",
   "resetPasswordHint": "Enter a new password for your account.",
   "resetPasswordSubmit": "Update password",

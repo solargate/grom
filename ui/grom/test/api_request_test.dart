@@ -22,15 +22,18 @@ void main() {
       'name': 'Home Lab',
       'federation_enabled': true,
       'password_reset_enabled': true,
+      'captcha_enabled': true,
     });
     expect(info.name, 'Home Lab');
     expect(info.federationEnabled, isTrue);
     expect(info.passwordResetEnabled, isTrue);
+    expect(info.captchaEnabled, isTrue);
 
     final defaults = ServerInfo.fromJson({});
     expect(defaults.name, 'Grom Home');
     expect(defaults.federationEnabled, isFalse);
     expect(defaults.passwordResetEnabled, isFalse);
+    expect(defaults.captchaEnabled, isFalse);
   });
 
   test('UserInfo.fromJson reads optional avatar fields', () {
@@ -208,6 +211,7 @@ void main() {
           'name': 'Lab',
           'federation_enabled': true,
           'password_reset_enabled': true,
+          'captcha_enabled': true,
         }),
         200,
         headers: {'content-type': 'application/json'},
@@ -217,6 +221,7 @@ void main() {
     expect(ok.name, 'Lab');
     expect(ok.federationEnabled, isTrue);
     expect(ok.passwordResetEnabled, isTrue);
+    expect(ok.captchaEnabled, isTrue);
 
     final failClient = MockClient((request) async {
       return http.Response('nope', 500);
@@ -278,9 +283,50 @@ void main() {
       expect(request.headers['Content-Type'], 'application/json');
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       expect(body['email'], 'alice@example.com');
+      expect(body.containsKey('altcha'), isFalse);
       return http.Response('', 204);
     });
     await ApiRequest(client: client).forgotPassword(email: 'alice@example.com');
+  });
+
+  test('forgotPassword includes altcha when provided', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['altcha'], 'payload');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).forgotPassword(
+      email: 'alice@example.com',
+      altcha: 'payload',
+    );
+  });
+
+  test('login includes altcha when provided', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['altcha'], 'cap');
+      return http.Response(
+        jsonEncode({
+          'token': 'tok',
+          'expires_at': '2026-07-25T00:00:00Z',
+          'user': {
+            'id': '1',
+            'nickname': 'alice',
+            'name': 'Alice',
+            'email': 'alice@example.com',
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    await ApiRequest(client: client).login(
+      email: 'alice@example.com',
+      password: 'secret',
+      altcha: 'cap',
+    );
   });
 
   test('forgotPassword maps 429 and 503 to ApiException', () async {

@@ -3,6 +3,7 @@ module github.com/solargate/grom
 go 1.26.0
 
 require (
+	github.com/altcha-org/altcha-lib-go/v2 v2.0.0-20260725115309-2c4fc27a7b2d
 	github.com/deepteams/webp v1.2.7
 	github.com/flopp/go-staticmaps v0.0.0-20260318105611-d3eb636a6468
 	github.com/gin-gonic/gin v1.12.0
