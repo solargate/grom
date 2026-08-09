@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Swagger: shared `ErrorResponse` example is now a neutral `"bad request"`; `@Failure` responses include short per-endpoint descriptions
 - Swagger UI Try it out uses the current page origin (no hardcoded `localhost:8080`), so docs work via IP and domain as well as localhost
+- Changes in CI (publishing in Google Play)
 
 ## [0.7.0] - 2026-08-08
 
