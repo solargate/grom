@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-09
+
 ### Fixed
 
 - Android Health Sync: request Google Drive readonly scope explicitly and reconnect once after `invalid_token`, so Play/debug builds do not sync with a bare sign-in token
@@ -185,7 +187,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.7.1...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.7.2...HEAD
+[0.7.2]: https://github.com/solargate/grom/releases/tag/0.7.2
 [0.7.1]: https://github.com/solargate/grom/releases/tag/0.7.1
 [0.7.0]: https://github.com/solargate/grom/releases/tag/0.7.0
 [0.6.0]: https://github.com/solargate/grom/releases/tag/0.6.0
