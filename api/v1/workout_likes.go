@@ -39,9 +39,9 @@ type WorkoutLikesResponse struct {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutLikesResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/likes [get]
 func (a *App) getWorkoutLikes(ctx *gin.Context) {
 	viewerNickname, err := a.currentUserNickname(ctx)
@@ -81,10 +81,10 @@ func (a *App) getWorkoutLikes(ctx *gin.Context) {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutLikeStateResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Cannot like own workout"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/likes [post]
 func (a *App) likeWorkout(ctx *gin.Context) {
 	a.mutateWorkoutLike(ctx, true)
@@ -99,10 +99,10 @@ func (a *App) likeWorkout(ctx *gin.Context) {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutLikeStateResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Invalid request"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/likes [delete]
 func (a *App) unlikeWorkout(ctx *gin.Context) {
 	a.mutateWorkoutLike(ctx, false)

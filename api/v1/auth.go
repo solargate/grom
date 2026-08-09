@@ -41,7 +41,7 @@ type LoginResponse struct {
 }
 
 type ErrorResponse struct {
-	Error string `json:"error" example:"email already registered"`
+	Error string `json:"error" example:"bad request"`
 }
 
 func (a *App) toUserResponse(user *users.User) UserResponse {
@@ -64,8 +64,8 @@ func (a *App) toUserResponse(user *users.User) UserResponse {
 // @Produce      json
 // @Param        body  body  RegisterRequest  true  "Registration data"
 // @Success      201   {object}  UserResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      409   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request or captcha"
+// @Failure      409   {object}  ErrorResponse  "Email or nickname already taken"
 // @Router       /auth/register [post]
 func (a *App) register(ctx *gin.Context) {
 	var req RegisterRequest
@@ -108,8 +108,8 @@ func (a *App) register(ctx *gin.Context) {
 // @Produce      json
 // @Param        body  body  LoginRequest  true  "Login credentials"
 // @Success      200   {object}  LoginResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request or captcha"
+// @Failure      401   {object}  ErrorResponse  "Invalid credentials"
 // @Router       /auth/login [post]
 func (a *App) login(ctx *gin.Context) {
 	var req LoginRequest
@@ -154,7 +154,7 @@ func (a *App) login(ctx *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  UserResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /auth/me [get]
 func (a *App) getMe(ctx *gin.Context) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
@@ -186,8 +186,8 @@ type UpdateProfileRequest struct {
 // @Security     BearerAuth
 // @Param        body  body  UpdateProfileRequest  true  "Profile data"
 // @Success      200   {object}  UserResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
 // @Router       /auth/me [patch]
 func (a *App) updateMe(ctx *gin.Context) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)

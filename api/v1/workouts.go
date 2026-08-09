@@ -449,9 +449,9 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
-// @Failure      500   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid workout data or track"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
+// @Failure      500   {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts [post]
 func (a *App) createWorkout(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -781,8 +781,8 @@ func parseEquipmentIDsForm(raw string) ([]string, error) {
 // @Security     BearerAuth
 // @Param        track  formData  file  true  "Track file FIT or GPX"
 // @Success      200  {object}  ParseTrackResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Track file required or invalid"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /workouts/parse-track [post]
 func (a *App) parseTrack(ctx *gin.Context) {
 	file, err := ctx.FormFile("track")
@@ -815,9 +815,9 @@ func (a *App) parseTrack(ctx *gin.Context) {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutSpeedResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/speed [get]
 func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -871,9 +871,9 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutHeartRateResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/heartrate [get]
 func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -929,9 +929,9 @@ func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
 // @Param        owner   query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Param        format  query  string  false  "gpx to download as GPX; omit for original file (own workouts only)"
 // @Success      200  {file}  binary
-// @Failure      401  {object}  ErrorResponse
-// @Failure      403  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      403  {object}  ErrorResponse  "Original track download not allowed"
+// @Failure      404  {object}  ErrorResponse  "Track not found"
 // @Router       /workouts/{id}/track [get]
 func (a *App) getWorkoutTrack(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1022,8 +1022,8 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 // @Param        id  path  string  true  "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {file}  binary
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Map preview not found"
 // @Router       /workouts/{id}/map-preview [get]
 func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1069,9 +1069,9 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 // @Param        id     path   string  true   "Workout ID"
 // @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
 // @Success      200  {object}  WorkoutResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id} [get]
 func (a *App) getWorkout(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1229,10 +1229,10 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 // @Param        id      path      string  true  "Workout ID"
 // @Param        photos  formData  file    true  "Photo files (repeatable)"
 // @Success      200     {object}  WorkoutResponse
-// @Failure      400     {object}  ErrorResponse
-// @Failure      401     {object}  ErrorResponse
-// @Failure      404     {object}  ErrorResponse
-// @Failure      500     {object}  ErrorResponse
+// @Failure      400     {object}  ErrorResponse  "Photos required or invalid"
+// @Failure      401     {object}  ErrorResponse  "Unauthorized"
+// @Failure      404     {object}  ErrorResponse  "Workout not found"
+// @Failure      500     {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/media [post]
 func (a *App) addWorkoutMedia(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1289,10 +1289,10 @@ func (a *App) addWorkoutMedia(ctx *gin.Context) {
 // @Param        id        path  string  true  "Workout ID"
 // @Param        filename  path  string  true  "Photo filename"
 // @Success      200       {object}  WorkoutResponse
-// @Failure      400       {object}  ErrorResponse
-// @Failure      401       {object}  ErrorResponse
-// @Failure      404       {object}  ErrorResponse
-// @Failure      500       {object}  ErrorResponse
+// @Failure      400       {object}  ErrorResponse  "Invalid request"
+// @Failure      401       {object}  ErrorResponse  "Unauthorized"
+// @Failure      404       {object}  ErrorResponse  "Workout or photo not found"
+// @Failure      500       {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id}/media/{filename} [delete]
 func (a *App) deleteWorkoutMedia(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1347,9 +1347,9 @@ func handleWorkoutMediaError(ctx *gin.Context, err error) {
 // @Param        name  query  string  true  "external_id.name"
 // @Param        id    query  string  true  "external_id.id"
 // @Success      200  {object}  ExternalIDExistsResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Name and id are required"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/external [get]
 func (a *App) checkWorkoutExternalID(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1383,9 +1383,9 @@ func (a *App) checkWorkoutExternalID(ctx *gin.Context) {
 // @Param        limit   query  int     false  "page size (default 20, max 100)"
 // @Param        cursor  query  string  false  "opaque cursor from previous page next_cursor"
 // @Success      200  {object}  WorkoutListResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Invalid scope, limit, or cursor"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts [get]
 func (a *App) listWorkouts(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1496,9 +1496,9 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Workout ID"
 // @Success      204
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id} [delete]
 func (a *App) deleteWorkout(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)
@@ -1548,10 +1548,10 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 // @Param        id    path  string  true  "Workout ID"
 // @Param        body  body  CreateWorkoutRequest  true  "Workout data"
 // @Success      200   {object}  WorkoutResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
-// @Failure      404   {object}  ErrorResponse
-// @Failure      500   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid workout data"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
+// @Failure      404   {object}  ErrorResponse  "Workout not found"
+// @Failure      500   {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts/{id} [put]
 func (a *App) updateWorkout(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)

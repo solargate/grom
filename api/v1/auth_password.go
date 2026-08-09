@@ -30,9 +30,9 @@ type resetPasswordRequest struct {
 // @Produce      json
 // @Param        body  body  forgotPasswordRequest  true  "Account email"
 // @Success      204
-// @Failure      400   {object}  ErrorResponse
-// @Failure      429   {object}  ErrorResponse
-// @Failure      503   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request or captcha"
+// @Failure      429   {object}  ErrorResponse  "Rate limit exceeded"
+// @Failure      503   {object}  ErrorResponse  "Password reset is not configured"
 // @Router       /auth/password/forgot [post]
 func (a *App) forgotPassword(ctx *gin.Context) {
 	if a.PasswordReset == nil || !a.PasswordReset.Enabled() {
@@ -74,9 +74,9 @@ func (a *App) forgotPassword(ctx *gin.Context) {
 // @Produce      json
 // @Param        body  body  resetPasswordRequest  true  "Reset token and new password"
 // @Success      204
-// @Failure      400   {object}  ErrorResponse
-// @Failure      429   {object}  ErrorResponse
-// @Failure      503   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request or reset token"
+// @Failure      429   {object}  ErrorResponse  "Rate limit exceeded"
+// @Failure      503   {object}  ErrorResponse  "Password reset is not configured"
 // @Router       /auth/password/reset [post]
 func (a *App) resetPassword(ctx *gin.Context) {
 	if a.PasswordReset == nil || !a.PasswordReset.Enabled() {

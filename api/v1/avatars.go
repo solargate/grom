@@ -19,8 +19,8 @@ import (
 // @Security     BearerAuth
 // @Param        avatar  formData  file  true  "Avatar image"
 // @Success      200  {object}  UserResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Invalid image"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /auth/me/avatar [put]
 func (a *App) uploadMyAvatar(ctx *gin.Context) {
 	userID, err := a.currentUserID(ctx)
@@ -63,8 +63,8 @@ func (a *App) uploadMyAvatar(ctx *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  UserResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Avatar not found"
 // @Router       /auth/me/avatar [delete]
 func (a *App) deleteMyAvatar(ctx *gin.Context) {
 	userID, err := a.currentUserID(ctx)
@@ -99,8 +99,8 @@ func (a *App) deleteMyAvatar(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        nickname  path  string  true  "User nickname"
 // @Success      200  {file}  binary
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Avatar not found"
 // @Router       /users/{nickname}/avatar [get]
 func (a *App) getUserAvatar(ctx *gin.Context) {
 	if _, err := a.currentUserNickname(ctx); err != nil {
@@ -142,8 +142,8 @@ func (a *App) getUserAvatar(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        ownerKey  path  string  true  "Encoded remote author handle"
 // @Success      200  {file}  binary
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Avatar not found"
 // @Router       /federation/authors/{ownerKey}/avatar [get]
 func (a *App) getFederatedAuthorAvatar(ctx *gin.Context) {
 	nickname, err := a.currentUserNickname(ctx)

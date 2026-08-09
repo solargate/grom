@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Swagger: shared `ErrorResponse` example is now a neutral `"bad request"`; `@Failure` responses include short per-endpoint descriptions
+
 ## [0.7.0] - 2026-08-08
 
 ### Added

@@ -41,10 +41,10 @@ type StravaImportStatusResponse struct {
 // @Security     BearerAuth
 // @Param        archive  formData  file  false  "Strava bulk export ZIP (multipart)"
 // @Success      202  {object}  StravaImportStatusResponse
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      409  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Invalid or too large archive"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      409  {object}  ErrorResponse  "Import already in progress"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /integrations/strava/import [post]
 func (a *App) importStravaArchive(ctx *gin.Context) {
 	jobs := a.stravaJobManager()
@@ -125,7 +125,7 @@ func stravaArchiveReader(ctx *gin.Context) (io.Reader, int64, error) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  StravaImportStatusResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /integrations/strava/import/status [get]
 func (a *App) getStravaImportStatus(ctx *gin.Context) {
 	jobs := a.stravaJobManager()

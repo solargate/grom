@@ -39,9 +39,9 @@ func toUserSearchResults(items []social.UserSearchResult) []UserSearchResult {
 // @Security     BearerAuth
 // @Param        q  query  string  true  "Search query"
 // @Success      200  {array}  UserSearchResult
-// @Failure      400  {object}  ErrorResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      400  {object}  ErrorResponse  "Missing or invalid query"
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Federated user not found"
 // @Router       /users/search [get]
 func (a *App) searchUsers(ctx *gin.Context) {
 	userID, err := a.currentUserID(ctx)

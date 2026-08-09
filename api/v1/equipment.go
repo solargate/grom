@@ -79,8 +79,8 @@ func handleEquipmentError(ctx *gin.Context, err error) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {array}   EquipmentResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /equipment [get]
 func (a *App) listEquipment(ctx *gin.Context) {
 	
@@ -112,9 +112,9 @@ func (a *App) listEquipment(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        body  body  CreateEquipmentRequest  true  "Equipment data"
 // @Success      201   {object}  EquipmentResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
-// @Failure      500   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
+// @Failure      500   {object}  ErrorResponse  "Internal server error"
 // @Router       /equipment [post]
 func (a *App) createEquipment(ctx *gin.Context) {
 	
@@ -158,10 +158,10 @@ func (a *App) createEquipment(ctx *gin.Context) {
 // @Param        id    path  string  true  "Equipment ID"
 // @Param        body  body  UpdateEquipmentRequest  true  "Equipment data"
 // @Success      200   {object}  EquipmentResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
-// @Failure      404   {object}  ErrorResponse
-// @Failure      500   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid request"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
+// @Failure      404   {object}  ErrorResponse  "Equipment not found"
+// @Failure      500   {object}  ErrorResponse  "Internal server error"
 // @Router       /equipment/{id} [put]
 func (a *App) updateEquipment(ctx *gin.Context) {
 	
@@ -205,9 +205,9 @@ func (a *App) updateEquipment(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Equipment ID"
 // @Success      204
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Equipment not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /equipment/{id} [delete]
 func (a *App) deleteEquipment(ctx *gin.Context) {
 			nickname, err := a.currentUserNickname(ctx)

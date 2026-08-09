@@ -31,8 +31,8 @@ func toProfileResponse(profile *users.Profile) ProfileResponse {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  ProfileResponse
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /profile [get]
 func (a *App) getProfile(ctx *gin.Context) {
 	userID, err := a.currentUserID(ctx)

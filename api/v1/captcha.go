@@ -14,8 +14,8 @@ import (
 // @Tags         captcha
 // @Produce      json
 // @Success      200
-// @Failure      404  {object}  ErrorResponse
-// @Failure      429  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse  "Captcha is disabled"
+// @Failure      429  {object}  ErrorResponse  "Rate limit exceeded"
 // @Router       /captcha/challenge [get]
 func (a *App) getCaptchaChallenge(ctx *gin.Context) {
 	if a.Captcha == nil || !a.Captcha.Enabled() {

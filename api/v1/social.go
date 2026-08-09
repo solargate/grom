@@ -103,10 +103,10 @@ func (a *App) toFollowResponse(f *social.Follow, viewerNickname string) FollowRe
 // @Security     BearerAuth
 // @Param        body  body  FollowRequest  true  "Follow target"
 // @Success      201   {object}  FollowResponse
-// @Failure      400   {object}  ErrorResponse
-// @Failure      401   {object}  ErrorResponse
-// @Failure      404   {object}  ErrorResponse
-// @Failure      409   {object}  ErrorResponse
+// @Failure      400   {object}  ErrorResponse  "Invalid follow target"
+// @Failure      401   {object}  ErrorResponse  "Unauthorized"
+// @Failure      404   {object}  ErrorResponse  "User not found"
+// @Failure      409   {object}  ErrorResponse  "Already following"
 // @Router       /social/follow [post]
 func (a *App) followUser(ctx *gin.Context) {
 
@@ -146,8 +146,8 @@ func (a *App) followUser(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Param        id  path  string  true  "Follow ID"
 // @Success      204
-// @Failure      401  {object}  ErrorResponse
-// @Failure      404  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Follow not found"
 // @Router       /social/follow/{id} [delete]
 func (a *App) unfollowUser(ctx *gin.Context) {
 
@@ -172,7 +172,7 @@ func (a *App) unfollowUser(ctx *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {array}  FollowResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /social/following [get]
 func (a *App) listFollowing(ctx *gin.Context) {
 
@@ -208,7 +208,7 @@ func (a *App) listFollowing(ctx *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {array}  FollowerResponse
-// @Failure      401  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Router       /social/followers [get]
 func (a *App) listFollowers(ctx *gin.Context) {
 
