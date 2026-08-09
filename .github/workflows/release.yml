@@ -129,9 +129,76 @@ jobs:
           path: dist/
           if-no-files-found: error
 
+  resolve-android-version:
+    name: Resolve Android version code
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    outputs:
+      version_code: ${{ steps.resolve.outputs.version_code }}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Google API client
+        run: pip install --quiet google-api-python-client google-auth
+
+      - name: Resolve next versionCode from Play
+        id: resolve
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          PACKAGE_NAME: com.solargate.grom
+        run: |
+          set -euo pipefail
+          : "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:?GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret is required}"
+
+          CREDENTIALS_FILE="$(mktemp)"
+          trap 'rm -f "${CREDENTIALS_FILE}"' EXIT
+          printf '%s' "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON}" > "${CREDENTIALS_FILE}"
+          export CREDENTIALS_FILE
+
+          python - <<'PY'
+          import os
+
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+
+          package_name = os.environ["PACKAGE_NAME"]
+          credentials_file = os.environ["CREDENTIALS_FILE"]
+
+          credentials = service_account.Credentials.from_service_account_file(
+              credentials_file,
+              scopes=["https://www.googleapis.com/auth/androidpublisher"],
+          )
+          service = build("androidpublisher", "v3", credentials=credentials, cache_discovery=False)
+
+          edit = service.edits().insert(packageName=package_name, body={}).execute()
+          edit_id = edit["id"]
+          max_code = 0
+          try:
+              tracks_resp = (
+                  service.edits()
+                  .tracks()
+                  .list(packageName=package_name, editId=edit_id)
+                  .execute()
+              )
+              for track in tracks_resp.get("tracks", []):
+                  for release in track.get("releases", []):
+                      for version_code in release.get("versionCodes", []):
+                          max_code = max(max_code, int(version_code))
+          finally:
+              service.edits().delete(packageName=package_name, editId=edit_id).execute()
+
+          next_code = max_code + 1
+          print(f"Max Play versionCode={max_code}; next versionCode={next_code}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"version_code={next_code}\n")
+          PY
+
   build-apk:
     name: Build Android APK
-    needs: [validate, test]
+    needs: [validate, test, resolve-android-version]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -180,8 +247,9 @@ jobs:
       - name: Build release APK
         env:
           VERSION: ${{ needs.validate.outputs.version }}
+          VERSION_CODE: ${{ needs.resolve-android-version.outputs.version_code }}
         working-directory: ui/grom
-        run: flutter build apk --release --build-name="${VERSION}" --build-number=1
+        run: flutter build apk --release --build-name="${VERSION}" --build-number="${VERSION_CODE}"
 
       - name: Stage APK artifact
         env:
@@ -226,9 +294,107 @@ jobs:
           set -euo pipefail
           rm -f ui/grom/android/upload-keystore.jks ui/grom/android/key.properties
 
+  build-aab:
+    name: Build Android AAB
+    needs: [validate, test, resolve-android-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+          cache: true
+
+      - name: Prepare Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          : "${ANDROID_KEYSTORE_BASE64:?ANDROID_KEYSTORE_BASE64 secret is required}"
+          : "${ANDROID_KEYSTORE_PASSWORD:?ANDROID_KEYSTORE_PASSWORD secret is required}"
+          : "${ANDROID_KEY_PASSWORD:?ANDROID_KEY_PASSWORD secret is required}"
+          : "${ANDROID_KEY_ALIAS:?ANDROID_KEY_ALIAS secret is required}"
+
+          KEYSTORE_PATH="ui/grom/android/upload-keystore.jks"
+          PROPS_PATH="ui/grom/android/key.properties"
+
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${KEYSTORE_PATH}"
+          chmod 600 "${KEYSTORE_PATH}"
+
+          {
+            printf 'storePassword=%s\n' "${ANDROID_KEYSTORE_PASSWORD}"
+            printf 'keyPassword=%s\n' "${ANDROID_KEY_PASSWORD}"
+            printf 'keyAlias=%s\n' "${ANDROID_KEY_ALIAS}"
+            printf 'storeFile=upload-keystore.jks\n'
+          } > "${PROPS_PATH}"
+          chmod 600 "${PROPS_PATH}"
+
+      - name: Build release AAB
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          VERSION_CODE: ${{ needs.resolve-android-version.outputs.version_code }}
+        working-directory: ui/grom
+        run: flutter build appbundle --release --build-name="${VERSION}" --build-number="${VERSION_CODE}"
+
+      - name: Stage AAB artifact
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp ui/grom/build/app/outputs/bundle/release/app-release.aab "dist/grom-${VERSION}.aab"
+          ls -la dist/
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-aab
+          path: dist/grom-*.aab
+          if-no-files-found: error
+
+      - name: Clean up signing materials
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ui/grom/android/upload-keystore.jks ui/grom/android/key.properties
+
+  upload-play:
+    name: Upload to Google Play
+    needs: [validate, build-aab]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download AAB
+        uses: actions/download-artifact@v7
+        with:
+          name: android-aab
+          path: dist
+
+      - name: Upload AAB to Play (internal draft)
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.solargate.grom
+          releaseFiles: dist/grom-*.aab
+          tracks: internal
+          status: draft
+          releaseName: Grom ${{ needs.validate.outputs.version }}
+
   release:
     name: Create draft release
-    needs: [validate, build-server, build-apk]
+    needs: [validate, build-server, build-apk, upload-play]
     runs-on: ubuntu-latest
     permissions:
       contents: write
