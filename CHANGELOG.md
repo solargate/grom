@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Android Health Sync: stop calling web-only `canAccessScopes` after Google Sign-In (it threw `UnimplementedError` and showed a generic sign-in failure); surface technical error detail in the snackbar when present
+
 ## [0.7.2] - 2026-08-09
 
 ### Fixed

@@ -39,11 +39,9 @@ bool _looksLikeInvalidOrDeniedToken(Object error) {
 }
 
 Future<void> _ensureDriveScopesGranted() async {
-  final alreadyGranted = await _googleSignIn.canAccessScopes(_driveScopes);
-  if (alreadyGranted) {
-    return;
-  }
-
+  // Android-only path: do not call canAccessScopes (web-only; throws
+  // UnimplementedError on mobile). Scopes are also set on GoogleSignIn;
+  // requestScopes is a no-op when already granted.
   final granted = await _googleSignIn.requestScopes(_driveScopes);
   if (!granted) {
     throw GoogleDriveException(GoogleDriveError.accessDenied);
@@ -71,7 +69,10 @@ Future<drive.DriveApi> _createDriveApi({required bool forceInteractive}) async {
 
   final client = await _googleSignIn.authenticatedClient();
   if (client == null) {
-    throw GoogleDriveException(GoogleDriveError.signInFailed);
+    throw GoogleDriveException(
+      GoogleDriveError.signInFailed,
+      message: 'authenticatedClient returned null',
+    );
   }
   return drive.DriveApi(client);
 }

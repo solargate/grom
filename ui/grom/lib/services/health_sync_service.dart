@@ -294,17 +294,59 @@ class HealthSyncService extends ChangeNotifier {
 
 /// Maps [GoogleDriveException] to a [HealthSyncResult] for UI handling.
 HealthSyncResult healthSyncResultFromDriveError(GoogleDriveException error) {
+  final detail = error.message ?? '';
   if (error.error == GoogleDriveError.cancelled) {
-    return const HealthSyncResult(kind: HealthSyncResultKind.signInCancelled);
+    return HealthSyncResult(
+      kind: HealthSyncResultKind.signInCancelled,
+      message: detail,
+    );
   }
   if (error.error == GoogleDriveError.signInFailed) {
-    return const HealthSyncResult(kind: HealthSyncResultKind.signInFailed);
+    return HealthSyncResult(
+      kind: HealthSyncResultKind.signInFailed,
+      message: detail,
+    );
   }
   if (error.error == GoogleDriveError.accessDenied) {
-    return const HealthSyncResult(kind: HealthSyncResultKind.accessDenied);
+    return HealthSyncResult(
+      kind: HealthSyncResultKind.accessDenied,
+      message: detail,
+    );
   }
   return HealthSyncResult(
     kind: HealthSyncResultKind.error,
-    message: error.message ?? 'unsupported platform',
+    message: detail.isEmpty ? 'unsupported platform' : detail,
   );
+}
+
+/// Localized snackbar text for a [HealthSyncResult], with optional error detail.
+String healthSyncResultSnackBarMessage(
+  HealthSyncResult result, {
+  required String imported,
+  required String noNewWorkouts,
+  required String folderNotFound,
+  required String folderEmpty,
+  required String signInCancelled,
+  required String signInFailed,
+  required String accessDenied,
+  required String Function(String message) syncError,
+}) {
+  String withDetail(String base) {
+    final detail = result.message.trim();
+    if (detail.isEmpty) {
+      return base;
+    }
+    return '$base: $detail';
+  }
+
+  return switch (result.kind) {
+    HealthSyncResultKind.imported => imported,
+    HealthSyncResultKind.noNewWorkouts => noNewWorkouts,
+    HealthSyncResultKind.folderNotFound => folderNotFound,
+    HealthSyncResultKind.folderEmpty => folderEmpty,
+    HealthSyncResultKind.signInCancelled => withDetail(signInCancelled),
+    HealthSyncResultKind.signInFailed => withDetail(signInFailed),
+    HealthSyncResultKind.accessDenied => withDetail(accessDenied),
+    HealthSyncResultKind.error => syncError(result.message),
+  };
 }

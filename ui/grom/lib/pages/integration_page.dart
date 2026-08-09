@@ -117,16 +117,17 @@ class _IntegrationPageState extends State<IntegrationPage> {
   void _showHealthSyncResultSnackBar(HealthSyncResult result) {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
-    final message = switch (result.kind) {
-      HealthSyncResultKind.imported => l10n.healthSyncImported(result.importedCount),
-      HealthSyncResultKind.noNewWorkouts => l10n.healthSyncNoNewWorkouts,
-      HealthSyncResultKind.folderNotFound => l10n.healthSyncFolderNotFound,
-      HealthSyncResultKind.folderEmpty => l10n.healthSyncFolderEmpty,
-      HealthSyncResultKind.signInCancelled => l10n.healthSyncGoogleSignInCancelled,
-      HealthSyncResultKind.signInFailed => l10n.healthSyncGoogleSignInFailed,
-      HealthSyncResultKind.accessDenied => l10n.healthSyncDriveAccessDenied,
-      HealthSyncResultKind.error => l10n.healthSyncSyncError(result.message),
-    };
+    final message = healthSyncResultSnackBarMessage(
+      result,
+      imported: l10n.healthSyncImported(result.importedCount),
+      noNewWorkouts: l10n.healthSyncNoNewWorkouts,
+      folderNotFound: l10n.healthSyncFolderNotFound,
+      folderEmpty: l10n.healthSyncFolderEmpty,
+      signInCancelled: l10n.healthSyncGoogleSignInCancelled,
+      signInFailed: l10n.healthSyncGoogleSignInFailed,
+      accessDenied: l10n.healthSyncDriveAccessDenied,
+      syncError: l10n.healthSyncSyncError,
+    );
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
