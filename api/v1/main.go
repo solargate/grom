@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	sloggin "github.com/samber/slog-gin"
 
-	_ "github.com/solargate/grom/api/docs"
+	"github.com/solargate/grom/api/docs"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/logging"
 	"github.com/solargate/grom/internal/server"
@@ -25,7 +25,6 @@ import (
 // @contact.email  solarwind.palm@gmail.com
 // @license.name   GPL-3.0
 // @license.url    https://www.gnu.org/licenses/gpl-3.0.html
-// @host      localhost:8080
 // @BasePath  /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -89,7 +88,9 @@ func RunRouter() {
 }
 
 // RegisterAPIDocs mounts Swagger UI under /api/docs with a slash redirect.
+// Host is left empty so Try it out uses the browser's current origin (localhost, IP, or domain).
 func RegisterAPIDocs(router *gin.Engine) {
+	docs.SwaggerInfo.Host = ""
 	swaggerHandler := ginSwagger.WrapHandler(swaggerFiles.Handler)
 	serveSwaggerUI := func(c *gin.Context) {
 		c.Request.URL.Path = "/api/docs/index.html"
