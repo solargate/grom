@@ -22,43 +22,128 @@ import 'google_drive_stub.dart'
 bool get _isAndroidDriveSupported =>
     !kIsWeb && Platform.isAndroid;
 
+const _driveScopes = <String>[
+  drive.DriveApi.driveReadonlyScope,
+];
+
 final GoogleSignIn _googleSignIn = GoogleSignIn(
-  scopes: const [drive.DriveApi.driveReadonlyScope],
+  scopes: _driveScopes,
 );
 
-Future<drive.DriveApi?> _driveApi() async {
+bool _looksLikeInvalidOrDeniedToken(Object error) {
+  final message = error.toString().toLowerCase();
+  return message.contains('invalid_token') ||
+      message.contains('access was denied') ||
+      message.contains('access_denied') ||
+      message.contains('403');
+}
+
+Future<void> _ensureDriveScopesGranted() async {
+  final alreadyGranted = await _googleSignIn.canAccessScopes(_driveScopes);
+  if (alreadyGranted) {
+    return;
+  }
+
+  final granted = await _googleSignIn.requestScopes(_driveScopes);
+  if (!granted) {
+    throw GoogleDriveException(GoogleDriveError.accessDenied);
+  }
+}
+
+Future<drive.DriveApi> _createDriveApi({required bool forceInteractive}) async {
   if (!_isAndroidDriveSupported) {
     throw GoogleDriveException(GoogleDriveError.unsupported);
   }
 
-  var account = await _googleSignIn.signInSilently();
+  GoogleSignInAccount? account;
+  if (!forceInteractive) {
+    account = await _googleSignIn.signInSilently();
+  }
   account ??= await _googleSignIn.signIn();
   if (account == null) {
     throw GoogleDriveException(GoogleDriveError.cancelled);
   }
 
+  await _ensureDriveScopesGranted();
+
+  // Re-read auth after requestScopes so Drive gets a token that includes the scope.
+  await _googleSignIn.currentUser?.authentication;
+
   final client = await _googleSignIn.authenticatedClient();
   if (client == null) {
     throw GoogleDriveException(GoogleDriveError.signInFailed);
   }
-
   return drive.DriveApi(client);
+}
+
+Future<void> _disconnectQuietly() async {
+  try {
+    await _googleSignIn.disconnect();
+  } catch (_) {
+    // Best-effort revoke of a stale / incomplete grant.
+  }
+}
+
+/// Runs [run] with a Drive client. On invalid/denied token, disconnects once and
+/// retries with an interactive sign-in + explicit Drive scope consent.
+Future<T> _withDriveApi<T>(Future<T> Function(drive.DriveApi api) run) async {
+  Future<T> attempt({required bool forceInteractive}) async {
+    final api = await _createDriveApi(forceInteractive: forceInteractive);
+    return run(api);
+  }
+
+  try {
+    return await attempt(forceInteractive: false);
+  } catch (error) {
+    if (error is GoogleDriveException) {
+      if (error.error == GoogleDriveError.cancelled ||
+          error.error == GoogleDriveError.unsupported ||
+          error.error == GoogleDriveError.signInFailed) {
+        rethrow;
+      }
+      if (error.error != GoogleDriveError.accessDenied &&
+          !_looksLikeInvalidOrDeniedToken(error)) {
+        rethrow;
+      }
+    } else if (!_looksLikeInvalidOrDeniedToken(error)) {
+      throw _mapDriveError(error);
+    }
+
+    await _disconnectQuietly();
+
+    try {
+      return await attempt(forceInteractive: true);
+    } on GoogleDriveException {
+      rethrow;
+    } catch (retryError) {
+      throw _mapDriveError(retryError);
+    }
+  }
 }
 
 GoogleDriveException _mapDriveError(Object error) {
   final message = error.toString().toLowerCase();
-  if (message.contains('access_denied') || message.contains('403')) {
-    return GoogleDriveException(GoogleDriveError.accessDenied, message: error.toString());
+  if (_looksLikeInvalidOrDeniedToken(error)) {
+    return GoogleDriveException(
+      GoogleDriveError.accessDenied,
+      message: error.toString(),
+    );
   }
   if (message.contains('sign_in') || message.contains('sign in')) {
-    return GoogleDriveException(GoogleDriveError.signInFailed, message: error.toString());
+    return GoogleDriveException(
+      GoogleDriveError.signInFailed,
+      message: error.toString(),
+    );
   }
-  return GoogleDriveException(GoogleDriveError.signInFailed, message: error.toString());
+  return GoogleDriveException(
+    GoogleDriveError.signInFailed,
+    message: error.toString(),
+  );
 }
 
 Future<void> ensureGoogleDriveSignedIn() async {
   try {
-    await _driveApi();
+    await _withDriveApi((_) async {});
   } on GoogleDriveException {
     rethrow;
   } catch (error) {
@@ -67,35 +152,32 @@ Future<void> ensureGoogleDriveSignedIn() async {
 }
 
 Future<GoogleDriveFolder?> _firstMatchingFolder(String query) async {
-  final api = await _driveApi();
-  if (api == null) {
-    return null;
-  }
+  return _withDriveApi((api) async {
+    final response = await api.files.list(
+      q: query,
+      spaces: 'drive',
+      $fields: 'files(id,name)',
+      pageSize: 1,
+    );
 
-  final response = await api.files.list(
-    q: query,
-    spaces: 'drive',
-    $fields: 'files(id,name)',
-    pageSize: 1,
-  );
+    final files = response.files;
+    if (files == null || files.isEmpty) {
+      return null;
+    }
 
-  final files = response.files;
-  if (files == null || files.isEmpty) {
-    return null;
-  }
-
-  final file = files.first;
-  final id = file.id;
-  final name = file.name;
-  if (id == null || name == null) {
-    return null;
-  }
-  return GoogleDriveFolder(id: id, name: name);
+    final file = files.first;
+    final id = file.id;
+    final name = file.name;
+    if (id == null || name == null) {
+      return null;
+    }
+    return GoogleDriveFolder(id: id, name: name);
+  });
 }
 
 Future<GoogleDriveFolder?> findHealthSyncFolderByNameContains() async {
   try {
-    return _firstMatchingFolder(
+    return await _firstMatchingFolder(
       "mimeType='application/vnd.google-apps.folder' and name contains 'Health Sync' and trashed=false",
     );
   } on GoogleDriveException {
@@ -113,7 +195,7 @@ Future<GoogleDriveFolder?> findFolderByExactName(String name) async {
 
   try {
     final escaped = trimmed.replaceAll("'", r"\'");
-    return _firstMatchingFolder(
+    return await _firstMatchingFolder(
       "mimeType='application/vnd.google-apps.folder' and name = '$escaped' and trashed=false",
     );
   } on GoogleDriveException {
@@ -125,34 +207,31 @@ Future<GoogleDriveFolder?> findFolderByExactName(String name) async {
 
 Future<List<GoogleDriveFileEntry>> listFolderFiles(String folderId) async {
   try {
-    final api = await _driveApi();
-    if (api == null) {
-      return const [];
-    }
+    return await _withDriveApi((api) async {
+      final entries = <GoogleDriveFileEntry>[];
+      String? pageToken;
 
-    final entries = <GoogleDriveFileEntry>[];
-    String? pageToken;
+      do {
+        final response = await api.files.list(
+          q: "'$folderId' in parents and trashed=false",
+          spaces: 'drive',
+          $fields: 'nextPageToken,files(id,name)',
+          pageSize: 200,
+          pageToken: pageToken,
+        );
 
-    do {
-      final response = await api.files.list(
-        q: "'$folderId' in parents and trashed=false",
-        spaces: 'drive',
-        $fields: 'nextPageToken,files(id,name)',
-        pageSize: 200,
-        pageToken: pageToken,
-      );
-
-      for (final file in response.files ?? const []) {
-        final id = file.id;
-        final name = file.name;
-        if (id != null && name != null) {
-          entries.add(GoogleDriveFileEntry(id: id, name: name));
+        for (final file in response.files ?? const []) {
+          final id = file.id;
+          final name = file.name;
+          if (id != null && name != null) {
+            entries.add(GoogleDriveFileEntry(id: id, name: name));
+          }
         }
-      }
-      pageToken = response.nextPageToken;
-    } while (pageToken != null);
+        pageToken = response.nextPageToken;
+      } while (pageToken != null);
 
-    return entries;
+      return entries;
+    });
   } on GoogleDriveException {
     rethrow;
   } catch (error) {
@@ -162,21 +241,18 @@ Future<List<GoogleDriveFileEntry>> listFolderFiles(String folderId) async {
 
 Future<List<int>> downloadDriveFile(String fileId) async {
   try {
-    final api = await _driveApi();
-    if (api == null) {
-      throw GoogleDriveException(GoogleDriveError.unsupported);
-    }
+    return await _withDriveApi((api) async {
+      final media = await api.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      ) as drive.Media;
 
-    final media = await api.files.get(
-      fileId,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
-
-    final chunks = <int>[];
-    await for (final chunk in media.stream) {
-      chunks.addAll(chunk);
-    }
-    return chunks;
+      final chunks = <int>[];
+      await for (final chunk in media.stream) {
+        chunks.addAll(chunk);
+      }
+      return chunks;
+    });
   } on GoogleDriveException {
     rethrow;
   } catch (error) {
