@@ -38,16 +38,23 @@ class WorkoutSpeedChart extends StatelessWidget {
 
     var minX = spots.first.x;
     var maxX = spots.first.x;
+    var minSeriesY = spots.first.y;
     var maxY = spots.first.y;
     for (final spot in spots) {
       if (spot.x < minX) minX = spot.x;
       if (spot.x > maxX) maxX = spot.x;
+      if (spot.y < minSeriesY) minSeriesY = spot.y;
       if (spot.y > maxY) maxY = spot.y;
     }
     if (maxX <= minX) {
       maxX = minX + 0.1;
     }
-    final yTop = maxY <= 0 ? 1.0 : maxY * 1.1;
+    final yBottom = math.max(0.0, minSeriesY - 5);
+    var yTop = maxY <= 0 ? 1.0 : maxY * 1.1;
+    if (yTop <= yBottom) {
+      yTop = yBottom + 1;
+    }
+    final yInterval = (yTop - yBottom) / 4;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -73,13 +80,13 @@ class WorkoutSpeedChart extends StatelessWidget {
                     LineChartData(
                       minX: minX,
                       maxX: maxX,
-                      minY: 0,
+                      minY: yBottom,
                       maxY: yTop,
                       clipData: const FlClipData.all(),
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
-                        horizontalInterval: yTop / 4,
+                        horizontalInterval: yInterval,
                         getDrawingHorizontalLine: (value) => FlLine(
                           color: theme.dividerColor.withValues(alpha: 0.4),
                           strokeWidth: 1,
@@ -103,9 +110,9 @@ class WorkoutSpeedChart extends StatelessWidget {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 36,
-                            interval: yTop / 4,
+                            interval: yInterval,
                             getTitlesWidget: (value, meta) {
-                              if (value <= 0 || value >= yTop) {
+                              if (value <= yBottom || value >= yTop) {
                                 return const SizedBox.shrink();
                               }
                               return Text(
