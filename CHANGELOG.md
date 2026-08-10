@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Mobile add-workout form: stop clipping the floating “Workout name” label at the top of the Manual tab
+
 ## [0.7.3] - 2026-08-09
 
 ### Fixed

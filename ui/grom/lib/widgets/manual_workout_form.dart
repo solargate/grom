@@ -111,6 +111,9 @@ class ManualWorkoutForm extends StatelessWidget {
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: SingleChildScrollView(
+          // Space for OutlineInputBorder floating labels when title is outside
+          // (mobile add sheet with TabBar); otherwise labels clip at the scroll top.
+          padding: EdgeInsets.only(top: showTitle ? 0 : 8),
           child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
