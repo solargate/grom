@@ -133,52 +133,58 @@ class _GromApiTabState extends State<GromApiTab> {
                       ),
                     const SizedBox(height: 8),
                     Text(l10n.patExpiryLabel, style: Theme.of(context).textTheme.titleSmall),
-                    RadioListTile<_PatExpiryMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.patExpiry90Days),
-                      value: _PatExpiryMode.days90,
+                    RadioGroup<_PatExpiryMode>(
                       groupValue: expiryMode,
-                      onChanged: (value) => setDialogState(() => expiryMode = value!),
-                    ),
-                    RadioListTile<_PatExpiryMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.patExpiry180Days),
-                      value: _PatExpiryMode.days180,
-                      groupValue: expiryMode,
-                      onChanged: (value) => setDialogState(() => expiryMode = value!),
-                    ),
-                    RadioListTile<_PatExpiryMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.patExpiryCustomDays),
-                      value: _PatExpiryMode.custom,
-                      groupValue: expiryMode,
-                      onChanged: (value) => setDialogState(() => expiryMode = value!),
-                    ),
-                    if (expiryMode == _PatExpiryMode.custom)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 8),
-                        child: TextField(
-                          controller: customDaysController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => expiryMode = value);
+                        }
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          RadioListTile<_PatExpiryMode>(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l10n.patExpiry90Days),
+                            value: _PatExpiryMode.days90,
                           ),
-                        ),
-                      ),
-                    RadioListTile<_PatExpiryMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.patExpiryNone),
-                      value: _PatExpiryMode.none,
-                      groupValue: expiryMode,
-                      onChanged: (value) => setDialogState(() => expiryMode = value!),
-                    ),
-                    if (expiryMode == _PatExpiryMode.none)
-                      Text(
-                        l10n.patNoExpiryWarning,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.error,
+                          RadioListTile<_PatExpiryMode>(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l10n.patExpiry180Days),
+                            value: _PatExpiryMode.days180,
+                          ),
+                          RadioListTile<_PatExpiryMode>(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l10n.patExpiryCustomDays),
+                            value: _PatExpiryMode.custom,
+                          ),
+                          if (expiryMode == _PatExpiryMode.custom)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16, bottom: 8),
+                              child: TextField(
+                                controller: customDaysController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
                             ),
+                          RadioListTile<_PatExpiryMode>(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l10n.patExpiryNone),
+                            value: _PatExpiryMode.none,
+                          ),
+                          if (expiryMode == _PatExpiryMode.none)
+                            Text(
+                              l10n.patNoExpiryWarning,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                            ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
