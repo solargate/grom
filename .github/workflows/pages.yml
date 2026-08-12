@@ -1,0 +1,80 @@
+name: Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'PRIVACY.md'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'PRIVACY.md'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
+      - name: Build site from PRIVACY.md
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          {
+            cat <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Privacy Policy</title>
+          <style>
+            body {
+              font-family: system-ui, sans-serif;
+              max-width: 40rem;
+              margin: 2rem auto;
+              padding: 0 1rem;
+              line-height: 1.5;
+            }
+          </style>
+          </head>
+          <body>
+          EOF
+            pandoc PRIVACY.md
+            printf '</body>\n</html>\n'
+          } > site/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    name: Deploy
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
