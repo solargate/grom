@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build
+    name: Build Pages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,15 +59,15 @@ jobs:
           EOF
             pandoc PRIVACY.md
             printf '</body>\n</html>\n'
-          } > site/index.html
+          } > site/privacy.html
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
-    name: Deploy
+    name: Deploy Pages
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
@@ -77,4 +77,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
