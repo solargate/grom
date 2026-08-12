@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'models/personal_access_token.dart';
 import 'models/downloaded_track.dart';
 import 'models/equipment.dart';
 import 'models/parsed_track_metadata.dart';
@@ -1147,6 +1148,66 @@ class ApiRequest {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
+    throw _parseError(response);
+  }
+
+  Future<List<PersonalAccessToken>> listPersonalAccessTokens(String token) async {
+    final response = await _client.get(
+      _uri('/api/v1/auth/pat'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) =>
+              PersonalAccessToken.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw _parseError(response);
+  }
+
+  Future<CreatePersonalAccessTokenResult> createPersonalAccessToken({
+    required String token,
+    required String name,
+    required List<String> scopes,
+    int? expiresInDays,
+    bool noExpiration = false,
+  }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'scopes': scopes,
+      'no_expiration': noExpiration,
+    };
+    if (!noExpiration && expiresInDays != null) {
+      body['expires_in_days'] = expiresInDays;
+    }
+    final response = await _client.post(
+      _uri('/api/v1/auth/pat'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 201) {
+      return CreatePersonalAccessTokenResult.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw _parseError(response);
+  }
+
+  Future<void> revokePersonalAccessToken({
+    required String token,
+    required String id,
+  }) async {
+    final response = await _client.delete(
+      _uri('/api/v1/auth/pat/$id'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 204) {
+      return;
+    }
     throw _parseError(response);
   }
 

@@ -379,6 +379,13 @@ func (a *App) workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]st
 
 func (a *App) resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (ownerNickname, workoutID string, err error) {
 	workoutID = ctx.Param("id")
+	if auth.IsPAT(ctx) {
+		ownerNickname = strings.TrimSpace(ctx.Query("owner"))
+		if ownerNickname != "" && ownerNickname != viewerNickname {
+			return "", "", workouts.ErrWorkoutNotFound
+		}
+		return viewerNickname, workoutID, nil
+	}
 	ownerNickname = strings.TrimSpace(ctx.Query("owner"))
 	if ownerNickname == "" {
 		ownerNickname = viewerNickname
@@ -846,7 +853,7 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 		return
 	}
 
-	if a.Federation.Inbox() == nil {
+	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
@@ -902,7 +909,7 @@ func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
 		return
 	}
 
-	if a.Federation.Inbox() == nil {
+	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
@@ -963,10 +970,8 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 
 	data, storageName, workoutName, err := a.Workouts.TrackFile(owner, workoutID)
 	if err != nil {
-		if errors.Is(err, workouts.ErrWorkoutNotFound) {
-			if a.Federation.Inbox() != nil {
-				data, storageName, workoutName, err = a.Federation.Inbox().TrackFile(nickname, owner, workoutID)
-			}
+		if errors.Is(err, workouts.ErrWorkoutNotFound) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
+			data, storageName, workoutName, err = a.Federation.Inbox().TrackFile(nickname, owner, workoutID)
 		}
 	}
 	if err != nil {
@@ -1043,7 +1048,7 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 	}
 
 	data, err := a.Workouts.MapPreview(owner, workoutID)
-	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
 		data, err = a.Federation.Inbox().MapPreview(nickname, owner, workoutID)
 	}
 	if err != nil {
@@ -1103,7 +1108,7 @@ func (a *App) getWorkout(ctx *gin.Context) {
 		return
 	}
 
-	if a.Federation.Inbox() == nil {
+	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
@@ -1166,7 +1171,7 @@ func (a *App) getWorkoutMediaPreview(ctx *gin.Context) {
 
 	filename := ctx.Param("filename")
 	data, err := a.Workouts.MediaPreview(owner, workoutID, filename)
-	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) {
+	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
 		data, err = a.Federation.Inbox().MediaPreview(nickname, owner, workoutID, filename)
 	}
 	if err != nil {
@@ -1202,7 +1207,7 @@ func (a *App) getWorkoutMediaOriginal(ctx *gin.Context) {
 
 	filename := ctx.Param("filename")
 	data, contentType, err := a.Workouts.MediaOriginal(owner, workoutID, filename)
-	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) {
+	if err != nil && (errors.Is(err, workouts.ErrPhotoNotFound) || errors.Is(err, workouts.ErrWorkoutNotFound)) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
 		data, contentType, err = a.Federation.Inbox().MediaOriginal(nickname, owner, workoutID, filename)
 	}
 	if err != nil {
@@ -1395,7 +1400,9 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	}
 
 	scope := strings.TrimSpace(ctx.Query("scope"))
-	if scope == "" {
+	if auth.IsPAT(ctx) {
+		scope = "own"
+	} else if scope == "" {
 		scope = "feed"
 	}
 	if scope != "feed" && scope != "own" {

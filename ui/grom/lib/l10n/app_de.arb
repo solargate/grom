@@ -485,5 +485,60 @@
     "placeholders": {
       "message": { "type": "String" }
     }
-  }
+  },
+  "integrationTabGrom": "Grom",
+  "integrationTabExternal": "Externe Dienste",
+  "gromApiTitle": "Grom API",
+  "gromApiDescription": "Erstellen Sie persönliche Zugriffstoken, um externe Apps und Skripte mit Ihren Trainingseinheiten und Ausrüstung zu verbinden.",
+  "patCreateToken": "Token erstellen",
+  "patNoTokens": "Noch keine persönlichen Zugriffstoken",
+  "patNameLabel": "Tokenname",
+  "patScopesLabel": "Berechtigungen",
+  "patScopeWorkoutsRead": "Trainingseinheiten lesen",
+  "patScopeWorkoutsWrite": "Trainingseinheiten schreiben",
+  "patScopeEquipmentRead": "Ausrüstung lesen",
+  "patScopeEquipmentWrite": "Ausrüstung schreiben",
+  "patExpiryLabel": "Ablauf",
+  "patExpiry90Days": "90 Tage",
+  "patExpiry180Days": "180 Tage",
+  "patExpiryCustomDays": "Benutzerdefiniert (Tage)",
+  "patExpiryNone": "Kein Ablauf",
+  "patNoExpiryWarning": "Token ohne Ablauf bleiben gültig, bis Sie sie widerrufen. Nur verwenden, wenn Sie das Risiko verstehen.",
+  "patSelectScope": "Wählen Sie mindestens eine Berechtigung",
+  "patTokenCreatedTitle": "Token erstellt",
+  "patTokenCreatedWarning": "Kopieren Sie dieses Token jetzt. Es wird nicht erneut angezeigt.",
+  "patCopyToken": "Token kopieren",
+  "patTokenCopied": "Token kopiert",
+  "patClose": "Schließen",
+  "patRevoke": "Widerrufen",
+  "patRevokeConfirmTitle": "Token widerrufen?",
+  "patRevokeConfirmMessage": "„{name}“ widerrufen? Apps mit diesem Token verlieren sofort den Zugriff.",
+  "@patRevokeConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "patExpiresNever": "Läuft nicht ab",
+  "patExpiresAt": "Läuft ab am {date}",
+  "@patExpiresAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedAt": "Zuletzt verwendet {date}",
+  "@patLastUsedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedNever": "Nie verwendet",
+  "patCreatedAt": "Erstellt {date}",
+  "@patCreatedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patFailedToLoad": "Token konnten nicht geladen werden",
+  "patFailedToCreate": "Token konnte nicht erstellt werden",
+  "patFailedToRevoke": "Token konnte nicht widerrufen werden"
 }

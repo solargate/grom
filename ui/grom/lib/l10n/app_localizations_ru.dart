@@ -1084,4 +1084,120 @@ class AppLocalizationsRu extends AppLocalizations {
   String healthSyncSyncError(String message) {
     return 'Импорт Health Sync не удался: $message';
   }
+
+  @override
+  String get integrationTabGrom => 'Grom';
+
+  @override
+  String get integrationTabExternal => 'Внешние сервисы';
+
+  @override
+  String get gromApiTitle => 'Grom API';
+
+  @override
+  String get gromApiDescription =>
+      'Создавайте персональные токены доступа для подключения внешних приложений и скриптов к вашим тренировкам и снаряжению.';
+
+  @override
+  String get patCreateToken => 'Создать токен';
+
+  @override
+  String get patNoTokens => 'Персональных токенов пока нет';
+
+  @override
+  String get patNameLabel => 'Название токена';
+
+  @override
+  String get patScopesLabel => 'Права доступа';
+
+  @override
+  String get patScopeWorkoutsRead => 'Чтение тренировок';
+
+  @override
+  String get patScopeWorkoutsWrite => 'Запись тренировок';
+
+  @override
+  String get patScopeEquipmentRead => 'Чтение снаряжения';
+
+  @override
+  String get patScopeEquipmentWrite => 'Запись снаряжения';
+
+  @override
+  String get patExpiryLabel => 'Срок действия';
+
+  @override
+  String get patExpiry90Days => '90 дней';
+
+  @override
+  String get patExpiry180Days => '180 дней';
+
+  @override
+  String get patExpiryCustomDays => 'Свой срок (дни)';
+
+  @override
+  String get patExpiryNone => 'Без срока';
+
+  @override
+  String get patNoExpiryWarning =>
+      'Токены без срока действуют до отзыва. Используйте только если понимаете риски.';
+
+  @override
+  String get patSelectScope => 'Выберите хотя бы одно право доступа';
+
+  @override
+  String get patTokenCreatedTitle => 'Токен создан';
+
+  @override
+  String get patTokenCreatedWarning =>
+      'Скопируйте токен сейчас. Повторно он не будет показан.';
+
+  @override
+  String get patCopyToken => 'Скопировать токен';
+
+  @override
+  String get patTokenCopied => 'Токен скопирован';
+
+  @override
+  String get patClose => 'Закрыть';
+
+  @override
+  String get patRevoke => 'Отозвать';
+
+  @override
+  String get patRevokeConfirmTitle => 'Отозвать токен?';
+
+  @override
+  String patRevokeConfirmMessage(String name) {
+    return 'Отозвать «$name»? Приложения с этим токеном сразу потеряют доступ.';
+  }
+
+  @override
+  String get patExpiresNever => 'Без срока';
+
+  @override
+  String patExpiresAt(String date) {
+    return 'Истекает $date';
+  }
+
+  @override
+  String patLastUsedAt(String date) {
+    return 'Использовался $date';
+  }
+
+  @override
+  String get patLastUsedNever => 'Не использовался';
+
+  @override
+  String patCreatedAt(String date) {
+    return 'Создан $date';
+  }
+
+  @override
+  String get patFailedToLoad => 'Не удалось загрузить токены';
+
+  @override
+  String get patFailedToCreate => 'Не удалось создать токен';
+
+  @override
+  String get patFailedToRevoke => 'Не удалось отозвать токен';
 }

@@ -485,5 +485,60 @@
     "placeholders": {
       "message": { "type": "String" }
     }
-  }
+  },
+  "integrationTabGrom": "Grom",
+  "integrationTabExternal": "Внешние сервисы",
+  "gromApiTitle": "Grom API",
+  "gromApiDescription": "Создавайте персональные токены доступа для подключения внешних приложений и скриптов к вашим тренировкам и снаряжению.",
+  "patCreateToken": "Создать токен",
+  "patNoTokens": "Персональных токенов пока нет",
+  "patNameLabel": "Название токена",
+  "patScopesLabel": "Права доступа",
+  "patScopeWorkoutsRead": "Чтение тренировок",
+  "patScopeWorkoutsWrite": "Запись тренировок",
+  "patScopeEquipmentRead": "Чтение снаряжения",
+  "patScopeEquipmentWrite": "Запись снаряжения",
+  "patExpiryLabel": "Срок действия",
+  "patExpiry90Days": "90 дней",
+  "patExpiry180Days": "180 дней",
+  "patExpiryCustomDays": "Свой срок (дни)",
+  "patExpiryNone": "Без срока",
+  "patNoExpiryWarning": "Токены без срока действуют до отзыва. Используйте только если понимаете риски.",
+  "patSelectScope": "Выберите хотя бы одно право доступа",
+  "patTokenCreatedTitle": "Токен создан",
+  "patTokenCreatedWarning": "Скопируйте токен сейчас. Повторно он не будет показан.",
+  "patCopyToken": "Скопировать токен",
+  "patTokenCopied": "Токен скопирован",
+  "patClose": "Закрыть",
+  "patRevoke": "Отозвать",
+  "patRevokeConfirmTitle": "Отозвать токен?",
+  "patRevokeConfirmMessage": "Отозвать «{name}»? Приложения с этим токеном сразу потеряют доступ.",
+  "@patRevokeConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "patExpiresNever": "Без срока",
+  "patExpiresAt": "Истекает {date}",
+  "@patExpiresAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedAt": "Использовался {date}",
+  "@patLastUsedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedNever": "Не использовался",
+  "patCreatedAt": "Создан {date}",
+  "@patCreatedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patFailedToLoad": "Не удалось загрузить токены",
+  "patFailedToCreate": "Не удалось создать токен",
+  "patFailedToRevoke": "Не удалось отозвать токен"
 }

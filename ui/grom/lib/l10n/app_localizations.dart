@@ -2116,6 +2116,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Health Sync import failed: {message}'**
   String healthSyncSyncError(String message);
+
+  /// No description provided for @integrationTabGrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Grom'**
+  String get integrationTabGrom;
+
+  /// No description provided for @integrationTabExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'External services'**
+  String get integrationTabExternal;
+
+  /// No description provided for @gromApiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grom API'**
+  String get gromApiTitle;
+
+  /// No description provided for @gromApiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create personal access tokens to connect external apps and scripts to your workouts and equipment.'**
+  String get gromApiDescription;
+
+  /// No description provided for @patCreateToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Create token'**
+  String get patCreateToken;
+
+  /// No description provided for @patNoTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'No personal access tokens yet'**
+  String get patNoTokens;
+
+  /// No description provided for @patNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Token name'**
+  String get patNameLabel;
+
+  /// No description provided for @patScopesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scopes'**
+  String get patScopesLabel;
+
+  /// No description provided for @patScopeWorkoutsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read workouts'**
+  String get patScopeWorkoutsRead;
+
+  /// No description provided for @patScopeWorkoutsWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write workouts'**
+  String get patScopeWorkoutsWrite;
+
+  /// No description provided for @patScopeEquipmentRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read equipment'**
+  String get patScopeEquipmentRead;
+
+  /// No description provided for @patScopeEquipmentWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write equipment'**
+  String get patScopeEquipmentWrite;
+
+  /// No description provided for @patExpiryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiration'**
+  String get patExpiryLabel;
+
+  /// No description provided for @patExpiry90Days.
+  ///
+  /// In en, this message translates to:
+  /// **'90 days'**
+  String get patExpiry90Days;
+
+  /// No description provided for @patExpiry180Days.
+  ///
+  /// In en, this message translates to:
+  /// **'180 days'**
+  String get patExpiry180Days;
+
+  /// No description provided for @patExpiryCustomDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom (days)'**
+  String get patExpiryCustomDays;
+
+  /// No description provided for @patExpiryNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiration'**
+  String get patExpiryNone;
+
+  /// No description provided for @patNoExpiryWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens without expiration remain valid until you revoke them. Use only if you understand the risk.'**
+  String get patNoExpiryWarning;
+
+  /// No description provided for @patSelectScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one scope'**
+  String get patSelectScope;
+
+  /// No description provided for @patTokenCreatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Token created'**
+  String get patTokenCreatedTitle;
+
+  /// No description provided for @patTokenCreatedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy this token now. You will not be able to see it again.'**
+  String get patTokenCreatedWarning;
+
+  /// No description provided for @patCopyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy token'**
+  String get patCopyToken;
+
+  /// No description provided for @patTokenCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Token copied'**
+  String get patTokenCopied;
+
+  /// No description provided for @patClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get patClose;
+
+  /// No description provided for @patRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get patRevoke;
+
+  /// No description provided for @patRevokeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke token?'**
+  String get patRevokeConfirmTitle;
+
+  /// No description provided for @patRevokeConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke \"{name}\"? Apps using this token will lose access immediately.'**
+  String patRevokeConfirmMessage(String name);
+
+  /// No description provided for @patExpiresNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never expires'**
+  String get patExpiresNever;
+
+  /// No description provided for @patExpiresAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String patExpiresAt(String date);
+
+  /// No description provided for @patLastUsedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last used {date}'**
+  String patLastUsedAt(String date);
+
+  /// No description provided for @patLastUsedNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never used'**
+  String get patLastUsedNever;
+
+  /// No description provided for @patCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String patCreatedAt(String date);
+
+  /// No description provided for @patFailedToLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load tokens'**
+  String get patFailedToLoad;
+
+  /// No description provided for @patFailedToCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create token'**
+  String get patFailedToCreate;
+
+  /// No description provided for @patFailedToRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to revoke token'**
+  String get patFailedToRevoke;
 }
 
 class _AppLocalizationsDelegate

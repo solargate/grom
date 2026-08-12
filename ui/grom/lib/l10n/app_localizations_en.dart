@@ -1083,4 +1083,120 @@ class AppLocalizationsEn extends AppLocalizations {
   String healthSyncSyncError(String message) {
     return 'Health Sync import failed: $message';
   }
+
+  @override
+  String get integrationTabGrom => 'Grom';
+
+  @override
+  String get integrationTabExternal => 'External services';
+
+  @override
+  String get gromApiTitle => 'Grom API';
+
+  @override
+  String get gromApiDescription =>
+      'Create personal access tokens to connect external apps and scripts to your workouts and equipment.';
+
+  @override
+  String get patCreateToken => 'Create token';
+
+  @override
+  String get patNoTokens => 'No personal access tokens yet';
+
+  @override
+  String get patNameLabel => 'Token name';
+
+  @override
+  String get patScopesLabel => 'Scopes';
+
+  @override
+  String get patScopeWorkoutsRead => 'Read workouts';
+
+  @override
+  String get patScopeWorkoutsWrite => 'Write workouts';
+
+  @override
+  String get patScopeEquipmentRead => 'Read equipment';
+
+  @override
+  String get patScopeEquipmentWrite => 'Write equipment';
+
+  @override
+  String get patExpiryLabel => 'Expiration';
+
+  @override
+  String get patExpiry90Days => '90 days';
+
+  @override
+  String get patExpiry180Days => '180 days';
+
+  @override
+  String get patExpiryCustomDays => 'Custom (days)';
+
+  @override
+  String get patExpiryNone => 'No expiration';
+
+  @override
+  String get patNoExpiryWarning =>
+      'Tokens without expiration remain valid until you revoke them. Use only if you understand the risk.';
+
+  @override
+  String get patSelectScope => 'Select at least one scope';
+
+  @override
+  String get patTokenCreatedTitle => 'Token created';
+
+  @override
+  String get patTokenCreatedWarning =>
+      'Copy this token now. You will not be able to see it again.';
+
+  @override
+  String get patCopyToken => 'Copy token';
+
+  @override
+  String get patTokenCopied => 'Token copied';
+
+  @override
+  String get patClose => 'Close';
+
+  @override
+  String get patRevoke => 'Revoke';
+
+  @override
+  String get patRevokeConfirmTitle => 'Revoke token?';
+
+  @override
+  String patRevokeConfirmMessage(String name) {
+    return 'Revoke \"$name\"? Apps using this token will lose access immediately.';
+  }
+
+  @override
+  String get patExpiresNever => 'Never expires';
+
+  @override
+  String patExpiresAt(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String patLastUsedAt(String date) {
+    return 'Last used $date';
+  }
+
+  @override
+  String get patLastUsedNever => 'Never used';
+
+  @override
+  String patCreatedAt(String date) {
+    return 'Created $date';
+  }
+
+  @override
+  String get patFailedToLoad => 'Failed to load tokens';
+
+  @override
+  String get patFailedToCreate => 'Failed to create token';
+
+  @override
+  String get patFailedToRevoke => 'Failed to revoke token';
 }
