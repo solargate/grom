@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Tests: chart Y-axis helper, login/forgot/reset password and create-workout defaults (Flutter); migrate reset-token exclusion, file profile store, mailer SMTP validation, federation delivery and social search edge cases (Go)
+
 ### Changed
 
 - Heart rate and speed chart Y axes start at `max(0, series min − 5)` instead of 0, so the plotted range is easier to read

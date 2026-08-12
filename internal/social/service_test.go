@@ -282,3 +282,64 @@ func TestActivateFollowByActivityID(t *testing.T) {
 		t.Fatalf("status = %q, want active", updated.Status)
 	}
 }
+
+func TestSearchLocalRemoteWhenFederationDisabled(t *testing.T) {
+	withSocialConfig(t, false, "localhost")
+	svc, _, _ := newSocialService(t, t.TempDir())
+
+	_, err := svc.SearchLocal("bob@remote.example", "")
+	if !errors.Is(err, social.ErrRemoteNotReady) {
+		t.Fatalf("err = %v, want ErrRemoteNotReady", err)
+	}
+}
+
+func TestSearchLocalByNickname(t *testing.T) {
+	withSocialConfig(t, false, "localhost")
+	dir := t.TempDir()
+	svc, users, _ := newSocialService(t, dir)
+
+	alice, err := users.Create("alice", "Alice", "alice@example.com", "password12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := users.Create("bob", "Bob", "bob@example.com", "password12"); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := svc.SearchLocal("bob@localhost", alice.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Nickname != "bob" {
+		t.Fatalf("results = %#v", results)
+	}
+
+	self, err := svc.SearchLocal("alice@localhost", alice.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if self != nil {
+		t.Fatalf("expected nil when searching self, got %#v", self)
+	}
+}
+
+func TestSearchLocalPrefix(t *testing.T) {
+	withSocialConfig(t, false, "localhost")
+	dir := t.TempDir()
+	svc, users, _ := newSocialService(t, dir)
+
+	if _, err := users.Create("alice", "Alice", "alice@example.com", "password12"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := users.Create("bob", "Bob", "bob@example.com", "password12"); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := svc.SearchLocal("bo", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Nickname != "bob" {
+		t.Fatalf("results = %#v", results)
+	}
+}

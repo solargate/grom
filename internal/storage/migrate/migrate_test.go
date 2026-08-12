@@ -1,11 +1,13 @@
 package migrate_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/social"
@@ -682,5 +684,57 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	if got := roundTrip.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
 		t.Fatalf("round-trip equipment: %#v", roundTrip.LastEquipmentBySport)
+	}
+}
+
+func TestMigrateResetTokensNotCopied(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if err := fileBackend.ResetTokens().ReplaceForUser(user.ID, reset.TokenRecord{
+		TokenHash: "hash-before-migrate",
+		UserID:    user.ID,
+		ExpiresAt: now.Add(time.Hour),
+		CreatedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.ResetTokens().GetByHash("hash-before-migrate"); err != nil {
+		t.Fatalf("source token: %v", err)
+	}
+	_ = fileBackend.Close()
+
+	if _, err := migrate.Run(migrate.Options{
+		From:   config.StorageDriverFile,
+		To:     config.StorageDriverBBolt,
+		Config: cfg,
+		Verify: true,
+	}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer boltBackend.Close()
+
+	if _, err := boltBackend.ResetTokens().GetByHash("hash-before-migrate"); !errors.Is(err, reset.ErrInvalidToken) {
+		t.Fatalf("expected reset token absent on bbolt, got %v", err)
 	}
 }

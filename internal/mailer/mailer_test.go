@@ -42,3 +42,51 @@ func TestNew_UnknownDriver(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestNew_SMTPConstructsMailer(t *testing.T) {
+	for _, enc := range []string{"starttls", "tls", "none"} {
+		t.Run(enc, func(t *testing.T) {
+			cfg := config.MailerConfig{
+				Driver: "smtp",
+				From:   "noreply@example.com",
+			}
+			cfg.SMTP.Host = "smtp.example.com"
+			cfg.SMTP.Port = 587
+			cfg.SMTP.Encryption = enc
+			m, err := mailer.New(cfg)
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+			if m == nil {
+				t.Fatal("nil mailer")
+			}
+		})
+	}
+}
+
+func TestSMTP_SendValidatesBeforeDial(t *testing.T) {
+	cfg := config.MailerConfig{
+		Driver: "smtp",
+		From:   "noreply@example.com",
+	}
+	cfg.SMTP.Host = "127.0.0.1"
+	cfg.SMTP.Port = 1
+	cfg.SMTP.Encryption = "none"
+	m, err := mailer.New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = m.Send(context.Background(), mailer.Message{})
+	if !errors.Is(err, mailer.ErrEmptyMessage) {
+		t.Fatalf("empty message: %v", err)
+	}
+
+	err = m.Send(context.Background(), mailer.Message{
+		To:      []string{"user@example.com"},
+		Subject: "Reset",
+	})
+	if !errors.Is(err, mailer.ErrEmptyMessage) {
+		t.Fatalf("missing body: %v", err)
+	}
+}

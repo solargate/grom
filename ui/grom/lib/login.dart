@@ -15,10 +15,12 @@ class LoginForm extends StatefulWidget {
     super.key,
     this.onLoggedIn,
     this.popOnSuccess = false,
+    this.api,
   });
 
   final void Function(UserInfo user)? onLoggedIn;
   final bool popOnSuccess;
+  final ApiRequest? api;
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -26,7 +28,7 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiRequest();
+  late final ApiRequest _api;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -41,6 +43,7 @@ class _LoginFormState extends State<LoginForm> {
   @override
   void initState() {
     super.initState();
+    _api = widget.api ?? ApiRequest();
     if (isMobileClient) {
       _loadSavedServerUrl();
     } else {

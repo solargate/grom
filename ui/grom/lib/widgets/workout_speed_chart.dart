@@ -7,6 +7,7 @@ import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/workout_speed.dart';
 import 'package:grom/models/workout_stats.dart';
 
+import 'chart_axis.dart';
 import 'workout_map_preview.dart';
 
 const Color kWorkoutSpeedChartColor = Color(0xFF2682B9);
@@ -49,11 +50,12 @@ class WorkoutSpeedChart extends StatelessWidget {
     if (maxX <= minX) {
       maxX = minX + 0.1;
     }
-    final yBottom = math.max(0.0, minSeriesY - 5);
-    var yTop = maxY <= 0 ? 1.0 : maxY * 1.1;
-    if (yTop <= yBottom) {
-      yTop = yBottom + 1;
-    }
+    final yAxis = computeChartYAxisBounds(
+      minSeriesY: minSeriesY,
+      maxSeriesY: maxY,
+    );
+    final yBottom = yAxis.bottom;
+    final yTop = yAxis.top;
     final yInterval = (yTop - yBottom) / 4;
 
     return LayoutBuilder(

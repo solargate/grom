@@ -181,3 +181,48 @@ func TestDeliverWorkoutUpdate(t *testing.T) {
 		t.Fatalf("unexpected media item: %#v", mediaItems[0])
 	}
 }
+
+func TestPostActivityNon2xxReturnsError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	delivery := &Delivery{client: server.Client()}
+	err := delivery.DeliverWorkoutDelete("bob", "38472901", []string{server.URL})
+	if err == nil {
+		t.Fatal("expected delivery error for non-2xx inbox response")
+	}
+}
+
+func TestDeliverWorkoutStopsOnFirstInboxFailure(t *testing.T) {
+	var successCalls int
+	okServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		successCalls++
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer okServer.Close()
+
+	failServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer failServer.Close()
+
+	workout := &workouts.Workout{
+		ID:              "38472901",
+		Name:            "Run",
+		SportType:       "Run",
+		StartDate:       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+		DurationSeconds: 3600,
+		Distance:        10000,
+	}
+
+	delivery := &Delivery{client: okServer.Client()}
+	err := delivery.DeliverWorkout("alice", workout, []string{failServer.URL, okServer.URL}, nil, nil)
+	if err == nil {
+		t.Fatal("expected error when first inbox rejects activity")
+	}
+	if successCalls != 0 {
+		t.Fatalf("second inbox should not be called after first failure, successCalls=%d", successCalls)
+	}
+}

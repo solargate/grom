@@ -4,9 +4,10 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'api_request.dart';
 
 class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key, required this.token});
+  const ResetPasswordPage({super.key, required this.token, this.api});
 
   final String token;
+  final ApiRequest? api;
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -14,12 +15,18 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiRequest();
+  late final ApiRequest _api;
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _isSubmitting = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _api = widget.api ?? ApiRequest();
+  }
 
   @override
   void dispose() {

@@ -25,7 +25,9 @@ class ForgotPasswordPage extends StatelessWidget {
 }
 
 class ForgotPasswordForm extends StatefulWidget {
-  const ForgotPasswordForm({super.key});
+  const ForgotPasswordForm({super.key, this.api});
+
+  final ApiRequest? api;
 
   @override
   State<ForgotPasswordForm> createState() => _ForgotPasswordFormState();
@@ -33,7 +35,7 @@ class ForgotPasswordForm extends StatefulWidget {
 
 class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiRequest();
+  late final ApiRequest _api;
   final _emailController = TextEditingController();
   final _serverUrlController = TextEditingController();
   bool _isSubmitting = false;
@@ -43,6 +45,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   @override
   void initState() {
     super.initState();
+    _api = widget.api ?? ApiRequest();
     if (isMobileClient) {
       _loadSavedServerUrl();
     } else {

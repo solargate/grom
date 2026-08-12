@@ -15,6 +15,7 @@ import '../models/equipment.dart';
 import '../models/workout.dart';
 import '../services/track_recording_service.dart';
 import '../platform/shared_track_intent.dart';
+import 'create_workout_defaults.dart';
 import 'create_workout_name_sync.dart';
 import 'manual_workout_form.dart';
 import 'record_workout_tab.dart';
@@ -55,10 +56,16 @@ Future<Workout?> showAddWorkoutSheet(
 }
 
 class AddWorkoutSheet extends StatefulWidget {
-  const AddWorkoutSheet({super.key, this.initialTrack, this.workout});
+  const AddWorkoutSheet({
+    super.key,
+    this.initialTrack,
+    this.workout,
+    this.api,
+  });
 
   final SharedTrackPayload? initialTrack;
   final Workout? workout;
+  final ApiRequest? api;
 
   @override
   State<AddWorkoutSheet> createState() => _AddWorkoutSheetState();
@@ -67,7 +74,7 @@ class AddWorkoutSheet extends StatefulWidget {
 class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _api = ApiRequest();
+  late final ApiRequest _api;
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _recorder = TrackRecordingService.instance;
@@ -115,6 +122,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   @override
   void initState() {
     super.initState();
+    _api = widget.api ?? ApiRequest();
     final existing = widget.workout;
     if (existing != null) {
       _nameSync.synced = false;
@@ -273,14 +281,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   }
 
   void _applyLastEquipmentForSport(String sportTypeId) {
-    final lastIds = _lastEquipmentBySport[sportTypeId];
-    if (lastIds == null || lastIds.isEmpty) {
-      _selectedEquipmentIds = [];
-      return;
-    }
-    final existingIds = _userEquipment.map((item) => item.id).toSet();
-    _selectedEquipmentIds =
-        lastIds.where((id) => existingIds.contains(id)).toList();
+    _selectedEquipmentIds = resolveEquipmentIdsForSport(
+      sportTypeId: sportTypeId,
+      lastEquipmentBySport: _lastEquipmentBySport,
+      existingEquipmentIds: _userEquipment.map((item) => item.id),
+    );
   }
 
   @override
