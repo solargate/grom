@@ -9,8 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/config"
 )
+
+type mockPATAuthenticator struct {
+	record *pat.TokenRecord
+	err    error
+}
+
+func (m *mockPATAuthenticator) Authenticate(string) (*pat.TokenRecord, error) {
+	return m.record, m.err
+}
 
 func withTestAuthConfig(t *testing.T) {
 	t.Helper()
@@ -162,5 +172,75 @@ func TestAuthRequiredMiddleware(t *testing.T) {
 				t.Fatalf("body = %q, want %q", w.Body.String(), tc.wantID)
 			}
 		})
+	}
+}
+
+func TestAuthRequiredRejectsPAT(t *testing.T) {
+	withTestAuthConfig(t)
+	gin.SetMode(gin.TestMode)
+
+	r := gin.New()
+	r.GET("/x", auth.AuthRequired(), func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Authorization", "Bearer grom_pat_testsecretvalue")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d body=%s", w.Code, http.StatusUnauthorized, w.Body.String())
+	}
+}
+
+func TestAuthAPIWithPATInsufficientScope(t *testing.T) {
+	withTestAuthConfig(t)
+	gin.SetMode(gin.TestMode)
+
+	authenticator := &mockPATAuthenticator{
+		record: &pat.TokenRecord{
+			UserID: "user-1",
+			Scopes: []string{pat.ScopeWorkoutsRead},
+		},
+	}
+
+	r := gin.New()
+	r.GET("/x", auth.AuthAPI(authenticator, pat.ScopeWorkoutsWrite), func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Authorization", "Bearer grom_pat_testsecretvalue")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d body=%s", w.Code, http.StatusForbidden, w.Body.String())
+	}
+}
+
+func TestAuthAPIWithPATValidScope(t *testing.T) {
+	withTestAuthConfig(t)
+	gin.SetMode(gin.TestMode)
+
+	authenticator := &mockPATAuthenticator{
+		record: &pat.TokenRecord{
+			UserID: "user-42",
+			ID:     "pat-1",
+			Scopes: []string{pat.ScopeWorkoutsRead},
+		},
+	}
+
+	r := gin.New()
+	r.GET("/x", auth.AuthAPI(authenticator, pat.ScopeWorkoutsRead), func(c *gin.Context) {
+		id, _ := c.Get(auth.ContextUserIDKey)
+		c.String(http.StatusOK, "%v", id)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Authorization", "Bearer grom_pat_testsecretvalue")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d body=%s", w.Code, http.StatusOK, w.Body.String())
+	}
+	if w.Body.String() != "user-42" {
+		t.Fatalf("body = %q, want user-42", w.Body.String())
 	}
 }
