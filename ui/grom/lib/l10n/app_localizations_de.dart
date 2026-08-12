@@ -1104,4 +1104,120 @@ class AppLocalizationsDe extends AppLocalizations {
   String healthSyncSyncError(String message) {
     return 'Health Sync Import fehlgeschlagen: $message';
   }
+
+  @override
+  String get integrationTabGrom => 'Grom';
+
+  @override
+  String get integrationTabExternal => 'Externe Dienste';
+
+  @override
+  String get gromApiTitle => 'Grom API';
+
+  @override
+  String get gromApiDescription =>
+      'Erstellen Sie persönliche Zugriffstoken, um externe Apps und Skripte mit Ihren Trainingseinheiten und Ausrüstung zu verbinden.';
+
+  @override
+  String get patCreateToken => 'Token erstellen';
+
+  @override
+  String get patNoTokens => 'Noch keine persönlichen Zugriffstoken';
+
+  @override
+  String get patNameLabel => 'Tokenname';
+
+  @override
+  String get patScopesLabel => 'Berechtigungen';
+
+  @override
+  String get patScopeWorkoutsRead => 'Trainingseinheiten lesen';
+
+  @override
+  String get patScopeWorkoutsWrite => 'Trainingseinheiten schreiben';
+
+  @override
+  String get patScopeEquipmentRead => 'Ausrüstung lesen';
+
+  @override
+  String get patScopeEquipmentWrite => 'Ausrüstung schreiben';
+
+  @override
+  String get patExpiryLabel => 'Ablauf';
+
+  @override
+  String get patExpiry90Days => '90 Tage';
+
+  @override
+  String get patExpiry180Days => '180 Tage';
+
+  @override
+  String get patExpiryCustomDays => 'Benutzerdefiniert (Tage)';
+
+  @override
+  String get patExpiryNone => 'Kein Ablauf';
+
+  @override
+  String get patNoExpiryWarning =>
+      'Token ohne Ablauf bleiben gültig, bis Sie sie widerrufen. Nur verwenden, wenn Sie das Risiko verstehen.';
+
+  @override
+  String get patSelectScope => 'Wählen Sie mindestens eine Berechtigung';
+
+  @override
+  String get patTokenCreatedTitle => 'Token erstellt';
+
+  @override
+  String get patTokenCreatedWarning =>
+      'Kopieren Sie dieses Token jetzt. Es wird nicht erneut angezeigt.';
+
+  @override
+  String get patCopyToken => 'Token kopieren';
+
+  @override
+  String get patTokenCopied => 'Token kopiert';
+
+  @override
+  String get patClose => 'Schließen';
+
+  @override
+  String get patRevoke => 'Widerrufen';
+
+  @override
+  String get patRevokeConfirmTitle => 'Token widerrufen?';
+
+  @override
+  String patRevokeConfirmMessage(String name) {
+    return '„$name“ widerrufen? Apps mit diesem Token verlieren sofort den Zugriff.';
+  }
+
+  @override
+  String get patExpiresNever => 'Läuft nicht ab';
+
+  @override
+  String patExpiresAt(String date) {
+    return 'Läuft ab am $date';
+  }
+
+  @override
+  String patLastUsedAt(String date) {
+    return 'Zuletzt verwendet $date';
+  }
+
+  @override
+  String get patLastUsedNever => 'Nie verwendet';
+
+  @override
+  String patCreatedAt(String date) {
+    return 'Erstellt $date';
+  }
+
+  @override
+  String get patFailedToLoad => 'Token konnten nicht geladen werden';
+
+  @override
+  String get patFailedToCreate => 'Token konnte nicht erstellt werden';
+
+  @override
+  String get patFailedToRevoke => 'Token konnte nicht widerrufen werden';
 }

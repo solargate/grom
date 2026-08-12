@@ -5,6 +5,7 @@ import (
 
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage/blob"
@@ -22,6 +23,7 @@ type Backend interface {
 	Federation() federation.Storage
 	Blobs() blob.Store
 	ResetTokens() reset.TokenStore
+	PAT() pat.Repository
 
 	Close() error
 	Ping(ctx context.Context) error

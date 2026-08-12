@@ -160,6 +160,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 10. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
 11. **Password reset:** optional; enabled when `mailer.driver` is `log`/`smtp` and `auth.reset.public_base_url` is set. API `POST /auth/password/forgot` and `/auth/password/reset`; tokens in `reset_tokens.yaml` / bbolt `reset_tokens` (not migrated). UI: Forgot password on login + web `/reset-password` (mobile opens email link in browser). `password_reset_enabled` on `/server-info`.
 12. **Auth captcha (ALTCHA):** optional PoW via `auth.captcha.enabled` (default off). Protects register, login, and password forgot (not token reset). `GET /api/v1/captcha/challenge`; client sends `altcha` payload; `captcha_enabled` on `/server-info`. Implementation in `internal/auth/captcha/`.
+13. **Personal access tokens (PAT):** scoped long-lived API tokens (`grom_pat_…`) for workouts/equipment; `GET/POST /api/v1/auth/pat`, `DELETE /api/v1/auth/pat/{id}` (JWT only); `AuthAPI` middleware on workout/equipment routes; storage in `personal_access_tokens.yaml` / bbolt `personal_access_tokens` (not migrated). Scopes: `workouts:read`, `workouts:write`, `equipment:read`, `equipment:write`. Default TTL 90 days, max 10 per user. UI: Integration → Grom tab. Docs: `docs/user/grom-api-tokens.md`.
 
 ## Agent do / don't
 
@@ -195,6 +196,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 | Config / TLS listen | `internal/config/`, `internal/server/`; human docs in `docs/admin/configuration.md` |
 | Password reset / mailer | `internal/auth/reset/`, `internal/mailer/`, `api/v1/auth_password.go`; docs in `docs/admin/configuration.md` |
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
+| Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
 | Human docs | `docs/README.md` (index), `docs/user/`, `docs/admin/`; keep `README.md` short |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |

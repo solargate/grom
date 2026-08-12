@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/federation"
@@ -26,6 +27,7 @@ type Backend struct {
 	fed         federation.Storage
 	blobs       blob.Store
 	resetTokens reset.TokenStore
+	patStore    *PATStore
 }
 
 func Open(location string) (*Backend, error) {
@@ -69,6 +71,7 @@ func Open(location string) (*Backend, error) {
 		fed:         federation.NewStorage(followersStore, inboxStore),
 		blobs:       blobStore,
 		resetTokens: NewResetTokenStore(location),
+		patStore:    NewPATStore(location),
 	}, nil
 }
 
@@ -82,6 +85,7 @@ func (b *Backend) Social() social.Repository             { return b.social }
 func (b *Backend) Federation() federation.Storage        { return b.fed }
 func (b *Backend) Blobs() blob.Store                     { return b.blobs }
 func (b *Backend) ResetTokens() reset.TokenStore         { return b.resetTokens }
+func (b *Backend) PAT() pat.Repository                   { return b.patStore }
 
 func (b *Backend) Close() error { return nil }
 

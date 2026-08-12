@@ -29,7 +29,7 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @description Type "Bearer" followed by a space and a JWT session token or personal access token (`grom_pat_...`).
 func RunRouter() {
 	app, err := NewApp()
 	if err != nil {

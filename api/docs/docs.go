@@ -330,6 +330,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/pat": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns metadata for the authenticated user's personal access tokens (secrets are never returned)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pat"
+                ],
+                "summary": "List personal access tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.PATResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a scoped personal access token. The full token value is returned only in this response.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pat"
+                ],
+                "summary": "Create personal access token",
+                "parameters": [
+                    {
+                        "description": "Token options",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.CreatePATRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.CreatePATResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid name, scopes, or expiry",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Token limit reached",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/pat/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permanently revokes a personal access token by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pat"
+                ],
+                "summary": "Revoke personal access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Token not found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Create a new user account",
@@ -2342,6 +2492,49 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.CreatePATRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "scopes"
+            ],
+            "properties": {
+                "expires_in_days": {
+                    "type": "integer",
+                    "example": 90
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Backup script"
+                },
+                "no_expiration": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "workouts:read",
+                        "equipment:read"
+                    ]
+                }
+            }
+        },
+        "v1.CreatePATResponse": {
+            "type": "object",
+            "properties": {
+                "pat": {
+                    "$ref": "#/definitions/v1.PATResponse"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "grom_pat_abc123secret"
+                }
+            }
+        },
         "v1.CreateWorkoutCommentRequest": {
             "type": "object",
             "required": [
@@ -2586,6 +2779,45 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/v1.UserResponse"
+                }
+            }
+        },
+        "v1.PATResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-08-12T10:00:00Z"
+                },
+                "expires_at": {
+                    "type": "string",
+                    "example": "2026-11-10T10:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "last_used_at": {
+                    "type": "string",
+                    "example": "2026-08-12T15:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Backup script"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "workouts:read",
+                        "equipment:read"
+                    ]
+                },
+                "token_prefix": {
+                    "type": "string",
+                    "example": "grom_pat_a1"
                 }
             }
         },
@@ -3372,7 +3604,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "description": "Type \"Bearer\" followed by a space and a JWT session token or personal access token (` + "`" + `grom_pat_...` + "`" + `).",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

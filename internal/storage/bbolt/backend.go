@@ -8,6 +8,7 @@ import (
 
 	bolt "go.etcd.io/bbolt"
 
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/federation"
@@ -31,6 +32,7 @@ type Backend struct {
 	fed         federation.Storage
 	blobs       blob.Store
 	resetTokens reset.TokenStore
+	patStore    *PATStore
 }
 
 // Open opens a bbolt metadata database and filesystem blob store under location.
@@ -85,6 +87,7 @@ func Open(dbPath, location string) (*Backend, error) {
 		fed:         federation.NewStorage(followersStore, inboxStore),
 		blobs:       blobStore,
 		resetTokens: NewResetTokenStore(db),
+		patStore:    NewPATStore(db),
 	}, nil
 }
 
@@ -115,6 +118,7 @@ func (b *Backend) Social() social.Repository             { return b.social }
 func (b *Backend) Federation() federation.Storage        { return b.fed }
 func (b *Backend) Blobs() blob.Store                     { return b.blobs }
 func (b *Backend) ResetTokens() reset.TokenStore         { return b.resetTokens }
+func (b *Backend) PAT() pat.Repository                   { return b.patStore }
 func (b *Backend) DB() *bolt.DB                          { return b.db }
 func (b *Backend) Location() string                      { return b.location }
 

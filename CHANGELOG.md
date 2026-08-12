@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Personal access tokens (PAT): scoped API access for workouts and equipment via `grom_pat_…` tokens; `GET/POST /api/v1/auth/pat`, `DELETE /api/v1/auth/pat/{id}`; storage in `personal_access_tokens.yaml` / bbolt `personal_access_tokens`; Integration screen tab **Grom** for token management (tab **External services** for Strava and Health Sync)
 - Tests: chart Y-axis helper, login/forgot/reset password and create-workout defaults (Flutter); migrate reset-token exclusion, file profile store, mailer SMTP validation, federation delivery and social search edge cases (Go)
 
 ### Changed

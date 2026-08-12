@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
 	"github.com/solargate/grom/internal/auth/captcha"
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
@@ -37,6 +38,7 @@ type App struct {
 	Mailer            mailer.Mailer
 	PasswordReset     *reset.Service
 	Captcha           *captcha.Service
+	PAT               *pat.Service
 	Location          string
 	TempDir           string
 
@@ -101,6 +103,7 @@ func NewApp() (*App, error) {
 		Mailer:            mail,
 		PasswordReset:     passwordReset,
 		Captcha:           captchaSvc,
+		PAT:               pat.NewService(backend.PAT()),
 		Location:          config.Cfg.Storage.ResolvedLocation,
 		TempDir:           config.Cfg.Storage.ResolvedTempDir,
 	}
@@ -204,6 +207,9 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		authGroup.PATCH("/me", auth.AuthRequired(), a.updateMe)
 		authGroup.PUT("/me/avatar", auth.AuthRequired(), a.uploadMyAvatar)
 		authGroup.DELETE("/me/avatar", auth.AuthRequired(), a.deleteMyAvatar)
+		authGroup.GET("/pat", auth.AuthRequired(), a.listPAT)
+		authGroup.POST("/pat", auth.AuthRequired(), a.createPAT)
+		authGroup.DELETE("/pat/:id", auth.AuthRequired(), a.revokePAT)
 
 		apiV1.GET("/profile", auth.AuthRequired(), a.getProfile)
 
@@ -217,34 +223,40 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		socialGroup.GET("/following", a.listFollowing)
 		socialGroup.GET("/followers", a.listFollowers)
 
-		workoutGroup := apiV1.Group("/workouts", auth.AuthRequired())
-		workoutGroup.POST("", a.createWorkout)
-		workoutGroup.POST("/parse-track", a.parseTrack)
-		workoutGroup.GET("/external", a.checkWorkoutExternalID)
-		workoutGroup.GET("/:id/track", a.getWorkoutTrack)
-		workoutGroup.GET("/:id/speed", a.getWorkoutSpeed)
-		workoutGroup.GET("/:id/heartrate", a.getWorkoutHeartRate)
-		workoutGroup.GET("/:id/map-preview", a.getWorkoutMapPreview)
-		workoutGroup.GET("/:id/media/:filename/preview", a.getWorkoutMediaPreview)
-		workoutGroup.GET("/:id/media/:filename", a.getWorkoutMediaOriginal)
-		workoutGroup.GET("/:id/likes", a.getWorkoutLikes)
-		workoutGroup.POST("/:id/likes", a.likeWorkout)
-		workoutGroup.DELETE("/:id/likes", a.unlikeWorkout)
-		workoutGroup.GET("/:id/comments", a.getWorkoutComments)
-		workoutGroup.POST("/:id/comments", a.createWorkoutComment)
-		workoutGroup.DELETE("/:id/comments/:commentId", a.deleteWorkoutComment)
-		workoutGroup.POST("/:id/media", a.addWorkoutMedia)
-		workoutGroup.DELETE("/:id/media/:filename", a.deleteWorkoutMedia)
-		workoutGroup.GET("/:id", a.getWorkout)
-		workoutGroup.PUT("/:id", a.updateWorkout)
-		workoutGroup.DELETE("/:id", a.deleteWorkout)
-		workoutGroup.GET("", a.listWorkouts)
+		workoutRead := auth.AuthAPI(a.PAT, pat.ScopeWorkoutsRead)
+		workoutWrite := auth.AuthAPI(a.PAT, pat.ScopeWorkoutsWrite)
 
-		equipmentGroup := apiV1.Group("/equipment", auth.AuthRequired())
-		equipmentGroup.GET("", a.listEquipment)
-		equipmentGroup.POST("", a.createEquipment)
-		equipmentGroup.PUT("/:id", a.updateEquipment)
-		equipmentGroup.DELETE("/:id", a.deleteEquipment)
+		workoutGroup := apiV1.Group("/workouts")
+		workoutGroup.POST("", workoutWrite, a.createWorkout)
+		workoutGroup.POST("/parse-track", workoutWrite, a.parseTrack)
+		workoutGroup.GET("/external", workoutRead, a.checkWorkoutExternalID)
+		workoutGroup.GET("/:id/track", workoutRead, a.getWorkoutTrack)
+		workoutGroup.GET("/:id/speed", workoutRead, a.getWorkoutSpeed)
+		workoutGroup.GET("/:id/heartrate", workoutRead, a.getWorkoutHeartRate)
+		workoutGroup.GET("/:id/map-preview", workoutRead, a.getWorkoutMapPreview)
+		workoutGroup.GET("/:id/media/:filename/preview", workoutRead, a.getWorkoutMediaPreview)
+		workoutGroup.GET("/:id/media/:filename", workoutRead, a.getWorkoutMediaOriginal)
+		workoutGroup.GET("/:id/likes", auth.AuthRequired(), a.getWorkoutLikes)
+		workoutGroup.POST("/:id/likes", auth.AuthRequired(), a.likeWorkout)
+		workoutGroup.DELETE("/:id/likes", auth.AuthRequired(), a.unlikeWorkout)
+		workoutGroup.GET("/:id/comments", auth.AuthRequired(), a.getWorkoutComments)
+		workoutGroup.POST("/:id/comments", auth.AuthRequired(), a.createWorkoutComment)
+		workoutGroup.DELETE("/:id/comments/:commentId", auth.AuthRequired(), a.deleteWorkoutComment)
+		workoutGroup.POST("/:id/media", workoutWrite, a.addWorkoutMedia)
+		workoutGroup.DELETE("/:id/media/:filename", workoutWrite, a.deleteWorkoutMedia)
+		workoutGroup.GET("/:id", workoutRead, a.getWorkout)
+		workoutGroup.PUT("/:id", workoutWrite, a.updateWorkout)
+		workoutGroup.DELETE("/:id", workoutWrite, a.deleteWorkout)
+		workoutGroup.GET("", workoutRead, a.listWorkouts)
+
+		equipmentRead := auth.AuthAPI(a.PAT, pat.ScopeEquipmentRead)
+		equipmentWrite := auth.AuthAPI(a.PAT, pat.ScopeEquipmentWrite)
+
+		equipmentGroup := apiV1.Group("/equipment")
+		equipmentGroup.GET("", equipmentRead, a.listEquipment)
+		equipmentGroup.POST("", equipmentWrite, a.createEquipment)
+		equipmentGroup.PUT("/:id", equipmentWrite, a.updateEquipment)
+		equipmentGroup.DELETE("/:id", equipmentWrite, a.deleteEquipment)
 
 		integrationsGroup := apiV1.Group("/integrations", auth.AuthRequired())
 		integrationsGroup.POST("/strava/import", a.importStravaArchive)

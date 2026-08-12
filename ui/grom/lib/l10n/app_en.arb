@@ -485,5 +485,60 @@
     "placeholders": {
       "message": { "type": "String" }
     }
-  }
+  },
+  "integrationTabGrom": "Grom",
+  "integrationTabExternal": "External services",
+  "gromApiTitle": "Grom API",
+  "gromApiDescription": "Create personal access tokens to connect external apps and scripts to your workouts and equipment.",
+  "patCreateToken": "Create token",
+  "patNoTokens": "No personal access tokens yet",
+  "patNameLabel": "Token name",
+  "patScopesLabel": "Scopes",
+  "patScopeWorkoutsRead": "Read workouts",
+  "patScopeWorkoutsWrite": "Write workouts",
+  "patScopeEquipmentRead": "Read equipment",
+  "patScopeEquipmentWrite": "Write equipment",
+  "patExpiryLabel": "Expiration",
+  "patExpiry90Days": "90 days",
+  "patExpiry180Days": "180 days",
+  "patExpiryCustomDays": "Custom (days)",
+  "patExpiryNone": "No expiration",
+  "patNoExpiryWarning": "Tokens without expiration remain valid until you revoke them. Use only if you understand the risk.",
+  "patSelectScope": "Select at least one scope",
+  "patTokenCreatedTitle": "Token created",
+  "patTokenCreatedWarning": "Copy this token now. You will not be able to see it again.",
+  "patCopyToken": "Copy token",
+  "patTokenCopied": "Token copied",
+  "patClose": "Close",
+  "patRevoke": "Revoke",
+  "patRevokeConfirmTitle": "Revoke token?",
+  "patRevokeConfirmMessage": "Revoke \"{name}\"? Apps using this token will lose access immediately.",
+  "@patRevokeConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "patExpiresNever": "Never expires",
+  "patExpiresAt": "Expires {date}",
+  "@patExpiresAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedAt": "Last used {date}",
+  "@patLastUsedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patLastUsedNever": "Never used",
+  "patCreatedAt": "Created {date}",
+  "@patCreatedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "patFailedToLoad": "Failed to load tokens",
+  "patFailedToCreate": "Failed to create token",
+  "patFailedToRevoke": "Failed to revoke token"
 }
