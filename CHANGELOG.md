@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-13
+
 ### Added
 
 - Personal access tokens (PAT): scoped API access for workouts and equipment via `grom_pat_…` tokens; `GET/POST /api/v1/auth/pat`, `DELETE /api/v1/auth/pat/{id}`; storage in `personal_access_tokens.yaml` / bbolt `personal_access_tokens`; Integration screen tab **Grom** for token management (tab **External services** for Strava and Health Sync)
@@ -207,7 +209,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.7.3...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/solargate/grom/releases/tag/0.8.0
 [0.7.3]: https://github.com/solargate/grom/releases/tag/0.7.3
 [0.7.2]: https://github.com/solargate/grom/releases/tag/0.7.2
 [0.7.1]: https://github.com/solargate/grom/releases/tag/0.7.1
