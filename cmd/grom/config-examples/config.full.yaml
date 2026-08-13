@@ -109,6 +109,7 @@ storage:
 
 logging:
   # Optional. Minimum log level: debug | info | warn | error. Default: info.
+  # When level is debug, Gin also runs in debug mode ([GIN-debug] route dumps); otherwise Gin release mode.
   level: info
   # Optional. Log format: json (machine-readable, recommended for production) or text (human-readable, useful in development). Default: json.
   format: json

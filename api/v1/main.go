@@ -42,6 +42,8 @@ func RunRouter() {
 		defaultLevel = slog.LevelDebug
 	}
 
+	gin.SetMode(ginModeForLoggingLevel(config.Cfg.Logging.Level))
+
 	router := gin.New()
 	router.Use(sloggin.NewWithConfig(slog.Default(), sloggin.Config{
 		DefaultLevel:     defaultLevel,
@@ -80,11 +82,20 @@ func RunRouter() {
 		"tls_mode", config.Cfg.Server.TLS.Mode,
 		"http_port", config.Cfg.Server.Port,
 		"https_port", config.Cfg.Server.TLS.Port,
+		"gin_mode", gin.Mode(),
 	)
 	if err := server.Run(router); err != nil {
 		slog.Error("HTTP server stopped", "err", err)
 		panic(err)
 	}
+}
+
+// ginModeForLoggingLevel maps logging.level to Gin mode: debug only when level is debug.
+func ginModeForLoggingLevel(level string) string {
+	if level == "debug" {
+		return gin.DebugMode
+	}
+	return gin.ReleaseMode
 }
 
 // RegisterAPIDocs mounts Swagger UI under /api/docs with a slash redirect.

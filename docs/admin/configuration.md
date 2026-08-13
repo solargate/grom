@@ -17,7 +17,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
 | `auth.reset` / `mailer` | Password reset email (`public_base_url`, SMTP or log driver) |
 | `auth.captcha` | Optional ALTCHA PoW on register/login/forgot (`enabled`, optional `hmac_secret` / `cost` / `expires_seconds`) |
-| `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json` |
+| `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json`. Gin framework debug output (`[GIN-debug]`) is enabled only when `logging.level` is `debug`; otherwise Gin runs in release mode |
 
 Relative paths in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir`, and `federation.ca_cert_file` are resolved against the directory of the `grom` binary (absolute paths are used as-is).
 

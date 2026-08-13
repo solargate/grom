@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Heart rate and speed chart Y axes start at `max(0, series min − 5)` instead of 0, so the plotted range is easier to read
+- Gin debug mode (`[GIN-debug]`) only when `logging.level` is `debug`; otherwise release mode
 
 ### Fixed
 
