@@ -52,6 +52,15 @@ jobs:
     needs: validate
     uses: ./.github/workflows/checks.yml
 
+  pages:
+    name: Pages
+    needs: validate
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+
   build-server:
     name: Build server
     needs: [validate, test]
@@ -394,7 +403,7 @@ jobs:
 
   release:
     name: Create draft release
-    needs: [validate, build-server, build-apk, upload-play]
+    needs: [validate, build-server, build-apk, upload-play, pages]
     runs-on: ubuntu-latest
     permissions:
       contents: write
