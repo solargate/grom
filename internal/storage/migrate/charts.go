@@ -23,76 +23,150 @@ func chartStores(backend storage.Backend) (workouts.SpeedChartStore, workouts.He
 	}
 }
 
-func copyLocalCharts(src, dst storage.Backend, nickname string, w *workouts.Workout) error {
+func copyLocalCharts(src, dst storage.Backend, nickname string, w *workouts.Workout) (speedCopied, hrCopied int, err error) {
 	if w == nil || w.Track == "" {
-		return nil
+		return 0, 0, nil
 	}
 	srcSpeed, srcHR, err := chartStores(src)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	dstSpeed, dstHR, err := chartStores(dst)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	ctx := context.Background()
 	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
 
 	speedSamples, err := srcSpeed.ReadLocal(ctx, nickname, dirName)
 	if err != nil {
-		return fmt.Errorf("read local speed chart: %w", err)
+		return 0, 0, fmt.Errorf("read local speed chart: %w", err)
 	}
 	if len(speedSamples) > 0 {
 		if err := dstSpeed.WriteLocal(ctx, nickname, dirName, speedSamples); err != nil {
-			return fmt.Errorf("write local speed chart: %w", err)
+			return 0, 0, fmt.Errorf("write local speed chart: %w", err)
 		}
+		speedCopied = 1
 	}
 
 	hrSamples, err := srcHR.ReadLocal(ctx, nickname, dirName)
 	if err != nil {
-		return fmt.Errorf("read local heart rate chart: %w", err)
+		return 0, 0, fmt.Errorf("read local heart rate chart: %w", err)
 	}
 	if len(hrSamples) > 0 {
 		if err := dstHR.WriteLocal(ctx, nickname, dirName, hrSamples); err != nil {
-			return fmt.Errorf("write local heart rate chart: %w", err)
+			return 0, 0, fmt.Errorf("write local heart rate chart: %w", err)
 		}
+		hrCopied = 1
 	}
-	return nil
+	return speedCopied, hrCopied, nil
 }
 
-func copyFederatedCharts(src, dst storage.Backend, viewer, ownerKey string, w *workouts.Workout) error {
+func copyFederatedCharts(src, dst storage.Backend, viewer, ownerKey string, w *workouts.Workout) (speedCopied, hrCopied int, err error) {
 	if w == nil || w.Track == "" {
-		return nil
+		return 0, 0, nil
 	}
 	srcSpeed, srcHR, err := chartStores(src)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	dstSpeed, dstHR, err := chartStores(dst)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	ctx := context.Background()
 
 	speedSamples, err := srcSpeed.ReadFederated(ctx, viewer, ownerKey, w.ID)
 	if err != nil {
-		return fmt.Errorf("read federated speed chart: %w", err)
+		return 0, 0, fmt.Errorf("read federated speed chart: %w", err)
 	}
 	if len(speedSamples) > 0 {
 		if err := dstSpeed.WriteFederated(ctx, viewer, ownerKey, w.ID, speedSamples); err != nil {
-			return fmt.Errorf("write federated speed chart: %w", err)
+			return 0, 0, fmt.Errorf("write federated speed chart: %w", err)
 		}
+		speedCopied = 1
 	}
 
 	hrSamples, err := srcHR.ReadFederated(ctx, viewer, ownerKey, w.ID)
 	if err != nil {
-		return fmt.Errorf("read federated heart rate chart: %w", err)
+		return 0, 0, fmt.Errorf("read federated heart rate chart: %w", err)
 	}
 	if len(hrSamples) > 0 {
 		if err := dstHR.WriteFederated(ctx, viewer, ownerKey, w.ID, hrSamples); err != nil {
-			return fmt.Errorf("write federated heart rate chart: %w", err)
+			return 0, 0, fmt.Errorf("write federated heart rate chart: %w", err)
+		}
+		hrCopied = 1
+	}
+
+	return speedCopied, hrCopied, nil
+}
+
+func countCharts(backend storage.Backend, location string, result *Result) error {
+	speedStore, hrStore, err := chartStores(backend)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+
+	usersList, err := backend.Users().ListAll()
+	if err != nil {
+		return err
+	}
+	for _, u := range usersList {
+		ws, err := backend.Workouts().List(u.Nickname)
+		if err != nil {
+			return err
+		}
+		for i := range ws {
+			w := ws[i]
+			if w.Track == "" {
+				continue
+			}
+			dirName := keys.WorkoutDirName(w.StartDate, w.ID)
+			speedSamples, err := speedStore.ReadLocal(ctx, u.Nickname, dirName)
+			if err != nil {
+				return err
+			}
+			if len(speedSamples) > 0 {
+				result.LocalSpeedCharts++
+			}
+			hrSamples, err := hrStore.ReadLocal(ctx, u.Nickname, dirName)
+			if err != nil {
+				return err
+			}
+			if len(hrSamples) > 0 {
+				result.LocalHeartRateCharts++
+			}
 		}
 	}
 
+	_, inbox, err := loadFederationInbox(backend, location)
+	if err != nil {
+		return err
+	}
+	for viewer, byOwner := range inbox {
+		for ownerKey, list := range byOwner {
+			for i := range list {
+				w := list[i]
+				if w.Track == "" {
+					continue
+				}
+				speedSamples, err := speedStore.ReadFederated(ctx, viewer, ownerKey, w.ID)
+				if err != nil {
+					return err
+				}
+				if len(speedSamples) > 0 {
+					result.FedSpeedCharts++
+				}
+				hrSamples, err := hrStore.ReadFederated(ctx, viewer, ownerKey, w.ID)
+				if err != nil {
+					return err
+				}
+				if len(hrSamples) > 0 {
+					result.FedHeartRateCharts++
+				}
+			}
+		}
+	}
 	return nil
 }

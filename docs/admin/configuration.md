@@ -63,7 +63,15 @@ Notes:
 
 `postgres` is reserved in config but not implemented.
 
-Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes and comments (local, federated cache, and outbound activity ids) are copied so they remain readable after switching drivers:
+Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes and comments (local, federated cache, and outbound activity ids) and personal access tokens are copied so they remain readable after switching drivers:
+
+| Copied by `migrate-storage` | Not copied |
+|-----------------------------|------------|
+| Users, profiles, equipment, workouts | Password-reset tokens (short-lived; in-flight reset links become invalid) |
+| Follows, federation followers, federated inbox authors/workouts | Blob files (tracks, photos, avatars, keys) — shared on disk |
+| Local/federated likes and comments + outbound activity ids | Temp Strava jobs / in-memory captcha state |
+| Speed/HR charts (format conversion) | |
+| Personal access tokens (PAT) | |
 
 ```bash
 grom migrate-storage --config config.yaml --from file --to bbolt --verify
@@ -73,7 +81,7 @@ grom migrate-storage --config config.yaml --from bbolt --to file --verify
 
 Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
 
-Password-reset tokens (`reset_tokens.yaml` / bbolt `reset_tokens`) are short-lived and are **not** copied by migrate-storage; in-flight reset links become invalid after a migrate.
+Password-reset tokens (`reset_tokens.yaml` / bbolt `reset_tokens`) are short-lived and are **not** copied by migrate-storage; in-flight reset links become invalid after a migrate. Legacy plain-text Like activity ids (without `object_id`) are reconstructed via federated inbox and, when `federation.domain` is set, local workout object URLs.
 
 ## Mailer and password reset
 

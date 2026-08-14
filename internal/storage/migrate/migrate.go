@@ -23,32 +23,43 @@ type Options struct {
 	From   config.StorageDriver
 	To     config.StorageDriver
 	Config config.StorageConfig
-	DryRun bool
-	Verify bool
-	Force  bool
+	// FederationDomain is used to reconstruct legacy like activity ids for
+	// local workouts (https://{domain}/users/{nick}/workouts/{id}). Empty
+	// skips that reconstruction path.
+	FederationDomain string
+	DryRun           bool
+	Verify           bool
+	Force            bool
 }
 
 type Result struct {
-	Users              int
-	Equipment          int
-	Follows            int
-	Workouts           int
-	FedFollowers       int
-	FedAuthors         int
-	FedInboxWorkouts   int
-	LocalLikes         int
-	FedLikes           int
-	LikeActivities     int
-	LocalComments      int
-	FedComments        int
-	CommentActivities  int
+	Users                int
+	Profiles             int
+	Equipment            int
+	Follows              int
+	Workouts             int
+	FedFollowers         int
+	FedAuthors           int
+	FedInboxWorkouts     int
+	LocalLikes           int
+	FedLikes             int
+	LikeActivities       int
+	LocalComments        int
+	FedComments          int
+	CommentActivities    int
+	LocalSpeedCharts     int
+	LocalHeartRateCharts int
+	FedSpeedCharts       int
+	FedHeartRateCharts   int
+	PersonalAccessTokens int
 }
 
 // Run copies metadata from one storage driver to another. Track/media/avatar
 // blob files under storage.location are shared and not copied. Speed and
 // heart-rate charts are converted between file JSON blobs and bbolt binary
 // buckets. Workout likes and comments (local, federated cache, and outbound
-// activity ids) are copied so they remain readable after switching drivers.
+// activity ids) and personal access tokens are copied so they remain readable
+// after switching drivers. Password-reset tokens are not copied.
 func Run(opts Options) (*Result, error) {
 	if opts.From == opts.To {
 		return nil, fmt.Errorf("from and to drivers must differ")
@@ -75,7 +86,7 @@ func Run(opts Options) (*Result, error) {
 			return nil, err
 		}
 		defer src.Close()
-		return countAll(src, cfg.ResolvedLocation)
+		return countAll(src, cfg.ResolvedLocation, opts.FederationDomain)
 	}
 
 	if opts.To == config.StorageDriverBBolt {
@@ -99,7 +110,7 @@ func Run(opts Options) (*Result, error) {
 		return nil, fmt.Errorf("open target: %w", err)
 	}
 
-	result, err := copyAll(src, dst, cfg.ResolvedLocation)
+	result, err := copyAll(src, dst, cfg.ResolvedLocation, opts.FederationDomain)
 	closeErr := dst.Close()
 	if err != nil {
 		return result, err
@@ -109,7 +120,7 @@ func Run(opts Options) (*Result, error) {
 	}
 
 	if opts.Verify {
-		srcCount, err := countAll(src, cfg.ResolvedLocation)
+		srcCount, err := countAll(src, cfg.ResolvedLocation, opts.FederationDomain)
 		if err != nil {
 			return result, fmt.Errorf("verify source count: %w", err)
 		}
@@ -118,7 +129,7 @@ func Run(opts Options) (*Result, error) {
 			return result, fmt.Errorf("reopen target for verify: %w", err)
 		}
 		defer dst2.Close()
-		dstCount, err := countAll(dst2, cfg.ResolvedLocation)
+		dstCount, err := countAll(dst2, cfg.ResolvedLocation, opts.FederationDomain)
 		if err != nil {
 			return result, fmt.Errorf("verify target count: %w", err)
 		}
@@ -136,7 +147,7 @@ func openDriver(driver config.StorageDriver, cfg config.StorageConfig) (storage.
 	return storage.Open(c)
 }
 
-func copyAll(src, dst storage.Backend, location string) (*Result, error) {
+func copyAll(src, dst storage.Backend, location, federationDomain string) (*Result, error) {
 	result := &Result{}
 
 	usersList, err := src.Users().ListAll()
@@ -153,10 +164,11 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 		if err != nil {
 			return result, fmt.Errorf("get profile %s: %w", u.Nickname, err)
 		}
-		if profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0) {
+		if profile != nil && profileNonEmpty(profile) {
 			if err := dst.Users().PutProfile(u.ID, *profile); err != nil {
 				return result, fmt.Errorf("import profile %s: %w", u.Nickname, err)
 			}
+			result.Profiles++
 		}
 
 		eq, err := src.Equipment().List(u.Nickname)
@@ -179,9 +191,12 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 			if err := importWorkout(dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("import workout %s: %w", w.ID, err)
 			}
-			if err := copyLocalCharts(src, dst, u.Nickname, &w); err != nil {
+			speed, hr, err := copyLocalCharts(src, dst, u.Nickname, &w)
+			if err != nil {
 				return result, fmt.Errorf("copy charts for workout %s: %w", w.ID, err)
 			}
+			result.LocalSpeedCharts += speed
+			result.LocalHeartRateCharts += hr
 			if err := copyLocalLikes(src, dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("copy likes for workout %s: %w", w.ID, err)
 			}
@@ -247,9 +262,12 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 				if err := importInboxWorkout(dst, viewer, ownerKey, &w); err != nil {
 					return result, fmt.Errorf("import inbox workout: %w", err)
 				}
-				if err := copyFederatedCharts(src, dst, viewer, ownerKey, &w); err != nil {
+				speed, hr, err := copyFederatedCharts(src, dst, viewer, ownerKey, &w)
+				if err != nil {
 					return result, fmt.Errorf("copy federated charts for workout %s: %w", w.ID, err)
 				}
+				result.FedSpeedCharts += speed
+				result.FedHeartRateCharts += hr
 				result.FedInboxWorkouts++
 			}
 		}
@@ -261,7 +279,7 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 	}
 	result.FedLikes = fedLikes
 
-	likeActivities, err := copyLikeActivities(src, dst, authors, inbox)
+	likeActivities, err := copyLikeActivities(src, dst, authors, inbox, federationDomain)
 	if err != nil {
 		return result, fmt.Errorf("copy like activities: %w", err)
 	}
@@ -279,10 +297,16 @@ func copyAll(src, dst storage.Backend, location string) (*Result, error) {
 	}
 	result.CommentActivities = commentActivities
 
+	pats, err := copyPersonalAccessTokens(src, dst)
+	if err != nil {
+		return result, fmt.Errorf("copy personal access tokens: %w", err)
+	}
+	result.PersonalAccessTokens = pats
+
 	return result, nil
 }
 
-func countAll(backend storage.Backend, location string) (*Result, error) {
+func countAll(backend storage.Backend, location, federationDomain string) (*Result, error) {
 	result := &Result{}
 	usersList, err := backend.Users().ListAll()
 	if err != nil {
@@ -290,6 +314,13 @@ func countAll(backend storage.Backend, location string) (*Result, error) {
 	}
 	result.Users = len(usersList)
 	for _, u := range usersList {
+		profile, err := backend.Users().GetProfile(u.ID)
+		if err != nil {
+			return nil, err
+		}
+		if profile != nil && profileNonEmpty(profile) {
+			result.Profiles++
+		}
 		eq, err := backend.Equipment().List(u.Nickname)
 		if err != nil {
 			return nil, err
@@ -333,7 +364,7 @@ func countAll(backend storage.Backend, location string) (*Result, error) {
 		return nil, err
 	}
 	result.FedLikes = fedLikes
-	likeActivities, err := countLikeActivities(backend, authors, inbox)
+	likeActivities, err := countLikeActivities(backend, authors, inbox, federationDomain)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +384,19 @@ func countAll(backend storage.Backend, location string) (*Result, error) {
 		return nil, err
 	}
 	result.CommentActivities = commentActivities
+	if err := countCharts(backend, location, result); err != nil {
+		return nil, err
+	}
+	pats, err := countPersonalAccessTokens(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.PersonalAccessTokens = pats
 	return result, nil
+}
+
+func profileNonEmpty(profile *users.Profile) bool {
+	return profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0)
 }
 
 func listFollows(backend storage.Backend) ([]social.Follow, error) {

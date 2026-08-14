@@ -42,7 +42,7 @@ func copyFederatedLikes(src, dst storage.Backend) (int, error) {
 	return len(entries), nil
 }
 
-func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout) (int, error) {
+func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout, federationDomain string) (int, error) {
 	seen := make(map[string]struct{})
 	copied := 0
 
@@ -101,6 +101,35 @@ func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]
 			}
 		}
 	}
+
+	// Reconstruct legacy like activities for local workouts when federation.domain is known.
+	if federationDomain != "" {
+		usersList, err := src.Users().ListAll()
+		if err != nil {
+			return copied, err
+		}
+		for _, actor := range usersList {
+			for _, owner := range usersList {
+				ws, err := src.Workouts().List(owner.Nickname)
+				if err != nil {
+					return copied, err
+				}
+				for i := range ws {
+					objectID := localWorkoutObjectID(federationDomain, owner.Nickname, ws[i].ID)
+					if objectID == "" {
+						continue
+					}
+					activityID, err := src.Likes().GetLikeActivityID(actor.Nickname, objectID)
+					if err != nil {
+						return copied, fmt.Errorf("read local like activity for %s: %w", objectID, err)
+					}
+					if err := put(actor.Nickname, objectID, activityID); err != nil {
+						return copied, fmt.Errorf("write reconstructed local like activity: %w", err)
+					}
+				}
+			}
+		}
+	}
 	return copied, nil
 }
 
@@ -136,7 +165,7 @@ func countFederatedLikes(backend storage.Backend) (int, error) {
 	return len(entries), nil
 }
 
-func countLikeActivities(backend storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout) (int, error) {
+func countLikeActivities(backend storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout, federationDomain string) (int, error) {
 	seen := make(map[string]struct{})
 	add := func(actor, objectID string) {
 		if actor == "" || objectID == "" {
@@ -176,6 +205,34 @@ func countLikeActivities(backend storage.Backend, authors map[string]map[string]
 				}
 				if activityID != "" {
 					add(viewer, objectID)
+				}
+			}
+		}
+	}
+
+	if federationDomain != "" {
+		usersList, err := backend.Users().ListAll()
+		if err != nil {
+			return 0, err
+		}
+		for _, actor := range usersList {
+			for _, owner := range usersList {
+				ws, err := backend.Workouts().List(owner.Nickname)
+				if err != nil {
+					return 0, err
+				}
+				for i := range ws {
+					objectID := localWorkoutObjectID(federationDomain, owner.Nickname, ws[i].ID)
+					if objectID == "" {
+						continue
+					}
+					activityID, err := backend.Likes().GetLikeActivityID(actor.Nickname, objectID)
+					if err != nil {
+						return 0, err
+					}
+					if activityID != "" {
+						add(actor.Nickname, objectID)
+					}
 				}
 			}
 		}
@@ -277,4 +334,11 @@ func remoteWorkoutObjectID(ownerHandle, ownerNickname, workoutID string) string 
 		return ""
 	}
 	return fmt.Sprintf("https://%s/users/%s/workouts/%s", domain, ownerNickname, workoutID)
+}
+
+func localWorkoutObjectID(domain, nickname, workoutID string) string {
+	if domain == "" || nickname == "" || workoutID == "" {
+		return ""
+	}
+	return fmt.Sprintf("https://%s/users/%s/workouts/%s", domain, nickname, workoutID)
 }

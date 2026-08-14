@@ -29,12 +29,19 @@ func TestPATStoreRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := store.GetByHash("hash-1")
-	if err != nil {
+	all, err := store.ListAll()
+	if err != nil || len(all) != 1 || all[0].ID != "id-1" {
+		t.Fatalf("ListAll: %#v err=%v", all, err)
+	}
+
+	updated := rec
+	updated.Name = "Script 2"
+	if err := store.Import(updated); err != nil {
 		t.Fatal(err)
 	}
-	if got.Name != "Script" || got.TokenPrefix != "grom_pat_ab" {
-		t.Fatalf("unexpected record: %#v", got)
+	got, err := store.GetByHash("hash-1")
+	if err != nil || got.Name != "Script 2" || got.TokenPrefix != "grom_pat_ab" {
+		t.Fatalf("Import upsert: %#v err=%v", got, err)
 	}
 
 	list, err := store.ListByUser("user-1")

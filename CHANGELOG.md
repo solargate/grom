@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `grom migrate-storage` copies personal access tokens between `file` and `bbolt`; password-reset tokens remain excluded
+- `grom migrate-storage --verify` also compares profiles, speed/heart-rate chart counts, and PAT counts; legacy plain-text Like activity ids for local workouts are reconstructed when `federation.domain` is set
+
 ## [0.8.0] - 2026-08-13
 
 ### Added

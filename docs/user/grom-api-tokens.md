@@ -47,4 +47,4 @@ Full API details: Swagger UI at `/api/docs/` on your server.
 
 ## Storage and migration
 
-Tokens are stored on the server in `personal_access_tokens.yaml` (file driver) or the `personal_access_tokens` bbolt bucket. They are **not** copied by `grom migrate-storage`; recreate tokens after migrating storage drivers.
+Tokens are stored on the server in `personal_access_tokens.yaml` (file driver) or the `personal_access_tokens` bbolt bucket. `grom migrate-storage` copies tokens between drivers so existing `grom_pat_…` secrets keep working after you switch `storage.driver`.

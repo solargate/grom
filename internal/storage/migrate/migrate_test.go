@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
@@ -155,7 +156,7 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	_ = fileBackend.Close()
 
 	if _, err := migrate.Run(migrate.Options{
-		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Force: true,
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Force: true, Verify: true,
 	}); err != nil {
 		t.Fatalf("file→bbolt: %v", err)
 	}
@@ -194,7 +195,7 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	}
 
 	if _, err := migrate.Run(migrate.Options{
-		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg,
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg, Verify: true,
 	}); err != nil {
 		t.Fatalf("bbolt→file: %v", err)
 	}
@@ -616,10 +617,14 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	_ = fileBackend.Close()
 
-	if _, err := migrate.Run(migrate.Options{
+	result, err := migrate.Run(migrate.Options{
 		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Verify: true,
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("file→bbolt: %v", err)
+	}
+	if result.Profiles != 1 {
+		t.Fatalf("profiles result: %+v", result)
 	}
 
 	bboltCfg := cfg
@@ -738,3 +743,154 @@ func TestMigrateResetTokensNotCopied(t *testing.T) {
 		t.Fatalf("expected reset token absent on bbolt, got %v", err)
 	}
 }
+
+func TestMigratePreservesPersonalAccessTokens(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expires := time.Date(2027, 2, 1, 0, 0, 0, 0, time.UTC)
+	rec := pat.TokenRecord{
+		ID:          "pat-1",
+		TokenHash:   "hash-pat-1",
+		TokenPrefix: "grom_pat_xx",
+		UserID:      user.ID,
+		Name:        "CI",
+		Scopes:      []string{pat.ScopeWorkoutsRead, pat.ScopeEquipmentRead},
+		CreatedAt:   time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC),
+		ExpiresAt:   &expires,
+	}
+	if err := fileBackend.PAT().Create(rec); err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend.Close()
+
+	result, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Verify: true, Force: true,
+	})
+	if err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+	if result.PersonalAccessTokens != 1 {
+		t.Fatalf("pats result: %+v", result)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := boltBackend.PAT().GetByHash("hash-pat-1")
+	if err != nil {
+		t.Fatalf("bbolt pat: %v", err)
+	}
+	if got.ID != "pat-1" || got.Name != "CI" || got.UserID != user.ID || len(got.Scopes) != 2 {
+		t.Fatalf("unexpected pat: %#v", got)
+	}
+	_ = boltBackend.Close()
+
+	result2, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg, Verify: true,
+	})
+	if err != nil {
+		t.Fatalf("bbolt→file: %v", err)
+	}
+	if result2.PersonalAccessTokens != 1 {
+		t.Fatalf("round-trip pats: %+v", result2)
+	}
+
+	fileCfg := cfg
+	fileCfg.Driver = config.StorageDriverFile
+	fileBackend2, err := storage.Open(fileCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fileBackend2.Close()
+	got, err = fileBackend2.PAT().GetByHash("hash-pat-1")
+	if err != nil || got.Name != "CI" {
+		t.Fatalf("round-trip pat: %#v err=%v", got, err)
+	}
+}
+
+func TestMigrateLegacyLocalLikeActivity(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.Users().Create("bob", "Bob", "bob@example.com", "password123"); err != nil {
+		t.Fatal(err)
+	}
+	w, err := fileBackend.Workouts().Create("bob", &workouts.Workout{
+		Name: "Run", SportType: "Run",
+		StartDate: time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	domain := "grom.test"
+	objectID := "https://" + domain + "/users/bob/workouts/" + w.ID
+	activityID := "https://" + domain + "/users/alice/activities/legacy-local-1"
+	if err := fileBackend.Likes().PutLikeActivityID("alice", objectID, activityID); err != nil {
+		t.Fatal(err)
+	}
+	sumPath := filepath.Join(dir, "users", "alice", "federation", "outbox", "likes")
+	entries, err := os.ReadDir(sumPath)
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("expected 1 activity file: %v len=%d", err, len(entries))
+	}
+	if err := os.WriteFile(filepath.Join(sumPath, entries[0].Name()), []byte(activityID), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend.Close()
+
+	result, err := migrate.Run(migrate.Options{
+		From:             config.StorageDriverFile,
+		To:               config.StorageDriverBBolt,
+		Config:           cfg,
+		FederationDomain: domain,
+		Verify:           true,
+		Force:            true,
+	})
+	if err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+	if result.LikeActivities != 1 {
+		t.Fatalf("like activities: %+v", result)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer boltBackend.Close()
+	got, err := boltBackend.Likes().GetLikeActivityID("alice", objectID)
+	if err != nil || got != activityID {
+		t.Fatalf("migrated local legacy activity id: %q err=%v", got, err)
+	}
+}
+

@@ -135,6 +135,39 @@ func (s *PATStore) UpdateLastUsed(id string, at time.Time) error {
 	return s.save(tokens)
 }
 
+// ListAll returns every personal access token (migration).
+func (s *PATStore) ListAll() ([]pat.TokenRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	tokens, err := s.load()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]pat.TokenRecord, len(tokens))
+	copy(out, tokens)
+	return out, nil
+}
+
+// Import writes a PAT record as-is (used by storage migration).
+func (s *PATStore) Import(record pat.TokenRecord) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	tokens, err := s.load()
+	if err != nil {
+		return err
+	}
+	for i := range tokens {
+		if tokens[i].ID == record.ID || tokens[i].TokenHash == record.TokenHash {
+			tokens[i] = record
+			return s.save(tokens)
+		}
+	}
+	tokens = append(tokens, record)
+	return s.save(tokens)
+}
+
 func (s *PATStore) load() ([]pat.TokenRecord, error) {
 	data, err := os.ReadFile(s.path)
 	if err != nil {

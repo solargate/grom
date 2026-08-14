@@ -45,7 +45,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/federation/` | ActivityPub inbox/outbox, delivery, keys, avatar cache |
 | `internal/tracks/` | GPX/FIT parse, stats, export, simplify |
 | `internal/storage/` | `Backend` interface; `file` and `bbolt` drivers (postgres not implemented) |
-| `internal/storage/migrate/` | Metadata copy between `file` ↔ `bbolt` (includes charts + likes) |
+| `internal/storage/migrate/` | Metadata copy between `file` ↔ `bbolt` (includes charts, likes, comments, PAT) |
 | `internal/storage/blob/` | Blob keys + FS blob store |
 | `internal/integrations/strava/` | Strava ZIP bulk import jobs |
 | `internal/avatars/` | Avatar processing |
@@ -158,9 +158,9 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 8. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
 9. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
 10. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
-11. **Password reset:** optional; enabled when `mailer.driver` is `log`/`smtp` and `auth.reset.public_base_url` is set. API `POST /auth/password/forgot` and `/auth/password/reset`; tokens in `reset_tokens.yaml` / bbolt `reset_tokens` (not migrated). UI: Forgot password on login + web `/reset-password` (mobile opens email link in browser). `password_reset_enabled` on `/server-info`.
+11. **Password reset:** optional; enabled when `mailer.driver` is `log`/`smtp` and `auth.reset.public_base_url` is set. API `POST /auth/password/forgot` and `/auth/password/reset`; tokens in `reset_tokens.yaml` / bbolt `reset_tokens` (not migrated by `grom migrate-storage`). UI: Forgot password on login + web `/reset-password` (mobile opens email link in browser). `password_reset_enabled` on `/server-info`.
 12. **Auth captcha (ALTCHA):** optional PoW via `auth.captcha.enabled` (default off). Protects register, login, and password forgot (not token reset). `GET /api/v1/captcha/challenge`; client sends `altcha` payload; `captcha_enabled` on `/server-info`. Implementation in `internal/auth/captcha/`.
-13. **Personal access tokens (PAT):** scoped long-lived API tokens (`grom_pat_…`) for workouts/equipment; `GET/POST /api/v1/auth/pat`, `DELETE /api/v1/auth/pat/{id}` (JWT only); `AuthAPI` middleware on workout/equipment routes; storage in `personal_access_tokens.yaml` / bbolt `personal_access_tokens` (not migrated). Scopes: `workouts:read`, `workouts:write`, `equipment:read`, `equipment:write`. Default TTL 90 days, max 10 per user. UI: Integration → Grom tab. Docs: `docs/user/grom-api-tokens.md`.
+13. **Personal access tokens (PAT):** scoped long-lived API tokens (`grom_pat_…`) for workouts/equipment; `GET/POST /api/v1/auth/pat`, `DELETE /api/v1/auth/pat/{id}` (JWT only); `AuthAPI` middleware on workout/equipment routes; storage in `personal_access_tokens.yaml` / bbolt `personal_access_tokens` (copied by `grom migrate-storage`). Scopes: `workouts:read`, `workouts:write`, `equipment:read`, `equipment:write`. Default TTL 90 days, max 10 per user. UI: Integration → Grom tab. Docs: `docs/user/grom-api-tokens.md`.
 
 ## Agent do / don't
 

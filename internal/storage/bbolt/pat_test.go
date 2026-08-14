@@ -34,11 +34,22 @@ func TestPATStoreRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	all, err := store.(*bbolt.PATStore).ListAll()
+	if err != nil || len(all) != 1 || all[0].ID != "id-1" {
+		t.Fatalf("ListAll: %#v err=%v", all, err)
+	}
+
+	updated := rec
+	updated.Name = "Script 2"
+	if err := store.(*bbolt.PATStore).PutExisting(updated); err != nil {
+		t.Fatal(err)
+	}
+
 	got, err := store.GetByHash("hash-1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Name != "Script" || got.TokenPrefix != "grom_pat_ab" {
+	if got.Name != "Script 2" || got.TokenPrefix != "grom_pat_ab" {
 		t.Fatalf("unexpected record: %#v", got)
 	}
 

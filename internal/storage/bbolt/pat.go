@@ -37,10 +37,13 @@ func (s *PATStore) ListByUser(userID string) ([]pat.TokenRecord, error) {
 	var out []pat.TokenRecord
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketPersonalAccessTokens)
-		return b.ForEach(func(_, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var rec pat.TokenRecord
 			if err := json.Unmarshal(v, &rec); err != nil {
 				return err
+			}
+			if rec.TokenHash == "" {
+				rec.TokenHash = string(k)
 			}
 			if rec.UserID == userID {
 				out = append(out, rec)
@@ -79,6 +82,9 @@ func (s *PATStore) GetByHash(hash string) (*pat.TokenRecord, error) {
 		var rec pat.TokenRecord
 		if err := json.Unmarshal(raw, &rec); err != nil {
 			return err
+		}
+		if rec.TokenHash == "" {
+			rec.TokenHash = hash
 		}
 		found = &rec
 		return nil
@@ -131,6 +137,52 @@ func (s *PATStore) UpdateLastUsed(id string, at time.Time) error {
 			return b.Put(k, payload)
 		}
 		return pat.ErrNotFound
+	})
+}
+
+// ListAll returns every personal access token (migration).
+func (s *PATStore) ListAll() ([]pat.TokenRecord, error) {
+	var out []pat.TokenRecord
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketPersonalAccessTokens)
+		return b.ForEach(func(k, v []byte) error {
+			var rec pat.TokenRecord
+			if err := json.Unmarshal(v, &rec); err != nil {
+				return err
+			}
+			// TokenHash is omitted from JSON (json:"-"); restore from bucket key.
+			if rec.TokenHash == "" {
+				rec.TokenHash = string(k)
+			}
+			out = append(out, rec)
+			return nil
+		})
+	})
+	return out, err
+}
+
+// PutExisting writes a PAT record as-is (used by storage migration).
+func (s *PATStore) PutExisting(record pat.TokenRecord) error {
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketPersonalAccessTokens)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var existing pat.TokenRecord
+			if err := json.Unmarshal(v, &existing); err != nil {
+				return err
+			}
+			if existing.ID == record.ID && string(k) != record.TokenHash {
+				if err := b.Delete(k); err != nil {
+					return err
+				}
+				break
+			}
+		}
+		return b.Put([]byte(record.TokenHash), payload)
 	})
 }
 
