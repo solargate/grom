@@ -49,7 +49,7 @@ go run . --config config-examples/config.prod.tls.yaml
 Notes:
 
 - Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
-- With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`, and comments as `Create`/`Delete` Note (`inReplyTo`); local workouts accept incoming likes and comments from other instances. Same-instance likes and comments work without federation.
+- With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`, and comments as `Create`/`Delete` Note (`inReplyTo`); local workouts accept incoming likes and comments from other instances. Same-instance likes and comments work without federation. Account deletion (`DELETE /api/v1/auth/me`) delivers a `Delete` of the local actor to known remote inboxes (best-effort) before wiping local data; the inbox applies remote actor `Delete` by purging that owner’s federated cache for the recipient.
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
 
 ## Storage drivers

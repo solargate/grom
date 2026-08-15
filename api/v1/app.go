@@ -205,6 +205,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		authGroup.POST("/password/reset", a.resetPassword)
 		authGroup.GET("/me", auth.AuthRequired(), a.getMe)
 		authGroup.PATCH("/me", auth.AuthRequired(), a.updateMe)
+		authGroup.DELETE("/me", auth.AuthRequired(), a.deleteMe)
 		authGroup.PUT("/me/avatar", auth.AuthRequired(), a.uploadMyAvatar)
 		authGroup.DELETE("/me/avatar", auth.AuthRequired(), a.deleteMyAvatar)
 		authGroup.GET("/pat", auth.AuthRequired(), a.listPAT)

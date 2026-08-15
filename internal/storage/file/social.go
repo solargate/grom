@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -219,6 +220,24 @@ func (s *SocialStore) Delete(id string) error {
 		}
 	}
 	return social.ErrFollowNotFound
+}
+
+func (s *SocialStore) DeleteInvolving(followerID, localHandle string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	out := s.follows[:0]
+	for _, f := range s.follows {
+		if f.FollowerID == followerID {
+			continue
+		}
+		if localHandle != "" && strings.EqualFold(f.TargetHandle, localHandle) {
+			continue
+		}
+		out = append(out, f)
+	}
+	s.follows = out
+	return s.save()
 }
 
 // Import writes a follow as-is (used by storage migration).

@@ -550,6 +550,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
   /// No description provided for @selectWorkoutType.
   ///
   /// In en, this message translates to:
@@ -1611,6 +1617,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete account'**
   String get deleteAccount;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'All account data, including server login credentials, workouts, equipment, and related data, will be permanently deleted from the server.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get deleteAccountPasswordLabel;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountGoodbye.
+  ///
+  /// In en, this message translates to:
+  /// **'Goodbye'**
+  String get deleteAccountGoodbye;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @deleteAccountInvalidPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid password'**
+  String get deleteAccountInvalidPassword;
 
   /// No description provided for @profileSaved.
   ///

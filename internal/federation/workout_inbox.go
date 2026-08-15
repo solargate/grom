@@ -278,6 +278,38 @@ func (s *WorkoutInboxStore) Delete(viewerNickname, ownerHandle, workoutID string
 	return nil
 }
 
+func (s *WorkoutInboxStore) DeleteAllForOwner(viewerNickname, ownerHandle string) error {
+	if viewerNickname == "" || ownerHandle == "" {
+		return nil
+	}
+	dir := s.ownerDir(viewerNickname, ownerHandle)
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".yaml") || name == "author.yaml" {
+			continue
+		}
+		workoutID := strings.TrimSuffix(name, ".yaml")
+		if err := s.Delete(viewerNickname, ownerHandle, workoutID); err != nil {
+			return err
+		}
+	}
+	ctx := context.Background()
+	_ = s.blobs.Delete(ctx, keys.FederatedInboxAvatar(viewerNickname, ownerKey))
+	if err := os.RemoveAll(dir); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove federated owner dir: %w", err)
+	}
+	return nil
+}
+
 func (s *WorkoutInboxStore) readWorkout(viewerNickname, ownerDir, ownerKey, workoutID string) (*workouts.Workout, error) {
 	path := filepath.Join(ownerDir, workoutID+".yaml")
 	data, err := os.ReadFile(path)

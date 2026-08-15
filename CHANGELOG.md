@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Profile screen: overflow menu (edit profile, delete account stub)
+- Account deletion from the profile menu: password confirmation, permanent wipe of user data (file and bbolt), ActivityPub `Delete` of the actor (best-effort), and incoming `Delete` Person handling in the federation inbox
+- Profile screen: overflow menu (edit profile, delete account)
 
 ### Changed
 

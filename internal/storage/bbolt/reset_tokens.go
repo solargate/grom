@@ -77,4 +77,27 @@ func (s *ResetTokenStore) DeleteByHash(hash string) error {
 	})
 }
 
+func (s *ResetTokenStore) DeleteAllForUser(userID string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketResetTokens)
+		var toDelete [][]byte
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var rec reset.TokenRecord
+			if err := json.Unmarshal(v, &rec); err != nil {
+				return err
+			}
+			if rec.UserID == userID {
+				toDelete = append(toDelete, append([]byte(nil), k...))
+			}
+		}
+		for _, k := range toDelete {
+			if err := b.Delete(k); err != nil {
+				return fmt.Errorf("delete reset token: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
 var _ reset.TokenStore = (*ResetTokenStore)(nil)

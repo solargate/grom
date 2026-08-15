@@ -598,12 +598,17 @@ func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string
 		return p.handleCommentDelete(viewerNickname, activity, noteID, inReplyTo)
 	}
 
-	if p.inboxStore == nil {
-		return nil
-	}
 	actorURI, _ := activity["actor"].(string)
 	ownerHandle := actorToHandle(actorURI)
 	if ownerHandle == "" {
+		return nil
+	}
+
+	if isActorDelete(activity["object"], actorURI) {
+		return p.handleActorDelete(viewerNickname, ownerHandle, actorURI)
+	}
+
+	if p.inboxStore == nil {
 		return nil
 	}
 
@@ -619,6 +624,55 @@ func (p *InboxProcessor) handleDelete(viewerNickname string, activity map[string
 	}
 	if p.comments != nil {
 		_ = p.comments.DeleteFederated(viewerNickname, ownerHandle, workoutID)
+	}
+	return nil
+}
+
+func isActorDelete(object any, actorURI string) bool {
+	switch obj := object.(type) {
+	case string:
+		return obj != "" && (obj == actorURI || strings.EqualFold(obj, actorURI))
+	case map[string]any:
+		id := stringValue(obj, "id")
+		typ, _ := obj["type"].(string)
+		if id == "" {
+			return false
+		}
+		if typ == "Person" || typ == "Tombstone" || typ == "" {
+			return id == actorURI || strings.EqualFold(id, actorURI)
+		}
+	}
+	return false
+}
+
+func (p *InboxProcessor) handleActorDelete(viewerNickname, ownerHandle, actorURI string) error {
+	if p.inboxStore != nil {
+		feed, err := p.inboxStore.List(viewerNickname)
+		if err != nil {
+			return err
+		}
+		for _, item := range feed {
+			if !strings.EqualFold(item.Author.Handle, ownerHandle) {
+				continue
+			}
+			if p.likes != nil {
+				_ = p.likes.DeleteFederated(viewerNickname, ownerHandle, item.ID)
+			}
+			if p.comments != nil {
+				_ = p.comments.DeleteFederated(viewerNickname, ownerHandle, item.ID)
+			}
+		}
+		if err := p.inboxStore.DeleteAllForOwner(viewerNickname, ownerHandle); err != nil {
+			return err
+		}
+	}
+	if p.followersStore != nil && actorURI != "" {
+		_ = p.followersStore.Remove(viewerNickname, actorURI)
+	}
+	if p.social != nil && p.users != nil {
+		if user, err := p.users.FindByNickname(viewerNickname); err == nil {
+			_ = p.social.DeleteFollowsToTarget(user.ID, ownerHandle)
+		}
 	}
 	return nil
 }

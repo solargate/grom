@@ -117,6 +117,29 @@ func (s *PATStore) DeleteByUserAndID(userID, id string) error {
 	})
 }
 
+func (s *PATStore) DeleteAllForUser(userID string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketPersonalAccessTokens)
+		var toDelete [][]byte
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var rec pat.TokenRecord
+			if err := json.Unmarshal(v, &rec); err != nil {
+				return err
+			}
+			if rec.UserID == userID {
+				toDelete = append(toDelete, append([]byte(nil), k...))
+			}
+		}
+		for _, k := range toDelete {
+			if err := b.Delete(k); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 func (s *PATStore) UpdateLastUsed(id string, at time.Time) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketPersonalAccessTokens)

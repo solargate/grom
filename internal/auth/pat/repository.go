@@ -9,5 +9,6 @@ type Repository interface {
 	CountByUser(userID string) (int, error)
 	GetByHash(hash string) (*TokenRecord, error)
 	DeleteByUserAndID(userID, id string) error
+	DeleteAllForUser(userID string) error
 	UpdateLastUsed(id string, at time.Time) error
 }

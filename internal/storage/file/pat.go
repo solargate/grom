@@ -112,6 +112,24 @@ func (s *PATStore) DeleteByUserAndID(userID, id string) error {
 	return s.save(out)
 }
 
+func (s *PATStore) DeleteAllForUser(userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	tokens, err := s.load()
+	if err != nil {
+		return err
+	}
+	out := tokens[:0]
+	for _, t := range tokens {
+		if t.UserID == userID {
+			continue
+		}
+		out = append(out, t)
+	}
+	return s.save(out)
+}
+
 func (s *PATStore) UpdateLastUsed(id string, at time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

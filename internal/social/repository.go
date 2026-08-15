@@ -11,4 +11,6 @@ type Repository interface {
 	FindByFollowActivityID(activityID string) (*Follow, error)
 	UpdateActivityID(id, activityID string) (*Follow, error)
 	Delete(id string) error
+	// DeleteInvolving removes follows where the user is follower or target (any status).
+	DeleteInvolving(followerID, localHandle string) error
 }

@@ -252,6 +252,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cancel => 'Отмена';
 
   @override
+  String get ok => 'OK';
+
+  @override
   String get selectWorkoutType => 'Выберите тип тренировки';
 
   @override
@@ -813,6 +816,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get deleteAccount => 'Удалить аккаунт';
+
+  @override
+  String get deleteAccountWarning =>
+      'Все данные аккаунта, включая данные для входа на сервер, данные о тренировках, снаряжении и т.д., будут безвозвратно удалены с сервера.';
+
+  @override
+  String get deleteAccountPasswordLabel => 'Пароль';
+
+  @override
+  String get deleteAccountConfirm => 'Удалить';
+
+  @override
+  String get deleteAccountGoodbye => 'До свидания';
+
+  @override
+  String get deleteAccountFailed => 'Не удалось удалить аккаунт';
+
+  @override
+  String get deleteAccountInvalidPassword => 'Неверный пароль';
 
   @override
   String get profileSaved => 'Профиль сохранён';

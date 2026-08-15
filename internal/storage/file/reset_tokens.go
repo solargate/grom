@@ -100,6 +100,24 @@ func (s *ResetTokenStore) DeleteByHash(hash string) error {
 	return s.save(out)
 }
 
+func (s *ResetTokenStore) DeleteAllForUser(userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	tokens, err := s.load()
+	if err != nil {
+		return err
+	}
+	out := tokens[:0]
+	for _, t := range tokens {
+		if t.UserID == userID {
+			continue
+		}
+		out = append(out, t)
+	}
+	return s.save(out)
+}
+
 func (s *ResetTokenStore) load() ([]reset.TokenRecord, error) {
 	data, err := os.ReadFile(s.path)
 	if err != nil {

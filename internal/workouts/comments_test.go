@@ -122,6 +122,34 @@ func TestFindAndRemoveByNoteID(t *testing.T) {
 	}
 }
 
+func TestRemoveWorkoutCommentsByHandle(t *testing.T) {
+	base := &WorkoutComments{Comments: []WorkoutComment{
+		{ID: "1", User: WorkoutLikeUser{Handle: "bob@a.test"}, Text: "one"},
+		{ID: "2", User: WorkoutLikeUser{Handle: "alice@a.test"}, Text: "two"},
+		{ID: "3", User: WorkoutLikeUser{Handle: "BOB@a.test"}, Text: "three"},
+	}}
+
+	got := RemoveWorkoutCommentsByHandle(base, "bob@a.test")
+	if got.CommentsNum != 1 || got.Comments[0].ID != "2" {
+		t.Fatalf("remove by handle: %#v", got)
+	}
+
+	again := RemoveWorkoutCommentsByHandle(&got, "bob@a.test")
+	if again.CommentsNum != 1 {
+		t.Fatalf("idempotent remove: %#v", again)
+	}
+
+	empty := RemoveWorkoutCommentsByHandle(&got, "")
+	if empty.CommentsNum != 1 {
+		t.Fatalf("empty handle should no-op: %#v", empty)
+	}
+
+	nilResult := RemoveWorkoutCommentsByHandle(nil, "bob@a.test")
+	if nilResult.CommentsNum != 0 || nilResult.Comments == nil {
+		t.Fatalf("nil comments: %#v", nilResult)
+	}
+}
+
 func TestCanDeleteComment(t *testing.T) {
 	c := &WorkoutComment{User: WorkoutLikeUser{Handle: "bob@grom.test"}}
 	if !CanDeleteComment("bob@grom.test", "alice", c, "alice@grom.test") {

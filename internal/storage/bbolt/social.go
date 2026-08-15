@@ -1,6 +1,7 @@
 package bbolt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -226,6 +227,40 @@ func (s *SocialStore) Delete(id string) error {
 		}
 		_ = s.deleteFollowIndexes(tx, *f)
 		return tx.Bucket(bucketFollows).Delete([]byte(id))
+	})
+}
+
+func (s *SocialStore) DeleteInvolving(followerID, localHandle string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		var toDelete []string
+		c := tx.Bucket(bucketFollows).Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var f social.Follow
+			if err := unmarshalJSON(v, &f); err != nil {
+				return err
+			}
+			if f.FollowerID == followerID {
+				toDelete = append(toDelete, f.ID)
+				continue
+			}
+			if localHandle != "" && strings.EqualFold(f.TargetHandle, localHandle) {
+				toDelete = append(toDelete, f.ID)
+			}
+		}
+		for _, id := range toDelete {
+			f, err := s.getFollow(tx, id)
+			if err != nil {
+				if errors.Is(err, social.ErrFollowNotFound) {
+					continue
+				}
+				return err
+			}
+			_ = s.deleteFollowIndexes(tx, *f)
+			if err := tx.Bucket(bucketFollows).Delete([]byte(id)); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

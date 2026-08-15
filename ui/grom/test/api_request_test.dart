@@ -708,4 +708,41 @@ void main() {
     );
     expect(count, 0);
   });
+
+  test('deleteAccount sends DELETE /auth/me with password', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'DELETE');
+      expect(request.url.path, '/api/v1/auth/me');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      expect(request.headers['Content-Type'], 'application/json');
+      expect(jsonDecode(request.body)['password'], 'secret12');
+      return http.Response('', 204);
+    });
+    await ApiRequest(client: client).deleteAccount(
+      token: 'tok',
+      password: 'secret12',
+    );
+  });
+
+  test('deleteAccount maps 403 to ApiException', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'invalid password'}),
+        403,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: client).deleteAccount(
+        token: 'tok',
+        password: 'wrong',
+      );
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.statusCode, 403);
+      expect(e.message, 'invalid password');
+    }
+  });
 }
