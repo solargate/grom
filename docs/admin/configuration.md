@@ -156,4 +156,4 @@ auth:
 ## See also
 
 - [Install and run](install.md)
-- [Strava bulk import](../strava-bulk-import.md) (`storage.temp_dir`)
+- [Strava bulk import](../integrations/strava-bulk-import.md) (`storage.temp_dir`)

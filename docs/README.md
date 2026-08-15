@@ -12,8 +12,8 @@ English documentation for Grom. The [root README](../README.md) is a short entry
 | Reset a forgotten password (when the operator enables email) | [User overview — Sign-in and password reset](user/overview.md#sign-in-and-password-reset) |
 | Sign in / register when the instance enables captcha | [User overview — Sign-in and password reset](user/overview.md#sign-in-and-password-reset) |
 | Use Grom in a browser (same UI as Android) | Open the server base URL after [install](admin/install.md); see [User overview](user/overview.md) |
-| Import a Strava export (UI + how import works) | [Strava bulk import](strava-bulk-import.md) |
-| Import Health Sync activities from Google Drive (Android) | [Health Sync + Google Drive](health-sync-google-drive.md) |
+| Import a Strava export (UI + how import works) | [Strava bulk import](integrations/strava-bulk-import.md) |
+| Import Health Sync activities from Google Drive (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
 | Create API tokens for scripts and external apps | [Grom API tokens](user/grom-api-tokens.md) |
 
 ### Admin
@@ -27,7 +27,7 @@ English documentation for Grom. The [root README](../README.md) is a short entry
 
 | Topic | Page |
 |-------|------|
-| Strava ZIP column mapping and import behavior | [Strava bulk import](strava-bulk-import.md) |
-| Health Sync Google Drive import (Android client) | [Health Sync + Google Drive](health-sync-google-drive.md) |
+| Strava ZIP column mapping and import behavior | [Strava bulk import](integrations/strava-bulk-import.md) |
+| Health Sync Google Drive import (Android client) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
 | Full annotated config | [`config.full.yaml`](../cmd/grom/config-examples/config.full.yaml) |
 | HTTP API (Swagger UI) | On a running server: `/api/docs/` (e.g. `http://localhost:8080/api/docs/`); sources under [`api/docs/`](../api/docs/) |

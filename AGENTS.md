@@ -62,10 +62,10 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 - **Layout:** Root `README.md` is a short front door (what/why, hero screenshots, quick start, links). Details live under `docs/`:
   - `docs/user/` — end-user / client tour (web + Android)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
-  - `docs/strava-bulk-import.md` — Strava ZIP reference (column mapping, behavior)
+  - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
   - `docs/screenshots/` — images for README and user docs
 - **Index:** `docs/README.md` (“I want to…”). Do not duplicate that TOC here.
-- **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` if you add/rename pages.
+- **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` if you add/rename pages.
 - **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make doc`). Runtime Swagger UI is `/api/docs`.
 
 ## Tech stack
@@ -154,7 +154,7 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 4. **Workout likes:** cannot like own workouts; API `GET/POST/DELETE /workouts/{id}/likes` (optional `owner` query like get workout). Responses expose `likes_count`, `liked_by_me`, `can_like`. Local likes via `workouts.LikesRepository`; file: `likes.yaml` per workout, federated cache/outbox under `federation/`; bbolt: `workout_likes` / `fed_workout_likes` / `like_activities`. `grom migrate-storage` copies local likes, federated like cache, and outbound Like activity ids between drivers. Federated like/unlike delivers ActivityPub `Like` / `Undo`; inbox applies remote likes and caches `likesCount` / `likedUsers` from Create objects. UI: `WorkoutLikeBar` on list cards and detail (likes left, comments right).
 5. **Workout comments:** can comment on own and others' workouts; API `GET/POST /workouts/{id}/comments`, `DELETE /workouts/{id}/comments/{commentId}` (optional `owner`). Text max 1000 chars; empty rejected. Delete allowed for comment author or workout owner. Responses expose `comments_count`; list items include `can_delete`. Local via `workouts.CommentsRepository`; file: `comments.yaml` (`comments_num` + `comments[]` with `id`, `user`, `datetime`, `text`, `note_id`); federated cache/outbox under `federation/`; bbolt: `workout_comments` / `fed_workout_comments` / `comment_activities`. Federated comment delivers ActivityPub `Create`/`Note` with `inReplyTo`; delete delivers `Delete` Note (owner delete of remote comment notifies author). Workout Create/Update embeds `commentsCount` / `comments`. UI dialog for list/add/delete.
 6. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). Delivery is async with retry workers. Keep HTTP signatures / actor URLs consistent with `federation.domain`.
-7. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/strava-bulk-import.md`.
+7. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/integrations/strava-bulk-import.md`.
 8. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
 9. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
 10. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
@@ -198,5 +198,5 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
-| Human docs | `docs/README.md` (index), `docs/user/`, `docs/admin/`; keep `README.md` short |
+| Human docs | `docs/README.md` (index), `docs/user/`, `docs/admin/`, `docs/integrations/`; keep `README.md` short |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |
