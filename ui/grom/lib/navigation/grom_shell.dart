@@ -629,8 +629,109 @@ class _GromShellState extends State<GromShell> {
       case ProfileMenuAction.edit:
         unawaited(_profilePageKey.currentState?.openEditProfile());
       case ProfileMenuAction.deleteAccount:
-        break;
+        unawaited(_confirmDeleteAccount());
     }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    final passwordController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.deleteAccount),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.deleteAccountWarning),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofillHints: const [AutofillHints.password],
+                decoration: InputDecoration(
+                  labelText: l10n.deleteAccountPasswordLabel,
+                ),
+                onSubmitted: (_) => Navigator.pop(dialogContext, true),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              child: Text(l10n.deleteAccountConfirm),
+            ),
+          ],
+        );
+      },
+    );
+
+    final password = passwordController.text;
+    passwordController.dispose();
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.deleteAccountInvalidPassword)),
+      );
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final token = await AuthStorage.getToken();
+      if (token == null) {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.deleteAccountFailed)),
+        );
+        return;
+      }
+      await _api.deleteAccount(token: token, password: password);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final message = e.statusCode == 403
+          ? l10n.deleteAccountInvalidPassword
+          : (e.message.isNotEmpty ? e.message : l10n.deleteAccountFailed);
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.deleteAccountFailed)),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteAccountGoodbye),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.ok),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    await _logout(showSignedOutSnack: false);
   }
 
   String _contentHeaderTitle(AppLocalizations l10n) {
@@ -670,7 +771,7 @@ class _GromShellState extends State<GromShell> {
     );
   }
 
-  Future<void> _logout() async {
+  Future<void> _logout({bool showSignedOutSnack = true}) async {
     await AuthStorage.clear();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
@@ -682,9 +783,11 @@ class _GromShellState extends State<GromShell> {
       _workoutPhotoViewerIndex = null;
       _feedPhotoViewerWorkout = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.signedOut)),
-    );
+    if (showSignedOutSnack) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.signedOut)),
+      );
+    }
   }
 
   String _sectionTitle(AppLocalizations l10n) {

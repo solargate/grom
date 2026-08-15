@@ -19,4 +19,6 @@ type TokenStore interface {
 	GetByHash(hash string) (*TokenRecord, error)
 	// DeleteByHash removes a token by its hash. Missing keys are not an error.
 	DeleteByHash(hash string) error
+	// DeleteAllForUser removes every reset token for userID. Missing tokens are fine.
+	DeleteAllForUser(userID string) error
 }

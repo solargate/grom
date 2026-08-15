@@ -25,6 +25,11 @@ type Backend interface {
 	ResetTokens() reset.TokenStore
 	PAT() pat.Repository
 
+	// PurgeUser permanently removes the account and all related data for both
+	// this user and cross-user references (follows, likes/comments, inbox caches).
+	// localHandle is nickname@domain as used in social likes/comments.
+	PurgeUser(userID, nickname, localHandle string) error
+
 	Close() error
 	Ping(ctx context.Context) error
 }

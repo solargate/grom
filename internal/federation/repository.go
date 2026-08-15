@@ -28,6 +28,8 @@ type InboxRepository interface {
 	// Empty mediaFiles clears previously stored media. Empty track clears previously stored track artifacts.
 	Replace(viewerNickname, ownerHandle string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput, actor map[string]any) error
 	Delete(viewerNickname, ownerHandle, workoutID string) error
+	// DeleteAllForOwner removes every cached workout and author metadata for ownerHandle under viewer.
+	DeleteAllForOwner(viewerNickname, ownerHandle string) error
 	TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, string, error)
 	MapPreview(viewerNickname, ownerNickname, workoutID string) ([]byte, error)
 	MediaOriginal(viewerNickname, ownerNickname, workoutID, filename string) ([]byte, string, error)

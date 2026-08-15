@@ -250,6 +250,31 @@ func (s *UsersStore) UpdatePassword(userID, passwordHash string) error {
 	})
 }
 
+func (s *UsersStore) Delete(userID string) error {
+	var nickname string
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		u, err := s.getByID(tx, userID)
+		if err != nil {
+			return err
+		}
+		nickname = u.Nickname
+		if err := tx.Bucket(bucketUsers).Delete([]byte(userID)); err != nil {
+			return err
+		}
+		_ = tx.Bucket(bucketUserProfiles).Delete([]byte(userID))
+		_ = tx.Bucket(bucketIdxUsersEmail).Delete([]byte(strings.ToLower(strings.TrimSpace(u.Email))))
+		_ = tx.Bucket(bucketIdxUsersNick).Delete([]byte(strings.ToLower(u.Nickname)))
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(data.UserDir(s.dataDir, nickname)); err != nil {
+		return fmt.Errorf("remove user dir: %w", err)
+	}
+	return nil
+}
+
 // PutExisting writes a user record without hashing (used by migration).
 func (s *UsersStore) PutExisting(u users.User) error {
 	if err := ensureUserDir(s.dataDir, u.Nickname); err != nil {

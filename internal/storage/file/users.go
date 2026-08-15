@@ -274,6 +274,33 @@ func (s *UsersStore) UpdatePassword(userID, passwordHash string) error {
 	return users.ErrUserNotFound
 }
 
+func (s *UsersStore) Delete(userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var nickname string
+	idx := -1
+	for i := range s.users {
+		if s.users[i].ID == userID {
+			nickname = s.users[i].Nickname
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return users.ErrUserNotFound
+	}
+	s.users = append(s.users[:idx], s.users[idx+1:]...)
+	if err := s.save(); err != nil {
+		return err
+	}
+	userDir := data.UserDir(s.dataDir, nickname)
+	if err := os.RemoveAll(userDir); err != nil {
+		return fmt.Errorf("remove user dir: %w", err)
+	}
+	return nil
+}
+
 // Import writes a user record as-is (used by storage migration).
 func (s *UsersStore) Import(user users.User) error {
 	s.mu.Lock()

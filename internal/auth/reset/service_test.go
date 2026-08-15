@@ -100,6 +100,7 @@ func (m *memUsers) SetLastEquipmentForSport(string, string, []string) error {
 	return nil
 }
 func (m *memUsers) RemoveEquipmentFromLastSets(string, string) error { return nil }
+func (m *memUsers) Delete(string) error                              { return users.ErrUserNotFound }
 
 type memTokens struct {
 	mu   sync.Mutex
@@ -140,6 +141,17 @@ func (s *memTokens) DeleteByHash(hash string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.byHash, hash)
+	return nil
+}
+
+func (s *memTokens) DeleteAllForUser(userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for h, r := range s.byHash {
+		if r.UserID == userID {
+			delete(s.byHash, h)
+		}
+	}
 	return nil
 }
 

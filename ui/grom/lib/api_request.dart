@@ -1044,6 +1044,26 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<void> deleteAccount({
+    required String token,
+    required String password,
+  }) async {
+    final response = await _client.delete(
+      _uri('/api/v1/auth/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'password': password}),
+    );
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw _parseError(response);
+  }
+
   Future<Map<String, dynamic>> uploadStravaArchiveRaw({
     required String token,
     required List<int> bytes,

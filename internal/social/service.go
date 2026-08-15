@@ -313,6 +313,26 @@ func (s *Service) Unfollow(followerID, followID string) error {
 	return s.follows.Delete(followID)
 }
 
+// DeleteFollowsToTarget removes this follower's follows targeting handle (no remote Undo).
+func (s *Service) DeleteFollowsToTarget(followerID, targetHandle string) error {
+	if followerID == "" || targetHandle == "" {
+		return nil
+	}
+	follows, err := s.follows.ListByFollower(followerID)
+	if err != nil {
+		return err
+	}
+	for _, f := range follows {
+		if !strings.EqualFold(f.TargetHandle, targetHandle) {
+			continue
+		}
+		if err := s.follows.Delete(f.ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Service) ListFollowing(followerID string) ([]Follow, error) {
 	return s.follows.ListByFollower(followerID)
 }

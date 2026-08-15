@@ -168,3 +168,19 @@ func RemoveWorkoutCommentByNoteID(comments *WorkoutComments, noteID string) Work
 	norm.Comments = filtered
 	return NormalizeWorkoutComments(&norm)
 }
+
+func RemoveWorkoutCommentsByHandle(comments *WorkoutComments, handle string) WorkoutComments {
+	norm := NormalizeWorkoutComments(comments)
+	if handle == "" {
+		return norm
+	}
+	filtered := make([]WorkoutComment, 0, len(norm.Comments))
+	for _, c := range norm.Comments {
+		if strings.EqualFold(c.User.Handle, handle) {
+			continue
+		}
+		filtered = append(filtered, c)
+	}
+	norm.Comments = filtered
+	return NormalizeWorkoutComments(&norm)
+}

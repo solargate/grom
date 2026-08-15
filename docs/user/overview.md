@@ -10,6 +10,10 @@ If the operator enables outbound email (`mailer` in server config), the sign-in 
 
 When the operator enables captcha (`auth.captcha.enabled`), sign-in, registration, and forgot-password show an **I'm not a robot** checkbox. Tick it and wait for the local proof-of-work check to finish before submitting (it may take a moment on slower devices). Setting a new password from the email reset link does not require captcha.
 
+## Profile and account deletion
+
+From **Profile**, use the overflow menu to edit your profile or **Delete account**. Deletion asks for your password and permanently removes your login, workouts, equipment, and related data from the server. Federated followers are notified with an ActivityPub `Delete` of your actor (best-effort; remote servers may keep stale copies if they never receive the activity). After success, the app shows **Goodbye** and signs you out. The same nickname and email can be registered again immediately. Account deletion requires a normal signed-in session (JWT); personal access tokens cannot delete an account.
+
 This page is a short tour of the main screens (screenshots below are from Android). Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin). For the HTTP API, see Swagger at `/api/docs/` on a running server.
 
 ## Workouts
@@ -38,7 +42,7 @@ Manage bikes, shoes, and other gear. Items are grouped by category; distance tot
 
 Follow other users on the same instance and browse a shared feed. Like and comment on workouts from people you follow (local or federated); counts appear on list and detail screens.
 
-When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way.
+When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way. Deleting your account sends a `Delete` of your actor so remote followers can purge cached workouts; receiving a remote actor `Delete` clears that athlete’s federated inbox entries on this server.
 
 ## Strava import
 

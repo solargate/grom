@@ -9,6 +9,9 @@ type Repository interface {
 	Create(nickname, name, email, password string) (*User, error)
 	UpdateProfile(userID, name string) (*User, error)
 	UpdatePassword(userID, passwordHash string) error
+	// Delete removes the user record and profile. Callers must purge other
+	// user-owned data (workouts, follows, etc.) via storage.Backend.PurgeUser.
+	Delete(userID string) error
 
 	GetProfile(userID string) (*Profile, error)
 	PutProfile(userID string, profile Profile) error

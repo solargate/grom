@@ -505,3 +505,34 @@ func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, follow
 	)
 	return nil
 }
+
+// DeliverActorDelete notifies remote inboxes that the local actor was deleted.
+// Delivery is best-effort: individual inbox failures are logged and do not stop the loop.
+func (d *Delivery) DeliverActorDelete(nickname string, followerInboxes []string) {
+	if d == nil || nickname == "" || len(followerInboxes) == 0 {
+		return
+	}
+	author := actorURL(nickname)
+	activity := map[string]any{
+		"@context": "https://www.w3.org/ns/activitystreams",
+		"id":       fmt.Sprintf("%s/activities/%s", author, uuid.NewString()),
+		"type":     "Delete",
+		"actor":    author,
+		"object":   author,
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	for _, inbox := range followerInboxes {
+		if err := d.postActivity(inbox, activity); err != nil {
+			slog.Error("federation actor delete delivery failed",
+				"nickname", nickname,
+				"inbox", inbox,
+				"err", err,
+			)
+			continue
+		}
+	}
+	slog.Info("federation actor delete delivered",
+		"nickname", nickname,
+		"inboxes", len(followerInboxes),
+	)
+}

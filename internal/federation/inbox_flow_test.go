@@ -56,6 +56,7 @@ func (m *memUsers) GetProfile(string) (*users.Profile, error) {
 }
 func (m *memUsers) PutProfile(string, users.Profile) error     { return nil }
 func (m *memUsers) SetLastSportType(string, string) error      { return nil }
+func (m *memUsers) Delete(string) error                         { return users.ErrUserNotFound }
 
 type memFollows struct {
 	mu      sync.Mutex
@@ -132,6 +133,21 @@ func (m *memFollows) Delete(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.follows, id)
+	return nil
+}
+
+func (m *memFollows) DeleteInvolving(followerID, localHandle string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for id, f := range m.follows {
+		if f.FollowerID == followerID {
+			delete(m.follows, id)
+			continue
+		}
+		if localHandle != "" && strings.EqualFold(f.TargetHandle, localHandle) {
+			delete(m.follows, id)
+		}
+	}
 	return nil
 }
 

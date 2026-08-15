@@ -324,6 +324,40 @@ func (s *InboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error
 	return nil
 }
 
+func (s *InboxStore) DeleteAllForOwner(viewerNickname, ownerHandle string) error {
+	if viewerNickname == "" || ownerHandle == "" {
+		return nil
+	}
+	ownerKey := federation.OwnerKeyFromHandle(ownerHandle)
+	prefix := fedInboxKey(viewerNickname, ownerKey, "")
+	// fedInboxKey with empty workoutID still ends with trailing slash — collect workout IDs.
+	var workoutIDs []string
+	err := s.db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket(bucketFedInbox).Cursor()
+		for k, _ := c.Seek(prefix); k != nil && strings.HasPrefix(string(k), string(prefix)); k, _ = c.Next() {
+			parts := strings.SplitN(string(k), "/", 3)
+			if len(parts) == 3 && parts[2] != "" {
+				workoutIDs = append(workoutIDs, parts[2])
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, id := range workoutIDs {
+		if err := s.Delete(viewerNickname, ownerHandle, id); err != nil {
+			return err
+		}
+	}
+	ctx := context.Background()
+	_ = s.blobs.Delete(ctx, keys.FederatedInboxAvatar(viewerNickname, ownerKey))
+	return s.db.Update(func(tx *bolt.Tx) error {
+		_ = tx.Bucket(bucketFedAuthors).Delete(fedAuthorKey(viewerNickname, ownerKey))
+		return nil
+	})
+}
+
 func (s *InboxStore) withOwnerWorkout(viewerNickname, ownerNickname, workoutID string, fn func(ownerKey string, w *workouts.Workout) error) error {
 	return s.db.View(func(tx *bolt.Tx) error {
 		ownerKey, err := s.findOwnerKey(tx, viewerNickname, ownerNickname)

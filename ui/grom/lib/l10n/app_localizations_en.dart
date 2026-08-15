@@ -252,6 +252,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get ok => 'OK';
+
+  @override
   String get selectWorkoutType => 'Select workout type';
 
   @override
@@ -813,6 +816,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountWarning =>
+      'All account data, including server login credentials, workouts, equipment, and related data, will be permanently deleted from the server.';
+
+  @override
+  String get deleteAccountPasswordLabel => 'Password';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get deleteAccountGoodbye => 'Goodbye';
+
+  @override
+  String get deleteAccountFailed => 'Failed to delete account';
+
+  @override
+  String get deleteAccountInvalidPassword => 'Invalid password';
 
   @override
   String get profileSaved => 'Profile saved';

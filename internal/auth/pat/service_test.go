@@ -64,6 +64,18 @@ func (m *memRepo) DeleteByUserAndID(userID, id string) error {
 	return nil
 }
 
+func (m *memRepo) DeleteAllForUser(userID string) error {
+	out := m.records[:0]
+	for _, r := range m.records {
+		if r.UserID == userID {
+			continue
+		}
+		out = append(out, r)
+	}
+	m.records = out
+	return nil
+}
+
 func (m *memRepo) setExpiresAt(id string, at time.Time) {
 	for i := range m.records {
 		if m.records[i].ID == id {
