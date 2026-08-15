@@ -1600,6 +1600,18 @@ abstract class AppLocalizations {
   /// **'Edit profile'**
   String get editProfile;
 
+  /// No description provided for @profileActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile actions'**
+  String get profileActions;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
   /// No description provided for @profileSaved.
   ///
   /// In en, this message translates to:

@@ -809,6 +809,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editProfile => 'Редактирование профиля';
 
   @override
+  String get profileActions => 'Действия с профилем';
+
+  @override
+  String get deleteAccount => 'Удалить аккаунт';
+
+  @override
   String get profileSaved => 'Профиль сохранён';
 
   @override

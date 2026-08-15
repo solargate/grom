@@ -16,10 +16,10 @@ class ProfilePage extends StatefulWidget {
   final String nickname;
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<ProfilePage> createState() => ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class ProfilePageState extends State<ProfilePage> {
   final ApiRequest _api = ApiRequest();
 
   String _name = '';
@@ -78,7 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _openEditProfile() async {
+  Future<void> openEditProfile() async {
     final result = await showProfileFormDialog(
       context,
       initialName: _name,
@@ -137,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Card(
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: _openEditProfile,
+              onTap: openEditProfile,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(

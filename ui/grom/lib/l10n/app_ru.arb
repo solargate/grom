@@ -376,6 +376,8 @@
   "failedToSearchUsers": "Не удалось выполнить поиск пользователей",
   "failedToLoadProfile": "Не удалось загрузить профиль",
   "editProfile": "Редактирование профиля",
+  "profileActions": "Действия с профилем",
+  "deleteAccount": "Удалить аккаунт",
   "profileSaved": "Профиль сохранён",
   "avatarUpdated": "Аватар обновлён",
   "failedToUploadAvatar": "Не удалось загрузить аватар",

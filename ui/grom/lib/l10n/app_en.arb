@@ -376,6 +376,8 @@
   "failedToSearchUsers": "Failed to search users",
   "failedToLoadProfile": "Failed to load profile",
   "editProfile": "Edit profile",
+  "profileActions": "Profile actions",
+  "deleteAccount": "Delete account",
   "profileSaved": "Profile saved",
   "avatarUpdated": "Avatar updated",
   "failedToUploadAvatar": "Failed to upload avatar",

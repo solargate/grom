@@ -809,6 +809,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editProfile => 'Edit profile';
 
   @override
+  String get profileActions => 'Profile actions';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
   String get profileSaved => 'Profile saved';
 
   @override

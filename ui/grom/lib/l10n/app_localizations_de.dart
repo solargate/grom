@@ -826,6 +826,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editProfile => 'Profil bearbeiten';
 
   @override
+  String get profileActions => 'Profilaktionen';
+
+  @override
+  String get deleteAccount => 'Konto löschen';
+
+  @override
   String get profileSaved => 'Profil gespeichert';
 
   @override

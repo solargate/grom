@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Profile screen: overflow menu (edit profile, delete account stub)
+
 ### Changed
 
 - `grom migrate-storage` copies personal access tokens between `file` and `bbolt`; password-reset tokens remain excluded

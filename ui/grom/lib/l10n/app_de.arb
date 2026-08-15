@@ -376,6 +376,8 @@
   "failedToSearchUsers": "Benutzersuche fehlgeschlagen",
   "failedToLoadProfile": "Profil konnte nicht geladen werden",
   "editProfile": "Profil bearbeiten",
+  "profileActions": "Profilaktionen",
+  "deleteAccount": "Konto löschen",
   "profileSaved": "Profil gespeichert",
   "avatarUpdated": "Avatar aktualisiert",
   "failedToUploadAvatar": "Avatar konnte nicht hochgeladen werden",

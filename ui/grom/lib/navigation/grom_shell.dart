@@ -24,6 +24,7 @@ import '../server_storage.dart';
 import '../services/health_sync_service.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
+import '../widgets/profile_menu.dart';
 import '../widgets/track_recording_recovery_dialog.dart';
 import '../widgets/workout_detail_menu.dart';
 import 'grom_destination.dart';
@@ -48,6 +49,7 @@ class GromShell extends StatefulWidget {
 class _GromShellState extends State<GromShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _homePageKey = GlobalKey<HomePageState>();
+  final _profilePageKey = GlobalKey<ProfilePageState>();
   final ApiRequest _api = ApiRequest();
 
   String _title = 'Grom Home';
@@ -78,6 +80,8 @@ class _GromShellState extends State<GromShell> {
       _isLoggedIn;
   bool get _isViewingWorkout =>
       _selectedDestination == GromDestination.home && _viewingWorkout != null;
+  bool get _isViewingProfile =>
+      _selectedDestination == GromDestination.profile && !_isViewingWorkout;
   bool get _isViewingFeedPhoto =>
       _selectedDestination == GromDestination.home &&
       _viewingWorkout == null &&
@@ -614,6 +618,21 @@ class _GromShellState extends State<GromShell> {
     );
   }
 
+  Widget _buildProfileMenu() {
+    return ProfileMenu(
+      onSelected: _handleProfileMenuAction,
+    );
+  }
+
+  void _handleProfileMenuAction(ProfileMenuAction action) {
+    switch (action) {
+      case ProfileMenuAction.edit:
+        unawaited(_profilePageKey.currentState?.openEditProfile());
+      case ProfileMenuAction.deleteAccount:
+        break;
+    }
+  }
+
   String _contentHeaderTitle(AppLocalizations l10n) {
     if (_isViewingWorkout) {
       return _viewingWorkout!.name;
@@ -743,7 +762,10 @@ class _GromShellState extends State<GromShell> {
       case GromDestination.userSearch:
         return const UserSearchPage();
       case GromDestination.profile:
-        return ProfilePage(nickname: _nickname!);
+        return ProfilePage(
+          key: _profilePageKey,
+          nickname: _nickname!,
+        );
       case GromDestination.equipment:
         return const EquipmentPage();
       case GromDestination.integration:
@@ -800,6 +822,7 @@ class _GromShellState extends State<GromShell> {
         actions: [
           if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
+          if (_isViewingProfile) _buildProfileMenu(),
         ],
       ),
       drawer: _isViewingWorkout ? null : _buildSideMenu(),
@@ -847,6 +870,7 @@ class _GromShellState extends State<GromShell> {
                           ),
                           if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
+                          if (_isViewingProfile) _buildProfileMenu(),
                         ],
                       ),
                     ),
