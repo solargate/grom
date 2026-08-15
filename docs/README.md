@@ -1,6 +1,6 @@
 # Documentation
 
-English documentation for Grom. The [root README](../README.md) is a short entry point; details live here.
+Grom is a self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like and comment on their activities, and browse a social feed - all on infrastructure you control.
 
 ## I want to…
 
