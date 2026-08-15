@@ -20,6 +20,8 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
 - **Federation** — optional ActivityPub so instances can follow each other across the network
 - **Strava import** — bulk-import a Strava data export ZIP
+- **Health Sync** — import activities from Google Drive on Android (Health Sync exports)
+- **API tokens** — scoped personal access tokens (`grom_pat_…`) for workouts and equipment
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
 - **Locales** — English, Russian, and German in the Flutter UI
 
@@ -43,7 +45,9 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 ## Documentation
 
 - **[Docs index](docs/README.md)** — user and admin guides
-- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment)
+- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, Health Sync)
+- [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
+- [Health Sync + Google Drive](docs/health-sync-google-drive.md) — Android import from Health Sync via Drive
 - [Install and run](docs/admin/install.md) — build and start the server
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset, captcha
 - API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))
