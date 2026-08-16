@@ -7,6 +7,7 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'requirements-docs.txt'
+      - 'scripts/emit_privacy_html.py'
       - '.github/workflows/pages.yml'
   pull_request:
     branches: [master]
@@ -14,6 +15,7 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'requirements-docs.txt'
+      - 'scripts/emit_privacy_html.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   workflow_call:
@@ -50,7 +52,7 @@ jobs:
           set -euo pipefail
           mkdocs build --strict
           # Stable URL for store listings (Play Console, etc.)
-          cp site/privacy/index.html site/privacy.html
+          python3 scripts/emit_privacy_html.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

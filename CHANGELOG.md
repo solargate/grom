@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `grom migrate-storage --verify` also compares profiles, speed/heart-rate chart counts, and PAT counts; legacy plain-text Like activity ids for local workouts are reconstructed when `federation.domain` is set
 - Privacy policy source moved to `docs/privacy.md`; root `PRIVACY.md` is a stub with links to the docs and Pages URL
 
+### Fixed
+
+- GitHub Pages `privacy.html` asset paths (CSS/JS) so the store URL renders the Material theme instead of a broken page
+
 ## [0.8.0] - 2026-08-13
 
 ### Added

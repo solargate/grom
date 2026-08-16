@@ -18,7 +18,7 @@ apidoc:
 
 docs:
 	mkdocs build --strict
-	cp site/privacy/index.html site/privacy.html
+	python3 scripts/emit_privacy_html.py
 
 docs-serve:
 	mkdocs serve
