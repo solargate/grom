@@ -435,6 +435,7 @@
   "about": "О приложении",
   "aboutAuthorLabel": "Автор",
   "aboutSourceCodeLabel": "Исходный код",
+  "aboutPrivacyPolicyLabel": "Политика конфиденциальности",
   "aboutLicenseLabel": "Лицензия",
   "mapDataAttributionTitle": "Картографические данные",
   "openStreetMapAttribution": "© Участники OpenStreetMap",

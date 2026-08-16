@@ -435,6 +435,7 @@
   "about": "About",
   "aboutAuthorLabel": "Author",
   "aboutSourceCodeLabel": "Source code",
+  "aboutPrivacyPolicyLabel": "Privacy Policy",
   "aboutLicenseLabel": "License",
   "mapDataAttributionTitle": "Map data",
   "openStreetMapAttribution": "© OpenStreetMap contributors",

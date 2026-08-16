@@ -1954,6 +1954,12 @@ abstract class AppLocalizations {
   /// **'Source code'**
   String get aboutSourceCodeLabel;
 
+  /// No description provided for @aboutPrivacyPolicyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get aboutPrivacyPolicyLabel;
+
   /// No description provided for @aboutLicenseLabel.
   ///
   /// In en, this message translates to:

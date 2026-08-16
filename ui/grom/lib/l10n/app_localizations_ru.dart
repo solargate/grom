@@ -988,6 +988,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aboutSourceCodeLabel => 'Исходный код';
 
   @override
+  String get aboutPrivacyPolicyLabel => 'Политика конфиденциальности';
+
+  @override
   String get aboutLicenseLabel => 'Лицензия';
 
   @override

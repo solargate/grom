@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'about_page_url.dart' if (dart.library.html) 'about_page_url_web.dart';
 
 const projectRepositoryUrl = 'https://github.com/solargate/grom';
+const privacyPolicyUrl = 'https://solargate.github.io/grom/privacy/';
 const openStreetMapCopyrightUrl = 'https://www.openstreetmap.org/copyright';
 
 class AboutPage extends StatelessWidget {
@@ -79,6 +80,19 @@ class AboutPage extends StatelessWidget {
               onPressed: () => _openExternalUrl(context, projectRepositoryUrl),
               icon: const Icon(Icons.open_in_new, size: 18),
               label: const Text(projectRepositoryUrl),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.aboutPrivacyPolicyLabel,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, privacyPolicyUrl),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(l10n.aboutPrivacyPolicyLabel),
             ),
             const SizedBox(height: 20),
             Text(

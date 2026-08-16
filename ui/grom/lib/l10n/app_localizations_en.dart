@@ -988,6 +988,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutSourceCodeLabel => 'Source code';
 
   @override
+  String get aboutPrivacyPolicyLabel => 'Privacy Policy';
+
+  @override
   String get aboutLicenseLabel => 'License';
 
   @override

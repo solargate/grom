@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://solargate.github.io/grom/`, including Privacy Policy at `/privacy/`
 - Docs site locales: full Russian (`/ru/`) and German (`/de/`) translations via `mkdocs-static-i18n` (English remains canonical; Privacy Policy stays English-only for all locales)
 - User docs: [Delete your Grom account](docs/user/delete-account.md) (web and Android steps, what data is removed; published at `/user/delete-account/` on the docs site)
+- Privacy Policy content for Google Play and self-hosted use (roles, location/fitness data, optional Google Drive, federation, account deletion, 13+); About screen link to the published policy
 
 ### Changed
 

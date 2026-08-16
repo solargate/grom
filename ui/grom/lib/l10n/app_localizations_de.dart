@@ -1006,6 +1006,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutSourceCodeLabel => 'Quellcode';
 
   @override
+  String get aboutPrivacyPolicyLabel => 'Datenschutzrichtlinie';
+
+  @override
   String get aboutLicenseLabel => 'Lizenz';
 
   @override
