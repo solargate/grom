@@ -17,6 +17,8 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   workflow_call:
+  release:
+    types: [published]
 
 permissions:
   contents: read
