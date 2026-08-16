@@ -44,7 +44,7 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 
 ## Documentation
 
-**On the website:** [Docs](https://solargate.github.io/grom/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy.html)
+**On the website:** [Docs](https://solargate.github.io/grom/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy/)
 
 **In the repository** (for contributors):
 

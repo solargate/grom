@@ -18,7 +18,6 @@ apidoc:
 
 docs:
 	mkdocs build --strict
-	python3 scripts/emit_privacy_html.py
 
 docs-serve:
 	mkdocs serve
