@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Account deletion from the profile menu: password confirmation, permanent wipe of user data (file and bbolt), ActivityPub `Delete` of the actor (best-effort), and incoming `Delete` Person handling in the federation inbox
 - Profile screen: overflow menu (edit profile, delete account)
 - Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://solargate.github.io/grom/`, including Privacy Policy at `/privacy/`
+- Docs site locales: full Russian (`/ru/`) and German (`/de/`) translations via `mkdocs-static-i18n` (English remains canonical; Privacy Policy stays English-only for all locales)
 - User docs: [Delete your Grom account](docs/user/delete-account.md) (web and Android steps, what data is removed; published at `/user/delete-account/` on the docs site)
 
 ### Changed

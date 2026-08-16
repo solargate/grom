@@ -47,9 +47,53 @@ nav:
 
 plugins:
   - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ru
+          name: Русский
+          build: true
+          site_description: Self-hosted трекер тренировок с необязательной федерацией ActivityPub
+          nav_translations:
+            Home: Главная
+            User: Пользователь
+            Overview: Обзор
+            Grom API tokens: API-токены Grom
+            Delete account: Удаление аккаунта
+            Admin: Администрирование
+            Install and run: Установка и запуск
+            Configuration: Конфигурация
+            Integrations: Интеграции
+            Strava bulk import: Массовый импорт Strava
+            Health Sync + Google Drive: Health Sync + Google Drive
+            Privacy Policy: Политика конфиденциальности
+        - locale: de
+          name: Deutsch
+          build: true
+          site_description: Self-hosted Trainings-Tracker mit optionaler ActivityPub-Föderation
+          nav_translations:
+            Home: Start
+            User: Benutzer
+            Overview: Überblick
+            Grom API tokens: Grom-API-Token
+            Delete account: Konto löschen
+            Admin: Administration
+            Install and run: Installation und Start
+            Configuration: Konfiguration
+            Integrations: Integrationen
+            Strava bulk import: Strava-Massenimport
+            Health Sync + Google Drive: Health Sync + Google Drive
+            Privacy Policy: Datenschutzrichtlinie
 
 markdown_extensions:
   - admonition
+  - attr_list
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:

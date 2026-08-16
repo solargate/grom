@@ -54,22 +54,23 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/web/` | `embed` of Flutter web assets |
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
 | `testdata/` (`testdata/tracks/` for GPX/FIT) | Shared fixtures for Go and Flutter tests |
-| `docs/` | Human documentation (English); index in `docs/README.md` (also MkDocs homepage) — not the same as `api/docs/` |
-| `mkdocs.yml` / `requirements-docs.txt` | GitHub Pages docs site (Material); built by `.github/workflows/pages.yml` |
+| `docs/` | Human documentation (EN + RU/DE via `*.ru.md` / `*.de.md`); index in `docs/README.md` (also MkDocs homepage) — not the same as `api/docs/` |
+| `mkdocs.yml` / `requirements-docs.txt` | GitHub Pages docs site (Material + `mkdocs-static-i18n`); built by `.github/workflows/pages.yml` |
 | `PRIVACY.md` | Stub linking to `docs/privacy.md` and Pages `/privacy/` |
 
 ## Human documentation
 
-- **Language:** English.
+- **Languages:** English is the canonical source under `docs/` (unsuffixed files). Russian and German are full translations via MkDocs Material + `mkdocs-static-i18n` (`docs_structure: suffix`: `page.ru.md`, `page.de.md`). EN is served at `/`; RU at `/ru/`; DE at `/de/`. Root `README.md` / `AGENTS.md` stay English-only.
 - **Layout:** Root `README.md` is a short front door (what/why, hero screenshots, quick start, links). Details live under `docs/`:
   - `docs/user/` — end-user / client tour (web + Android)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
   - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
-  - `docs/screenshots/` — images for README and user docs
-  - `docs/privacy.md` — privacy policy (root `PRIVACY.md` is a stub)
-- **Index:** `docs/README.md` (short pitch, Features, screenshot teaser, then “I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here; keep the feature list in sync with root `README.md` when capabilities change.
+  - `docs/screenshots/` — images for README and user docs (shared across locales)
+  - `docs/privacy.md` — privacy policy (English only; official text; root `PRIVACY.md` is a stub). Do not add `privacy.ru.md` / `privacy.de.md` — all locales link the same EN page via fallback.
+- **Index:** `docs/README.md` (short pitch, Features, screenshot teaser, then “I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here; keep the feature list in sync with root `README.md` when capabilities change. Localized homepages: `README.ru.md`, `README.de.md`.
 - **Pages:** published to `https://solargate.github.io/grom/` via MkDocs Material (`.github/workflows/pages.yml` on `docs/**` changes and on release). Local preview: `pip install -r requirements-docs.txt`, then `make docs` / `make docs-serve`. Store listings should use `…/privacy/`.
 - **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` and `mkdocs.yml` nav if you add/rename pages. Prefer GitHub blob/tree URLs (not `../` repo paths) for links that leave `docs/`, so they work on Pages.
+- **i18n sync:** when you change an English `docs/**/*.md` page (except `privacy.md`), update the matching `*.ru.md` and `*.de.md` in the same change. New pages need EN + RU + DE (and `nav_translations` in `mkdocs.yml` if nav labels change). Do not translate config keys, API paths, or code identifiers. For Russian headings that are linked from other pages, set explicit English-style anchors (`## Заголовок {#english-slug}`) so cross-links stay stable (Cyrillic alone yields `_1`-style slugs).
 - **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make doc`). Runtime Swagger UI is `/api/docs`.
 
 ## Tech stack
@@ -175,8 +176,8 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 
 - Read nearby packages before changing interfaces (`Repository`, `Backend`, `blob.Store`).
 - Preserve error-sentinel patterns and HTTP mapping in `api/v1`.
-- Update config examples and `docs/admin/` when TLS/federation/storage/install behavior changes; keep root `README.md` short (link out, update quick start only if needed).
-- Update `docs/user/` when client-facing flows or screens change in a way operators/users need to know.
+- Update config examples and `docs/admin/` when TLS/federation/storage/install behavior changes; keep root `README.md` short (link out, update quick start only if needed). Sync `*.ru.md` / `*.de.md` with English docs edits.
+- Update `docs/user/` when client-facing flows or screens change in a way operators/users need to know (EN + RU + DE).
 - Update `CHANGELOG.md` `[Unreleased]` for user-visible changes.
 - Add or extend tests for non-trivial logic (track stats, federation inbox, storage).
 - Keep API and Flutter models aligned when changing JSON field names.
@@ -205,5 +206,5 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
-| Human docs | `docs/README.md` (index + Pages homepage), `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md`; `mkdocs.yml`; keep root `README.md` short |
+| Human docs | `docs/README.md` (index + Pages homepage), `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |
