@@ -69,5 +69,5 @@ jobs:
 
       - name: Check swagger docs are up to date
         run: |
-          make doc
+          make apidoc
           git diff --exit-code api/docs
