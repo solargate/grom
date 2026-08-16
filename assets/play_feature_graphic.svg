@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" role="img" aria-label="Grom feature graphic">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1F6FA0"/>
+      <stop offset="55%" stop-color="#2682B9"/>
+      <stop offset="100%" stop-color="#3A98C9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="28%" cy="48%" r="45%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Full-bleed brand background -->
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- Soft diagonal atmosphere -->
+  <path d="M0 500 L420 0 H560 L140 500 Z" fill="#FFFFFF" fill-opacity="0.05"/>
+  <path d="M640 500 L1024 120 V500 Z" fill="#0E4F75" fill-opacity="0.18"/>
+
+  <!-- Bolt mark (from logo geometry, scaled for 500px height) -->
+  <g transform="translate(168 250) scale(0.38) translate(-512 -512)">
+    <path fill="#FFFFFF" fill-opacity="0.22"
+          d="M612 180 L300 512 H450 L412 844 L724 512 H574 Z"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="64"
+          stroke-linecap="round" stroke-linejoin="round"
+          d="M612 180 L300 512 H450 L412 844 L724 512 H574 Z"/>
+  </g>
+
+  <!-- Wordmark + short line -->
+  <g transform="translate(390 250)">
+    <text x="0" y="-18"
+          font-family="DejaVu Sans, Liberation Sans, Arial, Helvetica, sans-serif"
+          font-size="120" font-weight="700" fill="#FFFFFF"
+          letter-spacing="2">Grom</text>
+    <text x="4" y="62"
+          font-family="DejaVu Sans, Liberation Sans, Arial, Helvetica, sans-serif"
+          font-size="34" font-weight="400" fill="#FFFFFF" fill-opacity="0.88"
+          letter-spacing="0.5">Self-hosted workout tracker</text>
+  </g>
+</svg>
