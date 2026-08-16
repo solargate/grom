@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="16e-02: symmetric balanced bolt">
+  <!-- Mid on y=512; equal elbow widths; tips mirrored around x=512 -->
+  <rect width="1024" height="1024" fill="#2682B9"/>
+  <path fill="#FFFFFF" fill-opacity="0.22"
+        d="M612 180 L300 512 H450 L412 844 L724 512 H574 Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="64"
+        stroke-linecap="round" stroke-linejoin="round"
+        d="M612 180 L300 512 H450 L412 844 L724 512 H574 Z"/>
+</svg>

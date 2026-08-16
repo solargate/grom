@@ -2,6 +2,8 @@
 
 Der Flutter-Client von Grom läuft als **Web-UI** und als **Android**-App. Die Web-UI liefert derselbe `grom`-Prozess: öffnen Sie die Basis-URL des Servers im Browser (z. B. `http://localhost:8080/` mit der Standard-Dev-Konfiguration). Bildschirme und Abläufe entsprechen der Android-App; Live-GPS-Aufzeichnung gibt es nur unter Android. UI-Texte gibt es auf Englisch, Russisch und Deutsch.
 
+Wenn Sie nicht angemeldet sind, zeigt **Home** / „Startseite“ einen Willkommensbildschirm mit Grom-Logo, kurzer Beschreibung und den Schaltflächen **Sign in** / „Anmelden“ und **Register** / „Registrieren“. Unter Android erinnert der Text zusätzlich daran, beim Anmelden die Adresse des Grom-Servers einzugeben.
+
 Unter **Android** (später auch iOS) fragen Anmeldung und Registrierung nach einer **Server-URL**. Sie können einen nackten Host wie `grom.example.com` eingeben (ohne `https://`). Beim Absenden prüft die App `GET /api/v1/status` zuerst über HTTPS, dann HTTP, schreibt die aufgelöste URL ins Feld und fährt fort. Wenn Sie bereits `http://` / `https://` oder einen expliziten Port eingeben, wird dieser Wert unverändert genutzt. **HTTP ist für lokale / LAN-Instanzen** ohne TLS erlaubt; für öffentlich erreichbare Server bevorzugen Sie HTTPS.
 
 ## Anmeldung und Passwort-Reset

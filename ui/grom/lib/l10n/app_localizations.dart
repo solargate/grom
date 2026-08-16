@@ -124,6 +124,24 @@ abstract class AppLocalizations {
   /// **'My workouts'**
   String get homeTabMyWorkouts;
 
+  /// No description provided for @welcomeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts, equipment, and a friends feed on your own server.'**
+  String get welcomeDescription;
+
+  /// No description provided for @welcomeInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'To get started, sign in or register.'**
+  String get welcomeInstructions;
+
+  /// No description provided for @welcomeMobileServerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On a mobile phone, enter the Grom server address.'**
+  String get welcomeMobileServerHint;
+
   /// No description provided for @signIn.
   ///
   /// In en, this message translates to:

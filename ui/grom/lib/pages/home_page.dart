@@ -5,6 +5,8 @@ import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/workout.dart';
 import '../pages/workout_detail_page.dart';
+import '../platform/is_mobile_client.dart';
+import '../widgets/welcome_guest_view.dart';
 import '../widgets/workout_feed_list.dart';
 import '../widgets/workout_photo_viewer.dart';
 
@@ -24,6 +26,8 @@ class HomePage extends StatefulWidget {
     this.onPhotoViewerIndexChanged,
     this.feedPhotoViewerWorkout,
     this.onFeedPhotoViewerWorkoutChanged,
+    this.onSignIn,
+    this.onRegister,
   });
 
   final String? nickname;
@@ -37,6 +41,8 @@ class HomePage extends StatefulWidget {
   final ValueChanged<int?>? onPhotoViewerIndexChanged;
   final Workout? feedPhotoViewerWorkout;
   final ValueChanged<Workout?>? onFeedPhotoViewerWorkoutChanged;
+  final VoidCallback? onSignIn;
+  final VoidCallback? onRegister;
 
   @override
   State<HomePage> createState() => HomePageState();
@@ -214,7 +220,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     if (widget.nickname == null) {
-      return const SizedBox.shrink();
+      return WelcomeGuestView(
+        onSignIn: widget.onSignIn ?? () {},
+        onRegister: widget.onRegister ?? () {},
+        showMobileServerHint: isMobileClient,
+      );
     }
 
     final l10n = AppLocalizations.of(context)!;

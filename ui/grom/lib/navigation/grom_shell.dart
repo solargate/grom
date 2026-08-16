@@ -861,6 +861,12 @@ class _GromShellState extends State<GromShell> {
           onFeedPhotoViewerWorkoutChanged: (workout) {
             setState(() => _feedPhotoViewerWorkout = workout);
           },
+          onSignIn: () {
+            setState(() => _selectedDestination = GromDestination.login);
+          },
+          onRegister: () {
+            setState(() => _selectedDestination = GromDestination.register);
+          },
         );
       case GromDestination.userSearch:
         return const UserSearchPage();

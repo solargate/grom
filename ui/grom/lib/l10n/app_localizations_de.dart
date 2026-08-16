@@ -21,6 +21,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get homeTabMyWorkouts => 'Meine Trainings';
 
   @override
+  String get welcomeDescription =>
+      'Trainings, Ausrüstung und Freundes-Feed auf dem eigenen Server.';
+
+  @override
+  String get welcomeInstructions =>
+      'Melden Sie sich an oder registrieren Sie sich, um zu beginnen.';
+
+  @override
+  String get welcomeMobileServerHint =>
+      'Auf dem Mobiltelefon geben Sie die Adresse des Grom-Servers ein.';
+
+  @override
   String get signIn => 'Anmelden';
 
   @override

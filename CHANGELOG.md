@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Logged-out Home screen: Grom logo and name, short product blurb, sign-in/register actions, and a mobile-only hint to enter the server address
 - Account deletion from the profile menu: password confirmation, permanent wipe of user data (file and bbolt), ActivityPub `Delete` of the actor (best-effort), and incoming `Delete` Person handling in the federation inbox
 - Profile screen: overflow menu (edit profile, delete account)
 - Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://solargate.github.io/grom/`, including Privacy Policy at `/privacy/`
