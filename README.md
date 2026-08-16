@@ -44,12 +44,13 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 
 ## Documentation
 
-**On the website:** [Docs](https://solargate.github.io/grom/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy/)
+**On the website:** [Docs](https://solargate.github.io/grom/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Delete account](https://solargate.github.io/grom/user/delete-account/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy/)
 
 **In the repository** (for contributors):
 
 - **[Docs index](docs/README.md)** — user and admin guides
 - [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, Health Sync)
+- [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)
 - [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
 - [Health Sync + Google Drive](docs/integrations/health-sync-google-drive.md) — Android import from Health Sync via Drive
 - [Install and run](docs/admin/install.md) — build and start the server

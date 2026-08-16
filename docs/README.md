@@ -15,6 +15,7 @@ Grom is a self-hosted workout tracker with an optional ActivityPub federation la
 | Import a Strava export (UI + how import works) | [Strava bulk import](integrations/strava-bulk-import.md) |
 | Import Health Sync activities from Google Drive (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
 | Create API tokens for scripts and external apps | [Grom API tokens](user/grom-api-tokens.md) |
+| Delete my account | [Delete your Grom account](user/delete-account.md) |
 
 ### Admin
 

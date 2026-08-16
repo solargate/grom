@@ -36,6 +36,7 @@ nav:
   - User:
       - Overview: user/overview.md
       - Grom API tokens: user/grom-api-tokens.md
+      - Delete account: user/delete-account.md
   - Admin:
       - Install and run: admin/install.md
       - Configuration: admin/configuration.md
