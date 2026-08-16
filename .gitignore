@@ -1,5 +1,7 @@
 .vscode/
 .cursor/
+site/
+.venv-docs/
 cmd/grom/grom
 cmd/grom/data/
 

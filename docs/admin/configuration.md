@@ -2,8 +2,8 @@
 
 Grom is configured with a YAML file. By default it looks for `config.yaml` in the current working directory. Pass `--config` (or `-c`) to use another path.
 
-- Example profiles: [`cmd/grom/config-examples/`](../../cmd/grom/config-examples/)
-- Every field with comments: [`config.full.yaml`](../../cmd/grom/config-examples/config.full.yaml)
+- Example profiles: [`cmd/grom/config-examples/`](https://github.com/solargate/grom/tree/master/cmd/grom/config-examples)
+- Every field with comments: [`config.full.yaml`](https://github.com/solargate/grom/blob/master/cmd/grom/config-examples/config.full.yaml)
 
 **Required:** `auth.jwt_secret` — a long random secret used to sign JWT access tokens.
 

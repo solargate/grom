@@ -1,0 +1,61 @@
+site_name: Grom
+site_description: Self-hosted workout tracker with optional ActivityPub federation
+site_url: https://solargate.github.io/grom/
+repo_url: https://github.com/solargate/grom
+repo_name: solargate/grom
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: README.md
+  - User:
+      - Overview: user/overview.md
+      - Grom API tokens: user/grom-api-tokens.md
+  - Admin:
+      - Install and run: admin/install.md
+      - Configuration: admin/configuration.md
+  - Integrations:
+      - Strava bulk import: integrations/strava-bulk-import.md
+      - Health Sync + Google Drive: integrations/health-sync-google-drive.md
+  - Privacy Policy: privacy.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - toc:
+      permalink: true
+
+strict: true

@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Account deletion from the profile menu: password confirmation, permanent wipe of user data (file and bbolt), ActivityPub `Delete` of the actor (best-effort), and incoming `Delete` Person handling in the federation inbox
 - Profile screen: overflow menu (edit profile, delete account)
+- Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://solargate.github.io/grom/`, including Privacy Policy at `privacy.html`
 
 ### Changed
 
 - `grom migrate-storage` copies personal access tokens between `file` and `bbolt`; password-reset tokens remain excluded
 - `grom migrate-storage --verify` also compares profiles, speed/heart-rate chart counts, and PAT counts; legacy plain-text Like activity ids for local workouts are reconstructed when `federation.domain` is set
+- Privacy policy source moved to `docs/privacy.md`; root `PRIVACY.md` is a stub with links to the docs and Pages URL
 
 ## [0.8.0] - 2026-08-13
 

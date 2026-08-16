@@ -54,7 +54,9 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/web/` | `embed` of Flutter web assets |
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
 | `testdata/` (`testdata/tracks/` for GPX/FIT) | Shared fixtures for Go and Flutter tests |
-| `docs/` | Human documentation (English); index in `docs/README.md` — not the same as `api/docs/` |
+| `docs/` | Human documentation (English); index in `docs/README.md` (also MkDocs homepage) — not the same as `api/docs/` |
+| `mkdocs.yml` / `requirements-docs.txt` | GitHub Pages docs site (Material); built by `.github/workflows/pages.yml` |
+| `PRIVACY.md` | Stub linking to `docs/privacy.md` and Pages `privacy.html` |
 
 ## Human documentation
 
@@ -64,8 +66,10 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
   - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
   - `docs/screenshots/` — images for README and user docs
-- **Index:** `docs/README.md` (“I want to…”). Do not duplicate that TOC here.
-- **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` if you add/rename pages.
+  - `docs/privacy.md` — privacy policy (root `PRIVACY.md` is a stub)
+- **Index:** `docs/README.md` (“I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here.
+- **Pages:** published to `https://solargate.github.io/grom/` via MkDocs Material (`.github/workflows/pages.yml` on `docs/**` changes and on release). Local preview: `pip install -r requirements-docs.txt`, then `make docs` / `make docs-serve`. Store listings should use `…/privacy.html`.
+- **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` and `mkdocs.yml` nav if you add/rename pages. Prefer GitHub blob/tree URLs (not `../` repo paths) for links that leave `docs/`, so they work on Pages.
 - **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make doc`). Runtime Swagger UI is `/api/docs`.
 
 ## Tech stack
@@ -89,6 +93,8 @@ Prefer Makefile targets:
 make grom          # swagger + flutter web + go build → cmd/grom/grom
 make cli           # go build only
 make doc           # regenerate api/docs from swag annotations in api/v1
+make docs          # MkDocs Material site → site/ (incl. privacy.html); needs mkdocs from requirements-docs.txt
+make docs-serve    # mkdocs serve (live preview)
 make web           # flutter build web → copy into internal/web/dist
 make test          # go test ./... && flutter test
 make test-go
@@ -199,5 +205,5 @@ TLS / federation / storage are documented in `docs/admin/configuration.md` (inst
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
-| Human docs | `docs/README.md` (index), `docs/user/`, `docs/admin/`, `docs/integrations/`; keep `README.md` short |
+| Human docs | `docs/README.md` (index + Pages homepage), `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md`; `mkdocs.yml`; keep root `README.md` short |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`; update compare links; tag `X.Y.Z` on master (CI fills release body from changelog) |

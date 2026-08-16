@@ -29,5 +29,6 @@ Grom is a self-hosted workout tracker with an optional ActivityPub federation la
 |-------|------|
 | Strava ZIP column mapping and import behavior | [Strava bulk import](integrations/strava-bulk-import.md) |
 | Health Sync Google Drive import (Android client) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
-| Full annotated config | [`config.full.yaml`](../cmd/grom/config-examples/config.full.yaml) |
-| HTTP API (Swagger UI) | On a running server: `/api/docs/` (e.g. `http://localhost:8080/api/docs/`); sources under [`api/docs/`](../api/docs/) |
+| Full annotated config | [`config.full.yaml`](https://github.com/solargate/grom/blob/master/cmd/grom/config-examples/config.full.yaml) |
+| HTTP API (Swagger UI) | On a running server: `/api/docs/` (e.g. `http://localhost:8080/api/docs/`); OpenAPI sources in [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) |
+| Privacy policy | [Privacy Policy](privacy.md) |

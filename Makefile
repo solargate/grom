@@ -1,4 +1,4 @@
-.PHONY: all grom doc web cli android android-apk android-aab android-debug gencerts test test-go test-ui clean
+.PHONY: all grom apidoc docs docs-serve web cli android android-apk android-aab android-debug gencerts test test-go test-ui clean
 
 VERSION := $(shell tr -d '[:space:]' < VERSION)
 BUILD_NUMBER ?= 1
@@ -7,14 +7,21 @@ FLUTTER_VERSION_FLAGS := --build-name=$(VERSION) --build-number=$(BUILD_NUMBER)
 
 all: grom
 
-grom: doc web cli
+grom: apidoc web cli
 	cd cmd/grom && go build -ldflags "$(LDFLAGS)" -o grom
 
 cli:
 	cd cmd/grom && go build -ldflags "$(LDFLAGS)" -o grom
 
-doc:
+apidoc:
 	cd api && swag init -d v1
+
+docs:
+	mkdocs build --strict
+	cp site/privacy/index.html site/privacy.html
+
+docs-serve:
+	mkdocs serve
 
 web:
 	cd ui/grom && flutter build web $(FLUTTER_VERSION_FLAGS)
@@ -46,4 +53,5 @@ test-ui:
 
 clean:
 	rm -f cmd/grom/grom
+	rm -rf site
 	cd ui/grom && flutter clean
