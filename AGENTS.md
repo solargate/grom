@@ -67,7 +67,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
   - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
   - `docs/screenshots/` — images for README and user docs
   - `docs/privacy.md` — privacy policy (root `PRIVACY.md` is a stub)
-- **Index:** `docs/README.md` (“I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here.
+- **Index:** `docs/README.md` (short pitch, Features, screenshot teaser, then “I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here; keep the feature list in sync with root `README.md` when capabilities change.
 - **Pages:** published to `https://solargate.github.io/grom/` via MkDocs Material (`.github/workflows/pages.yml` on `docs/**` changes and on release). Local preview: `pip install -r requirements-docs.txt`, then `make docs` / `make docs-serve`. Store listings should use `…/privacy/`.
 - **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` and `mkdocs.yml` nav if you add/rename pages. Prefer GitHub blob/tree URLs (not `../` repo paths) for links that leave `docs/`, so they work on Pages.
 - **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make doc`). Runtime Swagger UI is `/api/docs`.

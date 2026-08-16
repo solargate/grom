@@ -1,6 +1,31 @@
 # Documentation
 
-Grom is a self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like and comment on their activities, and browse a social feed - all on infrastructure you control.
+Grom is a self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like and comment on their activities, and browse a social feed — all on infrastructure you control.
+
+The server is a single Go binary; the Flutter client ships as an embedded web UI and as an Android app.
+
+## Features
+
+- **Workouts** — create and edit activities with stats, notes, media, and map previews
+- **GPS tracks** — import GPX and FIT; live recording on Android
+- **Equipment** — track bikes, shoes, and other gear linked to workouts
+- **Social feed** — follow users and see their workouts in one timeline
+- **Workout likes** — like others’ activities, see counts and who liked; federated `Like` / `Undo` when ActivityPub is enabled
+- **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
+- **Federation** — optional ActivityPub so instances can follow each other across the network
+- **Strava import** — bulk-import a Strava data export ZIP
+- **Health Sync** — import activities from Google Drive on Android (Health Sync exports)
+- **API tokens** — scoped personal access tokens (`grom_pat_…`) for workouts and equipment
+- **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
+- **Locales** — English, Russian, and German in the Flutter UI
+
+<p align="center">
+  <img src="screenshots/workout-list.jpg" width="250" alt="Workout list" />
+  <img src="screenshots/workout-record.jpg" width="250" alt="Live recording" />
+  <img src="screenshots/equipment.jpg" width="250" alt="Equipment" />
+</p>
+
+Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Install and run](admin/install.md). Source and quick start: [repository README](https://github.com/solargate/grom#readme).
 
 ## I want to…
 
