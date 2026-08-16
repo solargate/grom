@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-16
+
 ### Added
 
 - Logged-out Home screen: Grom logo and name, short product blurb, sign-in/register actions, and a mobile-only hint to enter the server address
@@ -226,7 +228,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.9.0...HEAD
+[0.9.0]: https://github.com/solargate/grom/releases/tag/0.9.0
 [0.8.0]: https://github.com/solargate/grom/releases/tag/0.8.0
 [0.7.3]: https://github.com/solargate/grom/releases/tag/0.7.3
 [0.7.2]: https://github.com/solargate/grom/releases/tag/0.7.2
