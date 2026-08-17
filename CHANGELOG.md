@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Side menu: Settings, then About, then Sign out (logged in); Settings then About when logged out
 - Release CI uploads the Android AAB to Google Play closed testing (`alpha`) as a draft, instead of internal testing
 
+### Fixed
+
+- bbolt: the newest workout is no longer listed twice on the first feed / own-workouts page when another local user also has workouts
+
 ## [0.9.1] - 2026-08-17
 
 ### Fixed

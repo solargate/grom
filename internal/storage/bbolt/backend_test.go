@@ -108,6 +108,101 @@ func TestWorkoutsStoreCRUDAndListPage(t *testing.T) {
 	}
 }
 
+func TestWorkoutsStoreListPageDoesNotDuplicateNewest(t *testing.T) {
+	b := openTestBackend(t)
+	repo := b.WorkoutsRepo()
+
+	start := time.Date(2026, 7, 8, 15, 0, 0, 0, time.UTC)
+	aliceIDs := make([]string, 0, 3)
+	for i := 0; i < 3; i++ {
+		created, err := repo.Create("alice", &workouts.Workout{
+			Name: "Alice", SportType: "Run",
+			StartDate: start.Add(-time.Duration(i) * time.Hour),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		aliceIDs = append(aliceIDs, created.ID)
+	}
+	// incrementPrefix("alice/") == "alice0"; a neighbor nick must not leak into alice's page.
+	alice0w, err := repo.Create("alice0", &workouts.Workout{
+		Name: "Alice0", SportType: "Run",
+		StartDate: start.Add(30 * time.Minute),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bobNewest, err := repo.Create("bob", &workouts.Workout{
+		Name: "Bob", SportType: "Ride",
+		StartDate: start.Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertUniqueNewestFirst := func(t *testing.T, page []workouts.Workout, wantIDs []string, hasMore bool, gotMore bool) {
+		t.Helper()
+		if gotMore != hasMore {
+			t.Fatalf("hasMore=%v want %v page=%#v", gotMore, hasMore, page)
+		}
+		if len(page) != len(wantIDs) {
+			t.Fatalf("len=%d want %d page=%#v", len(page), len(wantIDs), page)
+		}
+		seen := make(map[string]struct{}, len(page))
+		for i, w := range page {
+			if w.ID != wantIDs[i] {
+				t.Fatalf("page[%d]=%q want %q", i, w.ID, wantIDs[i])
+			}
+			if _, dup := seen[w.ID]; dup {
+				t.Fatalf("duplicate id %q in page=%#v", w.ID, page)
+			}
+			seen[w.ID] = struct{}{}
+		}
+	}
+
+	// Newer-nickname keys used to leave the cursor past alice's prefix, so the
+	// newest alice workout was appended twice on the first page (limit > 1).
+	page, more, err := repo.ListPage("alice", nil, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUniqueNewestFirst(t, page, aliceIDs, false, more)
+
+	page, more, err = repo.ListPage("alice", nil, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUniqueNewestFirst(t, page, aliceIDs[:2], true, more)
+
+	cursor := &workouts.Cursor{StartDate: page[1].StartDate, ID: page[1].ID}
+	page2, more2, err := repo.ListPage("alice", cursor, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUniqueNewestFirst(t, page2, aliceIDs[2:], false, more2)
+
+	alice0Page, alice0More, err := repo.ListPage("alice0", nil, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUniqueNewestFirst(t, alice0Page, []string{alice0w.ID}, false, alice0More)
+
+	// Last nickname alphabetically: Seek(nextPrefix) hits end-of-bucket (nil), then Last().
+	bobPage, bobMore, err := repo.ListPage("bob", nil, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUniqueNewestFirst(t, bobPage, []string{bobNewest.ID}, false, bobMore)
+
+	empty, emptyMore, err := repo.ListPage("carol", nil, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(empty) != 0 || emptyMore {
+		t.Fatalf("empty user: page=%#v hasMore=%v", empty, emptyMore)
+	}
+}
+
 func TestWorkoutsUpdateMigratesChartsOnStartDateChange(t *testing.T) {
 	b := openTestBackend(t)
 	repo := b.WorkoutsRepo()

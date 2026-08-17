@@ -1,6 +1,7 @@
 package bbolt
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"math/big"
@@ -373,17 +374,9 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 				k, v = c.Prev()
 			}
 		} else {
-			// Seek to last key with this nickname prefix.
-			k, v = c.Seek(prefix)
-			if k == nil || !strings.HasPrefix(string(k), string(prefix)) {
+			k, v = seekLastWithPrefix(c, prefix)
+			if k == nil {
 				return nil
-			}
-			for {
-				nk, nv := c.Next()
-				if nk == nil || !strings.HasPrefix(string(nk), string(prefix)) {
-					break
-				}
-				k, v = nk, nv
 			}
 		}
 
@@ -406,6 +399,39 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 		return nil
 	})
 	return result, hasMore, err
+}
+
+// incrementPrefix returns the first key strictly greater than every key with
+// the given prefix, or nil if prefix is all 0xFF bytes.
+func incrementPrefix(prefix []byte) []byte {
+	next := make([]byte, len(prefix))
+	copy(next, prefix)
+	for i := len(next) - 1; i >= 0; i-- {
+		if next[i] < 0xFF {
+			next[i]++
+			return next[:i+1]
+		}
+	}
+	return nil
+}
+
+// seekLastWithPrefix positions c on the last key with prefix (O(log n)) and
+// returns that pair. A following Prev() walk is newest-first for workout keys.
+func seekLastWithPrefix(c *bolt.Cursor, prefix []byte) (k, v []byte) {
+	if next := incrementPrefix(prefix); next != nil {
+		k, v = c.Seek(next)
+		if k == nil {
+			k, v = c.Last()
+		} else {
+			k, v = c.Prev()
+		}
+	} else {
+		k, v = c.Last()
+	}
+	if k == nil || !bytes.HasPrefix(k, prefix) {
+		return nil, nil
+	}
+	return k, v
 }
 
 func (s *WorkoutsStore) RemoveEquipmentFromAll(nickname, equipmentID string) error {
