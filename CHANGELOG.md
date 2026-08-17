@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-17
+
 ### Fixed
 
 - Android: Health Sync + Google Drive no longer stays enabled after sign-out or a server URL change, so a later Grom account on the same device does not inherit Drive import
@@ -232,7 +234,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.9.1...HEAD
+[0.9.1]: https://github.com/solargate/grom/releases/tag/0.9.1
 [0.9.0]: https://github.com/solargate/grom/releases/tag/0.9.0
 [0.8.0]: https://github.com/solargate/grom/releases/tag/0.8.0
 [0.7.3]: https://github.com/solargate/grom/releases/tag/0.7.3
