@@ -19,8 +19,7 @@ import 'google_drive_stub.dart'
         GoogleDriveFileEntry,
         GoogleDriveFolder;
 
-bool get _isAndroidDriveSupported =>
-    !kIsWeb && Platform.isAndroid;
+bool get _isAndroidDriveSupported => !kIsWeb && Platform.isAndroid;
 
 const _driveScopes = <String>[
   drive.DriveApi.driveReadonlyScope,
@@ -83,6 +82,14 @@ Future<void> _disconnectQuietly() async {
   } catch (_) {
     // Best-effort revoke of a stale / incomplete grant.
   }
+}
+
+/// Revokes the app's Google Drive grant. No-op off Android.
+Future<void> disconnectGoogleDrive() async {
+  if (!_isAndroidDriveSupported) {
+    return;
+  }
+  await _disconnectQuietly();
 }
 
 /// Runs [run] with a Drive client. On invalid/denied token, disconnects once and

@@ -10,6 +10,8 @@ Grom’s Android app can import workouts that [Health Sync](https://healthsync.a
 4. Optionally edit the folder name (exact match on sync) or tap the folder search icon to pick the first Drive folder matching `Health Sync*` again.
 5. On **Home**, tap the sync icon in the header. Grom imports new workouts and refreshes the list.
 
+Signing out of Grom, or changing the server URL, turns Health Sync off and disconnects Google Drive access in the app. Enable the toggle again after you sign in.
+
 ## What gets imported
 
 For each activity CSV in the folder:

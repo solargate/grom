@@ -33,6 +33,8 @@ Future<void> ensureGoogleDriveSignedIn() async {
   throw GoogleDriveException(GoogleDriveError.unsupported);
 }
 
+Future<void> disconnectGoogleDrive() async {}
+
 Future<GoogleDriveFolder?> findHealthSyncFolderByNameContains() async {
   return null;
 }

@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'auth_storage.dart';
+import 'session.dart';
 
 const serverBaseUrlStorageKey = 'server_base_url';
 
@@ -30,7 +30,7 @@ class ServerStorage {
     }
 
     if (_cachedBaseUrl != null) {
-      await AuthStorage.clear();
+      await clearLocalSession();
     }
 
     final prefs = await SharedPreferences.getInstance();

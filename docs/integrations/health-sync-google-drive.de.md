@@ -10,6 +10,8 @@ Die Android-App von Grom kann Workouts importieren, die [Health Sync](https://he
 4. Optional den Ordnernamen bearbeiten (exakter Match beim Sync) oder das Ordner-Such-Icon tippen, um erneut den ersten Drive-Ordner zu wählen, der auf `Health Sync*` passt.
 5. Tippen Sie auf **Home** auf das Sync-Icon in der Kopfzeile. Grom importiert neue Workouts und aktualisiert die Liste.
 
+Abmelden von Grom oder Ändern der Server-URL deaktiviert Health Sync und trennt den Google-Drive-Zugriff in der App. Aktivieren Sie den Schalter nach der Anmeldung erneut.
+
 ## Was importiert wird
 
 Für jede Aktivitäts-CSV im Ordner:

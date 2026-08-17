@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await HealthSyncService.instance.resetForLogout();
   });
 
   group('HealthSyncStorage', () {
@@ -26,6 +27,36 @@ void main() {
       final cleared = await HealthSyncStorage.loadFolder();
       expect(cleared.name, 'Renamed');
       expect(cleared.id, isEmpty);
+    });
+
+    test('clearAll removes enabled flag and folder', () async {
+      await HealthSyncStorage.saveEnabled(true);
+      await HealthSyncStorage.saveFolder(name: 'Health Sync', id: 'folder-1');
+
+      await HealthSyncStorage.clearAll();
+
+      expect(await HealthSyncStorage.loadEnabled(), isFalse);
+      final folder = await HealthSyncStorage.loadFolder();
+      expect(folder.name, isEmpty);
+      expect(folder.id, isEmpty);
+    });
+  });
+
+  group('HealthSyncService.resetForLogout', () {
+    test('clears in-memory state and storage', () async {
+      final service = HealthSyncService.instance;
+      await service.setEnabled(true);
+      await service.saveFolder(name: 'Health Sync', id: 'folder-1');
+
+      await service.resetForLogout();
+
+      expect(service.enabled, isFalse);
+      expect(service.folderName, isEmpty);
+      expect(service.folderId, isEmpty);
+      expect(await HealthSyncStorage.loadEnabled(), isFalse);
+      final folder = await HealthSyncStorage.loadFolder();
+      expect(folder.name, isEmpty);
+      expect(folder.id, isEmpty);
     });
   });
 

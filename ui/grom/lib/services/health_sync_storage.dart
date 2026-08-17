@@ -23,7 +23,8 @@ class HealthSyncStorage {
     );
   }
 
-  static Future<void> saveFolder({required String name, required String id}) async {
+  static Future<void> saveFolder(
+      {required String name, required String id}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(healthSyncFolderNameStorageKey, name);
     await prefs.setString(healthSyncFolderIdStorageKey, id);
@@ -36,6 +37,13 @@ class HealthSyncStorage {
 
   static Future<void> clearFolderId() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(healthSyncFolderIdStorageKey);
+  }
+
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(healthSyncEnabledStorageKey);
+    await prefs.remove(healthSyncFolderNameStorageKey);
     await prefs.remove(healthSyncFolderIdStorageKey);
   }
 }

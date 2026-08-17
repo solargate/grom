@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Android: Health Sync + Google Drive no longer stays enabled after sign-out or a server URL change, so a later Grom account on the same device does not inherit Drive import
+
 ## [0.9.0] - 2026-08-16
 
 ### Added

@@ -56,6 +56,16 @@ class HealthSyncService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> resetForLogout() async {
+    _enabled = false;
+    _folderName = '';
+    _folderId = '';
+    _syncing = false;
+    await HealthSyncStorage.clearAll();
+    await disconnectGoogleDrive();
+    notifyListeners();
+  }
+
   Future<void> setEnabled(bool value) async {
     _enabled = value;
     await HealthSyncStorage.saveEnabled(value);
@@ -97,7 +107,8 @@ class HealthSyncService extends ChangeNotifier {
     try {
       final folder = await findHealthSyncFolderByNameContains();
       if (folder == null) {
-        return const HealthSyncResult(kind: HealthSyncResultKind.folderNotFound);
+        return const HealthSyncResult(
+            kind: HealthSyncResultKind.folderNotFound);
       }
       await saveFolder(name: folder.name, id: folder.id);
       await setEnabled(true);
@@ -117,7 +128,8 @@ class HealthSyncService extends ChangeNotifier {
       await ensureGoogleDriveSignedIn();
       final folder = await findHealthSyncFolderByNameContains();
       if (folder == null) {
-        return const HealthSyncResult(kind: HealthSyncResultKind.folderNotFound);
+        return const HealthSyncResult(
+            kind: HealthSyncResultKind.folderNotFound);
       }
       await saveFolder(name: folder.name, id: folder.id);
       return const HealthSyncResult(kind: HealthSyncResultKind.noNewWorkouts);
@@ -157,7 +169,8 @@ class HealthSyncService extends ChangeNotifier {
 
       final folderId = await _resolveFolderId(folderName);
       if (folderId == null) {
-        return const HealthSyncResult(kind: HealthSyncResultKind.folderNotFound);
+        return const HealthSyncResult(
+            kind: HealthSyncResultKind.folderNotFound);
       }
 
       final files = await listFolderFiles(folderId);
@@ -166,7 +179,8 @@ class HealthSyncService extends ChangeNotifier {
       }
 
       final filenames = files.map((file) => file.name).toList();
-      final csvFiles = files.where((file) => isHealthSyncCsvFilename(file.name));
+      final csvFiles =
+          files.where((file) => isHealthSyncCsvFilename(file.name));
       var imported = 0;
 
       for (final csvFile in csvFiles) {

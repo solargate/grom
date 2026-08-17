@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -21,6 +22,7 @@ import '../platform/file_download.dart';
 import '../platform/shared_track_intent.dart';
 import '../registration.dart';
 import '../server_storage.dart';
+import '../session.dart';
 import '../services/health_sync_service.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
@@ -221,7 +223,7 @@ class _GromShellState extends State<GromShell> {
         nickname = user.nickname;
       } on ApiException catch (e) {
         if (e.statusCode == 401) {
-          await AuthStorage.clear();
+          await clearLocalSession();
         }
       } catch (_) {
         // Network or server errors: keep token, show logged-out UI.
@@ -772,7 +774,7 @@ class _GromShellState extends State<GromShell> {
   }
 
   Future<void> _logout({bool showSignedOutSnack = true}) async {
-    await AuthStorage.clear();
+    await clearLocalSession();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     setState(() {
@@ -977,7 +979,8 @@ class _GromShellState extends State<GromShell> {
                               ),
                             ),
                           ),
-                          if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
+                          if (_showHealthSyncButton)
+                            _buildHealthSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
                           if (_isViewingProfile) _buildProfileMenu(),
                         ],
