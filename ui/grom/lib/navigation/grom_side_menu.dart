@@ -36,10 +36,10 @@ class GromSideMenu extends StatelessWidget {
           return 3;
         case GromDestination.integration:
           return 4;
+        case GromDestination.settings:
+          return 5;
         case GromDestination.about:
           return 6;
-        case GromDestination.settings:
-          return 7;
         case GromDestination.login:
         case GromDestination.register:
           return 0;
@@ -53,9 +53,9 @@ class GromSideMenu extends StatelessWidget {
         return 1;
       case GromDestination.register:
         return 2;
-      case GromDestination.about:
-        return 3;
       case GromDestination.settings:
+        return 3;
+      case GromDestination.about:
         return 4;
       case GromDestination.userSearch:
       case GromDestination.profile:
@@ -79,11 +79,11 @@ class GromSideMenu extends StatelessWidget {
         case 4:
           onDestinationSelected(GromDestination.integration);
         case 5:
-          onLogout();
+          onDestinationSelected(GromDestination.settings);
         case 6:
           onDestinationSelected(GromDestination.about);
         case 7:
-          onDestinationSelected(GromDestination.settings);
+          onLogout();
       }
       return;
     }
@@ -96,9 +96,9 @@ class GromSideMenu extends StatelessWidget {
       case 2:
         onDestinationSelected(GromDestination.register);
       case 3:
-        onDestinationSelected(GromDestination.about);
-      case 4:
         onDestinationSelected(GromDestination.settings);
+      case 4:
+        onDestinationSelected(GromDestination.about);
     }
   }
 
@@ -158,11 +158,6 @@ class GromSideMenu extends StatelessWidget {
             selectedIcon: const Icon(Icons.integration_instructions),
             label: Text(l10n.integration),
           ),
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.logout_outlined),
-            selectedIcon: const Icon(Icons.logout),
-            label: Text(l10n.signOut),
-          ),
         ] else ...[
           NavigationDrawerDestination(
             icon: const Icon(Icons.login_outlined),
@@ -176,15 +171,21 @@ class GromSideMenu extends StatelessWidget {
           ),
         ],
         NavigationDrawerDestination(
-          icon: const Icon(Icons.info_outline),
-          selectedIcon: const Icon(Icons.info),
-          label: Text(l10n.about),
-        ),
-        NavigationDrawerDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),
           label: Text(l10n.settings),
         ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.info_outline),
+          selectedIcon: const Icon(Icons.info),
+          label: Text(l10n.about),
+        ),
+        if (isLoggedIn)
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.logout_outlined),
+            selectedIcon: const Icon(Icons.logout),
+            label: Text(l10n.signOut),
+          ),
       ],
     );
   }

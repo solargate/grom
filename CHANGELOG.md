@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Side menu: Settings, then About, then Sign out (logged in); Settings then About when logged out
 - Release CI uploads the Android AAB to Google Play closed testing (`alpha`) as a draft, instead of internal testing
 
 ## [0.9.1] - 2026-08-17
