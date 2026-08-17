@@ -35,7 +35,7 @@ make cli     # nur Go-Binary (ohne Flutter-Web-Rebuild)
 make web     # Flutter web → internal/web/dist
 ```
 
-Weitere nützliche Targets: `make doc` (OpenAPI neu erzeugen), `make android-apk`, `make clean`.
+Weitere nützliche Targets: `make apidoc` (OpenAPI neu erzeugen), `make android-apk`, `make clean`.
 
 ## Start
 

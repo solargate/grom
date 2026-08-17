@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - bbolt: the newest workout is no longer listed twice on the first feed / own-workouts page when another local user also has workouts
+- Install docs: OpenAPI regen target is `make apidoc` (there is no `make doc`)
 
 ## [0.9.1] - 2026-08-17
 

@@ -35,7 +35,7 @@ make cli     # только Go-бинарник (без пересборки Flu
 make web     # Flutter web → internal/web/dist
 ```
 
-Другие полезные цели: `make doc` (перегенерация OpenAPI), `make android-apk`, `make clean`.
+Другие полезные цели: `make apidoc` (перегенерация OpenAPI), `make android-apk`, `make clean`.
 
 ## Запуск {#run}
 
