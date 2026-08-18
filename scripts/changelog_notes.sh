@@ -85,8 +85,8 @@ extract_google_play() {
   '
 }
 
-has_ui_or_android() {
-  grep -E -q -- '^- \*\*(UI|Android):\*\*'
+has_android() {
+  grep -E -q -- '^- \*\*Android:\*\*'
 }
 
 char_count() {
@@ -127,8 +127,8 @@ case "${MODE}" in
     PLAY_BODY="$(printf '%s\n' "${SECTION}" | extract_google_play | trim_blank_lines)"
     if [[ -n "${PLAY_BODY}" ]]; then
       NOTES="${PLAY_BODY}"
-    elif printf '%s\n' "${SECTION}" | has_ui_or_android; then
-      echo "::error::CHANGELOG version ${VERSION} has UI/Android entries but no ### Google Play section (or it is empty)" >&2
+    elif printf '%s\n' "${SECTION}" | has_android; then
+      echo "::error::CHANGELOG version ${VERSION} has Android entries but no ### Google Play section (or it is empty)" >&2
       exit 1
     else
       NOTES="${PLAY_STUB}"
