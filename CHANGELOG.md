@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-18
+
 ### Google Play
 
 - Sign in: pick an approved or previously used server next to the server URL
@@ -258,7 +260,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.9.1...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.10.0...HEAD
+[0.10.0]: https://github.com/solargate/grom/releases/tag/0.10.0
 [0.9.1]: https://github.com/solargate/grom/releases/tag/0.9.1
 [0.9.0]: https://github.com/solargate/grom/releases/tag/0.9.0
 [0.8.0]: https://github.com/solargate/grom/releases/tag/0.8.0
