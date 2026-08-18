@@ -35,6 +35,7 @@ nav:
   - Home: README.md
   - User:
       - Overview: user/overview.md
+      - Approved servers: user/approved-servers.md
       - Grom API tokens: user/grom-api-tokens.md
       - Delete account: user/delete-account.md
   - Admin:
@@ -64,6 +65,7 @@ plugins:
             Home: Главная
             User: Пользователь
             Overview: Обзор
+            Approved servers: Одобренные серверы
             Grom API tokens: API-токены Grom
             Delete account: Удаление аккаунта
             Admin: Администрирование
@@ -81,6 +83,7 @@ plugins:
             Home: Start
             User: Benutzer
             Overview: Überblick
+            Approved servers: Freigegebene Server
             Grom API tokens: Grom-API-Token
             Delete account: Konto löschen
             Admin: Administration

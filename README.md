@@ -50,6 +50,7 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 
 - **[Docs index](docs/README.md)** — user and admin guides
 - [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, Health Sync)
+- [Approved Grom servers](docs/user/approved-servers.md) — Android server picker and how to list a public instance
 - [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)
 - [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
 - [Health Sync + Google Drive](docs/integrations/health-sync-google-drive.md) — Android import from Health Sync via Drive

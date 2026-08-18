@@ -22,6 +22,7 @@ Entpacken Sie das Archiv für Ihr OS, kopieren Sie eine Konfiguration aus `confi
 
 - Go 1.26+
 - Flutter SDK `>=3.4.0 <4.0.0` (für die eingebettete Web-UI und Android-Builds)
+- Python 3 (MkDocs-Dokumentationssite und `server-catalog.yaml`-Tooling; `make web` / `make android-*` erzeugen den Katalog neu)
 - Make
 
 ### Build
@@ -35,7 +36,7 @@ make cli     # nur Go-Binary (ohne Flutter-Web-Rebuild)
 make web     # Flutter web → internal/web/dist
 ```
 
-Weitere nützliche Targets: `make apidoc` (OpenAPI neu erzeugen), `make android-apk`, `make clean`.
+Weitere nützliche Targets: `make apidoc` (OpenAPI neu erzeugen), `make catalog` (Server-Katalog-Dart), `make android-apk`, `make clean`.
 
 ## Start
 
@@ -66,7 +67,7 @@ cd cmd/grom
 
 Öffnen Sie die **Web-UI** im Browser unter der Basis-URL des Servers (derselbe Flutter-Client wie Android — z. B. `http://localhost:8080/` mit `config.dev.notls.yaml`). Registrieren Sie einen Nutzer und melden Sie sich an. Siehe [Benutzerüberblick](../user/overview.md).
 
-Die **Android**-App (später iOS) kann sich mit derselben Instanz verbinden: Host auf dem Login-Bildschirm eingeben (Schema optional). Klartext-**HTTP ist für lokale/LAN**-Installationen ohne TLS erlaubt; nutzen Sie HTTPS, wenn der Server über das lokale Netz hinaus erreichbar ist. Wie der Client `http` vs `https` auflöst: [Benutzerüberblick](../user/overview.md).
+Die **Android**-App (später iOS) kann sich mit derselben Instanz verbinden: Host auf dem Login-Bildschirm eingeben (Schema optional) oder einen [freigegebenen öffentlichen Server](../user/approved-servers.md) aus der Liste wählen. Klartext-**HTTP ist für lokale/LAN**-Installationen ohne TLS erlaubt; nutzen Sie HTTPS, wenn der Server über das lokale Netz hinaus erreichbar ist. Wie der Client `http` vs `https` auflöst: [Benutzerüberblick](../user/overview.md).
 
 **API-Dokumentation (Swagger UI):** `http://<host>:<port>/api/docs/` (z. B. `http://localhost:8080/api/docs/`). Generierte OpenAPI-Quellen liegen auch unter [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) im Repository.
 

@@ -22,6 +22,7 @@
 
 - Go 1.26+
 - Flutter SDK `>=3.4.0 <4.0.0` (для встроенного веб-UI и сборок Android)
+- Python 3 (сайт документации MkDocs и tooling `server-catalog.yaml`; `make web` / `make android-*` пересобирают каталог)
 - Make
 
 ### Сборка {#build}
@@ -35,7 +36,7 @@ make cli     # только Go-бинарник (без пересборки Flu
 make web     # Flutter web → internal/web/dist
 ```
 
-Другие полезные цели: `make apidoc` (перегенерация OpenAPI), `make android-apk`, `make clean`.
+Другие полезные цели: `make apidoc` (перегенерация OpenAPI), `make catalog` (Dart-каталог серверов), `make android-apk`, `make clean`.
 
 ## Запуск {#run}
 
@@ -66,7 +67,7 @@ cd cmd/grom
 
 Откройте **веб-UI** в браузере по базовому URL сервера (тот же Flutter-клиент, что на Android — например `http://localhost:8080/` с `config.dev.notls.yaml`). Зарегистрируйте пользователя и войдите. См. [Обзор для пользователя](../user/overview.md).
 
-Приложение **Android** (и позже iOS) может подключиться к тому же инстансу: на экране входа укажите хост (схема необязательна). Открытый **HTTP разрешён для локальных/LAN**-установок без TLS; используйте HTTPS, если сервер доступен за пределами локальной сети. Как клиент выбирает `http` vs `https` — в [Обзор для пользователя](../user/overview.md).
+Приложение **Android** (и позже iOS) может подключиться к тому же инстансу: на экране входа укажите хост (схема необязательна) или выберите [одобренный публичный сервер](../user/approved-servers.md) из списка. Открытый **HTTP разрешён для локальных/LAN**-установок без TLS; используйте HTTPS, если сервер доступен за пределами локальной сети. Как клиент выбирает `http` vs `https` — в [Обзор для пользователя](../user/overview.md).
 
 **Документация API (Swagger UI):** `http://<host>:<port>/api/docs/` (например `http://localhost:8080/api/docs/`). Сгенерированные исходники OpenAPI также лежат в [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) в репозитории.
 

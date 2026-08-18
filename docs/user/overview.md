@@ -4,7 +4,7 @@ Grom’s Flutter client runs as a **web UI** and as an **Android** app. The web 
 
 When you are not signed in, **Home** shows a welcome screen with the Grom logo, a short description, and **Sign in** / **Register** buttons. On Android the welcome text also reminds you to enter the Grom server address when signing in.
 
-On **Android** (and later iOS), sign-in and registration ask for a **server URL**. You can enter a bare host such as `grom.example.com` (no `https://` required). On submit the app probes `GET /api/v1/status` over HTTPS, then HTTP, writes the resolved URL into the field, and continues. If you already type `http://` / `https://` or an explicit port, that value is used as-is. **HTTP is supported for local / LAN instances** without TLS; prefer HTTPS for anything reachable on the public internet.
+On **Android** (and later iOS), sign-in and registration ask for a **server URL**. You can enter a bare host such as `grom.example.com` (no `https://` required), or open the dropdown next to the field and pick an [approved public server](approved-servers.md) or one you have already used. On submit the app probes `GET /api/v1/status` over HTTPS, then HTTP, writes the resolved URL into the field, and continues. If you already type `http://` / `https://` or an explicit port, that value is used as-is. **HTTP is supported for local / LAN instances** without TLS; prefer HTTPS for anything reachable on the public internet.
 
 ## Sign-in and password reset
 

@@ -4,6 +4,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'api_request.dart';
 import 'login.dart';
 import 'platform/is_mobile_client.dart';
+import 'server_history.dart';
 import 'server_storage.dart';
 import 'server_url_resolver.dart';
 import 'widgets/altcha_field.dart';
@@ -120,6 +121,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
         password: _passwordController.text,
         altcha: _altchaPayload,
       );
+      if (isMobileClient) {
+        await ServerHistory.remember(_serverUrlController.text);
+      }
 
       if (!mounted) return;
 

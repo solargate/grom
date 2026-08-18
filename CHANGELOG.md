@@ -11,13 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
+- Sign in: pick an approved or previously used server next to the server URL
 - Side menu: Settings, then About, then Sign out
+
+### Added
+
+- **Android:** Login, register, and forgot-password: dropdown next to the server URL lists approved public instances and servers you have successfully signed in to (manual URL entry remains)
+- **Docs:** How to pick an approved server in Android and how to list a public instance via pull request
 
 ### Changed
 
 - **UI:** Side menu: Settings, then About, then Sign out (logged in); Settings then About when logged out
 - **CI:** Release CI uploads the Android AAB to Google Play closed testing (`alpha`) as a draft, instead of internal testing
 - **CI:** Release CI attaches English Play Store "What's new" from `### Google Play` (or a maintenance stub when the release has no UI/Android changes)
+- **CI:** Validate `server-catalog.yaml` and keep the generated Flutter catalog in sync; Python tooling lives in `requirements.txt` (MkDocs + catalog)
 
 ### Fixed
 

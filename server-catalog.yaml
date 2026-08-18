@@ -1,0 +1,15 @@
+# Approved public Grom instances shipped in the Android client.
+# How to add yours: docs/user/approved-servers.md
+#
+# Each entry:
+#   url: https://... (required; https only, no port; path allowed)
+#   name: display name (one language, as submitted)
+#   description: short summary (one language, as submitted)
+#   email: operator contact (not shown in the app)
+#
+# Listing appears in the next Android release after the pull request is merged.
+servers:
+  - url: https://grom.msk.ru
+    name: Grom Moscow
+    description: Test Grom server instance (may be wiped)
+    email: solarwind.palm@gmail.com

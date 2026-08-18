@@ -36,6 +36,7 @@ Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und st
 | Sehen, was der Client kann (Workouts, Likes, Kommentare, Aufzeichnung, Ausrüstung) | [Benutzerüberblick](user/overview.md) |
 | Ein vergessenes Passwort zurücksetzen (wenn der Betreiber E-Mail aktiviert) | [Überblick — Anmeldung und Passwort-Reset](user/overview.md#anmeldung-und-passwort-reset) |
 | Anmelden / registrieren, wenn die Instanz Captcha aktiviert | [Überblick — Anmeldung und Passwort-Reset](user/overview.md#anmeldung-und-passwort-reset) |
+| Eine öffentliche Instanz in Android wählen oder die eigene listen | [Freigegebene Grom-Server](user/approved-servers.md) |
 | Grom im Browser nutzen (gleiche UI wie Android) | Basis-URL des Servers nach der [Installation](admin/install.md) öffnen; siehe [Benutzerüberblick](user/overview.md) |
 | Einen Strava-Export importieren (UI + Importverhalten) | [Strava-Massenimport](integrations/strava-bulk-import.md) |
 | Health-Sync-Aktivitäten von Google Drive importieren (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |

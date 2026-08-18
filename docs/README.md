@@ -36,6 +36,7 @@ Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Instal
 | See what the client can do (workouts, likes, comments, recording, equipment) | [User overview](user/overview.md) |
 | Reset a forgotten password (when the operator enables email) | [User overview — Sign-in and password reset](user/overview.md#sign-in-and-password-reset) |
 | Sign in / register when the instance enables captcha | [User overview — Sign-in and password reset](user/overview.md#sign-in-and-password-reset) |
+| Pick a public instance in the Android app, or list yours | [Approved Grom servers](user/approved-servers.md) |
 | Use Grom in a browser (same UI as Android) | Open the server base URL after [install](admin/install.md); see [User overview](user/overview.md) |
 | Import a Strava export (UI + how import works) | [Strava bulk import](integrations/strava-bulk-import.md) |
 | Import Health Sync activities from Google Drive (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |

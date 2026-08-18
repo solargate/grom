@@ -36,6 +36,7 @@ Grom — self-hosted трекер тренировок с опциональны
 | Узнать, что умеет клиент (тренировки, лайки, комментарии, запись, снаряжение) | [Обзор для пользователя](user/overview.md) |
 | Сбросить забытый пароль (если оператор включил почту) | [Обзор — Вход и сброс пароля](user/overview.md#sign-in-and-password-reset) |
 | Войти / зарегистрироваться, когда на инстансе включена captcha | [Обзор — Вход и сброс пароля](user/overview.md#sign-in-and-password-reset) |
+| Выбрать публичный инстанс в Android или добавить свой в список | [Одобренные серверы Grom](user/approved-servers.md) |
 | Пользоваться Grom в браузере (тот же UI, что на Android) | Откройте базовый URL сервера после [установки](admin/install.md); см. [Обзор для пользователя](user/overview.md) |
 | Импортировать экспорт Strava (UI + как работает импорт) | [Массовый импорт Strava](integrations/strava-bulk-import.md) |
 | Импортировать активности Health Sync из Google Drive (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
