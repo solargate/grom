@@ -385,6 +385,19 @@ jobs:
     needs: [validate, build-aab]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build Play Store what's new
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p play/whatsnew
+          scripts/changelog_notes.sh play CHANGELOG.md "${VERSION}" > play/whatsnew/whatsnew-en-US
+          echo "--- Play what's new ---"
+          cat play/whatsnew/whatsnew-en-US
+
       - name: Download AAB
         uses: actions/download-artifact@v7
         with:
@@ -400,6 +413,7 @@ jobs:
           tracks: alpha
           status: draft
           releaseName: Grom ${{ needs.validate.outputs.version }}
+          whatsNewDirectory: play/whatsnew
 
   release:
     name: Create draft release
@@ -416,22 +430,7 @@ jobs:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
-
-          awk -v ver="${VERSION}" '
-            /^## \[/ {
-              if (in_section) exit
-              if ($0 ~ "^## \\[" ver "\\]") in_section = 1
-              next
-            }
-            /^\[[^]]+\]: / { if (in_section) exit }
-            in_section { print }
-          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
-
-          if [[ ! -s release-notes.md ]]; then
-            echo "::error::No CHANGELOG section found for version ${VERSION}"
-            exit 1
-          fi
-
+          scripts/changelog_notes.sh github CHANGELOG.md "${VERSION}" > release-notes.md
           echo "--- Release notes ---"
           cat release-notes.md
 

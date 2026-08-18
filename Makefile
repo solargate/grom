@@ -1,4 +1,4 @@
-.PHONY: all grom apidoc docs docs-serve web cli android android-apk android-aab android-debug gencerts test test-go test-ui clean
+.PHONY: all grom apidoc docs docs-serve web cli android android-apk android-aab android-debug gencerts test test-go test-ui test-scripts clean
 
 VERSION := $(shell tr -d '[:space:]' < VERSION)
 BUILD_NUMBER ?= 1
@@ -42,10 +42,13 @@ android-debug:
 gencerts:
 	cd cmd/grom && go run . gencerts --ip $(IP) --domain $(DOMAIN)
 
-test: test-go test-ui
+test: test-go test-ui test-scripts
 
 test-go:
 	go test ./...
+
+test-scripts:
+	scripts/changelog_notes_test.sh
 
 test-ui:
 	cd ui/grom && flutter test

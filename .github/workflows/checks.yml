@@ -51,6 +51,16 @@ jobs:
         working-directory: ui/grom
         run: flutter test
 
+  changelog:
+    name: Changelog notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Test changelog note extraction
+        run: scripts/changelog_notes_test.sh
+
   swagger:
     name: Swagger
     runs-on: ubuntu-latest

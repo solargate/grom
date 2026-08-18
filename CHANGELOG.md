@@ -5,17 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+`[Unreleased]` bullets use a component prefix: **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, **CI:**. Optional `### Google Play` is the English Play Store "What's new" (≤500 characters); release CI omits that block from the GitHub release body.
+
 ## [Unreleased]
+
+### Google Play
+
+- Side menu: Settings, then About, then Sign out
 
 ### Changed
 
-- Side menu: Settings, then About, then Sign out (logged in); Settings then About when logged out
-- Release CI uploads the Android AAB to Google Play closed testing (`alpha`) as a draft, instead of internal testing
+- **UI:** Side menu: Settings, then About, then Sign out (logged in); Settings then About when logged out
+- **CI:** Release CI uploads the Android AAB to Google Play closed testing (`alpha`) as a draft, instead of internal testing
+- **CI:** Release CI attaches English Play Store "What's new" from `### Google Play` (or a maintenance stub when the release has no UI/Android changes)
 
 ### Fixed
 
-- bbolt: the newest workout is no longer listed twice on the first feed / own-workouts page when another local user also has workouts
-- Install docs: OpenAPI regen target is `make apidoc` (there is no `make doc`)
+- **Server:** bbolt: the newest workout is no longer listed twice on the first feed / own-workouts page when another local user also has workouts
+- **Docs:** Install docs: OpenAPI regen target is `make apidoc` (there is no `make doc`)
 
 ## [0.9.1] - 2026-08-17
 
