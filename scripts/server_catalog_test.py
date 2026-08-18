@@ -3,11 +3,22 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import server_catalog as catalog
+
+
+def _run_main(argv: list[str]) -> tuple[int, str]:
+    buf = StringIO()
+    with redirect_stderr(buf):
+        code = catalog.main(argv)
+    return code, buf.getvalue()
 
 
 def _write_yaml(directory: Path, body: str, name: str = "server-catalog.yaml") -> Path:
@@ -173,18 +184,17 @@ servers:
             root = Path(tmp)
             catalog_path = _write_yaml(root, body)
             output = root / "server_catalog.g.dart"
-            self.assertEqual(
-                catalog.main(
-                    [
-                        "generate",
-                        "--catalog",
-                        str(catalog_path),
-                        "--output",
-                        str(output),
-                    ]
-                ),
-                0,
+            code, stderr = _run_main(
+                [
+                    "generate",
+                    "--catalog",
+                    str(catalog_path),
+                    "--output",
+                    str(output),
+                ]
             )
+            self.assertEqual(code, 0)
+            self.assertIn(str(output), stderr)
             text = output.read_text(encoding="utf-8")
             self.assertIn("https://example.org", text)
             self.assertNotIn("admin@example.org", text)
@@ -199,10 +209,28 @@ servers:
 """
         with tempfile.TemporaryDirectory() as tmp:
             catalog_path = _write_yaml(Path(tmp), body)
-            self.assertEqual(
-                catalog.main(["validate", "--catalog", str(catalog_path)]),
-                1,
-            )
+            with patch.dict(os.environ, {"GITHUB_ACTIONS": ""}):
+                code, stderr = _run_main(["validate", "--catalog", str(catalog_path)])
+            self.assertEqual(code, 1)
+            self.assertIn("https://", stderr)
+            self.assertNotIn("::error::", stderr)
+
+    def test_cli_validate_emits_github_error_in_actions(self) -> None:
+        body = """
+servers:
+  - url: http://example.org
+    name: Example
+    description: Nope
+    email: admin@example.org
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            catalog_path = _write_yaml(Path(tmp), body)
+            buf = StringIO()
+            with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}):
+                with redirect_stderr(buf):
+                    code = catalog.main(["validate", "--catalog", str(catalog_path)])
+            self.assertEqual(code, 1)
+            self.assertIn("::error::", buf.getvalue())
 
     def test_repo_catalog_is_valid(self) -> None:
         entries = catalog.load_catalog(catalog.DEFAULT_CATALOG)

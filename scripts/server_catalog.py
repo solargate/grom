@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -203,7 +204,9 @@ def write_dart(path: Path, source: str) -> None:
 
 
 def _emit_error(message: str) -> None:
-    print(f"::error::{message}", file=sys.stderr)
+    print(message, file=sys.stderr)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::error::{message}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:

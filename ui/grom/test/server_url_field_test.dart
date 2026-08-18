@@ -95,7 +95,14 @@ void main() {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(ServerUrlField(controller: controller)));
+    await tester.pumpWidget(
+      wrap(
+        ServerUrlField(
+          controller: controller,
+          approvedServers: const [],
+        ),
+      ),
+    );
     await tester.tap(find.byTooltip('Choose a server'));
     await tester.pumpAndSettle();
 
