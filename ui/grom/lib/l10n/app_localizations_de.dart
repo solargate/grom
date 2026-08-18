@@ -169,6 +169,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get serverUrlHint => 'example.com';
 
   @override
+  String get chooseServerTooltip => 'Server wählen';
+
+  @override
+  String get chooseServerTitle => 'Server wählen';
+
+  @override
+  String get approvedServersSection => 'Freigegebene Server';
+
+  @override
+  String get recentServersSection => 'Zuletzt verwendete Server';
+
+  @override
+  String get serverPickerEmpty =>
+      'Noch keine Server. Geben Sie eine URL ein oder melden Sie sich an, um eine zu merken.';
+
+  @override
   String get language => 'Sprache';
 
   @override

@@ -31,7 +31,8 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | Path | Role |
 |------|------|
 | `CHANGELOG.md` | User-facing release notes (`[Unreleased]` + version sections; `### Google Play` is Play Store copy) |
-| `scripts/` | Release helpers (`changelog_notes.sh` extracts GitHub / Play notes from CHANGELOG) |
+| `scripts/` | Release helpers (`changelog_notes.sh`); `server_catalog.py` validates `server-catalog.yaml` and generates the Flutter catalog |
+| `server-catalog.yaml` | Approved public Grom instances compiled into the Android client |
 | `cmd/grom/` | Main binary; Cobra commands in `cmd/`; example configs in `config-examples/` |
 | `api/v1/` | Gin handlers, route registration, DTO/response types |
 | `api/docs/` | `swag`-generated OpenAPI (`make apidoc`) |
@@ -59,7 +60,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
 | `testdata/` | Shared fixtures: `tracks/` (GPX/FIT), `integrations/health-sync/` |
 | `docs/` | Human documentation (EN + RU/DE via `*.ru.md` / `*.de.md`); index in `docs/README.md` (also MkDocs homepage) — not the same as `api/docs/` |
-| `mkdocs.yml` / `requirements-docs.txt` | GitHub Pages docs site (Material + `mkdocs-static-i18n`); built by `.github/workflows/pages.yml` |
+| `mkdocs.yml` / `requirements.txt` | GitHub Pages docs site (Material + `mkdocs-static-i18n`) and catalog generator (PyYAML); `make docs` / `make catalog` use `.venv`. Pages workflow: `.github/workflows/pages.yml` |
 | `PRIVACY.md` | Stub linking to `docs/privacy.md` and Pages `/privacy/` |
 
 ## Human documentation
@@ -72,7 +73,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
   - `docs/screenshots/` — images for README and user docs (shared across locales)
   - `docs/privacy.md` — privacy policy (English only; official text; root `PRIVACY.md` is a stub). Do not add `privacy.ru.md` / `privacy.de.md` — all locales link the same EN page via fallback.
 - **Index:** `docs/README.md` (short pitch, Features, screenshot teaser, then “I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here; keep the feature list in sync with root `README.md` when capabilities change. Localized homepages: `README.ru.md`, `README.de.md`.
-- **Pages:** published to `https://solargate.github.io/grom/` via MkDocs Material (`.github/workflows/pages.yml` on `docs/**` changes and on release). Local preview: `pip install -r requirements-docs.txt`, then `make docs` / `make docs-serve`. Store listings should use `…/privacy/`.
+- **Pages:** published to `https://solargate.github.io/grom/` via MkDocs Material (`.github/workflows/pages.yml` on `docs/**` changes and on release). Local preview: `make docs` / `make docs-serve` (creates `.venv` from `requirements.txt`). Store listings should use `…/privacy/`.
 - **When to update:** client/UI behavior → `docs/user/`; install, TLS, storage, federation, logging → `docs/admin/`; third-party imports → `docs/integrations/` (keep README to a brief quick start + links; do not re-expand long config tables into README). Touch `docs/README.md` and `mkdocs.yml` nav if you add/rename pages. Prefer GitHub blob/tree URLs (not `../` repo paths) for links that leave `docs/`, so they work on Pages.
 - **i18n sync:** when you change an English `docs/**/*.md` page (except `privacy.md`), update the matching `*.ru.md` and `*.de.md` in the same change. New pages need EN + RU + DE (and `nav_translations` in `mkdocs.yml` if nav labels change). Do not translate config keys, API paths, or code identifiers. For Russian headings that are linked from other pages, set explicit English-style anchors (`## Заголовок {#english-slug}`) so cross-links stay stable (Cyrillic alone yields `_1`-style slugs).
 - **Do not confuse** `docs/` (human markdown) with `api/docs/` (generated OpenAPI; regenerate with `make apidoc`). Runtime Swagger UI is `/api/docs`.
@@ -99,9 +100,10 @@ Prefer Makefile targets:
 make grom          # swagger + flutter web + go build → cmd/grom/grom
 make cli           # go build only
 make apidoc        # regenerate api/docs from swag annotations in api/v1
-make docs          # MkDocs Material site → site/; needs mkdocs from requirements-docs.txt
+make docs          # MkDocs Material site → site/; creates `.venv` from requirements.txt
 make docs-serve    # mkdocs serve (live preview)
-make web           # flutter build web → copy into internal/web/dist
+make catalog       # validate server-catalog.yaml and generate ui/grom/lib/generated/server_catalog.g.dart
+make web           # catalog + flutter build web → internal/web/dist
 make test          # go test ./... && flutter test
 make test-go
 make test-ui
@@ -111,7 +113,7 @@ make gencerts IP=... DOMAIN=...
 make clean
 ```
 
-CI (`.github/workflows/verify.yml` → `checks.yml`) runs `go vet` / `go test`, `flutter analyze` / `flutter test`, and `make apidoc` with `git diff --exit-code api/docs`. Flutter version is pinned in the workflow files.
+CI (`.github/workflows/verify.yml` → `checks.yml`) runs `go vet` / `go test`, `flutter analyze` / `flutter test`, `make apidoc` with `git diff --exit-code api/docs`, and `scripts/server_catalog.py generate` with `git diff --exit-code` on the generated Flutter catalog. Flutter version is pinned in the workflow files.
 
 Run server (from `cmd/grom` or with absolute config path):
 
@@ -184,6 +186,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 16. **User profile preferences:** `GET /profile` (JWT); `last_sport_type` and `last_equipment_by_sport` for create-workout defaults. File: `profile.yaml`; bbolt: `user_profiles`. Copied by `grom migrate-storage`.
 17. **Equipment mileage:** cached `distance` is recalculated by `internal/equipment/distance` from the owner's workouts (including after Strava import). Do not set mileage only from the handler.
 18. **Sport and equipment type catalogs** must stay in sync: Go `internal/workouts/sport_types.go` ↔ Flutter `lib/models/sport_types.dart` (plus ARB keys and `sport_type_localizations.dart`); equipment types `internal/equipment` ↔ `lib/models/equipment_types.dart` (plus `equipment_type_localizations.dart`).
+19. **Approved servers:** `server-catalog.yaml` at the repo root is the source of truth; `scripts/server_catalog.py` validates it (https only, no ports, path allowed) and writes `ui/grom/lib/generated/server_catalog.g.dart`. Commit the generated file; `make catalog` / `make web` / `make android-*` regenerate it. CI diffs the Dart file. Do not parse the YAML in Flutter at runtime. Manual server URLs stay allowed; successful login/register remembers custom URLs locally. Docs: `docs/user/approved-servers.md`.
 
 ## Agent do / don't
 
@@ -203,6 +206,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Implement or claim support for `postgres` unless actually wiring a new driver behind `storage.Open`.
 - Enable federation paths that assume HTTPS while leaving `tls.mode: off`.
 - Hand-edit `api/docs/*` — regenerate with `make apidoc`.
+- Hand-edit `ui/grom/lib/generated/server_catalog.g.dart` — regenerate with `make catalog`.
 - Bypass auth middleware on protected `/api/v1` routes, or accept PAT on JWT-only routes (social, likes, comments, profile, integrations, account).
 - Add a backend Health Sync package; keep that flow client-side on Android.
 - Commit `cmd/grom/grom`, runtime `data/`, secrets, or personal config.
@@ -228,5 +232,6 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
 | Human docs | `docs/README.md` (index + Pages homepage), `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
+| Approved server catalog | `server-catalog.yaml`; `scripts/server_catalog.py`; Flutter `lib/server_catalog.dart` + `widgets/server_url_field.dart`; docs in `docs/user/approved-servers.md` |
 | Changelog / Play notes | `CHANGELOG.md`; `scripts/changelog_notes.sh` (`github` strips `### Google Play`; `play` emits en-US "What's new") |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD` (keep `### Google Play` if UI/Android); update compare links; tag `X.Y.Z` on master (CI fills GitHub body from changelog minus Play block; Play "What's new" from `### Google Play` or a stub) |

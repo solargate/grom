@@ -22,6 +22,7 @@ Unpack the archive for your OS, copy a config from `config-examples/` (set `auth
 
 - Go 1.26+
 - Flutter SDK `>=3.4.0 <4.0.0` (for the embedded web UI and Android builds)
+- Python 3 (MkDocs docs site and `server-catalog.yaml` tooling; `make web` / `make android-*` regenerate the catalog)
 - Make
 
 ### Build
@@ -35,7 +36,7 @@ make cli     # Go binary only (no Flutter web rebuild)
 make web     # Flutter web → internal/web/dist
 ```
 
-Other useful targets: `make apidoc` (regenerate OpenAPI), `make android-apk`, `make clean`.
+Other useful targets: `make apidoc` (regenerate OpenAPI), `make catalog` (server catalog Dart), `make android-apk`, `make clean`.
 
 ## Run
 
@@ -66,7 +67,7 @@ cd cmd/grom
 
 Open the **web UI** in a browser at the server’s base URL (same Flutter client as Android — for example `http://localhost:8080/` with `config.dev.notls.yaml`). Register a user, then sign in. See [User overview](../user/overview.md).
 
-The **Android** app (and later iOS) can connect to that same instance: enter the host on the login screen (scheme optional). Cleartext **HTTP is allowed for local/LAN** installs without TLS; use HTTPS when exposing the server beyond the local network. See [User overview](../user/overview.md) for how the client resolves `http` vs `https`.
+The **Android** app (and later iOS) can connect to that same instance: enter the host on the login screen (scheme optional), or pick an [approved public server](../user/approved-servers.md) from the dropdown. Cleartext **HTTP is allowed for local/LAN** installs without TLS; use HTTPS when exposing the server beyond the local network. See [User overview](../user/overview.md) for how the client resolves `http` vs `https`.
 
 **API docs (Swagger UI):** `http://<host>:<port>/api/docs/` (for example `http://localhost:8080/api/docs/`). Generated OpenAPI sources also live under [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) in the repository.
 

@@ -51,16 +51,6 @@ jobs:
         working-directory: ui/grom
         run: flutter test
 
-  changelog:
-    name: Changelog notes
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Test changelog note extraction
-        run: scripts/changelog_notes_test.sh
-
   swagger:
     name: Swagger
     runs-on: ubuntu-latest
@@ -81,3 +71,38 @@ jobs:
         run: |
           make apidoc
           git diff --exit-code api/docs
+
+  changelog:
+    name: Changelog notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Test changelog note extraction
+        run: scripts/changelog_notes_test.sh
+
+  catalog:
+    name: Server catalog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python tooling
+        run: pip install -r requirements.txt
+
+      - name: Test catalog generator
+        run: python scripts/server_catalog_test.py
+
+      - name: Check generated catalog is up to date
+        run: |
+          python scripts/server_catalog.py generate
+          git diff --exit-code ui/grom/lib/generated/server_catalog.g.dart

@@ -164,6 +164,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get serverUrlHint => 'example.com';
 
   @override
+  String get chooseServerTooltip => 'Выбрать сервер';
+
+  @override
+  String get chooseServerTitle => 'Выбор сервера';
+
+  @override
+  String get approvedServersSection => 'Одобренные серверы';
+
+  @override
+  String get recentServersSection => 'Недавние серверы';
+
+  @override
+  String get serverPickerEmpty =>
+      'Пока нет серверов. Введите URL или войдите, чтобы запомнить свой.';
+
+  @override
   String get language => 'Язык';
 
   @override

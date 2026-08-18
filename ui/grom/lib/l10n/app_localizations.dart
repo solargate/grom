@@ -388,6 +388,36 @@ abstract class AppLocalizations {
   /// **'example.com'**
   String get serverUrlHint;
 
+  /// No description provided for @chooseServerTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a server'**
+  String get chooseServerTooltip;
+
+  /// No description provided for @chooseServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a server'**
+  String get chooseServerTitle;
+
+  /// No description provided for @approvedServersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved servers'**
+  String get approvedServersSection;
+
+  /// No description provided for @recentServersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent servers'**
+  String get recentServersSection;
+
+  /// No description provided for @serverPickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No servers yet. Enter a URL, or sign in to remember one.'**
+  String get serverPickerEmpty;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:

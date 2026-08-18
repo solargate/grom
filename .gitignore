@@ -1,7 +1,9 @@
 .vscode/
 .cursor/
 site/
-.venv-docs/
+.venv/
+__pycache__/
+*.py[cod]
 cmd/grom/grom
 cmd/grom/data/
 

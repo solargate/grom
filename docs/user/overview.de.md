@@ -4,7 +4,7 @@ Der Flutter-Client von Grom läuft als **Web-UI** und als **Android**-App. Die W
 
 Wenn Sie nicht angemeldet sind, zeigt **Home** / „Startseite“ einen Willkommensbildschirm mit Grom-Logo, kurzer Beschreibung und den Schaltflächen **Sign in** / „Anmelden“ und **Register** / „Registrieren“. Unter Android erinnert der Text zusätzlich daran, beim Anmelden die Adresse des Grom-Servers einzugeben.
 
-Unter **Android** (später auch iOS) fragen Anmeldung und Registrierung nach einer **Server-URL**. Sie können einen nackten Host wie `grom.example.com` eingeben (ohne `https://`). Beim Absenden prüft die App `GET /api/v1/status` zuerst über HTTPS, dann HTTP, schreibt die aufgelöste URL ins Feld und fährt fort. Wenn Sie bereits `http://` / `https://` oder einen expliziten Port eingeben, wird dieser Wert unverändert genutzt. **HTTP ist für lokale / LAN-Instanzen** ohne TLS erlaubt; für öffentlich erreichbare Server bevorzugen Sie HTTPS.
+Unter **Android** (später auch iOS) fragen Anmeldung und Registrierung nach einer **Server-URL**. Sie können einen nackten Host wie `grom.example.com` eingeben (ohne `https://`) oder neben dem Feld die Liste öffnen und einen [freigegebenen öffentlichen Server](approved-servers.md) oder einen bereits genutzten wählen. Beim Absenden prüft die App `GET /api/v1/status` zuerst über HTTPS, dann HTTP, schreibt die aufgelöste URL ins Feld und fährt fort. Wenn Sie bereits `http://` / `https://` oder einen expliziten Port eingeben, wird dieser Wert unverändert genutzt. **HTTP ist für lokale / LAN-Instanzen** ohne TLS erlaubt; für öffentlich erreichbare Server bevorzugen Sie HTTPS.
 
 ## Anmeldung und Passwort-Reset
 

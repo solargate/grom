@@ -5,6 +5,7 @@ import 'api_request.dart';
 import 'auth_storage.dart';
 import 'forgot_password.dart';
 import 'platform/is_mobile_client.dart';
+import 'server_history.dart';
 import 'server_storage.dart';
 import 'server_url_resolver.dart';
 import 'widgets/altcha_field.dart';
@@ -119,6 +120,9 @@ class _LoginFormState extends State<LoginForm> {
       );
 
       await AuthStorage.saveToken(result.token);
+      if (isMobileClient) {
+        await ServerHistory.remember(_serverUrlController.text);
+      }
 
       if (!mounted) return;
 
