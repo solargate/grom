@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
 ### Fixed
 
 - **UI:** Web client loads CanvasKit from the Grom instance instead of `www.gstatic.com`, so the UI can open when Google's CDN is slow or blocked
