@@ -48,7 +48,10 @@
           serviceWorkerVersion: serviceWorkerVersion,
         },
         onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
+          // Local CanvasKit; dart2js otherwise falls back to gstatic.com.
+          engineInitializer.initializeEngine({
+            canvasKitBaseUrl: "canvaskit/",
+          }).then(function(appRunner) {
             appRunner.runApp();
           });
         }

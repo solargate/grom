@@ -38,7 +38,7 @@ catalog: venv
 	$(PYTHON) scripts/server_catalog.py generate
 
 web: catalog
-	cd ui/grom && flutter build web $(FLUTTER_VERSION_FLAGS)
+	cd ui/grom && flutter build web $(FLUTTER_VERSION_FLAGS) --no-web-resources-cdn
 	rm -rf internal/web/dist
 	cp -r ui/grom/build/web internal/web/dist
 	touch internal/web/dist/.gitkeep
