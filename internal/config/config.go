@@ -46,9 +46,10 @@ type StorageConfig struct {
 
 type Config struct {
 	Server struct {
-		Name string `mapstructure:"name" yaml:"name"`
-		Port int    `mapstructure:"port" yaml:"port"`
-		TLS  struct {
+		Name         string           `mapstructure:"name" yaml:"name"`
+		Port         int              `mapstructure:"port" yaml:"port"`
+		Registration RegistrationMode `mapstructure:"registration" yaml:"registration"`
+		TLS          struct {
 			Mode             string `mapstructure:"mode" yaml:"mode"`
 			Enabled          bool   `mapstructure:"enabled" yaml:"enabled"` // legacy: true => static
 			Port             int    `mapstructure:"port" yaml:"port"`
@@ -99,6 +100,15 @@ type LoggingConfig struct {
 	// Format is text or json. Default: json.
 	Format string `mapstructure:"format" yaml:"format"`
 }
+
+// RegistrationMode controls whether new users can sign up.
+type RegistrationMode string
+
+const (
+	RegistrationOpen   RegistrationMode = "open"
+	RegistrationClosed RegistrationMode = "closed"
+	RegistrationInvite RegistrationMode = "invite"
+)
 
 // MailerDriver selects how outbound email is delivered.
 type MailerDriver string
@@ -159,6 +169,11 @@ type CaptchaConfig struct {
 // CaptchaEnabled reports whether ALTCHA captcha is required on auth endpoints.
 func (c *Config) CaptchaEnabled() bool {
 	return c.Auth.Captcha.Enabled
+}
+
+// RegistrationAllowed reports whether new user registration is open.
+func (c *Config) RegistrationAllowed() bool {
+	return c.Server.Registration == RegistrationOpen
 }
 
 // CaptchaHMACSecret returns the HMAC key used to sign/verify challenges.
@@ -230,6 +245,15 @@ func FinalizeConfig(cfg *Config) error {
 	if cfg.Storage.Location == "" {
 		cfg.Storage.Location = "data"
 	}
+	switch cfg.Server.Registration {
+	case "":
+		cfg.Server.Registration = RegistrationOpen
+	case RegistrationOpen, RegistrationClosed, RegistrationInvite:
+		// valid
+	default:
+		return fmt.Errorf("server.registration must be one of open, closed, invite (got %q)", cfg.Server.Registration)
+	}
+
 	if cfg.Auth.JWTSecret == "" {
 		return fmt.Errorf("auth.jwt_secret must be set in config")
 	}

@@ -12,6 +12,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | Area | What to set |
 |------|-------------|
 | `server.port` / `server.tls` | Listen ports and TLS mode (`off`, `static`, or `autocert`) |
+| `server.registration` | Registration mode: `open` (default), `closed`, or `invite` |
 | `storage.driver` / `location` / `temp_dir` | `file` (default; tests / tiny instances) or `bbolt` (recommended for normal installs); data root and temp dirs |
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
@@ -51,6 +52,18 @@ Notes:
 - Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
 - With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`, and comments as `Create`/`Delete` Note (`inReplyTo`); local workouts accept incoming likes and comments from other instances. Same-instance likes and comments work without federation. Account deletion (`DELETE /api/v1/auth/me`) delivers a `Delete` of the local actor to known remote inboxes (best-effort) before wiping local data; the inbox applies remote actor `Delete` by purging that owner’s federated cache for the recipient.
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
+
+## Registration
+
+The `server.registration` setting controls whether new users can sign up:
+
+| Value | Behavior |
+|-------|----------|
+| `open` | Anyone can register (default) |
+| `closed` | Registration is disabled; the API returns 403 |
+| `invite` | Registration by invitation only (invite mechanism is not yet implemented; the API returns 403) |
+
+The current mode is exposed via `GET /api/v1/server-info` in the `registration` field, so clients can adapt the UI before the user attempts to register.
 
 ## Storage drivers
 

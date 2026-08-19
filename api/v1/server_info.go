@@ -33,5 +33,6 @@ func (a *App) getServerInfo(ctx *gin.Context) {
 		"federation_enabled":     config.Cfg.Federation.Enabled,
 		"password_reset_enabled": config.Cfg.PasswordResetEnabled(),
 		"captcha_enabled":        config.Cfg.CaptchaEnabled(),
+		"registration":           config.Cfg.Server.Registration,
 	})
 }

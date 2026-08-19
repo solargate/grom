@@ -12,6 +12,7 @@ Grom wird über eine YAML-Datei konfiguriert. Standardmäßig sucht er `config.y
 | Bereich | Was setzen |
 |---------|------------|
 | `server.port` / `server.tls` | Listen-Ports und TLS-Modus (`off`, `static` oder `autocert`) |
+| `server.registration` | Registrierungsmodus: `open` (Standard), `closed` oder `invite` |
 | `storage.driver` / `location` / `temp_dir` | `file` (Standard; Tests / winzige Instanzen) oder `bbolt` (empfohlen für normale Installationen); Datenwurzel und Temp-Verzeichnisse |
 | `storage.bbolt.path` | Optionaler Pfad zu `grom.db` bei bbolt (Standard: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; erfordert HTTPS |
@@ -51,6 +52,18 @@ Hinweise:
 - Föderation erfordert HTTPS (`tls.mode: static` oder `autocert`). Mit `tls.mode: off` läuft sie nicht.
 - Bei aktivierter Föderation werden Likes auf Remote-Workouts als ActivityPub `Like` / `Undo` zugestellt, Kommentare als `Create`/`Delete` Note (`inReplyTo`); lokale Workouts akzeptieren eingehende Likes und Kommentare von anderen Instanzen. Likes und Kommentare auf derselben Instanz funktionieren ohne Föderation. Kontolöschung (`DELETE /api/v1/auth/me`) liefert ein `Delete` des lokalen Actors an bekannte Remote-Inboxes (best-effort), bevor lokale Daten gelöscht werden; die Inbox wendet Remote-Actor-`Delete` an, indem der föderierte Cache dieses Besitzers für den Empfänger bereinigt wird.
 - Legacy-Configs mit `server.tls.enabled: true` (ohne `mode`) gelten als `mode: static`.
+
+## Registrierung {#registration}
+
+Die Einstellung `server.registration` steuert, ob neue Benutzer sich anmelden können:
+
+| Wert | Verhalten |
+|------|-----------|
+| `open` | Jeder kann sich registrieren (Standard) |
+| `closed` | Registrierung deaktiviert; die API gibt 403 zurück |
+| `invite` | Registrierung nur auf Einladung (Einladungsmechanismus noch nicht implementiert; die API gibt 403 zurück) |
+
+Der aktuelle Modus wird über `GET /api/v1/server-info` im Feld `registration` bereitgestellt, damit Clients die Oberfläche anpassen können, bevor der Benutzer eine Registrierung versucht.
 
 ## Speicher-Treiber
 

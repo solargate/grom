@@ -420,6 +420,35 @@ func TestFinalizeConfig_MailerSMTPValidation(t *testing.T) {
 	}
 }
 
+func TestFinalizeConfig_RegistrationDefaultOpen(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "off"
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Server.Registration != config.RegistrationOpen {
+		t.Fatalf("registration = %q, want open", cfg.Server.Registration)
+	}
+}
+
+func TestFinalizeConfig_RegistrationClosedValid(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "off"
+	cfg.Server.Registration = config.RegistrationClosed
+	if err := config.FinalizeConfig(&cfg); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFinalizeConfig_RegistrationInvalidValue(t *testing.T) {
+	cfg := baseCfg()
+	cfg.Server.TLS.Mode = "off"
+	cfg.Server.Registration = "bogus"
+	if err := config.FinalizeConfig(&cfg); err == nil {
+		t.Fatal("expected error for invalid registration mode")
+	}
+}
+
 func TestHostWithoutPort(t *testing.T) {
 	if got := config.HostWithoutPort("192.168.1.251:8443"); got != "192.168.1.251" {
 		t.Fatalf("HostWithoutPort = %q", got)
