@@ -112,12 +112,12 @@ assert_eq "${GOT}" "${WANT}" "play notes should use ### Google Play"
 GOT="$("${SCRIPT}" play "${TMP}/CHANGELOG.md" 1.2.0)"
 assert_eq "${GOT}" "Stability and maintenance improvements" "server-only release should use Play stub"
 
-GOT="$("${SCRIPT}" play "${TMP}/CHANGELOG.md" 1.1.0)"
-assert_eq "${GOT}" "Stability and maintenance improvements" "UI-only release should use Play stub"
+assert_fails "UI without ### Google Play should fail" \
+  "${SCRIPT}" play "${TMP}/CHANGELOG.md" 1.1.0
+grep -q 'UI/Android' "${TMP}/err" || fail "expected UI/Android error for 1.1.0"
 
 assert_fails "empty ### Google Play with Android tag should fail" \
   "${SCRIPT}" play "${TMP}/CHANGELOG.md" 1.0.0
-grep -q 'Android' "${TMP}/err" || fail "expected Android error for 1.0.0"
 
 assert_fails "Play notes over 500 characters should fail" \
   "${SCRIPT}" play "${TMP}/CHANGELOG.md" 0.9.0
@@ -165,9 +165,9 @@ if grep -q '^### Google Play' <<<"${GOT}"; then
 fi
 
 PLAY_GOT="$("${SCRIPT}" play "${ROOT}/CHANGELOG.md" Unreleased)"
-if printf '%s\n' "${GOT}" | grep -E -q -- '^- \*\*Android:\*\*'; then
+if printf '%s\n' "${GOT}" | grep -E -q -- '^- \*\*(UI|Android):\*\*'; then
   if [[ "${PLAY_GOT}" == "Stability and maintenance improvements" ]]; then
-    fail "real CHANGELOG Unreleased should not use the Play stub while it has Android entries"
+    fail "real CHANGELOG Unreleased should not use the Play stub while it has UI/Android entries"
   fi
 fi
 

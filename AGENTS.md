@@ -164,7 +164,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Match existing style: short, imperative commit subjects focused on why.
 - Do not commit generated noise, local data, TLS material, or `.cursor/`.
 - `internal/web/dist/*` is produced by the build; prefer regenerating via Makefile rather than hand-editing.
-- User-visible changes: add a bullet under `CHANGELOG.md` → `[Unreleased]` (Added / Changed / Fixed / Security; call out **Breaking** for config, API, or storage). Prefix the bullet with **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, or **CI:**. If the release includes **Android:**, keep a short English `### Google Play` block (plain text, ≤500 characters) for the Play Store listing; omit that block when there are no **Android:** entries (CI then uses a maintenance stub). Skip pure refactors, tests, and CI noise.
+- User-visible changes: add a bullet under `CHANGELOG.md` → `[Unreleased]` (Added / Changed / Fixed / Security; call out **Breaking** for config, API, or storage). Prefix the bullet with **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, or **CI:**. If the release includes **UI:** or **Android:**, keep a short English `### Google Play` block (plain text, ≤500 characters) for the Play Store listing; omit that block when the release is Server/Docs/CI only (CI then uses a maintenance stub). Skip pure refactors, tests, and CI noise.
 
 ## Domain notes agents should respect
 
@@ -197,7 +197,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Pick `AuthRequired` vs `AuthAPI` explicitly for new `/api/v1` routes (see coding conventions).
 - Update config examples and `docs/admin/` when TLS/federation/storage/install behavior changes; keep root `README.md` short (link out, update quick start only if needed). Sync `*.ru.md` / `*.de.md` with English docs edits.
 - Update `docs/user/` when client-facing flows or screens change in a way operators/users need to know (EN + RU + DE).
-- Update `CHANGELOG.md` `[Unreleased]` for user-visible changes (component prefix; `### Google Play` when **Android:**).
+- Update `CHANGELOG.md` `[Unreleased]` for user-visible changes (component prefix; `### Google Play` when UI/Android).
 - Add or extend tests for non-trivial logic (track stats, federation inbox, storage).
 - Keep API and Flutter models aligned when changing JSON field names; keep sport/equipment catalogs in sync across Go and Flutter.
 
@@ -234,4 +234,4 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Human docs | `docs/README.md` (index + Pages homepage), `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
 | Approved server catalog | `server-catalog.yaml`; `scripts/server_catalog.py`; Flutter `lib/server_catalog.dart` + `widgets/server_url_field.dart`; docs in `docs/user/approved-servers.md` |
 | Changelog / Play notes | `CHANGELOG.md`; `scripts/changelog_notes.sh` (`github` strips `### Google Play`; `play` emits en-US "What's new") |
-| Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD` (keep `### Google Play` if **Android:**); update compare links; tag `X.Y.Z` on master (CI fills GitHub body from changelog minus Play block; Play "What's new" from `### Google Play` or a stub) |
+| Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD` (keep `### Google Play` if UI/Android); update compare links; tag `X.Y.Z` on master (CI fills GitHub body from changelog minus Play block; Play "What's new" from `### Google Play` or a stub) |

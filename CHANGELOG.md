@@ -5,13 +5,9 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-`[Unreleased]` bullets use a component prefix: **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, **CI:**. Optional `### Google Play` is the English Play Store "What's new" (≤500 characters); required when the section has **Android:** entries, otherwise release CI uses a maintenance stub. Release CI omits that block from the GitHub release body.
+`[Unreleased]` bullets use a component prefix: **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, **CI:**. Optional `### Google Play` is the English Play Store "What's new" (≤500 characters); release CI omits that block from the GitHub release body.
 
 ## [Unreleased]
-
-### Changed
-
-- **CI:** Play Store "What's new" is required only when the changelog has **Android:** entries; **UI:**-only releases use the maintenance stub
 
 ### Fixed
 
