@@ -575,6 +575,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/v1.ErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "Registration is disabled or invite-only",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
                     "409": {
                         "description": "Email or nickname already taken",
                         "schema": {

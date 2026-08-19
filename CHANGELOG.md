@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Server:** `server.registration` config option to control user registration (`open`, `closed`, `invite`); exposed via `/api/v1/server-info`
+
 ### Fixed
 
 - **Server:** Web client loads CanvasKit from the Grom instance instead of `www.gstatic.com`, so the UI can open when Google's CDN is slow or blocked

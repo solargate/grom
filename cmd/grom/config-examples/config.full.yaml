@@ -9,6 +9,11 @@ server:
   # Optional. HTTP listen port. Default: 8080.
   # When TLS is on, this port is used for redirect / ACME HTTP-01.
   port: 8080
+  # Optional. Registration mode: open | closed | invite. Default: open.
+  # open   - anyone can register.
+  # closed - registration is disabled.
+  # invite - registration by invitation only (not yet implemented).
+  registration: open
   tls:
     # Optional. TLS mode: off | static | autocert. Default: off (or static if enabled is true).
     mode: off

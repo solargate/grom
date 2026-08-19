@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
+	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/users"
 )
 
@@ -65,9 +66,19 @@ func (a *App) toUserResponse(user *users.User) UserResponse {
 // @Param        body  body  RegisterRequest  true  "Registration data"
 // @Success      201   {object}  UserResponse
 // @Failure      400   {object}  ErrorResponse  "Invalid request or captcha"
+// @Failure      403   {object}  ErrorResponse  "Registration is disabled or invite-only"
 // @Failure      409   {object}  ErrorResponse  "Email or nickname already taken"
 // @Router       /auth/register [post]
 func (a *App) register(ctx *gin.Context) {
+	switch config.Cfg.Server.Registration {
+	case config.RegistrationClosed:
+		ctx.JSON(http.StatusForbidden, ErrorResponse{Error: "registration is disabled on this server"})
+		return
+	case config.RegistrationInvite:
+		ctx.JSON(http.StatusForbidden, ErrorResponse{Error: "registration on this server is by invitation only"})
+		return
+	}
+
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})

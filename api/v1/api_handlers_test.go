@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	v1 "github.com/solargate/grom/api/v1"
+	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -34,6 +35,64 @@ func TestServerInfoAndStatus(t *testing.T) {
 	}
 	if info["password_reset_enabled"] != false {
 		t.Fatalf("expected password_reset_enabled=false, got %#v", info)
+	}
+	if info["registration"] != "open" {
+		t.Fatalf("expected registration=open, got %#v", info)
+	}
+}
+
+func TestRegisterClosedMode(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Federation.Domain = "localhost"
+		cfg.Server.Registration = config.RegistrationClosed
+	})
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
+		"nickname": "bob",
+		"name":     "Bob",
+		"email":    "bob@example.com",
+		"password": "password12",
+	}, "")
+	expectStatus(t, w, http.StatusForbidden)
+	body := decodeObject(t, w)
+	if msg, _ := body["error"].(string); msg != "registration is disabled on this server" {
+		t.Fatalf("unexpected error: %q", msg)
+	}
+}
+
+func TestRegisterInviteMode(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Federation.Domain = "localhost"
+		cfg.Server.Registration = config.RegistrationInvite
+	})
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/auth/register", map[string]string{
+		"nickname": "bob",
+		"name":     "Bob",
+		"email":    "bob@example.com",
+		"password": "password12",
+	}, "")
+	expectStatus(t, w, http.StatusForbidden)
+	body := decodeObject(t, w)
+	if msg, _ := body["error"].(string); msg != "registration on this server is by invitation only" {
+		t.Fatalf("unexpected error: %q", msg)
+	}
+}
+
+func TestServerInfoRegistrationClosed(t *testing.T) {
+	ta := setupTestAppWithConfig(t, func(cfg *config.Config) {
+		cfg.Server.TLS.Mode = "off"
+		cfg.Federation.Enabled = false
+		cfg.Federation.Domain = "localhost"
+		cfg.Server.Registration = config.RegistrationClosed
+	})
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/server-info", nil, "")
+	expectStatus(t, w, http.StatusOK)
+	info := decodeObject(t, w)
+	if info["registration"] != "closed" {
+		t.Fatalf("expected registration=closed, got %#v", info)
 	}
 }
 
