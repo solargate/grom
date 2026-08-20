@@ -6,6 +6,10 @@
 >
 > Configuration formats, APIs, storage layouts, and other interfaces may and will change without a stable migration path. Expect bugs. Use at your own risk.
 
+> **Grom — a free workout ecosystem: your server, your communities, open code.**
+
+Grom aims to be a fully free ecosystem for athletes and enthusiasts: run a server for yourself or any community, keep workouts on infrastructure you control, and optionally share activities across communities through federation. It stays open to integrations with available sports services and formats — and remains open source so anyone can help shape it. Longer version: [About the project](docs/about.md).
+
 Self-hosted workout tracker with an optional ActivityPub federation layer. Record or import workouts, manage equipment, follow other athletes (local or federated), like and comment on their activities, and browse a social feed — all on infrastructure you control.
 
 The server is a single Go binary; the Flutter client ships as an embedded web UI and as an Android app.
@@ -44,11 +48,12 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 
 ## Documentation
 
-**On the website:** [Docs](https://solargate.github.io/grom/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Delete account](https://solargate.github.io/grom/user/delete-account/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy/)
+**On the website:** [Docs](https://solargate.github.io/grom/) · [About](https://solargate.github.io/grom/about/) · [User overview](https://solargate.github.io/grom/user/overview/) · [Delete account](https://solargate.github.io/grom/user/delete-account/) · [Install](https://solargate.github.io/grom/admin/install/) · [Configuration](https://solargate.github.io/grom/admin/configuration/) · [Privacy](https://solargate.github.io/grom/privacy/)
 
 **In the repository** (for contributors):
 
 - **[Docs index](docs/README.md)** — user and admin guides
+- [About the project](docs/about.md) — mission, pillars, and why Grom exists
 - [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, Health Sync)
 - [Approved Grom servers](docs/user/approved-servers.md) — Android server picker and how to list a public instance
 - [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)

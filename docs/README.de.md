@@ -1,5 +1,9 @@
 # Dokumentation
 
+> **Grom — ein freies Trainings-Ökosystem: Ihr Server, Ihre Communities, offener Code.**
+
+Grom soll ein vollständig freies Ökosystem für Sportlerinnen, Sportler und Ambitionierte sein: Betreiben Sie einen Server für sich oder jede Community, behalten Sie Workouts auf Infrastruktur, die Sie kontrollieren, und tauschen Sie Aktivitäten optional über Föderation zwischen Communities aus. Grom bleibt offen für Integrationen mit verfügbaren Sport-Diensten und Formaten — und als Open Source, damit jede und jeder mitgestalten kann. Ausführlicher: [Über das Projekt](about.md).
+
 Grom ist ein self-hosted Trainings-Tracker mit optionaler ActivityPub-Föderation. Erfassen oder importieren Sie Workouts, verwalten Sie Ausrüstung, folgen Sie anderen Sportlern (lokal oder föderiert), liken und kommentieren Sie Aktivitäten und browsen Sie einen Social Feed — auf Infrastruktur, die Sie kontrollieren.
 
 Der Server ist eine einzelne Go-Binary; der Flutter-Client erscheint als eingebettete Web-UI und als Android-App.
@@ -28,6 +32,12 @@ Der Server ist eine einzelne Go-Binary; der Flutter-Client erscheint als eingebe
 Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und starten: [Installation und Start](admin/install.md). Quellcode und Quick Start: [Repository-README](https://github.com/solargate/grom#readme).
 
 ## Ich möchte…
+
+### Über das Projekt
+
+| Ziel | Seite |
+|------|-------|
+| Mission und Säulen des Projekts lesen | [Über das Projekt](about.md) |
 
 ### Benutzer
 

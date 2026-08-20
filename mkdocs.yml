@@ -33,6 +33,7 @@ theme:
 
 nav:
   - Home: README.md
+  - About: about.md
   - User:
       - Overview: user/overview.md
       - Approved servers: user/approved-servers.md
@@ -63,6 +64,7 @@ plugins:
           site_description: Self-hosted трекер тренировок с необязательной федерацией ActivityPub
           nav_translations:
             Home: Главная
+            About: О проекте
             User: Пользователь
             Overview: Обзор
             Approved servers: Одобренные серверы
@@ -81,6 +83,7 @@ plugins:
           site_description: Self-hosted Trainings-Tracker mit optionaler ActivityPub-Föderation
           nav_translations:
             Home: Start
+            About: Über das Projekt
             User: Benutzer
             Overview: Überblick
             Approved servers: Freigegebene Server

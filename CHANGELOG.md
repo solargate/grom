@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Docs:** Project mission and tagline on the docs homepage and repository README; expanded [About the project](docs/about.md) page (EN / RU / DE)
 - **Server:** `server.registration` config option to control user registration (`open`, `closed`, `invite`); exposed via `/api/v1/server-info`
 
 ### Fixed

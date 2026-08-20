@@ -67,6 +67,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 
 - **Languages:** English is the canonical source under `docs/` (unsuffixed files). Russian and German are full translations via MkDocs Material + `mkdocs-static-i18n` (`docs_structure: suffix`: `page.ru.md`, `page.de.md`). EN is served at `/`; RU at `/ru/`; DE at `/de/`. Root `README.md` / `AGENTS.md` stay English-only.
 - **Layout:** Root `README.md` is a short front door (what/why, hero screenshots, quick start, links). Details live under `docs/`:
+  - `docs/about.md` — project mission and pillars (EN + RU/DE)
   - `docs/user/` — end-user / client tour (web + Android)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
   - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
@@ -231,7 +232,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
-| Human docs | `docs/README.md` (index + Pages homepage), `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
+| Human docs | `docs/README.md` (index + Pages homepage), `docs/about.md`, `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
 | Approved server catalog | `server-catalog.yaml`; `scripts/server_catalog.py`; Flutter `lib/server_catalog.dart` + `widgets/server_url_field.dart`; docs in `docs/user/approved-servers.md` |
 | Changelog / Play notes | `CHANGELOG.md`; `scripts/changelog_notes.sh` (`github` strips `### Google Play`; `play` emits en-US "What's new") |
 | Version bump / release | edit `VERSION`; move `CHANGELOG.md` `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD` (keep `### Google Play` if UI/Android); update compare links; tag `X.Y.Z` on master (CI fills GitHub body from changelog minus Play block; Play "What's new" from `### Google Play` or a stub) |
