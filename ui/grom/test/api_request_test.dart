@@ -56,14 +56,17 @@ void main() {
         'Run': ['eq-1', 'eq-2'],
         'Ride': ['bike-1'],
       },
+      'used_sport_types': ['Ride', 'Run', 'Walk'],
     });
     expect(profile.lastSportType, 'Ride');
     expect(profile.lastEquipmentBySport['Run'], ['eq-1', 'eq-2']);
     expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
+    expect(profile.usedSportTypes, ['Ride', 'Run', 'Walk']);
 
     final empty = UserProfile.fromJson({});
     expect(empty.lastSportType, isNull);
     expect(empty.lastEquipmentBySport, isEmpty);
+    expect(empty.usedSportTypes, isEmpty);
   });
 
   test('ApiException keeps status code', () {
@@ -200,6 +203,39 @@ void main() {
     expect(page.items.first.id, 'wid');
     expect(page.nextCursor, 'next');
     expect(page.hasMore, isTrue);
+  });
+
+  test('listWorkouts sends sport_types query when provided', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.url.queryParameters['scope'], 'own');
+      expect(request.url.queryParameters['sport_types'], 'Run,Ride');
+      return http.Response(
+        jsonEncode({'items': [], 'has_more': false}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    await ApiRequest(client: client).listWorkouts(
+      'tok',
+      scope: 'own',
+      sportTypes: const ['Run', 'Ride'],
+    );
+
+    final emptyClient = MockClient((request) async {
+      expect(request.url.queryParameters.containsKey('sport_types'), isTrue);
+      expect(request.url.queryParameters['sport_types'], '');
+      return http.Response(
+        jsonEncode({'items': [], 'has_more': false}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    await ApiRequest(client: emptyClient).listWorkouts(
+      'tok',
+      scope: 'own',
+      sportTypes: const [],
+    );
   });
 
   test('getServerInfo parses JSON and falls back on errors', () async {
@@ -573,11 +609,12 @@ void main() {
       expect(request.url.path, '/api/v1/profile');
       expect(request.headers['Authorization'], 'Bearer tok');
       return http.Response(
-        jsonEncode({
+		jsonEncode({
           'last_sport_type': 'Ride',
           'last_equipment_by_sport': {
             'Ride': ['bike-1'],
           },
+          'used_sport_types': ['Ride', 'Run'],
         }),
         200,
         headers: {'content-type': 'application/json'},
@@ -586,6 +623,7 @@ void main() {
     final profile = await ApiRequest(client: client).getProfile('tok');
     expect(profile.lastSportType, 'Ride');
     expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
+    expect(profile.usedSportTypes, ['Ride', 'Run']);
   });
 
   test('like and unlike workout send owner query', () async {

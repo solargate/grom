@@ -350,6 +350,21 @@ func parseOptionalFloatForm(raw string) (*float64, error) {
 	return &v, nil
 }
 
+// parseSportTypesQuery splits a comma-separated sport_types query into an allow-set.
+// Empty tokens are dropped; unknown ids are kept (they simply match nothing).
+func parseSportTypesQuery(raw string) map[string]struct{} {
+	parts := strings.Split(raw, ",")
+	out := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		out[part] = struct{}{}
+	}
+	return out
+}
+
 func (a *App) currentUserNickname(ctx *gin.Context) (string, error) {
 	userID, _ := ctx.Get(auth.ContextUserIDKey)
 	id, ok := userID.(string)
@@ -512,6 +527,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 	}
 
 	a.saveLastEquipmentForSport(userID, req.SportType, resolvedIDs)
+	a.rememberUsedSportType(userID, req.SportType)
 	a.scheduleRefreshLastSportType(nickname, userID)
 
 	a.publishCreatedWorkout(nickname, workout)
@@ -752,6 +768,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 
 	if userID != "" {
 		a.saveLastEquipmentForSport(userID, form.SportType, resolvedIDs)
+		a.rememberUsedSportType(userID, form.SportType)
 		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 
@@ -1380,15 +1397,16 @@ func (a *App) checkWorkoutExternalID(ctx *gin.Context) {
 
 // listWorkouts godoc
 // @Summary      List workouts
-// @Description  Return a cursor page of workouts for the authenticated user sorted by start date descending (id descending tie-breaker). Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts. Default limit is 20 (max 100).
+// @Description  Return a cursor page of workouts for the authenticated user sorted by start date descending (id descending tie-breaker). Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts. Optional sport_types (comma-separated) filters own workouts only; omit for all types; empty value returns an empty page. Unknown type ids are ignored. Default limit is 20 (max 100).
 // @Tags         workouts
 // @Produce      json
 // @Security     BearerAuth
-// @Param        scope   query  string  false  "feed (default) or own"
-// @Param        limit   query  int     false  "page size (default 20, max 100)"
-// @Param        cursor  query  string  false  "opaque cursor from previous page next_cursor"
+// @Param        scope        query  string  false  "feed (default) or own"
+// @Param        limit        query  int     false  "page size (default 20, max 100)"
+// @Param        cursor       query  string  false  "opaque cursor from previous page next_cursor"
+// @Param        sport_types  query  string  false  "comma-separated sport type ids; only with scope=own"
 // @Success      200  {object}  WorkoutListResponse
-// @Failure      400  {object}  ErrorResponse  "Invalid scope, limit, or cursor"
+// @Failure      400  {object}  ErrorResponse  "Invalid scope, limit, cursor, or sport_types with feed"
 // @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Failure      500  {object}  ErrorResponse  "Internal server error"
 // @Router       /workouts [get]
@@ -1407,6 +1425,12 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	}
 	if scope != "feed" && scope != "own" {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid scope"})
+		return
+	}
+
+	rawSportTypes, sportTypesPresent := ctx.GetQuery("sport_types")
+	if sportTypesPresent && scope != "own" {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "sport_types is only allowed with scope=own"})
 		return
 	}
 
@@ -1445,7 +1469,18 @@ func (a *App) listWorkouts(ctx *gin.Context) {
 	var page workouts.Page
 
 	if scope == "own" {
-		page, err = feedSvc.ListOwnPage(nickname, viewer.Name, cursor, limit)
+		var sportTypes map[string]struct{}
+		if sportTypesPresent {
+			sportTypes = parseSportTypesQuery(rawSportTypes)
+			if len(sportTypes) == 0 {
+				ctx.JSON(http.StatusOK, WorkoutListResponse{
+					Items:   []WorkoutResponse{},
+					HasMore: false,
+				})
+				return
+			}
+		}
+		page, err = feedSvc.ListOwnPage(nickname, viewer.Name, cursor, limit, sportTypes)
 	} else {
 		var follows []social.Follow
 		follows, err = a.Social.ListFollowing(userID)
@@ -1594,6 +1629,7 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 
 	if userID, err := a.currentUserID(ctx); err == nil {
 		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+		a.rememberUsedSportType(userID, req.SportType)
 		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 

@@ -70,6 +70,10 @@ class _GromShellState extends State<GromShell> {
   SharedTrackPayload? _pendingSharedTrack;
   bool _isProcessingSharedTrack = false;
 
+  bool _sportFilterVisible = false;
+  bool _sportFilterExpanded = false;
+  VoidCallback? _onToggleSportFilter;
+
   bool get _isLoggedIn => _nickname != null;
   bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -77,6 +81,12 @@ class _GromShellState extends State<GromShell> {
       _isAndroid &&
       _healthSyncEnabled &&
       _selectedDestination == GromDestination.home &&
+      !_isViewingWorkout &&
+      !_isViewingFeedPhoto &&
+      _isLoggedIn;
+  bool get _showSportFilterButton =>
+      _selectedDestination == GromDestination.home &&
+      _sportFilterVisible &&
       !_isViewingWorkout &&
       !_isViewingFeedPhoto &&
       _isLoggedIn;
@@ -194,6 +204,37 @@ class _GromShellState extends State<GromShell> {
       onPressed: HealthSyncService.instance.syncing ? null : _runHealthSync,
       icon: const Icon(Symbols.directory_sync),
     );
+  }
+
+  Widget? _buildSportFilterHeaderButton() {
+    if (!_showSportFilterButton) {
+      return null;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    return IconButton(
+      tooltip: l10n.filterWorkouts,
+      isSelected: _sportFilterExpanded,
+      onPressed: _onToggleSportFilter,
+      icon: const Icon(Icons.filter_list),
+      selectedIcon: Icon(
+        Icons.filter_list,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  void _onSportFilterChromeChanged(SportFilterChrome chrome) {
+    if (_sportFilterVisible == chrome.visible &&
+        _sportFilterExpanded == chrome.expanded &&
+        identical(_onToggleSportFilter, chrome.onToggle)) {
+      return;
+    }
+    setState(() {
+      _sportFilterVisible = chrome.visible;
+      _sportFilterExpanded = chrome.expanded;
+      _onToggleSportFilter = chrome.onToggle;
+    });
   }
 
   Future<({String name, bool federationEnabled})> _fetchServerInfo() async {
@@ -784,6 +825,9 @@ class _GromShellState extends State<GromShell> {
       _isWorkoutMapExpanded = false;
       _workoutPhotoViewerIndex = null;
       _feedPhotoViewerWorkout = null;
+      _sportFilterVisible = false;
+      _sportFilterExpanded = false;
+      _onToggleSportFilter = null;
     });
     if (showSignedOutSnack) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -863,6 +907,7 @@ class _GromShellState extends State<GromShell> {
           onFeedPhotoViewerWorkoutChanged: (workout) {
             setState(() => _feedPhotoViewerWorkout = workout);
           },
+          onSportFilterChromeChanged: _onSportFilterChromeChanged,
           onSignIn: () {
             setState(() => _selectedDestination = GromDestination.login);
           },
@@ -931,6 +976,7 @@ class _GromShellState extends State<GromShell> {
             : null,
         title: Text(_contentHeaderTitle(l10n)),
         actions: [
+          if (_showSportFilterButton) _buildSportFilterHeaderButton()!,
           if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
           if (_isViewingProfile) _buildProfileMenu(),
@@ -979,6 +1025,8 @@ class _GromShellState extends State<GromShell> {
                               ),
                             ),
                           ),
+                          if (_showSportFilterButton)
+                            _buildSportFilterHeaderButton()!,
                           if (_showHealthSyncButton)
                             _buildHealthSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),

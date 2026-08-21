@@ -107,3 +107,37 @@ func TestSetLastSportType(t *testing.T) {
 		t.Fatalf("got %q, want Ride", profile.LastSportType)
 	}
 }
+
+func TestTouchAndPruneUsedSportTypes(t *testing.T) {
+	store := newTestStore(t)
+	user, err := store.Create("athlete", "Athlete", "athlete@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TouchUsedSportType(user.ID, "Run"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TouchUsedSportType(user.ID, "Ride"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TouchUsedSportType(user.ID, "Run"); err != nil {
+		t.Fatal(err)
+	}
+	profile, err := store.GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(profile.UsedSportTypes) != 2 || profile.UsedSportTypes[0] != "Run" || profile.UsedSportTypes[1] != "Ride" {
+		t.Fatalf("used %#v", profile.UsedSportTypes)
+	}
+	if err := store.PruneUsedSportTypes(user.ID, map[string]struct{}{"Ride": {}}); err != nil {
+		t.Fatal(err)
+	}
+	profile, err = store.GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(profile.UsedSportTypes) != 1 || profile.UsedSportTypes[0] != "Ride" {
+		t.Fatalf("after prune %#v", profile.UsedSportTypes)
+	}
+}

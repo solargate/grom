@@ -15,4 +15,6 @@ type User struct {
 type Profile struct {
 	LastSportType        string              `yaml:"last_sport_type,omitempty" json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `yaml:"last_equipment_by_sport,omitempty" json:"last_equipment_by_sport,omitempty"`
+	// UsedSportTypes are unique sport types from create/update, most recently used first.
+	UsedSportTypes []string `yaml:"used_sport_types,omitempty" json:"used_sport_types,omitempty"`
 }

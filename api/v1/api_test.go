@@ -633,6 +633,59 @@ func TestListWorkoutsPagination(t *testing.T) {
 	}
 }
 
+func TestListWorkoutsSportTypesFilter(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	start := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for i, sport := range []string{"Run", "Ride", "Walk", "Ride", "Run"} {
+		w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+			"name":       sport,
+			"sport_type": sport,
+			"start_date": start.Add(-time.Duration(i) * time.Hour).Format(time.RFC3339),
+		}, token)
+		expectStatus(t, w, http.StatusCreated)
+	}
+
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&sport_types=Run,Walk&limit=2", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items, cursor, hasMore := decodeWorkoutPage(t, w)
+	if len(items) != 2 || !hasMore || cursor == "" {
+		t.Fatalf("page1 items=%d hasMore=%v cursor=%q", len(items), hasMore, cursor)
+	}
+	if items[0]["sport_type"] != "Run" || items[1]["sport_type"] != "Walk" {
+		t.Fatalf("unexpected sports: %#v", items)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&sport_types=Run,Walk&limit=2&cursor="+cursor, nil, token)
+	expectStatus(t, w, http.StatusOK)
+	items2, _, hasMore2 := decodeWorkoutPage(t, w)
+	if len(items2) != 1 || hasMore2 {
+		t.Fatalf("page2 items=%d hasMore=%v", len(items2), hasMore2)
+	}
+	if items2[0]["sport_type"] != "Run" {
+		t.Fatalf("expected last Run, got %#v", items2[0])
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&sport_types=", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	empty, _, emptyMore := decodeWorkoutPage(t, w)
+	if len(empty) != 0 || emptyMore {
+		t.Fatalf("empty filter: items=%d hasMore=%v", len(empty), emptyMore)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own&sport_types=NotARealSport,AlsoFake", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	junk, _, junkMore := decodeWorkoutPage(t, w)
+	if len(junk) != 0 || junkMore {
+		t.Fatalf("unknown types: items=%d hasMore=%v", len(junk), junkMore)
+	}
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=feed&sport_types=Run", nil, token)
+	expectStatus(t, w, http.StatusBadRequest)
+}
+
 func TestWorkoutChartsAcrossStorageDrivers(t *testing.T) {
 	for _, driver := range []config.StorageDriver{config.StorageDriverFile, config.StorageDriverBBolt} {
 		t.Run(string(driver), func(t *testing.T) {
@@ -930,6 +983,82 @@ func TestProfileLastSportTypeTracksNewestByStartDate(t *testing.T) {
 	profile = decodeObject(t, w)
 	if profile["last_sport_type"] != "Ride" {
 		t.Fatalf("after deleting newest, expected Ride, got %#v", profile["last_sport_type"])
+	}
+}
+
+func TestProfileUsedSportTypesRecencyAndPrune(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, user := ta.login(t, "alice@example.com", "password12")
+	userID, _ := user["id"].(string)
+	nickname, _ := user["nickname"].(string)
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Run one", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	runID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile := decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Run"})
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Ride one", "sport_type": "Ride", "start_date": "2026-07-02T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	rideID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Ride", "Run"})
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+runID, map[string]any{
+		"name": "Run one edited", "sport_type": "Walk", "start_date": "2026-07-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusOK)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk", "Ride", "Run"})
+
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk", "Ride"})
+
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+rideID, nil, token)
+	expectStatus(t, w, http.StatusNoContent)
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType after delete: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk"})
+}
+
+func assertUsedSportTypes(t *testing.T, profile map[string]any, want []string) {
+	t.Helper()
+	raw, _ := profile["used_sport_types"].([]any)
+	got := make([]string, 0, len(raw))
+	for _, v := range raw {
+		s, _ := v.(string)
+		got = append(got, s)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("used_sport_types %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("used_sport_types %#v, want %#v", got, want)
+		}
 	}
 }
 

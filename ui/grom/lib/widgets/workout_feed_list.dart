@@ -19,6 +19,8 @@ class WorkoutFeedList extends StatefulWidget {
     required this.onPhotoTap,
     this.onAuthTokenLoaded,
     this.api,
+    this.sportTypes,
+    this.emptyMessage,
   });
 
   final String nickname;
@@ -30,6 +32,12 @@ class WorkoutFeedList extends StatefulWidget {
   final void Function(Workout workout, int photoIndex) onPhotoTap;
   final ValueChanged<String>? onAuthTokenLoaded;
   final ApiRequest? api;
+
+  /// When non-null, sent as `sport_types` (empty list → empty query value).
+  final List<String>? sportTypes;
+
+  /// Overrides [AppLocalizations.noWorkoutsYet] when the list is empty.
+  final String? emptyMessage;
 
   @override
   State<WorkoutFeedList> createState() => WorkoutFeedListState();
@@ -70,9 +78,28 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
     }
     if (widget.refreshToken != oldWidget.refreshToken ||
         widget.nickname != oldWidget.nickname ||
-        widget.scope != oldWidget.scope) {
+        widget.scope != oldWidget.scope ||
+        !_sameSportTypes(oldWidget.sportTypes, widget.sportTypes)) {
       _loadWorkouts(reset: true);
     }
+  }
+
+  static bool _sameSportTypes(List<String>? a, List<String>? b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a == null || b == null) {
+      return a == b;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> reload() => _loadWorkouts(reset: true);
@@ -117,6 +144,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
         scope: widget.scope,
         limit: _pageLimit,
         cursor: reset ? null : _nextCursor,
+        sportTypes: widget.sportTypes,
       );
       if (!mounted) return;
       setState(() {
@@ -182,7 +210,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            l10n.noWorkoutsYet,
+            widget.emptyMessage ?? l10n.noWorkoutsYet,
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),

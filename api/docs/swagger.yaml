@@ -360,6 +360,10 @@ definitions:
         type: object
       last_sport_type:
         type: string
+      used_sport_types:
+        items:
+          type: string
+        type: array
     type: object
   v1.RegisterRequest:
     properties:
@@ -1453,7 +1457,8 @@ paths:
   /profile:
     get:
       description: Returns UI/service preferences (last sport type, last equipment
-        by sport). Not part of public user identity.
+        by sport, used sport types ordered by most recent create/update). Not part
+        of public user identity.
       produces:
       - application/json
       responses:
@@ -1673,7 +1678,9 @@ paths:
     get:
       description: Return a cursor page of workouts for the authenticated user sorted
         by start date descending (id descending tie-breaker). Use scope=feed for the
-        full feed (default) or scope=own for only the viewer's workouts. Default limit
+        full feed (default) or scope=own for only the viewer's workouts. Optional
+        sport_types (comma-separated) filters own workouts only; omit for all types;
+        empty value returns an empty page. Unknown type ids are ignored. Default limit
         is 20 (max 100).
       parameters:
       - description: feed (default) or own
@@ -1688,6 +1695,10 @@ paths:
         in: query
         name: cursor
         type: string
+      - description: comma-separated sport type ids; only with scope=own
+        in: query
+        name: sport_types
+        type: string
       produces:
       - application/json
       responses:
@@ -1696,7 +1707,7 @@ paths:
           schema:
             $ref: '#/definitions/v1.WorkoutListResponse'
         "400":
-          description: Invalid scope, limit, or cursor
+          description: Invalid scope, limit, cursor, or sport_types with feed
           schema:
             $ref: '#/definitions/v1.ErrorResponse'
         "401":

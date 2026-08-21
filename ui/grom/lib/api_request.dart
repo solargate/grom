@@ -78,10 +78,12 @@ class UserProfile {
   UserProfile({
     this.lastSportType,
     this.lastEquipmentBySport = const {},
+    this.usedSportTypes = const [],
   });
 
   final String? lastSportType;
   final Map<String, List<String>> lastEquipmentBySport;
+  final List<String> usedSportTypes;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final lastEquipmentRaw = json['last_equipment_by_sport'];
@@ -95,10 +97,21 @@ class UserProfile {
         }
       }
     }
+    final usedRaw = json['used_sport_types'];
+    final usedSports = <String>[];
+    if (usedRaw is List) {
+      for (final item in usedRaw) {
+        final s = item.toString();
+        if (s.isNotEmpty) {
+          usedSports.add(s);
+        }
+      }
+    }
     final sport = json['last_sport_type'] as String?;
     return UserProfile(
       lastSportType: (sport == null || sport.isEmpty) ? null : sport,
       lastEquipmentBySport: lastEquipment,
+      usedSportTypes: usedSports,
     );
   }
 }
@@ -840,6 +853,7 @@ class ApiRequest {
     String scope = 'feed',
     int limit = 20,
     String? cursor,
+    List<String>? sportTypes,
   }) async {
     final params = <String, String>{
       'limit': '$limit',
@@ -849,6 +863,9 @@ class ApiRequest {
     }
     if (cursor != null && cursor.isNotEmpty) {
       params['cursor'] = cursor;
+    }
+    if (sportTypes != null) {
+      params['sport_types'] = sportTypes.join(',');
     }
     final uri = _uri('/api/v1/workouts').replace(queryParameters: params);
     final response = await _client.get(

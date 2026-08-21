@@ -396,7 +396,7 @@ func countAll(backend storage.Backend, location, federationDomain string) (*Resu
 }
 
 func profileNonEmpty(profile *users.Profile) bool {
-	return profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0)
+	return profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0 || len(profile.UsedSportTypes) > 0)
 }
 
 func listFollows(backend storage.Backend) ([]social.Follow, error) {

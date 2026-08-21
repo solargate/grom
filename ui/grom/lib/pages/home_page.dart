@@ -3,14 +3,29 @@ import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
+import '../models/social.dart';
 import '../models/workout.dart';
 import '../pages/workout_detail_page.dart';
 import '../platform/is_mobile_client.dart';
+import '../widgets/sport_type_toggle.dart';
 import '../widgets/welcome_guest_view.dart';
 import '../widgets/workout_feed_list.dart';
 import '../widgets/workout_photo_viewer.dart';
 
 enum HomeFeedTab { feed, myWorkouts }
+
+/// AppBar chrome for the My workouts sport filter (owned by [HomePage]).
+class SportFilterChrome {
+  const SportFilterChrome({
+    required this.visible,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final bool visible;
+  final bool expanded;
+  final VoidCallback onToggle;
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -28,6 +43,7 @@ class HomePage extends StatefulWidget {
     this.onFeedPhotoViewerWorkoutChanged,
     this.onSignIn,
     this.onRegister,
+    this.onSportFilterChromeChanged,
   });
 
   final String? nickname;
@@ -43,6 +59,7 @@ class HomePage extends StatefulWidget {
   final ValueChanged<Workout?>? onFeedPhotoViewerWorkoutChanged;
   final VoidCallback? onSignIn;
   final VoidCallback? onRegister;
+  final ValueChanged<SportFilterChrome>? onSportFilterChromeChanged;
 
   @override
   State<HomePage> createState() => HomePageState();
@@ -56,6 +73,10 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   HomeFeedTab _activeTab = HomeFeedTab.myWorkouts;
   String? _authToken;
   bool _isLoadingTabs = true;
+
+  List<String> _usedSportTypes = const [];
+  Set<String> _includedSportTypes = {};
+  bool _filterExpanded = false;
 
   final Map<HomeFeedTab, ScrollController> _scrollControllers = {
     HomeFeedTab.feed: ScrollController(),
@@ -77,9 +98,17 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.nickname != oldWidget.nickname) {
+      _usedSportTypes = const [];
+      _includedSportTypes = {};
+      _filterExpanded = false;
       _loadTabState(resetToDefaultTab: true);
     } else if (widget.refreshToken != oldWidget.refreshToken) {
       _loadTabState();
+    } else if (widget.viewingWorkout != oldWidget.viewingWorkout ||
+        widget.feedPhotoViewerWorkout != oldWidget.feedPhotoViewerWorkout ||
+        widget.onSportFilterChromeChanged !=
+            oldWidget.onSportFilterChromeChanged) {
+      _notifySportFilterChrome();
     }
   }
 
@@ -97,8 +126,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       setState(() {
         _showFeedTab = false;
         _isLoadingTabs = false;
+        _usedSportTypes = const [];
+        _includedSportTypes = {};
+        _filterExpanded = false;
       });
       _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
+      _notifySportFilterChrome();
       return;
     }
 
@@ -110,9 +143,14 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         throw ApiException('Not authenticated');
       }
 
-      final following = await _api.listFollowing(token);
+      final results = await Future.wait<Object>([
+        _api.listFollowing(token),
+        _api.getProfile(token),
+      ]);
       if (!mounted) return;
 
+      final following = results[0] as List<FollowInfo>;
+      final profile = results[1] as UserProfile;
       final showFeedTab =
           following.any((follow) => follow.status == 'active');
       final preferredTab = showFeedTab && resetToDefaultTab
@@ -121,12 +159,34 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ? HomeFeedTab.myWorkouts
               : _activeTab;
 
+      final used = List<String>.from(profile.usedSportTypes);
+      final previousUsed = _usedSportTypes;
+      final included = <String>{};
+      if (previousUsed.isEmpty && _includedSportTypes.isEmpty) {
+        included.addAll(used);
+      } else {
+        included.addAll(
+          _includedSportTypes.where((id) => used.contains(id)),
+        );
+        for (final id in used) {
+          if (!previousUsed.contains(id)) {
+            included.add(id);
+          }
+        }
+      }
+
       setState(() {
         _showFeedTab = showFeedTab;
         _activeTab = preferredTab;
         _isLoadingTabs = false;
+        _usedSportTypes = used;
+        _includedSportTypes = included;
+        if (used.isEmpty) {
+          _filterExpanded = false;
+        }
       });
       _syncTabController(showFeedTab: showFeedTab, preferredTab: preferredTab);
+      _notifySportFilterChrome();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -134,6 +194,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _isLoadingTabs = false;
       });
       _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
+      _notifySportFilterChrome();
     }
   }
 
@@ -164,7 +225,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
     final tab = _tabForIndex(_tabController!.index);
     if (tab != _activeTab) {
-      setState(() => _activeTab = tab);
+      setState(() {
+        _activeTab = tab;
+        if (tab != HomeFeedTab.myWorkouts) {
+          _filterExpanded = false;
+        }
+      });
+      _notifySportFilterChrome();
     }
   }
 
@@ -216,6 +283,55 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     widget.onPhotoViewerIndexChanged?.call(index);
   }
 
+  bool get _filterButtonVisible =>
+      widget.nickname != null &&
+      _activeTab == HomeFeedTab.myWorkouts &&
+      _usedSportTypes.isNotEmpty &&
+      widget.viewingWorkout == null &&
+      widget.feedPhotoViewerWorkout == null;
+
+  void _notifySportFilterChrome() {
+    widget.onSportFilterChromeChanged?.call(
+      SportFilterChrome(
+        visible: _filterButtonVisible,
+        expanded: _filterExpanded && _filterButtonVisible,
+        onToggle: _toggleSportFilter,
+      ),
+    );
+  }
+
+  void _toggleSportFilter() {
+    if (!_filterButtonVisible) {
+      return;
+    }
+    setState(() => _filterExpanded = !_filterExpanded);
+    _notifySportFilterChrome();
+  }
+
+  void _onSportTypeToggled(String id) {
+    setState(() {
+      if (_includedSportTypes.contains(id)) {
+        _includedSportTypes = Set<String>.from(_includedSportTypes)..remove(id);
+      } else {
+        _includedSportTypes = Set<String>.from(_includedSportTypes)..add(id);
+      }
+    });
+  }
+
+  /// Null when all used sports are included (no query param).
+  /// Empty list when none included (`sport_types=`).
+  List<String>? get _ownListSportTypes {
+    if (_usedSportTypes.isEmpty) {
+      return null;
+    }
+    if (_includedSportTypes.length == _usedSportTypes.length &&
+        _usedSportTypes.every(_includedSportTypes.contains)) {
+      return null;
+    }
+    return _usedSportTypes
+        .where(_includedSportTypes.contains)
+        .toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +365,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       Tab(text: l10n.homeTabMyWorkouts),
     ];
 
+    final ownSportTypes = _ownListSportTypes;
+    final ownEmptyMessage = ownSportTypes != null
+        ? l10n.noWorkoutsMatchSportFilter
+        : null;
+
     final tabViews = <Widget>[
       if (_showFeedTab)
         WorkoutFeedList(
@@ -273,6 +394,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         scrollController: _scrollControllers[HomeFeedTab.myWorkouts]!,
         refreshToken: widget.refreshToken,
         federationEnabled: widget.federationEnabled,
+        sportTypes: ownSportTypes,
+        emptyMessage: ownEmptyMessage,
         onWorkoutTap: _openWorkout,
         onPhotoTap: _openWorkoutPhoto,
         onAuthTokenLoaded: (token) {
@@ -282,6 +405,9 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         },
       ),
     ];
+
+    final showFilterPanel =
+        _filterExpanded && _activeTab == HomeFeedTab.myWorkouts;
 
     // Keep the feed list mounted while viewing a workout so scroll position
     // and loaded pages survive back navigation.
@@ -304,6 +430,21 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           onTap: _onTabTapped,
                           tabs: tabs,
                         ),
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        alignment: Alignment.topCenter,
+                        child: showFilterPanel
+                            ? Material(
+                                color: Theme.of(context).colorScheme.surface,
+                                child: SportTypeToggleWrap(
+                                  sportTypeIds: _usedSportTypes,
+                                  selectedIds: _includedSportTypes,
+                                  onToggle: _onSportTypeToggled,
+                                ),
+                              )
+                            : const SizedBox(width: double.infinity),
                       ),
                       Expanded(
                         child: TabBarView(

@@ -976,7 +976,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns UI/service preferences (last sport type, last equipment by sport). Not part of public user identity.",
+                "description": "Returns UI/service preferences (last sport type, last equipment by sport, used sport types ordered by most recent create/update). Not part of public user identity.",
                 "produces": [
                     "application/json"
                 ],
@@ -1322,7 +1322,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return a cursor page of workouts for the authenticated user sorted by start date descending (id descending tie-breaker). Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts. Default limit is 20 (max 100).",
+                "description": "Return a cursor page of workouts for the authenticated user sorted by start date descending (id descending tie-breaker). Use scope=feed for the full feed (default) or scope=own for only the viewer's workouts. Optional sport_types (comma-separated) filters own workouts only; omit for all types; empty value returns an empty page. Unknown type ids are ignored. Default limit is 20 (max 100).",
                 "produces": [
                     "application/json"
                 ],
@@ -1348,6 +1348,12 @@ const docTemplate = `{
                         "description": "opaque cursor from previous page next_cursor",
                         "name": "cursor",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "comma-separated sport type ids; only with scope=own",
+                        "name": "sport_types",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1358,7 +1364,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid scope, limit, or cursor",
+                        "description": "Invalid scope, limit, cursor, or sport_types with feed",
                         "schema": {
                             "$ref": "#/definitions/v1.ErrorResponse"
                         }
@@ -3020,6 +3026,12 @@ const docTemplate = `{
                 },
                 "last_sport_type": {
                     "type": "string"
+                },
+                "used_sport_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

@@ -38,9 +38,10 @@ func (s *Service) List(nickname string) ([]Workout, error) {
 }
 
 // ListPage returns a cursor page of workouts for nickname (enriched).
-func (s *Service) ListPage(nickname string, cursor *Cursor, limit int) ([]Workout, bool, error) {
+// sportTypes nil means no sport filter.
+func (s *Service) ListPage(nickname string, cursor *Cursor, limit int, sportTypes map[string]struct{}) ([]Workout, bool, error) {
 	limit = ClampLimit(limit)
-	items, hasMore, err := s.repo.ListPage(nickname, cursor, limit)
+	items, hasMore, err := s.repo.ListPage(nickname, cursor, limit, sportTypes)
 	if err != nil {
 		return nil, false, err
 	}

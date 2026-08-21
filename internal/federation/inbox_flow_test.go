@@ -56,7 +56,11 @@ func (m *memUsers) GetProfile(string) (*users.Profile, error) {
 }
 func (m *memUsers) PutProfile(string, users.Profile) error     { return nil }
 func (m *memUsers) SetLastSportType(string, string) error      { return nil }
-func (m *memUsers) Delete(string) error                         { return users.ErrUserNotFound }
+func (m *memUsers) TouchUsedSportType(string, string) error    { return nil }
+func (m *memUsers) PruneUsedSportTypes(string, map[string]struct{}) error {
+	return nil
+}
+func (m *memUsers) Delete(string) error { return users.ErrUserNotFound }
 
 type memFollows struct {
 	mu      sync.Mutex

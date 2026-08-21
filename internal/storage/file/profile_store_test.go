@@ -86,6 +86,12 @@ func TestUsersStoreSetLastSportAndEquipmentPersist(t *testing.T) {
 	if err := store.SetLastEquipmentForSport(user.ID, "Run", []string{"eq-1"}); err != nil {
 		t.Fatal(err)
 	}
+	if err := store.TouchUsedSportType(user.ID, "Run"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TouchUsedSportType(user.ID, "Ride"); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := store.GetProfile(user.ID)
 	if err != nil {
@@ -96,6 +102,20 @@ func TestUsersStoreSetLastSportAndEquipmentPersist(t *testing.T) {
 	}
 	if len(got.LastEquipmentBySport["Run"]) != 1 || got.LastEquipmentBySport["Run"][0] != "eq-1" {
 		t.Fatalf("equipment = %#v", got.LastEquipmentBySport["Run"])
+	}
+	if len(got.UsedSportTypes) != 2 || got.UsedSportTypes[0] != "Ride" || got.UsedSportTypes[1] != "Run" {
+		t.Fatalf("used sports = %#v", got.UsedSportTypes)
+	}
+
+	if err := store.PruneUsedSportTypes(user.ID, map[string]struct{}{"Ride": {}}); err != nil {
+		t.Fatal(err)
+	}
+	pruned, err := store.GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pruned.UsedSportTypes) != 1 || pruned.UsedSportTypes[0] != "Ride" {
+		t.Fatalf("after prune %#v", pruned.UsedSportTypes)
 	}
 
 	if err := store.SetLastEquipmentForSport(user.ID, "Run", nil); err != nil {

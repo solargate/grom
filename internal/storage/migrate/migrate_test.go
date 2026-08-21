@@ -612,6 +612,7 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 			"Run":  {"eq-1"},
 			"Ride": {"bike-1", "bike-2"},
 		},
+		UsedSportTypes: []string{"Ride", "Run", "Walk"},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -646,6 +647,9 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	if got := profile.LastEquipmentBySport["Ride"]; len(got) != 2 || got[0] != "bike-1" {
 		t.Fatalf("equipment: %#v", profile.LastEquipmentBySport)
+	}
+	if len(profile.UsedSportTypes) != 3 || profile.UsedSportTypes[0] != "Ride" || profile.UsedSportTypes[2] != "Walk" {
+		t.Fatalf("used sports: %#v", profile.UsedSportTypes)
 	}
 	_ = boltBackend.Close()
 
@@ -689,6 +693,9 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	if got := roundTrip.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
 		t.Fatalf("round-trip equipment: %#v", roundTrip.LastEquipmentBySport)
+	}
+	if len(roundTrip.UsedSportTypes) != 3 || roundTrip.UsedSportTypes[0] != "Ride" {
+		t.Fatalf("round-trip used sports: %#v", roundTrip.UsedSportTypes)
 	}
 }
 

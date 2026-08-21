@@ -225,7 +225,13 @@ func (m *actorDeleteUsers) GetProfile(string) (*users.Profile, error) {
 }
 func (m *actorDeleteUsers) PutProfile(string, users.Profile) error { return nil }
 func (m *actorDeleteUsers) SetLastSportType(string, string) error  { return nil }
-func (m *actorDeleteUsers) Delete(string) error                    { return users.ErrUserNotFound }
+func (m *actorDeleteUsers) TouchUsedSportType(string, string) error {
+	return nil
+}
+func (m *actorDeleteUsers) PruneUsedSportTypes(string, map[string]struct{}) error {
+	return nil
+}
+func (m *actorDeleteUsers) Delete(string) error { return users.ErrUserNotFound }
 
 type actorDeleteFollows struct {
 	mu      sync.Mutex

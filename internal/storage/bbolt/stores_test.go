@@ -73,6 +73,12 @@ func TestUserProfileStore(t *testing.T) {
 	if err := store.SetLastEquipmentForSport(user.ID, "Run", []string{"eq-1"}); err != nil {
 		t.Fatal(err)
 	}
+	if err := store.TouchUsedSportType(user.ID, "Run"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TouchUsedSportType(user.ID, "Ride"); err != nil {
+		t.Fatal(err)
+	}
 
 	profile, err := store.GetProfile(user.ID)
 	if err != nil {
@@ -84,18 +90,25 @@ func TestUserProfileStore(t *testing.T) {
 	if got := profile.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
 		t.Fatalf("equipment: %#v", got)
 	}
+	if len(profile.UsedSportTypes) != 2 || profile.UsedSportTypes[0] != "Ride" || profile.UsedSportTypes[1] != "Run" {
+		t.Fatalf("used sports: %#v", profile.UsedSportTypes)
+	}
 
 	if err := store.PutProfile(user.ID, users.Profile{
 		LastSportType: "Walk",
 		LastEquipmentBySport: map[string][]string{
 			"Walk": {"eq-2"},
 		},
+		UsedSportTypes: []string{"Walk", "Ride"},
 	}); err != nil {
 		t.Fatal(err)
 	}
 	profile, err = store.GetProfile(user.ID)
 	if err != nil || profile.LastSportType != "Walk" {
 		t.Fatalf("after put: %#v err=%v", profile, err)
+	}
+	if len(profile.UsedSportTypes) != 2 || profile.UsedSportTypes[0] != "Walk" {
+		t.Fatalf("used after put: %#v", profile.UsedSportTypes)
 	}
 }
 

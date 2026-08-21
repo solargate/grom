@@ -18,4 +18,8 @@ type Repository interface {
 	SetLastSportType(userID, sportType string) error
 	SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error
 	RemoveEquipmentFromLastSets(userID, equipmentID string) error
+	// TouchUsedSportType moves sportType to the front of UsedSportTypes (most recent first).
+	TouchUsedSportType(userID, sportType string) error
+	// PruneUsedSportTypes drops UsedSportTypes entries not present in remaining.
+	PruneUsedSportTypes(userID string, remaining map[string]struct{}) error
 }

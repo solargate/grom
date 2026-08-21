@@ -282,7 +282,7 @@ func (s *WorkoutsStore) listAll(nickname string) ([]workouts.Workout, error) {
 	return result, nil
 }
 
-func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit int) ([]workouts.Workout, bool, error) {
+func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit int, sportTypes map[string]struct{}) ([]workouts.Workout, bool, error) {
 	if limit <= 0 {
 		limit = workouts.DefaultPageLimit
 	}
@@ -317,16 +317,19 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 		if cursorKey != "" && dirName >= cursorKey {
 			continue
 		}
-		if len(result) >= limit {
-			hasMore = true
-			break
-		}
 		workout, err := readWorkoutFromDir(filepath.Join(wd, dirName))
 		if err != nil {
 			return nil, false, fmt.Errorf("read workout %q: %w", dirName, err)
 		}
 		if cursor != nil && !workouts.AfterCursor(workout.StartDate, workout.ID, cursor) {
 			continue
+		}
+		if !workouts.MatchSportType(workout.SportType, sportTypes) {
+			continue
+		}
+		if len(result) >= limit {
+			hasMore = true
+			break
 		}
 		result = append(result, *workout)
 	}
