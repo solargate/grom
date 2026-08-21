@@ -976,7 +976,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns UI/service preferences (last sport type, last equipment by sport). Not part of public user identity.",
+                "description": "Returns UI/service preferences (last sport type, last equipment by sport, used sport types ordered by most recent create/update). Not part of public user identity.",
                 "produces": [
                     "application/json"
                 ],
@@ -3020,6 +3020,12 @@ const docTemplate = `{
                 },
                 "last_sport_type": {
                     "type": "string"
+                },
+                "used_sport_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

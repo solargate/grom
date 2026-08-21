@@ -98,6 +98,49 @@ func (s *UsersStore) SetLastSportType(userID, sportType string) error {
 	return s.saveProfile(nickname, profile)
 }
 
+func (s *UsersStore) TouchUsedSportType(userID, sportType string) error {
+	if sportType == "" {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	nickname, err := s.nicknameByIDLocked(userID)
+	if err != nil {
+		return err
+	}
+	profile, err := s.loadProfile(nickname)
+	if err != nil {
+		return err
+	}
+	updated := users.MoveSportToFront(profile.UsedSportTypes, sportType)
+	if slicesEqual(profile.UsedSportTypes, updated) {
+		return nil
+	}
+	profile.UsedSportTypes = updated
+	return s.saveProfile(nickname, profile)
+}
+
+func (s *UsersStore) PruneUsedSportTypes(userID string, remaining map[string]struct{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	nickname, err := s.nicknameByIDLocked(userID)
+	if err != nil {
+		return err
+	}
+	profile, err := s.loadProfile(nickname)
+	if err != nil {
+		return err
+	}
+	pruned := users.PruneUsedSports(profile.UsedSportTypes, remaining)
+	if slicesEqual(profile.UsedSportTypes, pruned) {
+		return nil
+	}
+	profile.UsedSportTypes = pruned
+	return s.saveProfile(nickname, profile)
+}
+
 func (s *UsersStore) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -161,7 +204,10 @@ func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) err
 }
 
 func cloneProfile(p users.Profile) users.Profile {
-	out := users.Profile{LastSportType: p.LastSportType}
+	out := users.Profile{
+		LastSportType:  p.LastSportType,
+		UsedSportTypes: cloneStrings(p.UsedSportTypes),
+	}
 	if len(p.LastEquipmentBySport) == 0 {
 		return out
 	}
@@ -172,4 +218,25 @@ func cloneProfile(p users.Profile) users.Profile {
 		out.LastEquipmentBySport[sport] = copied
 	}
 	return out
+}
+
+func cloneStrings(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

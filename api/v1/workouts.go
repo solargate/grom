@@ -512,6 +512,7 @@ func (a *App) createWorkout(ctx *gin.Context) {
 	}
 
 	a.saveLastEquipmentForSport(userID, req.SportType, resolvedIDs)
+	a.rememberUsedSportType(userID, req.SportType)
 	a.scheduleRefreshLastSportType(nickname, userID)
 
 	a.publishCreatedWorkout(nickname, workout)
@@ -752,6 +753,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 
 	if userID != "" {
 		a.saveLastEquipmentForSport(userID, form.SportType, resolvedIDs)
+		a.rememberUsedSportType(userID, form.SportType)
 		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 
@@ -1594,6 +1596,7 @@ func (a *App) updateWorkout(ctx *gin.Context) {
 
 	if userID, err := a.currentUserID(ctx); err == nil {
 		a.saveLastEquipmentForSport(userID, req.SportType, req.EquipmentIDs)
+		a.rememberUsedSportType(userID, req.SportType)
 		a.scheduleRefreshLastSportType(nickname, userID)
 	}
 

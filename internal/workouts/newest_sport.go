@@ -14,3 +14,14 @@ func NewestSportType(items []Workout) string {
 	}
 	return best.SportType
 }
+
+// UniqueSportTypes returns the set of non-empty sport types present in items.
+func UniqueSportTypes(items []Workout) map[string]struct{} {
+	out := make(map[string]struct{})
+	for i := range items {
+		if s := items[i].SportType; s != "" {
+			out[s] = struct{}{}
+		}
+	}
+	return out
+}

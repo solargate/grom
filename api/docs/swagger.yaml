@@ -360,6 +360,10 @@ definitions:
         type: object
       last_sport_type:
         type: string
+      used_sport_types:
+        items:
+          type: string
+        type: array
     type: object
   v1.RegisterRequest:
     properties:
@@ -1453,7 +1457,8 @@ paths:
   /profile:
     get:
       description: Returns UI/service preferences (last sport type, last equipment
-        by sport). Not part of public user identity.
+        by sport, used sport types ordered by most recent create/update). Not part
+        of public user identity.
       produces:
       - application/json
       responses:

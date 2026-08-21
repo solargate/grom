@@ -12,6 +12,7 @@ import (
 type ProfileResponse struct {
 	LastSportType        string              `json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
+	UsedSportTypes       []string            `json:"used_sport_types,omitempty"`
 }
 
 func toProfileResponse(profile *users.Profile) ProfileResponse {
@@ -21,12 +22,13 @@ func toProfileResponse(profile *users.Profile) ProfileResponse {
 	return ProfileResponse{
 		LastSportType:        profile.LastSportType,
 		LastEquipmentBySport: profile.LastEquipmentBySport,
+		UsedSportTypes:       profile.UsedSportTypes,
 	}
 }
 
 // getProfile godoc
 // @Summary      Get current user profile preferences
-// @Description  Returns UI/service preferences (last sport type, last equipment by sport). Not part of public user identity.
+// @Description  Returns UI/service preferences (last sport type, last equipment by sport, used sport types ordered by most recent create/update). Not part of public user identity.
 // @Tags         profile
 // @Produce      json
 // @Security     BearerAuth
@@ -59,6 +61,16 @@ func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs [
 	}
 }
 
+func (a *App) rememberUsedSportType(userID, sportType string) {
+	if err := a.Users.TouchUsedSportType(userID, sportType); err != nil {
+		slog.Warn("failed to remember used sport type",
+			"user_id", userID,
+			"sport_type", sportType,
+			"err", err,
+		)
+	}
+}
+
 func (a *App) touchLastEquipmentFromWorkout(userID string, workout *workouts.Workout) {
 	if workout == nil {
 		return
@@ -66,13 +78,24 @@ func (a *App) touchLastEquipmentFromWorkout(userID string, workout *workouts.Wor
 	a.saveLastEquipmentForSport(userID, workout.SportType, workoutEquipmentIDs(workout.Equipment))
 }
 
+func (a *App) touchUsedSportFromWorkout(userID string, workout *workouts.Workout) {
+	if workout == nil {
+		return
+	}
+	a.rememberUsedSportType(userID, workout.SportType)
+}
+
 // RefreshLastSportType rescans the user's workouts and stores the sport of the newest one.
+// It also prunes used_sport_types entries that no longer appear on any workout.
 func (a *App) RefreshLastSportType(nickname, userID string) error {
 	items, err := a.Workouts.List(nickname)
 	if err != nil {
 		return err
 	}
-	return a.Users.SetLastSportType(userID, workouts.NewestSportType(items))
+	if err := a.Users.SetLastSportType(userID, workouts.NewestSportType(items)); err != nil {
+		return err
+	}
+	return a.Users.PruneUsedSportTypes(userID, workouts.UniqueSportTypes(items))
 }
 
 func (a *App) scheduleRefreshLastSportType(nickname, userID string) {

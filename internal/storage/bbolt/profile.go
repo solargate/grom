@@ -11,12 +11,14 @@ import (
 type profileRecord struct {
 	LastSportType        string              `json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
+	UsedSportTypes       []string            `json:"used_sport_types,omitempty"`
 }
 
 func profileToRecord(p users.Profile) profileRecord {
 	return profileRecord{
 		LastSportType:        p.LastSportType,
 		LastEquipmentBySport: p.LastEquipmentBySport,
+		UsedSportTypes:       p.UsedSportTypes,
 	}
 }
 
@@ -24,6 +26,7 @@ func recordToProfile(r profileRecord) users.Profile {
 	return users.Profile{
 		LastSportType:        r.LastSportType,
 		LastEquipmentBySport: r.LastEquipmentBySport,
+		UsedSportTypes:       r.UsedSportTypes,
 	}
 }
 
@@ -89,6 +92,45 @@ func (s *UsersStore) SetLastSportType(userID, sportType string) error {
 	})
 }
 
+func (s *UsersStore) TouchUsedSportType(userID, sportType string) error {
+	if sportType == "" {
+		return nil
+	}
+	return s.db.Update(func(tx *bolt.Tx) error {
+		if _, err := s.getByID(tx, userID); err != nil {
+			return err
+		}
+		profile, err := s.getProfile(tx, userID)
+		if err != nil {
+			return err
+		}
+		updated := users.MoveSportToFront(profile.UsedSportTypes, sportType)
+		if slicesEqual(profile.UsedSportTypes, updated) {
+			return nil
+		}
+		profile.UsedSportTypes = updated
+		return s.putProfile(tx, userID, profile)
+	})
+}
+
+func (s *UsersStore) PruneUsedSportTypes(userID string, remaining map[string]struct{}) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		if _, err := s.getByID(tx, userID); err != nil {
+			return err
+		}
+		profile, err := s.getProfile(tx, userID)
+		if err != nil {
+			return err
+		}
+		pruned := users.PruneUsedSports(profile.UsedSportTypes, remaining)
+		if slicesEqual(profile.UsedSportTypes, pruned) {
+			return nil
+		}
+		profile.UsedSportTypes = pruned
+		return s.putProfile(tx, userID, profile)
+	})
+}
+
 func (s *UsersStore) SetLastEquipmentForSport(userID, sportType string, equipmentIDs []string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		if _, err := s.getByID(tx, userID); err != nil {
@@ -148,7 +190,10 @@ func (s *UsersStore) RemoveEquipmentFromLastSets(userID, equipmentID string) err
 }
 
 func cloneProfile(p users.Profile) users.Profile {
-	out := users.Profile{LastSportType: p.LastSportType}
+	out := users.Profile{
+		LastSportType:  p.LastSportType,
+		UsedSportTypes: cloneStrings(p.UsedSportTypes),
+	}
 	if len(p.LastEquipmentBySport) == 0 {
 		return out
 	}
@@ -159,4 +204,25 @@ func cloneProfile(p users.Profile) users.Profile {
 		out.LastEquipmentBySport[sport] = copied
 	}
 	return out
+}
+
+func cloneStrings(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

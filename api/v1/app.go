@@ -178,6 +178,7 @@ func (a *App) stravaJobManager() *strava.JobManager {
 			a.EquipmentDistance,
 			func(userID, nickname string, workout *workouts.Workout) {
 				a.touchLastEquipmentFromWorkout(userID, workout)
+				a.touchUsedSportFromWorkout(userID, workout)
 			},
 			func(userID, nickname string) {
 				a.scheduleRefreshLastSportType(nickname, userID)

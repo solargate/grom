@@ -56,14 +56,17 @@ void main() {
         'Run': ['eq-1', 'eq-2'],
         'Ride': ['bike-1'],
       },
+      'used_sport_types': ['Ride', 'Run', 'Walk'],
     });
     expect(profile.lastSportType, 'Ride');
     expect(profile.lastEquipmentBySport['Run'], ['eq-1', 'eq-2']);
     expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
+    expect(profile.usedSportTypes, ['Ride', 'Run', 'Walk']);
 
     final empty = UserProfile.fromJson({});
     expect(empty.lastSportType, isNull);
     expect(empty.lastEquipmentBySport, isEmpty);
+    expect(empty.usedSportTypes, isEmpty);
   });
 
   test('ApiException keeps status code', () {
@@ -573,11 +576,12 @@ void main() {
       expect(request.url.path, '/api/v1/profile');
       expect(request.headers['Authorization'], 'Bearer tok');
       return http.Response(
-        jsonEncode({
+		jsonEncode({
           'last_sport_type': 'Ride',
           'last_equipment_by_sport': {
             'Ride': ['bike-1'],
           },
+          'used_sport_types': ['Ride', 'Run'],
         }),
         200,
         headers: {'content-type': 'application/json'},
@@ -586,6 +590,7 @@ void main() {
     final profile = await ApiRequest(client: client).getProfile('tok');
     expect(profile.lastSportType, 'Ride');
     expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
+    expect(profile.usedSportTypes, ['Ride', 'Run']);
   });
 
   test('like and unlike workout send owner query', () async {

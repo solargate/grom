@@ -933,6 +933,82 @@ func TestProfileLastSportTypeTracksNewestByStartDate(t *testing.T) {
 	}
 }
 
+func TestProfileUsedSportTypesRecencyAndPrune(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, user := ta.login(t, "alice@example.com", "password12")
+	userID, _ := user["id"].(string)
+	nickname, _ := user["nickname"].(string)
+
+	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Run one", "sport_type": "Run", "start_date": "2026-07-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	runID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile := decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Run"})
+
+	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+		"name": "Ride one", "sport_type": "Ride", "start_date": "2026-07-02T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusCreated)
+	rideID, _ := decodeObject(t, w)["id"].(string)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Ride", "Run"})
+
+	w = ta.doJSON(t, http.MethodPut, "/api/v1/workouts/"+runID, map[string]any{
+		"name": "Run one edited", "sport_type": "Walk", "start_date": "2026-07-01T10:00:00Z",
+	}, token)
+	expectStatus(t, w, http.StatusOK)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk", "Ride", "Run"})
+
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk", "Ride"})
+
+	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+rideID, nil, token)
+	expectStatus(t, w, http.StatusNoContent)
+	if err := ta.app.RefreshLastSportType(nickname, userID); err != nil {
+		t.Fatalf("RefreshLastSportType after delete: %v", err)
+	}
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	profile = decodeObject(t, w)
+	assertUsedSportTypes(t, profile, []string{"Walk"})
+}
+
+func assertUsedSportTypes(t *testing.T, profile map[string]any, want []string) {
+	t.Helper()
+	raw, _ := profile["used_sport_types"].([]any)
+	got := make([]string, 0, len(raw))
+	for _, v := range raw {
+		s, _ := v.(string)
+		got = append(got, s)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("used_sport_types %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("used_sport_types %#v, want %#v", got, want)
+		}
+	}
+}
+
 func TestCreateWorkoutMultipartOmitsEquipmentUsesDefault(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
