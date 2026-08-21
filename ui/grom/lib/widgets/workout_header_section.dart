@@ -188,13 +188,18 @@ class _EquipmentLine extends StatelessWidget {
       children: [
         for (var i = 0; i < equipment.length; i++) ...[
           if (i > 0) WorkoutFieldSeparator(style: textStyle),
-          Icon(
-            _equipmentIcon(equipment[i]),
-            size: 14,
-            color: iconColor,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _equipmentIcon(equipment[i]),
+                size: 14,
+                color: iconColor,
+              ),
+              const SizedBox(width: 4),
+              Text(equipment[i].name, style: textStyle),
+            ],
           ),
-          const SizedBox(width: 4),
-          Text(equipment[i].name, style: textStyle),
         ],
       ],
     );

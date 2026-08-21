@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Workout detail: equipment icon wraps with its name
+
 ### Added
 
 - **Docs:** Project mission and tagline on the docs homepage and repository README; expanded [About the project](docs/about.md) page (EN / RU / DE)
@@ -16,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **UI:** Workout detail equipment line keeps each item’s icon with its name when wrapping
 - **Server:** Web client loads CanvasKit from the Grom instance instead of `www.gstatic.com`, so the UI can open when Google's CDN is slow or blocked
 
 ## [0.10.0] - 2026-08-18
