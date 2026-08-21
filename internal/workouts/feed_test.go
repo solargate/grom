@@ -152,7 +152,7 @@ func TestFeedServiceListOwnPage(t *testing.T) {
 	}
 
 	feed := workouts.NewFeedService(svc, blobs, "localhost")
-	page1, err := feed.ListOwnPage("alice", "Alice", nil, 2)
+	page1, err := feed.ListOwnPage("alice", "Alice", nil, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestFeedServiceListOwnPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	page2, err := feed.ListOwnPage("alice", "Alice", cursor, 2)
+	page2, err := feed.ListOwnPage("alice", "Alice", cursor, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,12 +179,59 @@ func TestFeedServiceListOwnPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	page3, err := feed.ListOwnPage("alice", "Alice", cursor2, 2)
+	page3, err := feed.ListOwnPage("alice", "Alice", cursor2, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page3.Items) != 1 || page3.HasMore {
 		t.Fatalf("page3 = %#v", page3)
+	}
+}
+
+func TestFeedServiceListOwnPageSportTypesFilter(t *testing.T) {
+	dir := t.TempDir()
+	svc := newTestService(dir)
+	blobs := blobfs.NewStore(dir)
+
+	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	types := []string{"Run", "Ride", "Run", "Walk", "Ride"}
+	for i, sport := range types {
+		_, err := svc.Create("alice", &workouts.Workout{
+			Name:      sport,
+			SportType: sport,
+			StartDate: start.Add(-time.Duration(i) * time.Hour),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	feed := workouts.NewFeedService(svc, blobs, "localhost")
+	allow := map[string]struct{}{"Run": {}, "Walk": {}}
+	page1, err := feed.ListOwnPage("alice", "Alice", nil, 2, allow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page1.Items) != 2 || !page1.HasMore {
+		t.Fatalf("page1 = %#v", page1)
+	}
+	if page1.Items[0].SportType != "Run" || page1.Items[1].SportType != "Run" {
+		t.Fatalf("unexpected sports: %#v", page1.Items)
+	}
+
+	cursor, err := workouts.DecodeCursor(page1.NextCursor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page2, err := feed.ListOwnPage("alice", "Alice", cursor, 2, allow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page2.Items) != 1 || page2.HasMore {
+		t.Fatalf("page2 = %#v", page2)
+	}
+	if page2.Items[0].SportType != "Walk" {
+		t.Fatalf("expected Walk, got %#v", page2.Items[0])
 	}
 }
 

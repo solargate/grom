@@ -300,7 +300,7 @@ func TestWorkoutsStoreListPage(t *testing.T) {
 		ids = append(ids, created.ID)
 	}
 
-	page1, more, err := store.ListPage("alice", nil, 2)
+	page1, more, err := store.ListPage("alice", nil, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,14 +312,14 @@ func TestWorkoutsStoreListPage(t *testing.T) {
 	}
 
 	cursor := &workouts.Cursor{StartDate: page1[1].StartDate, ID: page1[1].ID}
-	page2, more, err := store.ListPage("alice", cursor, 2)
+	page2, more, err := store.ListPage("alice", cursor, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page2) != 2 || !more {
 		t.Fatalf("page2 len=%d more=%v", len(page2), more)
 	}
-	page3, more, err := store.ListPage("alice", &workouts.Cursor{StartDate: page2[1].StartDate, ID: page2[1].ID}, 2)
+	page3, more, err := store.ListPage("alice", &workouts.Cursor{StartDate: page2[1].StartDate, ID: page2[1].ID}, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

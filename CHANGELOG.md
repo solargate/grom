@@ -11,13 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
+- Home → My workouts: filter the list by sport type
 - Workout detail: equipment icon wraps with its name
 
 ### Added
 
+- **UI:** Home → **My workouts**: filter button opens sport-type toggles from the profile `used_sport_types` list; filters `GET /workouts?scope=own` via optional `sport_types`
 - **Docs:** Project mission and tagline on the docs homepage and repository README; expanded [About the project](docs/about.md) page (EN / RU / DE)
 - **Server:** `server.registration` config option to control user registration (`open`, `closed`, `invite`); exposed via `/api/v1/server-info`
 - **Server:** Profile `used_sport_types` (most recently created/updated sport first); exposed on `GET /api/v1/profile` and parsed by the Flutter client
+- **Server:** Optional `sport_types` query on `GET /workouts` with `scope=own` (comma-separated; omit for all types; empty value returns an empty page)
 
 ### Fixed
 

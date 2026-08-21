@@ -348,7 +348,7 @@ func (s *WorkoutsStore) List(nickname string) ([]workouts.Workout, error) {
 	return result, nil
 }
 
-func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit int) ([]workouts.Workout, bool, error) {
+func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit int, sportTypes map[string]struct{}) ([]workouts.Workout, bool, error) {
 	if limit <= 0 {
 		limit = workouts.DefaultPageLimit
 	}
@@ -386,6 +386,10 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 				return err
 			}
 			if cursor != nil && !workouts.AfterCursor(w.StartDate, w.ID, cursor) {
+				k, v = c.Prev()
+				continue
+			}
+			if !workouts.MatchSportType(w.SportType, sportTypes) {
 				k, v = c.Prev()
 				continue
 			}

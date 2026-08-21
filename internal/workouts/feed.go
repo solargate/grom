@@ -33,7 +33,7 @@ type FeedService struct {
 
 type workoutLister interface {
 	List(nickname string) ([]Workout, error)
-	ListPage(nickname string, cursor *Cursor, limit int) ([]Workout, bool, error)
+	ListPage(nickname string, cursor *Cursor, limit int, sportTypes map[string]struct{}) ([]Workout, bool, error)
 }
 
 type FederatedWorkoutSource interface {
@@ -89,9 +89,11 @@ func (f *FeedService) ListOwn(viewerNickname, viewerName string) ([]FeedWorkout,
 }
 
 // ListOwnPage returns a cursor page of the viewer's own workouts.
-func (f *FeedService) ListOwnPage(viewerNickname, viewerName string, cursor *Cursor, limit int) (Page, error) {
+// sportTypes nil means no sport filter; an empty non-nil map is not used here
+// (callers should return an empty page without calling ListOwnPage).
+func (f *FeedService) ListOwnPage(viewerNickname, viewerName string, cursor *Cursor, limit int, sportTypes map[string]struct{}) (Page, error) {
 	limit = ClampLimit(limit)
-	own, hasMore, err := f.store.ListPage(viewerNickname, cursor, limit)
+	own, hasMore, err := f.store.ListPage(viewerNickname, cursor, limit, sportTypes)
 	if err != nil {
 		return Page{}, err
 	}
@@ -135,7 +137,7 @@ func (f *FeedService) ListFeedPage(viewerNickname, viewerName string, followedLo
 
 	batches := make([]feedBatch, 0, 2+len(followedLocal))
 
-	own, ownMore, err := f.store.ListPage(viewerNickname, cursor, limit)
+	own, ownMore, err := f.store.ListPage(viewerNickname, cursor, limit, nil)
 	if err != nil {
 		return Page{}, err
 	}
@@ -150,7 +152,7 @@ func (f *FeedService) ListFeedPage(viewerNickname, viewerName string, followedLo
 	batches = append(batches, feedBatch{items: ownFeed, hasMore: ownMore})
 
 	for _, author := range followedLocal {
-		list, more, err := f.store.ListPage(author.Nickname, cursor, limit)
+		list, more, err := f.store.ListPage(author.Nickname, cursor, limit, nil)
 		if err != nil {
 			return Page{}, err
 		}

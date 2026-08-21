@@ -853,6 +853,7 @@ class ApiRequest {
     String scope = 'feed',
     int limit = 20,
     String? cursor,
+    List<String>? sportTypes,
   }) async {
     final params = <String, String>{
       'limit': '$limit',
@@ -862,6 +863,9 @@ class ApiRequest {
     }
     if (cursor != null && cursor.isNotEmpty) {
       params['cursor'] = cursor;
+    }
+    if (sportTypes != null) {
+      params['sport_types'] = sportTypes.join(',');
     }
     final uri = _uri('/api/v1/workouts').replace(queryParameters: params);
     final response = await _client.get(

@@ -4,6 +4,8 @@
   "home": "Главная",
   "homeTabFeed": "Лента",
   "homeTabMyWorkouts": "Мои тренировки",
+  "filterWorkouts": "Фильтр",
+  "noWorkoutsMatchSportFilter": "Нет тренировок по выбранным видам спорта",
   "welcomeDescription": "Тренировки, снаряжение и лента друзей на своём сервере.",
   "welcomeInstructions": "Чтобы начать, войдите или зарегистрируйтесь.",
   "welcomeMobileServerHint": "На мобильном телефоне укажите адрес сервера Grom.",

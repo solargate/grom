@@ -9,7 +9,8 @@ type Repository interface {
 	List(nickname string) ([]Workout, error)
 	// ListPage returns up to limit workouts older than cursor (nil = first page),
 	// ordered by start_date DESC, id DESC. hasMore is true when more items exist.
-	ListPage(nickname string, cursor *Cursor, limit int) (items []Workout, hasMore bool, err error)
+	// sportTypes nil means no sport filter; when non-nil, only matching SportType values are returned.
+	ListPage(nickname string, cursor *Cursor, limit int, sportTypes map[string]struct{}) (items []Workout, hasMore bool, err error)
 	Delete(nickname, workoutID string) error
 	RemoveEquipmentFromAll(nickname, equipmentID string) error
 	HasExternalID(nickname, name, id string) (bool, error)

@@ -205,6 +205,39 @@ void main() {
     expect(page.hasMore, isTrue);
   });
 
+  test('listWorkouts sends sport_types query when provided', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.url.queryParameters['scope'], 'own');
+      expect(request.url.queryParameters['sport_types'], 'Run,Ride');
+      return http.Response(
+        jsonEncode({'items': [], 'has_more': false}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    await ApiRequest(client: client).listWorkouts(
+      'tok',
+      scope: 'own',
+      sportTypes: const ['Run', 'Ride'],
+    );
+
+    final emptyClient = MockClient((request) async {
+      expect(request.url.queryParameters.containsKey('sport_types'), isTrue);
+      expect(request.url.queryParameters['sport_types'], '');
+      return http.Response(
+        jsonEncode({'items': [], 'has_more': false}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    await ApiRequest(client: emptyClient).listWorkouts(
+      'tok',
+      scope: 'own',
+      sportTypes: const [],
+    );
+  });
+
   test('getServerInfo parses JSON and falls back on errors', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final okClient = MockClient((request) async {

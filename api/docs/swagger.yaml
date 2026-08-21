@@ -1678,7 +1678,9 @@ paths:
     get:
       description: Return a cursor page of workouts for the authenticated user sorted
         by start date descending (id descending tie-breaker). Use scope=feed for the
-        full feed (default) or scope=own for only the viewer's workouts. Default limit
+        full feed (default) or scope=own for only the viewer's workouts. Optional
+        sport_types (comma-separated) filters own workouts only; omit for all types;
+        empty value returns an empty page. Unknown type ids are ignored. Default limit
         is 20 (max 100).
       parameters:
       - description: feed (default) or own
@@ -1693,6 +1695,10 @@ paths:
         in: query
         name: cursor
         type: string
+      - description: comma-separated sport type ids; only with scope=own
+        in: query
+        name: sport_types
+        type: string
       produces:
       - application/json
       responses:
@@ -1701,7 +1707,7 @@ paths:
           schema:
             $ref: '#/definitions/v1.WorkoutListResponse'
         "400":
-          description: Invalid scope, limit, or cursor
+          description: Invalid scope, limit, cursor, or sport_types with feed
           schema:
             $ref: '#/definitions/v1.ErrorResponse'
         "401":

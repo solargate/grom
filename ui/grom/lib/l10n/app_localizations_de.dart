@@ -21,6 +21,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get homeTabMyWorkouts => 'Meine Trainings';
 
   @override
+  String get filterWorkouts => 'Filter';
+
+  @override
+  String get noWorkoutsMatchSportFilter =>
+      'Keine Trainings für die ausgewählten Sportarten';
+
+  @override
   String get welcomeDescription =>
       'Trainings, Ausrüstung und Freundes-Feed auf dem eigenen Server.';
 

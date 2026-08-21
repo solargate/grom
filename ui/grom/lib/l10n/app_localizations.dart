@@ -124,6 +124,18 @@ abstract class AppLocalizations {
   /// **'My workouts'**
   String get homeTabMyWorkouts;
 
+  /// No description provided for @filterWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filterWorkouts;
+
+  /// No description provided for @noWorkoutsMatchSportFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts match the selected sport types'**
+  String get noWorkoutsMatchSportFilter;
+
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:

@@ -85,14 +85,14 @@ func TestWorkoutsStoreCRUDAndListPage(t *testing.T) {
 		t.Fatalf("Get: %#v err=%v", got, err)
 	}
 
-	page, hasMore, err := repo.ListPage("alice", nil, 1)
+	page, hasMore, err := repo.ListPage("alice", nil, 1, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page) != 1 || page[0].ID != w2.ID || !hasMore {
 		t.Fatalf("page=%#v hasMore=%v", page, hasMore)
 	}
-	page2, hasMore2, err := repo.ListPage("alice", &workouts.Cursor{StartDate: page[0].StartDate, ID: page[0].ID}, 10)
+	page2, hasMore2, err := repo.ListPage("alice", &workouts.Cursor{StartDate: page[0].StartDate, ID: page[0].ID}, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,39 +162,39 @@ func TestWorkoutsStoreListPageDoesNotDuplicateNewest(t *testing.T) {
 
 	// Newer-nickname keys used to leave the cursor past alice's prefix, so the
 	// newest alice workout was appended twice on the first page (limit > 1).
-	page, more, err := repo.ListPage("alice", nil, 10)
+	page, more, err := repo.ListPage("alice", nil, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertUniqueNewestFirst(t, page, aliceIDs, false, more)
 
-	page, more, err = repo.ListPage("alice", nil, 2)
+	page, more, err = repo.ListPage("alice", nil, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertUniqueNewestFirst(t, page, aliceIDs[:2], true, more)
 
 	cursor := &workouts.Cursor{StartDate: page[1].StartDate, ID: page[1].ID}
-	page2, more2, err := repo.ListPage("alice", cursor, 10)
+	page2, more2, err := repo.ListPage("alice", cursor, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertUniqueNewestFirst(t, page2, aliceIDs[2:], false, more2)
 
-	alice0Page, alice0More, err := repo.ListPage("alice0", nil, 10)
+	alice0Page, alice0More, err := repo.ListPage("alice0", nil, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertUniqueNewestFirst(t, alice0Page, []string{alice0w.ID}, false, alice0More)
 
 	// Last nickname alphabetically: Seek(nextPrefix) hits end-of-bucket (nil), then Last().
-	bobPage, bobMore, err := repo.ListPage("bob", nil, 10)
+	bobPage, bobMore, err := repo.ListPage("bob", nil, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertUniqueNewestFirst(t, bobPage, []string{bobNewest.ID}, false, bobMore)
 
-	empty, emptyMore, err := repo.ListPage("carol", nil, 10)
+	empty, emptyMore, err := repo.ListPage("carol", nil, 10, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
