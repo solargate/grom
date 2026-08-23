@@ -2,6 +2,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/models/workout.dart';
+import 'package:grom/platform/is_mobile_client.dart';
 import 'package:intl/intl.dart';
 
 /// Display mode for Home → My workouts.
@@ -45,6 +46,25 @@ String? primaryMetricForWorkout(AppLocalizations l10n, Workout workout) {
   return formatDuration(l10n, workout.durationSeconds);
 }
 
-String formatWorkoutListDate(AppLocalizations l10n, DateTime startDate) {
-  return DateFormat.yMMMd(l10n.localeName).add_Hm().format(startDate.toLocal());
+/// Formats the date shown on a compact list row.
+///
+/// On mobile ([shortDate] defaults to [isMobileClient]): numeric date without
+/// time; year is omitted when it matches [now]. On web: same long form as the
+/// full workout card (`yMMMd` + time).
+String formatWorkoutListDate(
+  AppLocalizations l10n,
+  DateTime startDate, {
+  DateTime? now,
+  bool? shortDate,
+}) {
+  final local = startDate.toLocal();
+  final useShort = shortDate ?? isMobileClient;
+  if (!useShort) {
+    return DateFormat.yMMMd(l10n.localeName).add_Hm().format(local);
+  }
+  final reference = now ?? DateTime.now();
+  final pattern = local.year == reference.year
+      ? DateFormat.Md(l10n.localeName)
+      : DateFormat.yMd(l10n.localeName);
+  return pattern.format(local);
 }

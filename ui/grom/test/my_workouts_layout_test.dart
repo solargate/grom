@@ -5,9 +5,14 @@ import 'package:grom/l10n/app_localizations_en.dart';
 import 'package:grom/models/my_workouts_layout.dart';
 import 'package:grom/models/workout.dart';
 import 'package:grom/widgets/workout_list_row.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
   final l10n = AppLocalizationsEn();
+
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+  });
 
   Workout workout({
     String sportType = 'Run',
@@ -25,6 +30,41 @@ void main() {
       distance: distance,
     );
   }
+
+  group('formatWorkoutListDate', () {
+    final now = DateTime(2026, 8, 23, 12);
+
+    test('web keeps long date with time', () {
+      final text = formatWorkoutListDate(
+        l10n,
+        DateTime(2026, 8, 23, 14, 30),
+        shortDate: false,
+      );
+      expect(text, contains('2026'));
+      expect(text, contains('14:30'));
+    });
+
+    test('mobile omits year for current year and has no time', () {
+      final text = formatWorkoutListDate(
+        l10n,
+        DateTime(2026, 8, 23, 14, 30),
+        now: now,
+        shortDate: true,
+      );
+      expect(text, '8/23');
+      expect(text.contains(':'), isFalse);
+    });
+
+    test('mobile includes year for other years', () {
+      final text = formatWorkoutListDate(
+        l10n,
+        DateTime(2025, 8, 23, 14, 30),
+        now: now,
+        shortDate: true,
+      );
+      expect(text, '8/23/2025');
+    });
+  });
 
   group('primaryMetricForWorkout', () {
     test('distance sports return formatted distance', () {

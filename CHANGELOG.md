@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Server:** Profile `used_sport_types` (most recently created/updated sport first); exposed on `GET /api/v1/profile` and parsed by the Flutter client
 - **Server:** Optional `sport_types` query on `GET /workouts` with `scope=own` (comma-separated; omit for all types; empty value returns an empty page)
 
+### Changed
+
+- **UI:** Home → **My workouts** compact list on mobile: shorter numeric date without time (year only when not the current year); web keeps the full date+time
+
 ### Fixed
 
 - **UI:** Workout detail equipment line keeps each item’s icon with its name when wrapping
