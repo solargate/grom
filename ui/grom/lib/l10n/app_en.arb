@@ -5,6 +5,8 @@
   "homeTabFeed": "Feed",
   "homeTabMyWorkouts": "My workouts",
   "filterWorkouts": "Filter",
+  "myWorkoutsLayoutList": "List",
+  "myWorkoutsLayoutCards": "Cards",
   "noWorkoutsMatchSportFilter": "No workouts match the selected sport types",
   "welcomeDescription": "Workouts, equipment, and a friends feed on your own server.",
   "welcomeInstructions": "To get started, sign in or register.",
