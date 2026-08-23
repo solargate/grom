@@ -9,6 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../login.dart';
+import '../models/my_workouts_layout.dart';
 import '../models/workout.dart';
 import '../pages/about_page.dart';
 import '../pages/equipment_page.dart';
@@ -74,6 +75,10 @@ class _GromShellState extends State<GromShell> {
   bool _sportFilterExpanded = false;
   VoidCallback? _onToggleSportFilter;
 
+  bool _myWorkoutsLayoutVisible = false;
+  MyWorkoutsLayout _myWorkoutsLayout = MyWorkoutsLayout.cards;
+  VoidCallback? _onToggleMyWorkoutsLayout;
+
   bool get _isLoggedIn => _nickname != null;
   bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -87,6 +92,12 @@ class _GromShellState extends State<GromShell> {
   bool get _showSportFilterButton =>
       _selectedDestination == GromDestination.home &&
       _sportFilterVisible &&
+      !_isViewingWorkout &&
+      !_isViewingFeedPhoto &&
+      _isLoggedIn;
+  bool get _showMyWorkoutsLayoutButton =>
+      _selectedDestination == GromDestination.home &&
+      _myWorkoutsLayoutVisible &&
       !_isViewingWorkout &&
       !_isViewingFeedPhoto &&
       _isLoggedIn;
@@ -224,6 +235,22 @@ class _GromShellState extends State<GromShell> {
     );
   }
 
+  Widget? _buildMyWorkoutsLayoutHeaderButton() {
+    if (!_showMyWorkoutsLayoutButton) {
+      return null;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    final isList = _myWorkoutsLayout == MyWorkoutsLayout.list;
+    return IconButton(
+      tooltip: isList ? l10n.myWorkoutsLayoutCards : l10n.myWorkoutsLayoutList,
+      onPressed: _onToggleMyWorkoutsLayout,
+      icon: Icon(
+        isList ? Icons.calendar_view_day : Icons.format_list_bulleted,
+      ),
+    );
+  }
+
   void _onSportFilterChromeChanged(SportFilterChrome chrome) {
     if (_sportFilterVisible == chrome.visible &&
         _sportFilterExpanded == chrome.expanded &&
@@ -234,6 +261,19 @@ class _GromShellState extends State<GromShell> {
       _sportFilterVisible = chrome.visible;
       _sportFilterExpanded = chrome.expanded;
       _onToggleSportFilter = chrome.onToggle;
+    });
+  }
+
+  void _onMyWorkoutsLayoutChromeChanged(MyWorkoutsLayoutChrome chrome) {
+    if (_myWorkoutsLayoutVisible == chrome.visible &&
+        _myWorkoutsLayout == chrome.layout &&
+        identical(_onToggleMyWorkoutsLayout, chrome.onToggle)) {
+      return;
+    }
+    setState(() {
+      _myWorkoutsLayoutVisible = chrome.visible;
+      _myWorkoutsLayout = chrome.layout;
+      _onToggleMyWorkoutsLayout = chrome.onToggle;
     });
   }
 
@@ -908,6 +948,7 @@ class _GromShellState extends State<GromShell> {
             setState(() => _feedPhotoViewerWorkout = workout);
           },
           onSportFilterChromeChanged: _onSportFilterChromeChanged,
+          onMyWorkoutsLayoutChromeChanged: _onMyWorkoutsLayoutChromeChanged,
           onSignIn: () {
             setState(() => _selectedDestination = GromDestination.login);
           },
@@ -977,6 +1018,7 @@ class _GromShellState extends State<GromShell> {
         title: Text(_contentHeaderTitle(l10n)),
         actions: [
           if (_showSportFilterButton) _buildSportFilterHeaderButton()!,
+          if (_showMyWorkoutsLayoutButton) _buildMyWorkoutsLayoutHeaderButton()!,
           if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
           if (_isViewingProfile) _buildProfileMenu(),
@@ -1027,6 +1069,8 @@ class _GromShellState extends State<GromShell> {
                           ),
                           if (_showSportFilterButton)
                             _buildSportFilterHeaderButton()!,
+                          if (_showMyWorkoutsLayoutButton)
+                            _buildMyWorkoutsLayoutHeaderButton()!,
                           if (_showHealthSyncButton)
                             _buildHealthSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),

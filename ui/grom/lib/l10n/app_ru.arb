@@ -5,6 +5,8 @@
   "homeTabFeed": "Лента",
   "homeTabMyWorkouts": "Мои тренировки",
   "filterWorkouts": "Фильтр",
+  "myWorkoutsLayoutList": "Список",
+  "myWorkoutsLayoutCards": "Карточки",
   "noWorkoutsMatchSportFilter": "Нет тренировок по выбранным видам спорта",
   "welcomeDescription": "Тренировки, снаряжение и лента друзей на своём сервере.",
   "welcomeInstructions": "Чтобы начать, войдите или зарегистрируйтесь.",

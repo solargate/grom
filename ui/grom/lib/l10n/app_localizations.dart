@@ -130,6 +130,18 @@ abstract class AppLocalizations {
   /// **'Filter'**
   String get filterWorkouts;
 
+  /// No description provided for @myWorkoutsLayoutList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get myWorkoutsLayoutList;
+
+  /// No description provided for @myWorkoutsLayoutCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards'**
+  String get myWorkoutsLayoutCards;
+
   /// No description provided for @noWorkoutsMatchSportFilter.
   ///
   /// In en, this message translates to:

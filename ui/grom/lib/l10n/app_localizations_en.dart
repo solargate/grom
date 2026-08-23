@@ -24,6 +24,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterWorkouts => 'Filter';
 
   @override
+  String get myWorkoutsLayoutList => 'List';
+
+  @override
+  String get myWorkoutsLayoutCards => 'Cards';
+
+  @override
   String get noWorkoutsMatchSportFilter =>
       'No workouts match the selected sport types';
 

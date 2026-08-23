@@ -3,9 +3,11 @@ import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
+import '../models/my_workouts_layout.dart';
 import '../models/workout.dart';
 import '../platform/is_mobile_client.dart';
 import 'workout_card.dart';
+import 'workout_list_row.dart';
 
 class WorkoutFeedList extends StatefulWidget {
   const WorkoutFeedList({
@@ -21,6 +23,7 @@ class WorkoutFeedList extends StatefulWidget {
     this.api,
     this.sportTypes,
     this.emptyMessage,
+    this.layout = MyWorkoutsLayout.cards,
   });
 
   final String nickname;
@@ -38,6 +41,9 @@ class WorkoutFeedList extends StatefulWidget {
 
   /// Overrides [AppLocalizations.noWorkoutsYet] when the list is empty.
   final String? emptyMessage;
+
+  /// Card vs compact list row. List mode is intended for `scope=own` only.
+  final MyWorkoutsLayout layout;
 
   @override
   State<WorkoutFeedList> createState() => WorkoutFeedListState();
@@ -232,17 +238,30 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
           );
         }
         final workout = _workouts[index];
+        final useList = widget.layout == MyWorkoutsLayout.list;
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            WorkoutCard(
-              workout: workout,
-              authToken: _authToken ?? '',
-              federationEnabled: widget.federationEnabled,
-              compact: compact,
-              onTap: () => widget.onWorkoutTap(workout),
-              onPhotoTap: (photoIndex) =>
-                  widget.onPhotoTap(workout, photoIndex),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              switchInCurve: Curves.easeInOut,
+              switchOutCurve: Curves.easeInOut,
+              child: useList
+                  ? WorkoutListRow(
+                      key: ValueKey('list-${workout.id}'),
+                      workout: workout,
+                      onTap: () => widget.onWorkoutTap(workout),
+                    )
+                  : WorkoutCard(
+                      key: ValueKey('card-${workout.id}'),
+                      workout: workout,
+                      authToken: _authToken ?? '',
+                      federationEnabled: widget.federationEnabled,
+                      compact: compact,
+                      onTap: () => widget.onWorkoutTap(workout),
+                      onPhotoTap: (photoIndex) =>
+                          widget.onPhotoTap(workout, photoIndex),
+                    ),
             ),
             if (compact && index < _workouts.length - 1)
               Container(

@@ -11,12 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
-- Home → My workouts: filter the list by sport type
+- Home → My workouts: filter by sport type; toggle compact list vs cards
 - Workout detail: equipment icon wraps with its name
 
 ### Added
 
 - **UI:** Home → **My workouts**: filter button opens sport-type toggles from the profile `used_sport_types` list; filters `GET /workouts?scope=own` via optional `sport_types`
+- **UI:** Home → **My workouts**: list/cards toggle in the app bar (between filter and Health Sync); compact rows show sport icon, date, name, and distance or duration by sport category; preference is saved locally
 - **Docs:** Project mission and tagline on the docs homepage and repository README; expanded [About the project](docs/about.md) page (EN / RU / DE)
 - **Server:** `server.registration` config option to control user registration (`open`, `closed`, `invite`); exposed via `/api/v1/server-info`
 - **Server:** Profile `used_sport_types` (most recently created/updated sport first); exposed on `GET /api/v1/profile` and parsed by the Flutter client

@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
+import '../models/my_workouts_layout.dart';
 import '../models/social.dart';
 import '../models/workout.dart';
 import '../pages/workout_detail_page.dart';
 import '../platform/is_mobile_client.dart';
+import '../services/my_workouts_layout_storage.dart';
 import '../widgets/sport_type_toggle.dart';
 import '../widgets/welcome_guest_view.dart';
 import '../widgets/workout_feed_list.dart';
@@ -27,6 +31,19 @@ class SportFilterChrome {
   final VoidCallback onToggle;
 }
 
+/// AppBar chrome for cards/list layout toggle (owned by [HomePage]).
+class MyWorkoutsLayoutChrome {
+  const MyWorkoutsLayoutChrome({
+    required this.visible,
+    required this.layout,
+    required this.onToggle,
+  });
+
+  final bool visible;
+  final MyWorkoutsLayout layout;
+  final VoidCallback onToggle;
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
@@ -44,6 +61,7 @@ class HomePage extends StatefulWidget {
     this.onSignIn,
     this.onRegister,
     this.onSportFilterChromeChanged,
+    this.onMyWorkoutsLayoutChromeChanged,
   });
 
   final String? nickname;
@@ -60,6 +78,7 @@ class HomePage extends StatefulWidget {
   final VoidCallback? onSignIn;
   final VoidCallback? onRegister;
   final ValueChanged<SportFilterChrome>? onSportFilterChromeChanged;
+  final ValueChanged<MyWorkoutsLayoutChrome>? onMyWorkoutsLayoutChromeChanged;
 
   @override
   State<HomePage> createState() => HomePageState();
@@ -77,6 +96,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<String> _usedSportTypes = const [];
   Set<String> _includedSportTypes = {};
   bool _filterExpanded = false;
+  MyWorkoutsLayout _myWorkoutsLayout = MyWorkoutsLayout.cards;
 
   final Map<HomeFeedTab, ScrollController> _scrollControllers = {
     HomeFeedTab.feed: ScrollController(),
@@ -91,7 +111,17 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    unawaited(_loadMyWorkoutsLayout());
     _loadTabState(resetToDefaultTab: true);
+  }
+
+  Future<void> _loadMyWorkoutsLayout() async {
+    final layout = await MyWorkoutsLayoutStorage.getLayout();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _myWorkoutsLayout = layout);
+    _notifyMyWorkoutsLayoutChrome();
   }
 
   @override
@@ -107,8 +137,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     } else if (widget.viewingWorkout != oldWidget.viewingWorkout ||
         widget.feedPhotoViewerWorkout != oldWidget.feedPhotoViewerWorkout ||
         widget.onSportFilterChromeChanged !=
-            oldWidget.onSportFilterChromeChanged) {
+            oldWidget.onSportFilterChromeChanged ||
+        widget.onMyWorkoutsLayoutChromeChanged !=
+            oldWidget.onMyWorkoutsLayoutChromeChanged) {
       _notifySportFilterChrome();
+      _notifyMyWorkoutsLayoutChrome();
     }
   }
 
@@ -132,6 +165,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       });
       _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
       _notifySportFilterChrome();
+      _notifyMyWorkoutsLayoutChrome();
       return;
     }
 
@@ -187,6 +221,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       });
       _syncTabController(showFeedTab: showFeedTab, preferredTab: preferredTab);
       _notifySportFilterChrome();
+      _notifyMyWorkoutsLayoutChrome();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -195,6 +230,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       });
       _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
       _notifySportFilterChrome();
+      _notifyMyWorkoutsLayoutChrome();
     }
   }
 
@@ -232,6 +268,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
       });
       _notifySportFilterChrome();
+      _notifyMyWorkoutsLayoutChrome();
     }
   }
 
@@ -290,6 +327,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       widget.viewingWorkout == null &&
       widget.feedPhotoViewerWorkout == null;
 
+  bool get _layoutButtonVisible =>
+      widget.nickname != null &&
+      _activeTab == HomeFeedTab.myWorkouts &&
+      widget.viewingWorkout == null &&
+      widget.feedPhotoViewerWorkout == null;
+
   void _notifySportFilterChrome() {
     widget.onSportFilterChromeChanged?.call(
       SportFilterChrome(
@@ -300,12 +343,34 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  void _notifyMyWorkoutsLayoutChrome() {
+    widget.onMyWorkoutsLayoutChromeChanged?.call(
+      MyWorkoutsLayoutChrome(
+        visible: _layoutButtonVisible,
+        layout: _myWorkoutsLayout,
+        onToggle: _toggleMyWorkoutsLayout,
+      ),
+    );
+  }
+
   void _toggleSportFilter() {
     if (!_filterButtonVisible) {
       return;
     }
     setState(() => _filterExpanded = !_filterExpanded);
     _notifySportFilterChrome();
+  }
+
+  void _toggleMyWorkoutsLayout() {
+    if (!_layoutButtonVisible) {
+      return;
+    }
+    final next = _myWorkoutsLayout == MyWorkoutsLayout.cards
+        ? MyWorkoutsLayout.list
+        : MyWorkoutsLayout.cards;
+    setState(() => _myWorkoutsLayout = next);
+    _notifyMyWorkoutsLayoutChrome();
+    unawaited(MyWorkoutsLayoutStorage.setLayout(next));
   }
 
   void _onSportTypeToggled(String id) {
@@ -396,6 +461,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         federationEnabled: widget.federationEnabled,
         sportTypes: ownSportTypes,
         emptyMessage: ownEmptyMessage,
+        layout: _myWorkoutsLayout,
         onWorkoutTap: _openWorkout,
         onPhotoTap: _openWorkoutPhoto,
         onAuthTokenLoaded: (token) {
