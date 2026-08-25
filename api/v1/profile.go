@@ -62,6 +62,8 @@ func (a *App) saveLastEquipmentForSport(userID, sportType string, equipmentIDs [
 }
 
 func (a *App) rememberUsedSportType(userID, sportType string) {
+	a.profileSportsMu.Lock()
+	defer a.profileSportsMu.Unlock()
 	if err := a.Users.TouchUsedSportType(userID, sportType); err != nil {
 		slog.Warn("failed to remember used sport type",
 			"user_id", userID,
@@ -87,7 +89,12 @@ func (a *App) touchUsedSportFromWorkout(userID string, workout *workouts.Workout
 
 // RefreshLastSportType rescans the user's workouts and stores the sport of the newest one.
 // It also prunes used_sport_types entries that no longer appear on any workout.
+// Serialized with rememberUsedSportType so prune cannot apply a List snapshot taken
+// before a concurrent Touch.
 func (a *App) RefreshLastSportType(nickname, userID string) error {
+	a.profileSportsMu.Lock()
+	defer a.profileSportsMu.Unlock()
+
 	items, err := a.Workouts.List(nickname)
 	if err != nil {
 		return err

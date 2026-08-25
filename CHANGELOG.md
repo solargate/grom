@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Server:** Race between async profile sport refresh and remembering a newly used sport type could drop entries from `used_sport_types`
+
 ## [0.11.0] - 2026-08-23
 
 ### Google Play

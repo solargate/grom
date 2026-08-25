@@ -50,6 +50,9 @@ type App struct {
 	stravaJobs *strava.JobManager
 
 	profileRefreshWG sync.WaitGroup
+	// profileSportsMu serializes TouchUsedSportType with RefreshLastSportType so an
+	// async prune cannot drop a sport type that was touched after a stale List.
+	profileSportsMu sync.Mutex
 }
 
 func NewApp() (*App, error) {
