@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- My workouts list: rows sit flush with thin dividers instead of gaps between items
+
+### Changed
+
+- **UI:** My workouts list layout on mobile: rows are flush with full-width thin dividers instead of 8 px gaps; card layout and web unchanged
+
 ### Fixed
 
 - **Server:** Race between async profile sport refresh and remembering a newly used sport type could drop entries from `used_sport_types`

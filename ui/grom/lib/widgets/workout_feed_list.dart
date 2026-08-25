@@ -264,10 +264,14 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
                     ),
             ),
             if (compact && index < _workouts.length - 1)
-              Container(
-                height: 8,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              ),
+              useList
+                  ? const Divider(height: 1)
+                  : Container(
+                      height: 8,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                    ),
           ],
         );
       },
