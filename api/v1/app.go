@@ -45,6 +45,8 @@ type App struct {
 	federationOnce      sync.Once
 	federationDelivery  *federation.Delivery
 	federationInboxProc *federation.InboxProcessor
+	federationKeyResolver federation.KeyResolver
+	federationHTTPKeys    *federation.HTTPKeyResolver
 
 	stravaOnce sync.Once
 	stravaJobs *strava.JobManager
@@ -114,7 +116,7 @@ func NewApp() (*App, error) {
 	socialSvc.SetInboundFollowers(federation.NewInboundFollowersAdapter(app.Federation.Followers()))
 
 	if config.Cfg.Federation.Enabled {
-		delivery, err := federation.NewDelivery(app.Users, socialSvc)
+		delivery, err := federation.NewDelivery(app.Users, socialSvc, app.Blobs)
 		if err != nil {
 			_ = backend.Close()
 			return nil, err
@@ -122,6 +124,8 @@ func NewApp() (*App, error) {
 		socialSvc.SetDelivery(delivery)
 		app.federationDelivery = delivery
 		app.Federation.Inbox().SetHTTPClient(delivery.Client())
+		app.federationHTTPKeys = federation.NewHTTPKeyResolver(delivery.Client(), app.Blobs)
+		app.federationKeyResolver = app.federationHTTPKeys
 		app.federationInboxProc = federation.NewInboxProcessor(
 			app.Users,
 			socialSvc,
@@ -134,6 +138,7 @@ func NewApp() (*App, error) {
 		slog.Info("federation enabled",
 			"domain", config.Cfg.Federation.Domain,
 			"auto_accept_follows", config.Cfg.Federation.AutoAcceptFollows,
+			"authorized_fetch", config.Cfg.AuthorizedFetchEnabled(),
 		)
 	}
 
@@ -160,9 +165,21 @@ func (a *App) SetFederationHTTPClient(client *http.Client) {
 	if a.federationDelivery != nil {
 		a.federationDelivery.SetClient(client)
 	}
+	if a.federationHTTPKeys != nil {
+		a.federationHTTPKeys.SetClient(client)
+	}
 	if a.Federation != nil && a.Federation.Inbox() != nil {
 		a.Federation.Inbox().SetHTTPClient(client)
 	}
+}
+
+// SetFederationKeyResolver replaces the key resolver used for inbound HTTP Signature verification.
+// Intended for tests.
+func (a *App) SetFederationKeyResolver(resolver federation.KeyResolver) {
+	if a == nil || resolver == nil {
+		return
+	}
+	a.federationKeyResolver = resolver
 }
 
 func (a *App) newFeedService() *workouts.FeedService {

@@ -337,6 +337,32 @@ func (s *Service) ListFollowing(followerID string) ([]Follow, error) {
 	return s.follows.ListByFollower(followerID)
 }
 
+// ListLocalNicknamesFollowingHandle returns nicknames of local users who actively follow targetHandle.
+func (s *Service) ListLocalNicknamesFollowingHandle(targetHandle string) ([]string, error) {
+	targetHandle = strings.TrimSpace(targetHandle)
+	if targetHandle == "" {
+		return nil, nil
+	}
+	follows, err := s.follows.ListActiveByTarget(targetHandle)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(follows))
+	seen := make(map[string]struct{}, len(follows))
+	for i := range follows {
+		u, err := s.users.FindByID(follows[i].FollowerID)
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[u.Nickname]; ok {
+			continue
+		}
+		seen[u.Nickname] = struct{}{}
+		out = append(out, u.Nickname)
+	}
+	return out, nil
+}
+
 type Follower struct {
 	FollowerHandle    string `json:"follower_handle"`
 	FollowerNickname  string `json:"follower_nickname"`
@@ -418,6 +444,20 @@ func (s *Service) ActivateFollowByActivityID(activityID string) error {
 	}
 	_, err = s.follows.UpdateStatus(follow.ID, StatusActive)
 	return err
+}
+
+// LocalNicknameForFollowActivityID returns the local follower nickname for a Follow activity id
+// (any status, including pending). Used to route Accept activities via the shared inbox.
+func (s *Service) LocalNicknameForFollowActivityID(activityID string) (string, error) {
+	follow, err := s.follows.FindByFollowActivityID(activityID)
+	if err != nil {
+		return "", err
+	}
+	u, err := s.users.FindByID(follow.FollowerID)
+	if err != nil {
+		return "", err
+	}
+	return u.Nickname, nil
 }
 
 func (s *Service) HandleIncomingAccept(followActivityID string) error {

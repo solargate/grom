@@ -2,10 +2,11 @@ package v1_test
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -53,13 +54,22 @@ func (c *captureDeliveryRT) RoundTrip(req *http.Request) (*http.Response, error)
 	switch {
 	case strings.Contains(path, "/.well-known/webfinger"):
 		resource := req.URL.Query().Get("resource")
+		href := "https://remote.example/users/bob"
+		if strings.HasPrefix(resource, "acct:") {
+			handle := strings.TrimPrefix(resource, "acct:")
+			if at := strings.LastIndex(handle, "@"); at > 0 {
+				nick := handle[:at]
+				domain := handle[at+1:]
+				href = "https://" + domain + "/users/" + nick
+			}
+		}
 		payload, _ = json.Marshal(map[string]any{
 			"subject": resource,
 			"links": []any{
 				map[string]any{
 					"rel":  "self",
 					"type": "application/activity+json",
-					"href": "https://remote.example/users/bob",
+					"href": href,
 				},
 			},
 		})
@@ -311,14 +321,13 @@ func postFederatedWorkoutCreate(t *testing.T, ta *testApp, viewer, actorURL, wor
 		"actor":    actorURL,
 		"object":   obj,
 	}
-	data, err := json.Marshal(createObj)
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/users/"+viewer+"/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w := httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	keyID := actorURL + "#main-key"
+	ta.installRemoteKey(t, priv, keyID, actorURL)
+	w := ta.postSignedActivity(t, "/users/"+viewer+"/inbox", createObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 }
 

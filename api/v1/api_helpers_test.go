@@ -21,6 +21,8 @@ import (
 	"github.com/gin-gonic/gin"
 	v1 "github.com/solargate/grom/api/v1"
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/federation/httpsig"
 )
 
 type testApp struct {
@@ -52,6 +54,7 @@ func setupFederationTestApp(t *testing.T) *testApp {
 	t.Helper()
 	tlsDir := t.TempDir()
 	certPath, keyPath := writeTestTLS(t, tlsDir)
+	afOff := false
 	return setupTestAppWithConfig(t, func(cfg *config.Config) {
 		cfg.Server.TLS.Mode = "static"
 		cfg.Server.TLS.CertFile = certPath
@@ -59,6 +62,7 @@ func setupFederationTestApp(t *testing.T) *testApp {
 		cfg.Federation.Enabled = true
 		cfg.Federation.Domain = "localhost"
 		cfg.Federation.AutoAcceptFollows = false
+		cfg.Federation.AuthorizedFetch = &afOff
 	})
 }
 
@@ -275,4 +279,42 @@ func readTestdata(t *testing.T, rel string) []byte {
 		t.Fatal(err)
 	}
 	return data
+}
+
+// remoteTestActor is a stable actor URI used by signed federation inbox tests.
+const remoteTestActor = "https://remote.example/users/bob"
+
+func newRemoteTestKey(t *testing.T) (*rsa.PrivateKey, string) {
+	t.Helper()
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return priv, remoteTestActor + "#main-key"
+}
+
+func (ta *testApp) installRemoteKey(t *testing.T, priv *rsa.PrivateKey, keyID, owner string) {
+	t.Helper()
+	ta.app.SetFederationKeyResolver(federation.StaticKeyResolver{
+		Keys: map[string]federation.StaticKey{
+			keyID: {Public: &priv.PublicKey, Owner: owner},
+		},
+	})
+}
+
+func (ta *testApp) postSignedActivity(t *testing.T, path string, activity map[string]any, priv *rsa.PrivateKey, keyID string) *httptest.ResponseRecorder {
+	t.Helper()
+	data, err := json.Marshal(activity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(data))
+	req.Header.Set("Content-Type", "application/activity+json")
+	req.Host = "localhost"
+	if err := httpsig.SignPOST(req, data, priv, keyID); err != nil {
+		t.Fatalf("SignPOST: %v", err)
+	}
+	w := httptest.NewRecorder()
+	ta.router.ServeHTTP(w, req)
+	return w
 }

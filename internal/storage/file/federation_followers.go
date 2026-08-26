@@ -43,7 +43,8 @@ func (s *FederationFollowersStore) Add(nickname string, follower federation.Inbo
 
 	for i := range file.Followers {
 		if file.Followers[i].ActorURI == follower.ActorURI {
-			return nil
+			file.Followers[i] = follower
+			return s.save(path, file)
 		}
 	}
 	file.Followers = append(file.Followers, follower)
@@ -74,13 +75,7 @@ func (s *FederationFollowersStore) ListInboxes(nickname string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	inboxes := make([]string, 0, len(followers))
-	for i := range followers {
-		if followers[i].Inbox != "" {
-			inboxes = append(inboxes, followers[i].Inbox)
-		}
-	}
-	return inboxes, nil
+	return federation.DeduplicateDeliveryInboxes(followers), nil
 }
 
 func (s *FederationFollowersStore) Remove(nickname, actorURI string) error {

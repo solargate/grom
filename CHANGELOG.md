@@ -13,13 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - My workouts list: rows sit flush with thin dividers instead of gaps between items
 
+### Added
+
+- **Server:** ActivityPub HTTP Signatures (cavage-12): signed outbound delivery and GETs (instance actor at `/actor`), required signatures on inbound inboxes, optional `federation.authorized_fetch` (default on), shared-inbox routing, and sharedInbox fan-out dedupe
+
 ### Changed
 
 - **UI:** My workouts list layout on mobile: rows are flush with full-width thin dividers instead of 8 px gaps; card layout and web unchanged
+- **Docs:** Federation configuration documents HTTP Signatures, authorized fetch, and the instance actor
 
 ### Fixed
 
+- **Server:** Federated workout `Like` / `Undo` (and comment Note Create/Delete) delivered to the shared inbox are routed to the workout owner; outbound likes address the owner in `to`
 - **Server:** Race between async profile sport refresh and remembering a newly used sport type could drop entries from `used_sport_types`
+- **Server:** Federated `Accept` delivered to the shared inbox no longer leaves the follow stuck in `pending` (route by follower / follow activity id)
 
 ## [0.11.0] - 2026-08-23
 

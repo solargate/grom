@@ -66,6 +66,11 @@ func UserActorKey(nickname string) string {
 	return filepath.Join(data.UsersSubdir, nickname, "federation", "actor_key.pem")
 }
 
+// InstanceActorKey returns the logical storage key for the instance Application actor private key.
+func InstanceActorKey() string {
+	return filepath.Join("federation", "instance_actor_key.pem")
+}
+
 // FederatedInboxOwnerDir returns the inbox owner directory key prefix.
 func FederatedInboxOwnerDir(viewerNickname, ownerKey string) string {
 	return filepath.Join(data.UsersSubdir, viewerNickname, "federation", "inbox", "workouts", ownerKey)

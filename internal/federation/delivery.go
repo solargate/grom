@@ -1,11 +1,9 @@
 package federation
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -13,8 +11,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/federation/httpsig"
 	"github.com/solargate/grom/internal/server"
 	"github.com/solargate/grom/internal/social"
+	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
@@ -23,17 +23,22 @@ type Delivery struct {
 	client    *http.Client
 	userStore users.Repository
 	social    *social.Service
+	blobs     blob.Store
 }
 
-func NewDelivery(userStore users.Repository, socialSvc *social.Service) (*Delivery, error) {
+func NewDelivery(userStore users.Repository, socialSvc *social.Service, blobs blob.Store) (*Delivery, error) {
 	client, err := server.FederationHTTPClient()
 	if err != nil {
 		return nil, err
+	}
+	if err := ensureInstanceActorKey(blobs); err != nil {
+		return nil, fmt.Errorf("instance actor key: %w", err)
 	}
 	return &Delivery{
 		client:    client,
 		userStore: userStore,
 		social:    socialSvc,
+		blobs:     blobs,
 	}, nil
 }
 
@@ -69,33 +74,52 @@ func (d *Delivery) DeliverFollow(follow *social.Follow) error {
 		"actor":    actorURL(follower.Nickname),
 		"object":   follow.TargetActorURI,
 	}
-	body, err := json.Marshal(activity)
-	if err != nil {
-		return err
-	}
-
 	inbox := strings.TrimSuffix(follow.TargetActorURI, "/") + "/inbox"
-	req, err := http.NewRequest(http.MethodPost, inbox, bytes.NewReader(body))
-	if err != nil {
-		return err
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(follow.TargetActorURI); resolved != "" {
+			inbox = resolved
+		}
 	}
-	req.Header.Set("Content-Type", "application/activity+json")
-	req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
-
-	resp, err := d.client.Do(req)
-	if err != nil {
+	if err := d.postActivity(inbox, activity); err != nil {
 		slog.Error("federation follow delivery failed", "inbox", inbox, "err", err)
-		return err
-	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		err := fmt.Errorf("follow delivery failed: %s", resp.Status)
-		slog.Error("federation follow delivery failed", "inbox", inbox, "status", resp.StatusCode, "err", err)
 		return err
 	}
 	slog.Info("federation follow delivered", "inbox", inbox)
 	return nil
+}
+
+func (d *Delivery) resolveInboxURL(actorURI string) string {
+	parsed, err := parseActorURI(actorURI)
+	if err != nil {
+		return ""
+	}
+	actor, err := fetchActor(d.client, d.blobs, parsed)
+	if err != nil {
+		return ""
+	}
+	return PreferDeliveryInbox(ExtractActorEndpoints(actor))
+}
+
+func parseActorURI(actorURI string) (social.ParsedHandle, error) {
+	actorURI = strings.TrimSpace(actorURI)
+	const marker = "/users/"
+	idx := strings.Index(actorURI, marker)
+	if idx < 0 {
+		return social.ParsedHandle{}, fmt.Errorf("not a user actor URL")
+	}
+	hostPart := strings.TrimPrefix(actorURI[:idx], "https://")
+	hostPart = strings.TrimPrefix(hostPart, "http://")
+	nick := actorURI[idx+len(marker):]
+	nick = strings.SplitN(nick, "/", 2)[0]
+	nick = strings.SplitN(nick, "#", 2)[0]
+	if hostPart == "" || nick == "" {
+		return social.ParsedHandle{}, fmt.Errorf("invalid actor URL")
+	}
+	return social.ParsedHandle{
+		Nickname: nick,
+		Domain:   hostPart,
+		Handle:   nick + "@" + hostPart,
+	}, nil
 }
 
 func (d *Delivery) DeliverUndo(follow *social.Follow) error {
@@ -119,29 +143,14 @@ func (d *Delivery) DeliverUndo(follow *social.Follow) error {
 			"object": follow.TargetActorURI,
 		},
 	}
-	body, err := json.Marshal(activity)
-	if err != nil {
-		return err
-	}
-
 	inbox := strings.TrimSuffix(follow.TargetActorURI, "/") + "/inbox"
-	req, err := http.NewRequest(http.MethodPost, inbox, bytes.NewReader(body))
-	if err != nil {
-		return err
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(follow.TargetActorURI); resolved != "" {
+			inbox = resolved
+		}
 	}
-	req.Header.Set("Content-Type", "application/activity+json")
-	req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
-
-	resp, err := d.client.Do(req)
-	if err != nil {
+	if err := d.postActivity(inbox, activity); err != nil {
 		slog.Error("federation undo delivery failed", "inbox", inbox, "err", err)
-		return err
-	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		err := fmt.Errorf("undo delivery failed: %s", resp.Status)
-		slog.Error("federation undo delivery failed", "inbox", inbox, "status", resp.StatusCode, "err", err)
 		return err
 	}
 	slog.Info("federation undo delivered", "inbox", inbox)
@@ -170,9 +179,15 @@ func (d *Delivery) DeliverWorkoutLike(actorNickname, targetHandle, objectID stri
 		"type":     "Like",
 		"actor":    actorURL(actorNickname),
 		"object":   objectID,
-		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
-	if err := d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity); err != nil {
+	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(targetActor); resolved != "" {
+			inbox = resolved
+		}
+	}
+	if err := d.postActivity(inbox, activity); err != nil {
 		return "", err
 	}
 	return activityID, nil
@@ -197,9 +212,15 @@ func (d *Delivery) DeliverWorkoutUndoLike(actorNickname, targetHandle, objectID,
 			"actor":  actorURL(actorNickname),
 			"object": objectID,
 		},
-		"to": []string{"https://www.w3.org/ns/activitystreams#Public"},
+		"to": []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
-	return d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity)
+	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(targetActor); resolved != "" {
+			inbox = resolved
+		}
+	}
+	return d.postActivity(inbox, activity)
 }
 
 func (d *Delivery) DeliverWorkoutComment(actorNickname, targetHandle, workoutObjectID, noteID, text string, published time.Time) (string, error) {
@@ -231,7 +252,13 @@ func (d *Delivery) DeliverWorkoutComment(actorNickname, targetHandle, workoutObj
 		},
 		"to": []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
-	if err := d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity); err != nil {
+	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(targetActor); resolved != "" {
+			inbox = resolved
+		}
+	}
+	if err := d.postActivity(inbox, activity); err != nil {
 		return "", err
 	}
 	return activityID, nil
@@ -264,14 +291,20 @@ func (d *Delivery) DeliverWorkoutCommentDeleteWithReply(actorNickname, targetHan
 		"object":   object,
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
-	return d.postActivity(strings.TrimSuffix(targetActor, "/")+"/inbox", activity)
+	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
+	if d.blobs != nil {
+		if resolved := d.resolveInboxURL(targetActor); resolved != "" {
+			inbox = resolved
+		}
+	}
+	return d.postActivity(inbox, activity)
 }
 
 func (d *Delivery) ResolveRemote(parsed social.ParsedHandle) (*social.UserSearchResult, error) {
 	if !config.Cfg.Federation.Enabled {
 		return nil, social.ErrRemoteNotReady
 	}
-	actor, err := fetchActor(d.client, parsed)
+	actor, err := fetchActor(d.client, d.blobs, parsed)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +320,7 @@ func (d *Delivery) ResolveRemote(parsed social.ParsedHandle) (*social.UserSearch
 	}, nil
 }
 
-func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any, error) {
+func fetchActor(client *http.Client, blobs blob.Store, parsed social.ParsedHandle) (map[string]any, error) {
 	webfingerURL := fmt.Sprintf("https://%s/.well-known/webfinger?resource=acct:%s",
 		parsed.Domain, parsed.Handle)
 	req, err := http.NewRequest(http.MethodGet, webfingerURL, nil)
@@ -307,23 +340,26 @@ func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any
 		return nil, err
 	}
 	links, _ := jrd["links"].([]any)
-	var actorURL string
+	var actorURLStr string
 	for _, link := range links {
 		m, _ := link.(map[string]any)
 		if m["rel"] == "self" {
-			actorURL, _ = m["href"].(string)
+			actorURLStr, _ = m["href"].(string)
 			break
 		}
 	}
-	if actorURL == "" {
+	if actorURLStr == "" {
 		return nil, social.ErrUserNotFound
 	}
 
-	actorReq, err := http.NewRequest(http.MethodGet, actorURL, nil)
+	actorReq, err := http.NewRequest(http.MethodGet, actorURLStr, nil)
 	if err != nil {
 		return nil, err
 	}
 	actorReq.Header.Set("Accept", "application/activity+json")
+	if err := signOutboundGET(blobs, actorReq); err != nil {
+		slog.Debug("federation actor fetch unsigned", "url", actorURLStr, "err", err)
+	}
 	actorResp, err := client.Do(actorReq)
 	if err != nil {
 		return nil, err
@@ -337,6 +373,28 @@ func fetchActor(client *http.Client, parsed social.ParsedHandle) (map[string]any
 		return nil, err
 	}
 	return actor, nil
+}
+
+func signOutboundGET(blobs blob.Store, req *http.Request) error {
+	if blobs == nil {
+		return fmt.Errorf("no blobs")
+	}
+	ak, err := LoadOrCreateInstanceActorKey(blobs)
+	if err != nil {
+		return err
+	}
+	return httpsig.SignGET(req, ak.Private, ak.KeyID)
+}
+
+func signOutboundPOST(blobs blob.Store, actorNickname string, req *http.Request, body []byte) error {
+	if blobs == nil {
+		return fmt.Errorf("no blobs")
+	}
+	ak, err := LoadOrCreateUserActorKey(blobs, actorNickname)
+	if err != nil {
+		return err
+	}
+	return httpsig.SignPOST(req, body, ak.Private, ak.KeyID)
 }
 
 func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput) map[string]any {
@@ -445,7 +503,7 @@ func (d *Delivery) deliverWorkoutActivity(activityType, authorNickname string, w
 		"object":   buildWorkoutObject(authorNickname, workout, trackData, mediaFiles),
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
-	for _, inbox := range followerInboxes {
+	for _, inbox := range DeduplicateInboxURLs(followerInboxes) {
 		if err := d.postActivity(inbox, activity); err != nil {
 			slog.Error("federation workout activity delivery failed",
 				"activity_type", activityType,
@@ -487,7 +545,7 @@ func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, follow
 		"object":   workoutObjectURL(authorNickname, workoutID),
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
-	for _, inbox := range followerInboxes {
+	for _, inbox := range DeduplicateInboxURLs(followerInboxes) {
 		if err := d.postActivity(inbox, activity); err != nil {
 			slog.Error("federation workout delete delivery failed",
 				"author", authorNickname,
@@ -521,7 +579,7 @@ func (d *Delivery) DeliverActorDelete(nickname string, followerInboxes []string)
 		"object":   author,
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
-	for _, inbox := range followerInboxes {
+	for _, inbox := range DeduplicateInboxURLs(followerInboxes) {
 		if err := d.postActivity(inbox, activity); err != nil {
 			slog.Error("federation actor delete delivery failed",
 				"nickname", nickname,

@@ -44,6 +44,9 @@ federation:
   domain: ""
   # Optional. Automatically Accept incoming Follow activities. Default: false.
   auto_accept_follows: false
+  # Optional. Require HTTP Signatures on ActivityPub GET requests (actor, outbox, …).
+  # The instance actor at GET /actor stays public (breaks authorized-fetch key deadlocks). Default: true.
+  authorized_fetch: true
   # Optional. Number of outbound delivery workers. Default: 2.
   delivery_workers: 2
   # Optional. Max delivery attempts per activity before giving up. Default: 5.

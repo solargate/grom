@@ -16,6 +16,7 @@ Grom wird über eine YAML-Datei konfiguriert. Standardmäßig sucht er `config.y
 | `storage.driver` / `location` / `temp_dir` | `file` (Standard; Tests / winzige Instanzen) oder `bbolt` (empfohlen für normale Installationen); Datenwurzel und Temp-Verzeichnisse |
 | `storage.bbolt.path` | Optionaler Pfad zu `grom.db` bei bbolt (Standard: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; erfordert HTTPS |
+| `federation.authorized_fetch` | HTTP-Signaturen für ActivityPub-GETs verlangen (Standard **true**); `GET /actor` bleibt öffentlich |
 | `auth.reset` / `mailer` | Passwort-Reset per E-Mail (`public_base_url`, SMTP oder Log-Treiber) |
 | `auth.captcha` | Optionales ALTCHA-PoW bei Registrierung/Login/„vergessen“ (`enabled`, optional `hmac_secret` / `cost` / `expires_seconds`) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (Dev) oder `json` (Prod). Standard: `info` + `json`. Gin-Framework-Debug (`[GIN-debug]`) nur bei `logging.level: debug`; sonst Gin im Release-Modus |
@@ -51,6 +52,7 @@ Hinweise:
 
 - Föderation erfordert HTTPS (`tls.mode: static` oder `autocert`). Mit `tls.mode: off` läuft sie nicht.
 - Bei aktivierter Föderation werden Likes auf Remote-Workouts als ActivityPub `Like` / `Undo` zugestellt, Kommentare als `Create`/`Delete` Note (`inReplyTo`); lokale Workouts akzeptieren eingehende Likes und Kommentare von anderen Instanzen. Likes und Kommentare auf derselben Instanz funktionieren ohne Föderation. Kontolöschung (`DELETE /api/v1/auth/me`) liefert ein `Delete` des lokalen Actors an bekannte Remote-Inboxes (best-effort), bevor lokale Daten gelöscht werden; die Inbox wendet Remote-Actor-`Delete` an, indem der föderierte Cache dieses Besitzers für den Empfänger bereinigt wird.
+- Server-zu-Server-Anfragen nutzen **HTTP Signatures** (Draft cavage-12, RSA-SHA256): ausgehende Activities werden signiert; eingehende `POST` an User- und Shared-Inboxes brauchen eine gültige Signatur. Ausgehende Actor-/Key-Fetches werden als Instance-Actor (`GET /actor`) signiert. Bei `federation.authorized_fetch: true` (Standard) verlangen ActivityPub-GETs für User-Actors und Outboxes ebenfalls eine Signatur (`Vary: Signature`). Setzen Sie `authorized_fetch: false` nur zur lokalen Fehlersuche zwischen vertrauenswürdigen Instanzen.
 - Legacy-Configs mit `server.tls.enabled: true` (ohne `mode`) gelten als `mode: static`.
 
 ## Registrierung {#registration}

@@ -3,7 +3,6 @@ package v1_test
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"image"
 	"image/png"
@@ -352,6 +351,8 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 	ta := setupFederationTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
 	token, _ := ta.login(t, "alice@example.com", "password12")
+	priv, keyID := newRemoteTestKey(t)
+	ta.installRemoteKey(t, priv, keyID, remoteTestActor)
 
 	w := ta.doJSON(t, http.MethodGet, "/.well-known/webfinger?resource=acct:missing@localhost", nil, "")
 	expectStatus(t, w, http.StatusNotFound)
@@ -366,9 +367,9 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 	createObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Create",
-		"actor":    "https://remote.example/users/bob",
+		"actor":    remoteTestActor,
 		"object": map[string]any{
-			"id":              "https://remote.example/users/bob/workouts/22222222",
+			"id":              remoteTestActor + "/workouts/22222222",
 			"type":            "Note",
 			"name":            "Remote GPX",
 			"sportType":       "Run",
@@ -379,14 +380,7 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 			"trackData":       base64.StdEncoding.EncodeToString(gpx),
 		},
 	}
-	data, err := json.Marshal(createObj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w = httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	w = ta.postSignedActivity(t, "/users/alice/inbox", createObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	_, samples, err := ta.app.Federation.Inbox().GetSpeedChart("alice", "bob", "22222222")
@@ -419,9 +413,9 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 	updateObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Update",
-		"actor":    "https://remote.example/users/bob",
+		"actor":    remoteTestActor,
 		"object": map[string]any{
-			"id":              "https://remote.example/users/bob/workouts/22222222",
+			"id":              remoteTestActor + "/workouts/22222222",
 			"type":            "Note",
 			"name":            "Remote GPX edited",
 			"sportType":       "Run",
@@ -432,14 +426,7 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 			"trackData":       base64.StdEncoding.EncodeToString(gpx),
 		},
 	}
-	data, err = json.Marshal(updateObj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w = httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	w = ta.postSignedActivity(t, "/users/alice/inbox", updateObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	got, err := ta.app.Federation.Inbox().Get("alice", "bob", "22222222")
@@ -453,17 +440,10 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 	deleteObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Delete",
-		"actor":    "https://remote.example/users/bob",
-		"object":   "https://remote.example/users/bob/workouts/22222222",
+		"actor":    remoteTestActor,
+		"object":   remoteTestActor + "/workouts/22222222",
 	}
-	data, err = json.Marshal(deleteObj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w = httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	w = ta.postSignedActivity(t, "/users/alice/inbox", deleteObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	if _, err := ta.app.Federation.Inbox().Get("alice", "bob", "22222222"); !errors.Is(err, workouts.ErrWorkoutNotFound) {
@@ -474,6 +454,8 @@ func TestFederationInboxCreateWithTrackAndUpdate(t *testing.T) {
 func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
 	ta := setupFederationTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
+	priv, keyID := newRemoteTestKey(t)
+	ta.installRemoteKey(t, priv, keyID, remoteTestActor)
 
 	var photoA, photoB bytes.Buffer
 	img := image.NewRGBA(image.Rect(0, 0, 24, 24))
@@ -487,9 +469,9 @@ func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
 	createObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Create",
-		"actor":    "https://remote.example/users/bob",
+		"actor":    remoteTestActor,
 		"object": map[string]any{
-			"id":              "https://remote.example/users/bob/workouts/33333333",
+			"id":              remoteTestActor + "/workouts/33333333",
 			"type":            "Note",
 			"name":            "Remote with photos",
 			"sportType":       "Run",
@@ -510,14 +492,7 @@ func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
 			},
 		},
 	}
-	data, err := json.Marshal(createObj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req := httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w := httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	w := ta.postSignedActivity(t, "/users/alice/inbox", createObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	got, err := ta.app.Federation.Inbox().Get("alice", "bob", "33333333")
@@ -536,9 +511,9 @@ func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
 	updateObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Update",
-		"actor":    "https://remote.example/users/bob",
+		"actor":    remoteTestActor,
 		"object": map[string]any{
-			"id":              "https://remote.example/users/bob/workouts/33333333",
+			"id":              remoteTestActor + "/workouts/33333333",
 			"type":            "Note",
 			"name":            "Remote with photos edited",
 			"sportType":       "Run",
@@ -559,14 +534,7 @@ func TestFederationInboxMediaReplaceOnUpdate(t *testing.T) {
 			},
 		},
 	}
-	data, err = json.Marshal(updateObj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w = httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	w = ta.postSignedActivity(t, "/users/alice/inbox", updateObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	got, err = ta.app.Federation.Inbox().Get("alice", "bob", "33333333")
@@ -643,25 +611,31 @@ func TestFederationRoutes(t *testing.T) {
 	followBody := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Follow",
-		"actor":    "https://remote.example/users/bob",
+		"actor":    remoteTestActor,
 		"object":   "https://localhost/users/alice",
 		"id":       "https://remote.example/activities/1",
 	}
-	data, err := json.Marshal(followBody)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w = httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	priv, keyID := newRemoteTestKey(t)
+	ta.installRemoteKey(t, priv, keyID, remoteTestActor)
+	w = ta.postSignedActivity(t, "/users/alice/inbox", followBody, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	req = httptest.NewRequest(http.MethodPost, "/inbox", bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/activity+json")
 	w = httptest.NewRecorder()
 	ta.router.ServeHTTP(w, req)
-	expectStatus(t, w, http.StatusAccepted)
+	expectStatus(t, w, http.StatusUnauthorized)
+
+	// Instance actor is public (no AF required).
+	req = httptest.NewRequest(http.MethodGet, "/actor", nil)
+	req.Header.Set("Accept", "application/activity+json")
+	w = httptest.NewRecorder()
+	ta.router.ServeHTTP(w, req)
+	expectStatus(t, w, http.StatusOK)
+	inst := decodeObject(t, w)
+	if inst["type"] != "Application" {
+		t.Fatalf("instance actor: %#v", inst)
+	}
 
 	pngData := readTestdata(t, "images/avatar-square.png")
 	token, _ := ta.login(t, "alice@example.com", "password12")

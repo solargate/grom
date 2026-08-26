@@ -81,6 +81,9 @@ type Config struct {
 		Enabled               bool   `mapstructure:"enabled" yaml:"enabled"`
 		Domain                string `mapstructure:"domain" yaml:"domain"`
 		AutoAcceptFollows     bool   `mapstructure:"auto_accept_follows" yaml:"auto_accept_follows"`
+		// AuthorizedFetch requires HTTP Signatures on ActivityPub GET requests
+		// (except the instance actor at /actor). Nil means default true.
+		AuthorizedFetch       *bool  `mapstructure:"authorized_fetch" yaml:"authorized_fetch"`
 		DeliveryWorkers       int    `mapstructure:"delivery_workers" yaml:"delivery_workers"`
 		DeliveryRetryMax      int    `mapstructure:"delivery_retry_max" yaml:"delivery_retry_max"`
 		CACertFile            string `mapstructure:"ca_cert_file" yaml:"ca_cert_file"`
@@ -152,6 +155,15 @@ func (c *Config) MailerEnabled() bool {
 // PasswordResetEnabled reports whether password reset via email is available.
 func (c *Config) PasswordResetEnabled() bool {
 	return c.MailerEnabled() && strings.TrimSpace(c.Auth.Reset.PublicBaseURL) != ""
+}
+
+// AuthorizedFetchEnabled reports whether ActivityPub GETs require HTTP Signatures.
+// Default is true when federation.authorized_fetch is unset.
+func (c *Config) AuthorizedFetchEnabled() bool {
+	if c.Federation.AuthorizedFetch == nil {
+		return true
+	}
+	return *c.Federation.AuthorizedFetch
 }
 
 // CaptchaConfig controls optional ALTCHA proof-of-work protection on auth forms.

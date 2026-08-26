@@ -16,6 +16,7 @@ Grom is configured with a YAML file. By default it looks for `config.yaml` in th
 | `storage.driver` / `location` / `temp_dir` | `file` (default; tests / tiny instances) or `bbolt` (recommended for normal installs); data root and temp dirs |
 | `storage.bbolt.path` | Optional path to `grom.db` when using bbolt (default: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; requires HTTPS |
+| `federation.authorized_fetch` | Require HTTP Signatures on ActivityPub GETs (default **true**); `GET /actor` stays public |
 | `auth.reset` / `mailer` | Password reset email (`public_base_url`, SMTP or log driver) |
 | `auth.captcha` | Optional ALTCHA PoW on register/login/forgot (`enabled`, optional `hmac_secret` / `cost` / `expires_seconds`) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) or `json` (prod). Defaults: `info` + `json`. Gin framework debug output (`[GIN-debug]`) is enabled only when `logging.level` is `debug`; otherwise Gin runs in release mode |
@@ -51,6 +52,7 @@ Notes:
 
 - Federation requires HTTPS (`tls.mode: static` or `autocert`). It cannot run with `tls.mode: off`.
 - With federation enabled, likes on remote workouts are delivered as ActivityPub `Like` / `Undo`, and comments as `Create`/`Delete` Note (`inReplyTo`); local workouts accept incoming likes and comments from other instances. Same-instance likes and comments work without federation. Account deletion (`DELETE /api/v1/auth/me`) delivers a `Delete` of the local actor to known remote inboxes (best-effort) before wiping local data; the inbox applies remote actor `Delete` by purging that owner’s federated cache for the recipient.
+- Server-to-server requests use **HTTP Signatures** (draft cavage-12, RSA-SHA256): outbound activities are signed; inbound `POST` to user and shared inboxes must present a valid signature. Outbound actor/key fetches are signed as the instance actor (`GET /actor`). When `federation.authorized_fetch` is true (default), ActivityPub GETs for user actors and outboxes also require a signature (`Vary: Signature`). Set `authorized_fetch: false` only for local debugging between trusted instances.
 - Legacy configs with `server.tls.enabled: true` (and no `mode`) are treated as `mode: static`.
 
 ## Registration

@@ -16,6 +16,7 @@ Grom настраивается YAML-файлом. По умолчанию ищ�
 | `storage.driver` / `location` / `temp_dir` | `file` (по умолчанию; тесты / крошечные инстансы) или `bbolt` (рекомендуется для обычных установок); корень данных и temp |
 | `storage.bbolt.path` | Необязательный путь к `grom.db` при bbolt (по умолчанию: `{location}/grom.db`) |
 | `federation.enabled` / `federation.domain` | ActivityPub; нужен HTTPS |
+| `federation.authorized_fetch` | Требовать HTTP Signatures на ActivityPub GET (по умолчанию **true**); `GET /actor` остаётся публичным |
 | `auth.reset` / `mailer` | Email для сброса пароля (`public_base_url`, SMTP или log-драйвер) |
 | `auth.captcha` | Опциональный ALTCHA PoW на регистрацию/вход/«забыли» (`enabled`, опционально `hmac_secret` / `cost` / `expires_seconds`) |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) или `json` (prod). По умолчанию: `info` + `json`. Отладочный вывод Gin (`[GIN-debug]`) включается только при `logging.level: debug`; иначе Gin в release mode |
@@ -51,6 +52,7 @@ go run . --config config-examples/config.prod.tls.yaml
 
 - Федерация требует HTTPS (`tls.mode: static` или `autocert`). С `tls.mode: off` она не работает.
 - При включённой федерации лайки удалённых тренировок доставляются как ActivityPub `Like` / `Undo`, комментарии — как `Create`/`Delete` Note (`inReplyTo`); локальные тренировки принимают входящие лайки и комментарии с других инстансов. Лайки и комментарии на том же инстансе работают без федерации. Удаление аккаунта (`DELETE /api/v1/auth/me`) доставляет `Delete` локального актора в известные удалённые inbox (best-effort) перед очисткой локальных данных; inbox применяет удалённый actor `Delete`, очищая федеративный кэш этого владельца для получателя.
+- Запросы между серверами используют **HTTP Signatures** (draft cavage-12, RSA-SHA256): исходящие activity подписываются; входящие `POST` в user и shared inbox требуют валидную подпись. Исходящие fetch актора/ключа подписываются instance actor (`GET /actor`). При `federation.authorized_fetch: true` (по умолчанию) ActivityPub GET акторов и outbox тоже требуют подпись (`Vary: Signature`). Ставьте `authorized_fetch: false` только для отладки между доверенными локальными инстансами.
 - Устаревшие конфиги с `server.tls.enabled: true` (без `mode`) трактуются как `mode: static`.
 
 ## Регистрация {#registration}

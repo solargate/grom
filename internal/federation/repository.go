@@ -7,9 +7,10 @@ import (
 )
 
 type InboundFollower struct {
-	ActorURI string `yaml:"actor_uri" json:"actor_uri"`
-	Inbox    string `yaml:"inbox" json:"inbox"`
-	Handle   string `yaml:"handle" json:"handle"`
+	ActorURI    string `yaml:"actor_uri" json:"actor_uri"`
+	Inbox       string `yaml:"inbox" json:"inbox"`
+	SharedInbox string `yaml:"shared_inbox,omitempty" json:"shared_inbox,omitempty"`
+	Handle      string `yaml:"handle" json:"handle"`
 }
 
 type FollowersRepository interface {
