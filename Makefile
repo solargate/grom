@@ -60,7 +60,7 @@ gencerts:
 test: test-go test-ui test-scripts
 
 test-go:
-	go test ./...
+	go test -v ./...
 
 test-scripts: venv
 	scripts/changelog_notes_test.sh
