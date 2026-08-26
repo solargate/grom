@@ -577,5 +577,9 @@ func TestInboxProcessorAutoAcceptFollows(t *testing.T) {
 	if object["id"] != server.URL+"/follows/1" || object["type"] != "Follow" {
 		t.Fatalf("unexpected Accept object: %#v", object)
 	}
+	to, _ := gotAccept["to"].([]any)
+	if len(to) != 1 || to[0] != server.URL+"/users/bob" {
+		t.Fatalf("Accept to = %#v, want [%s/users/bob]", gotAccept["to"], server.URL)
+	}
 }
 

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Server:** Race between async profile sport refresh and remembering a newly used sport type could drop entries from `used_sport_types`
+- **Server:** Federated `Accept` delivered to the shared inbox no longer leaves the follow stuck in `pending` (route by follower / follow activity id)
 
 ## [0.11.0] - 2026-08-23
 

@@ -446,6 +446,20 @@ func (s *Service) ActivateFollowByActivityID(activityID string) error {
 	return err
 }
 
+// LocalNicknameForFollowActivityID returns the local follower nickname for a Follow activity id
+// (any status, including pending). Used to route Accept activities via the shared inbox.
+func (s *Service) LocalNicknameForFollowActivityID(activityID string) (string, error) {
+	follow, err := s.follows.FindByFollowActivityID(activityID)
+	if err != nil {
+		return "", err
+	}
+	u, err := s.users.FindByID(follow.FollowerID)
+	if err != nil {
+		return "", err
+	}
+	return u.Nickname, nil
+}
+
 func (s *Service) HandleIncomingAccept(followActivityID string) error {
 	// Updated when federation inbox is wired.
 	return nil

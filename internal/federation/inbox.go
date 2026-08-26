@@ -146,6 +146,7 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 				"actor":  followerActor,
 				"object": targetActor,
 			},
+			"to": []string{followerActor},
 		}
 		inbox := p.delivery.resolveInboxURL(followerActor)
 		if inbox == "" {

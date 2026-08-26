@@ -45,6 +45,25 @@ func (p *InboxProcessor) ResolveSharedInboxRecipients(activity map[string]any) [
 				}
 			}
 		}
+	case "Accept":
+		// Accept activates a pending Follow owned by the original follower (object.actor).
+		// Do not rely on ListActiveByTarget — the follow is still pending.
+		if obj, ok := activity["object"].(map[string]any); ok {
+			if actor, _ := obj["actor"].(string); actor != "" {
+				if nick, ok := LocalActorNickname(actor); ok {
+					add(nick)
+				}
+			}
+			if followID, _ := obj["id"].(string); followID != "" && p.social != nil {
+				if nick, err := p.social.LocalNicknameForFollowActivityID(followID); err == nil {
+					add(nick)
+				}
+			}
+		} else if followID := objectIDString(activity); followID != "" && p.social != nil {
+			if nick, err := p.social.LocalNicknameForFollowActivityID(followID); err == nil {
+				add(nick)
+			}
+		}
 	case "Undo":
 		if obj, ok := activity["object"].(map[string]any); ok {
 			if obj["type"] == "Follow" {
