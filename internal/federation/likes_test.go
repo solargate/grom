@@ -115,9 +115,13 @@ type captureRoundTripper struct {
 }
 
 func (c *captureRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
+	var body []byte
+	if req.Body != nil {
+		var err error
+		body, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var activity map[string]any
 	_ = json.Unmarshal(body, &activity)

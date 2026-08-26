@@ -1,10 +1,9 @@
 package v1_test
 
 import (
-	"bytes"
-	"encoding/json"
+	"crypto/rand"
+	"crypto/rsa"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -393,19 +392,19 @@ func TestFederationInboxAppliesRemoteActorDelete(t *testing.T) {
 		t.Fatalf("seed comments: %#v err=%v", comments, err)
 	}
 
-	deleteBody, err := json.Marshal(map[string]any{
+	deleteObj := map[string]any{
 		"@context": "https://www.w3.org/ns/activitystreams",
 		"type":     "Delete",
 		"actor":    actorURL,
 		"object":   actorURL,
-	})
+	}
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/users/alice/inbox", bytes.NewReader(deleteBody))
-	req.Header.Set("Content-Type", "application/activity+json")
-	w := httptest.NewRecorder()
-	ta.router.ServeHTTP(w, req)
+	keyID := actorURL + "#main-key"
+	ta.installRemoteKey(t, priv, keyID, actorURL)
+	w := ta.postSignedActivity(t, "/users/alice/inbox", deleteObj, priv, keyID)
 	expectStatus(t, w, http.StatusAccepted)
 
 	items, err := ta.app.Federation.Inbox().List("alice")

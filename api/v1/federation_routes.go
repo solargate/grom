@@ -2,7 +2,9 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -10,11 +12,13 @@ import (
 	"github.com/solargate/grom/internal/avatars"
 	"github.com/solargate/grom/internal/config"
 	fed "github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/federation/httpsig"
 )
 
 func (a *App) registerFederationRoutes(router *gin.Engine) {
 	router.GET("/.well-known/webfinger", a.webfingerHandler())
 	router.GET("/users/:nickname/avatar", a.publicAvatarHandler())
+	router.GET("/actor", a.instanceActorHandler())
 	router.GET("/users/:nickname", a.actorHandler())
 	router.POST("/users/:nickname/inbox", a.inboxHandler())
 	router.GET("/users/:nickname/outbox", a.outboxHandler())
@@ -63,11 +67,52 @@ func (a *App) webfingerHandler() gin.HandlerFunc {
 	}
 }
 
+func (a *App) instanceActorHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if !wantsActivityJSON(ctx) {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		ak, err := fed.LoadOrCreateInstanceActorKey(a.Blobs)
+		if err != nil {
+			logInternalError(ctx, "failed to load instance actor key", err)
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+		id := fmt.Sprintf("https://%s/actor", publicDomain())
+		ctx.Header("Content-Type", "application/activity+json")
+		ctx.JSON(http.StatusOK, gin.H{
+			"@context": []string{
+				"https://www.w3.org/ns/activitystreams",
+				"https://w3id.org/security/v1",
+			},
+			"id":                id,
+			"type":              "Application",
+			"preferredUsername": "actor",
+			"name":              config.Cfg.Server.Name,
+			"inbox":             fmt.Sprintf("https://%s/inbox", publicDomain()),
+			"outbox":            id + "/outbox",
+			"url":               id,
+			"publicKey": gin.H{
+				"id":           ak.KeyID,
+				"owner":        id,
+				"publicKeyPem": ak.PubPEM,
+			},
+			"endpoints": gin.H{
+				"sharedInbox": fmt.Sprintf("https://%s/inbox", publicDomain()),
+			},
+		})
+	}
+}
+
 func (a *App) actorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if !strings.Contains(ctx.GetHeader("Accept"), "application/activity+json") &&
-			!strings.Contains(ctx.GetHeader("Accept"), "application/ld+json") {
+		if !wantsActivityJSON(ctx) {
 			ctx.Status(http.StatusNotFound)
+			return
+		}
+		if err := a.requireAuthorizedFetch(ctx); err != nil {
+			ctx.Status(http.StatusUnauthorized)
 			return
 		}
 		user, err := a.Users.FindByNickname(ctx.Param("nickname"))
@@ -110,6 +155,8 @@ func (a *App) actorHandler() gin.HandlerFunc {
 				"url":       a.publicAvatarURL(user.Nickname),
 			}
 		}
+		ctx.Header("Vary", "Signature, Accept")
+		ctx.Header("Content-Type", "application/activity+json")
 		ctx.JSON(http.StatusOK, response)
 	}
 }
@@ -139,14 +186,26 @@ func (a *App) publicAvatarHandler() gin.HandlerFunc {
 func (a *App) inboxHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		nickname := ctx.Param("nickname")
+		body, err := httpsig.ReadBody(ctx.Request)
+		if err != nil {
+			ctx.Status(http.StatusBadRequest)
+			return
+		}
+		activity, err := decodeJSONObject(body)
+		if err != nil {
+			ctx.Status(http.StatusBadRequest)
+			return
+		}
+		if err := a.authenticateFederationActivity(ctx, body, activity); err != nil {
+			slog.Warn("federation inbox unauthorized", "nickname", nickname, "err", err)
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
 		if a.federationInboxProc != nil {
-			if err := a.federationInboxProc.Handle(nickname, ctx.Request.Body); err != nil {
+			if err := a.federationInboxProc.Handle(nickname, strings.NewReader(string(body))); err != nil {
 				ctx.Status(http.StatusBadRequest)
 				return
 			}
-		} else {
-			var activity map[string]any
-			_ = json.NewDecoder(ctx.Request.Body).Decode(&activity)
 		}
 		ctx.Status(http.StatusAccepted)
 	}
@@ -154,12 +213,41 @@ func (a *App) inboxHandler() gin.HandlerFunc {
 
 func (a *App) sharedInboxHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		body, err := httpsig.ReadBody(ctx.Request)
+		if err != nil {
+			ctx.Status(http.StatusBadRequest)
+			return
+		}
+		activity, err := decodeJSONObject(body)
+		if err != nil {
+			ctx.Status(http.StatusBadRequest)
+			return
+		}
+		if err := a.authenticateFederationActivity(ctx, body, activity); err != nil {
+			slog.Warn("federation shared inbox unauthorized", "err", err)
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+		if a.federationInboxProc != nil {
+			recipients := a.federationInboxProc.ResolveSharedInboxRecipients(activity)
+			for _, nick := range recipients {
+				if err := a.federationInboxProc.Handle(nick, strings.NewReader(string(body))); err != nil {
+					slog.Warn("federation shared inbox handle failed", "nickname", nick, "err", err)
+				}
+			}
+		}
 		ctx.Status(http.StatusAccepted)
 	}
 }
 
 func (a *App) outboxHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if err := a.requireAuthorizedFetch(ctx); err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+		ctx.Header("Vary", "Signature, Accept")
+		ctx.Header("Content-Type", "application/activity+json")
 		ctx.JSON(http.StatusOK, gin.H{
 			"@context":     "https://www.w3.org/ns/activitystreams",
 			"id":           actorURL(ctx.Param("nickname")) + "/outbox",
@@ -172,4 +260,43 @@ func (a *App) outboxHandler() gin.HandlerFunc {
 
 func (a *App) publicAvatarURL(nickname string) string {
 	return avatars.PublicURL(publicDomain(), nickname)
+}
+
+func wantsActivityJSON(ctx *gin.Context) bool {
+	accept := ctx.GetHeader("Accept")
+	return strings.Contains(accept, "application/activity+json") ||
+		strings.Contains(accept, "application/ld+json")
+}
+
+func (a *App) requireAuthorizedFetch(ctx *gin.Context) error {
+	if !fed.AuthorizedFetchRequired() {
+		return nil
+	}
+	body, err := httpsig.ReadBody(ctx.Request)
+	if err != nil {
+		return err
+	}
+	if a.federationKeyResolver == nil {
+		return errors.New("key resolver unavailable")
+	}
+	_, _, err = fed.AuthenticateRequest(ctx.Request, body, a.federationKeyResolver)
+	return err
+}
+
+func (a *App) authenticateFederationActivity(ctx *gin.Context, body []byte, activity map[string]any) error {
+	if a.federationKeyResolver == nil {
+		return errors.New("key resolver unavailable")
+	}
+	return fed.AuthenticateActivity(ctx.Request, body, activity, a.federationKeyResolver)
+}
+
+func decodeJSONObject(body []byte) (map[string]any, error) {
+	var activity map[string]any
+	if err := json.Unmarshal(body, &activity); err != nil {
+		return nil, err
+	}
+	if activity == nil {
+		return nil, errors.New("empty activity")
+	}
+	return activity, nil
 }

@@ -32,9 +32,6 @@ func (s *FederationFollowersStore) Add(nickname string, follower federation.Inbo
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketFedFollowers)
 		key := fedFollowerKey(nickname, follower.ActorURI)
-		if b.Get(key) != nil {
-			return nil
-		}
 		return b.Put(key, raw)
 	})
 }
@@ -61,13 +58,7 @@ func (s *FederationFollowersStore) ListInboxes(nickname string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	inboxes := make([]string, 0, len(followers))
-	for i := range followers {
-		if followers[i].Inbox != "" {
-			inboxes = append(inboxes, followers[i].Inbox)
-		}
-	}
-	return inboxes, nil
+	return federation.DeduplicateDeliveryInboxes(followers), nil
 }
 
 func (s *FederationFollowersStore) Remove(nickname, actorURI string) error {

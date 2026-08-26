@@ -11,6 +11,8 @@ federation:
   enabled: true
   domain: "192.168.1.251:8443"
   auto_accept_follows: true
+  # Easier dual-instance local debugging (unsigned AP GETs). Production should omit / leave true.
+  authorized_fetch: false
   ca_cert_file: tls/ca.crt
   tls_insecure_skip_verify: true
 

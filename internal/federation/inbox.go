@@ -1,6 +1,7 @@
 package federation
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -107,10 +108,27 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 		if handle == "" {
 			handle = followerActor
 		}
+		inboxURL := strings.TrimSuffix(followerActor, "/") + "/inbox"
+		sharedInbox := ""
+		if p.delivery != nil {
+			parsed := social.ParsedHandle{
+				Nickname: ownerNicknameFromDir(OwnerKeyFromHandle(handle)),
+				Domain:   domainFromHandle(handle),
+				Handle:   handle,
+			}
+			if actor, err := fetchActor(p.delivery.Client(), p.delivery.blobs, parsed); err == nil {
+				endpoints := ExtractActorEndpoints(actor)
+				if endpoints.Inbox != "" {
+					inboxURL = endpoints.Inbox
+				}
+				sharedInbox = endpoints.SharedInbox
+			}
+		}
 		_ = p.followersStore.Add(targetNickname, InboundFollower{
-			ActorURI: followerActor,
-			Inbox:    strings.TrimSuffix(followerActor, "/") + "/inbox",
-			Handle:   handle,
+			ActorURI:    followerActor,
+			Inbox:       inboxURL,
+			SharedInbox: sharedInbox,
+			Handle:      handle,
 		})
 		p.cacheInboundFollowerAvatar(targetNickname, handle)
 	}
@@ -129,7 +147,10 @@ func (p *InboxProcessor) handleFollow(targetNickname string, activity map[string
 				"object": targetActor,
 			},
 		}
-		inbox := strings.TrimSuffix(followerActor, "/") + "/inbox"
+		inbox := p.delivery.resolveInboxURL(followerActor)
+		if inbox == "" {
+			inbox = strings.TrimSuffix(followerActor, "/") + "/inbox"
+		}
 		return p.delivery.postActivity(inbox, accept)
 	}
 	return nil
@@ -144,7 +165,7 @@ func (p *InboxProcessor) cacheInboundFollowerAvatar(targetNickname, handle strin
 		Domain:   domainFromHandle(handle),
 		Handle:   handle,
 	}
-	actor, err := fetchActor(p.delivery.Client(), parsed)
+	actor, err := fetchActor(p.delivery.Client(), p.delivery.blobs, parsed)
 	if err != nil {
 		return
 	}
@@ -267,7 +288,7 @@ func (p *InboxProcessor) handleWorkoutActivity(viewerNickname string, activity m
 			Domain:   domainFromHandle(ownerHandle),
 			Handle:   ownerHandle,
 		}
-		if fetched, err := fetchActor(p.delivery.client, parsed); err == nil {
+		if fetched, err := fetchActor(p.delivery.client, p.delivery.blobs, parsed); err == nil {
 			actorDoc = fetched
 		}
 	}
@@ -478,7 +499,7 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 			Domain:   domainFromHandle(handle),
 			Handle:   handle,
 		}
-		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
+		if fetched, err := fetchActor(p.delivery.Client(), p.delivery.blobs, parsed); err == nil {
 			if name := ExtractActorName(fetched); name != "" {
 				actorUser.Name = name
 			}
@@ -541,7 +562,7 @@ func (p *InboxProcessor) handleCommentCreate(targetNickname string, activity, ob
 			Domain:   domainFromHandle(handle),
 			Handle:   handle,
 		}
-		if fetched, err := fetchActor(p.delivery.Client(), parsed); err == nil {
+		if fetched, err := fetchActor(p.delivery.Client(), p.delivery.blobs, parsed); err == nil {
 			if name := ExtractActorName(fetched); name != "" {
 				actorUser.Name = name
 			}
@@ -914,12 +935,23 @@ func (d *Delivery) postActivity(inbox string, activity map[string]any) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, inbox, strings.NewReader(string(body)))
+	req, err := http.NewRequest(http.MethodPost, inbox, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/activity+json")
 	req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
+
+	actorURI, _ := activity["actor"].(string)
+	nick := nicknameFromActorURL(actorURI)
+	if d.blobs != nil && nick != "" {
+		if err := signOutboundPOST(d.blobs, nick, req, body); err != nil {
+			return fmt.Errorf("sign activity: %w", err)
+		}
+	} else if nick != "" {
+		slog.Debug("federation activity post without signature (no key store)", "inbox", inbox, "actor", actorURI)
+	}
+
 	resp, err := d.client.Do(req)
 	if err != nil {
 		return err
