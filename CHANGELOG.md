@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Server:** Federated workout `Like` / `Undo` (and comment Note Create/Delete) delivered to the shared inbox are routed to the workout owner; outbound likes address the owner in `to`
 - **Server:** Race between async profile sport refresh and remembering a newly used sport type could drop entries from `used_sport_types`
 - **Server:** Federated `Accept` delivered to the shared inbox no longer leaves the follow stuck in `pending` (route by follower / follow activity id)
 

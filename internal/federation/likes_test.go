@@ -325,6 +325,10 @@ func TestDeliverWorkoutLikeAndUndo(t *testing.T) {
 	if like["id"] != activityID {
 		t.Fatalf("id = %v", like["id"])
 	}
+	to := stringOrSlice(like["to"])
+	if len(to) != 2 || to[0] != "https://www.w3.org/ns/activitystreams#Public" || to[1] != "https://remote.test/users/bob" {
+		t.Fatalf("to = %#v", like["to"])
+	}
 	if !strings.HasSuffix(transport.requests[0].URL.String(), "/users/bob/inbox") {
 		t.Fatalf("inbox url = %s", transport.requests[0].URL.String())
 	}

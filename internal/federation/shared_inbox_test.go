@@ -68,3 +68,68 @@ func TestResolveSharedInboxRecipientsAcceptViaToHeader(t *testing.T) {
 		t.Fatalf("recipients = %#v, want [carol]", got)
 	}
 }
+
+func TestResolveSharedInboxRecipientsLikeViaWorkoutObject(t *testing.T) {
+	prev := config.Cfg
+	t.Cleanup(func() { config.Cfg = prev })
+	config.Cfg.Federation.Domain = "grom.test"
+
+	proc := NewInboxProcessor(nil, nil, nil, nil, nil)
+	activity := map[string]any{
+		"type":   "Like",
+		"actor":  "https://remote.test/users/alice",
+		"object": "https://grom.test/users/bob/workouts/38472901",
+		"to":     []any{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	got := proc.ResolveSharedInboxRecipients(activity)
+	if len(got) != 1 || got[0] != "bob" {
+		t.Fatalf("recipients = %#v, want [bob]", got)
+	}
+}
+
+func TestResolveSharedInboxRecipientsUndoLikeViaNestedObject(t *testing.T) {
+	prev := config.Cfg
+	t.Cleanup(func() { config.Cfg = prev })
+	config.Cfg.Federation.Domain = "grom.test"
+
+	proc := NewInboxProcessor(nil, nil, nil, nil, nil)
+	activity := map[string]any{
+		"type":  "Undo",
+		"actor": "https://remote.test/users/alice",
+		"object": map[string]any{
+			"type":   "Like",
+			"id":     "https://remote.test/users/alice/activities/1",
+			"actor":  "https://remote.test/users/alice",
+			"object": "https://grom.test/users/bob/workouts/38472901",
+		},
+		"to": []any{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	got := proc.ResolveSharedInboxRecipients(activity)
+	if len(got) != 1 || got[0] != "bob" {
+		t.Fatalf("recipients = %#v, want [bob]", got)
+	}
+}
+
+func TestResolveSharedInboxRecipientsCommentCreateViaInReplyTo(t *testing.T) {
+	prev := config.Cfg
+	t.Cleanup(func() { config.Cfg = prev })
+	config.Cfg.Federation.Domain = "grom.test"
+
+	proc := NewInboxProcessor(nil, nil, nil, nil, nil)
+	// Only Public in to — owner must come from inReplyTo (workout URL).
+	activity := map[string]any{
+		"type":  "Create",
+		"actor": "https://remote.test/users/alice",
+		"object": map[string]any{
+			"type":      "Note",
+			"id":        "https://remote.test/users/alice/notes/1",
+			"content":   "nice",
+			"inReplyTo": "https://grom.test/users/bob/workouts/38472901",
+		},
+		"to": []any{"https://www.w3.org/ns/activitystreams#Public"},
+	}
+	got := proc.ResolveSharedInboxRecipients(activity)
+	if len(got) != 1 || got[0] != "bob" {
+		t.Fatalf("recipients = %#v, want [bob]", got)
+	}
+}

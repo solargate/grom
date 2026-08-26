@@ -64,13 +64,36 @@ func (p *InboxProcessor) ResolveSharedInboxRecipients(activity map[string]any) [
 				add(nick)
 			}
 		}
+	case "Like":
+		// Like of a local workout: object is the workout URL (owner is /users/{nick}/...).
+		addLocalOwnerFromObjectRef(add, activity["object"])
 	case "Undo":
 		if obj, ok := activity["object"].(map[string]any); ok {
-			if obj["type"] == "Follow" {
+			switch obj["type"] {
+			case "Follow":
 				if id, _ := obj["object"].(string); id != "" {
 					if nick, ok := LocalActorNickname(id); ok {
 						add(nick)
 					}
+				}
+			case "Like":
+				addLocalOwnerFromObjectRef(add, obj["object"])
+			}
+		}
+	case "Create":
+		// Comment Create embeds Note with inReplyTo = workout URL.
+		if obj, ok := activity["object"].(map[string]any); ok {
+			if obj["type"] == "Note" {
+				if inReplyTo := stringValue(obj, "inReplyTo"); inReplyTo != "" {
+					addLocalOwnerFromObjectRef(add, inReplyTo)
+				}
+			}
+		}
+	case "Delete":
+		if obj, ok := activity["object"].(map[string]any); ok {
+			if obj["type"] == "Note" {
+				if inReplyTo := stringValue(obj, "inReplyTo"); inReplyTo != "" {
+					addLocalOwnerFromObjectRef(add, inReplyTo)
 				}
 			}
 		}
@@ -90,4 +113,21 @@ func (p *InboxProcessor) ResolveSharedInboxRecipients(activity map[string]any) [
 	}
 
 	return out
+}
+
+// addLocalOwnerFromObjectRef adds the local nickname when raw is a local actor or
+// object URL under /users/{nick}/… (e.g. workout id).
+func addLocalOwnerFromObjectRef(add func(string), raw any) {
+	switch v := raw.(type) {
+	case string:
+		if nick, ok := LocalActorNickname(v); ok {
+			add(nick)
+		}
+	case map[string]any:
+		if id, _ := v["id"].(string); id != "" {
+			if nick, ok := LocalActorNickname(id); ok {
+				add(nick)
+			}
+		}
+	}
 }

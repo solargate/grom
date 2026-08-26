@@ -179,7 +179,7 @@ func (d *Delivery) DeliverWorkoutLike(actorNickname, targetHandle, objectID stri
 		"type":     "Like",
 		"actor":    actorURL(actorNickname),
 		"object":   objectID,
-		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
+		"to":       []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
 	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
 	if d.blobs != nil {
@@ -212,7 +212,7 @@ func (d *Delivery) DeliverWorkoutUndoLike(actorNickname, targetHandle, objectID,
 			"actor":  actorURL(actorNickname),
 			"object": objectID,
 		},
-		"to": []string{"https://www.w3.org/ns/activitystreams#Public"},
+		"to": []string{"https://www.w3.org/ns/activitystreams#Public", targetActor},
 	}
 	inbox := strings.TrimSuffix(targetActor, "/") + "/inbox"
 	if d.blobs != nil {
