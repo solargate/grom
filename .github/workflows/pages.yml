@@ -50,7 +50,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Build documentation site
-        run: mkdocs build --strict
+        run: |
+          mkdocs build --strict
+          cp docs/CNAME site/CNAME
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

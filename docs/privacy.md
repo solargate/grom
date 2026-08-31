@@ -6,10 +6,10 @@ This Privacy Policy describes how the **Grom** Android application and web clien
 
 Grom is a **self-hosted** workout tracker. The App connects to a **Grom server URL that you choose**. Account data and workouts are stored on **that** server. There is no single central “official Grom cloud.” The App publisher may operate one or more public instances for testing or personal use; those are **not** designated as an official product cloud, and hosts may change over time.
 
-- Documentation site (including this policy): [https://solargate.github.io/grom/](https://solargate.github.io/grom/)
-- This policy on the web: [https://solargate.github.io/grom/privacy/](https://solargate.github.io/grom/privacy/)
+- Documentation site (including this policy): [https://grom.solargate.team/](https://grom.solargate.team/)
+- This policy on the web: [https://grom.solargate.team/privacy/](https://grom.solargate.team/privacy/)
 - Source code: [https://github.com/solargate/grom](https://github.com/solargate/grom)
-- Account deletion guide: [https://solargate.github.io/grom/user/delete-account/](https://solargate.github.io/grom/user/delete-account/)
+- Account deletion guide: [https://grom.solargate.team/user/delete-account/](https://grom.solargate.team/user/delete-account/)
 
 **Contact**
 
@@ -173,7 +173,7 @@ Processing on a publisher-operated instance is typically necessary to provide th
 
 ## 12. Changes
 
-We may update this policy. The “Last updated” date will change, and the current version will be published at [https://solargate.github.io/grom/privacy/](https://solargate.github.io/grom/privacy/). Where required by law, we will provide additional notice of material changes.
+We may update this policy. The “Last updated” date will change, and the current version will be published at [https://grom.solargate.team/privacy/](https://grom.solargate.team/privacy/). Where required by law, we will provide additional notice of material changes.
 
 ## 13. Open-source software
 

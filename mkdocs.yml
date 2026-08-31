@@ -1,6 +1,6 @@
 site_name: Grom
 site_description: Self-hosted workout tracker with optional ActivityPub federation
-site_url: https://solargate.github.io/grom/
+site_url: https://grom.solargate.team/
 repo_url: https://github.com/solargate/grom
 repo_name: solargate/grom
 edit_uri: edit/master/docs/

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **UI:** My workouts list layout on mobile: rows are flush with full-width thin dividers instead of 8 px gaps; card layout and web unchanged
 - **Docs:** Federation configuration documents HTTP Signatures, authorized fetch, and the instance actor
+- **Docs:** documentation site custom domain [https://grom.solargate.team/](https://grom.solargate.team/) (was `https://solargate.github.io/grom/`)
+- **UI:** About screen privacy policy link points to `https://grom.solargate.team/privacy/`
 
 ### Fixed
 
@@ -90,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logged-out Home screen: Grom logo and name, short product blurb, sign-in/register actions, and a mobile-only hint to enter the server address
 - Account deletion from the profile menu: password confirmation, permanent wipe of user data (file and bbolt), ActivityPub `Delete` of the actor (best-effort), and incoming `Delete` Person handling in the federation inbox
 - Profile screen: overflow menu (edit profile, delete account)
-- Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://solargate.github.io/grom/`, including Privacy Policy at `/privacy/`
+- Documentation site on GitHub Pages (MkDocs Material): full `docs/` published at `https://grom.solargate.team/`, including Privacy Policy at `/privacy/`
 - Docs site locales: full Russian (`/ru/`) and German (`/de/`) translations via `mkdocs-static-i18n` (English remains canonical; Privacy Policy stays English-only for all locales)
 - User docs: [Delete your Grom account](docs/user/delete-account.md) (web and Android steps, what data is removed; published at `/user/delete-account/` on the docs site)
 - Privacy Policy content for Google Play and self-hosted use (roles, location/fitness data, optional Google Drive, federation, account deletion, 13+); About screen link to the published policy

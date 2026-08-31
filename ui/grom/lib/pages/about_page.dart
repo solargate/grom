@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'about_page_url.dart' if (dart.library.html) 'about_page_url_web.dart';
 
 const projectRepositoryUrl = 'https://github.com/solargate/grom';
-const privacyPolicyUrl = 'https://solargate.github.io/grom/privacy/';
+const privacyPolicyUrl = 'https://grom.solargate.team/privacy/';
 const openStreetMapCopyrightUrl = 'https://www.openstreetmap.org/copyright';
 
 class AboutPage extends StatelessWidget {

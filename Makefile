@@ -30,6 +30,7 @@ venv: $(VENV_STAMP)
 
 docs: venv
 	$(MKDOCS) build --strict
+	cp docs/CNAME site/CNAME
 
 docs-serve: venv
 	$(MKDOCS) serve
