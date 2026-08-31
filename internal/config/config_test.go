@@ -457,3 +457,21 @@ func TestHostWithoutPort(t *testing.T) {
 		t.Fatalf("HostWithoutPort = %q", got)
 	}
 }
+
+func TestAuthorizedFetchEnabledDefaultTrue(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Federation.Enabled = true
+	if !cfg.AuthorizedFetchEnabled() {
+		t.Fatal("expected default authorized_fetch true when unset")
+	}
+}
+
+func TestAuthorizedFetchEnabledExplicitFalse(t *testing.T) {
+	cfg := config.Config{}
+	cfg.Federation.Enabled = true
+	off := false
+	cfg.Federation.AuthorizedFetch = &off
+	if cfg.AuthorizedFetchEnabled() {
+		t.Fatal("expected authorized_fetch false")
+	}
+}

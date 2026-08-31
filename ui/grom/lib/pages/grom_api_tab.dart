@@ -10,14 +10,17 @@ import '../auth_storage.dart';
 enum _PatExpiryMode { days90, days180, custom, none }
 
 class GromApiTab extends StatefulWidget {
-  const GromApiTab({super.key});
+  const GromApiTab({super.key, this.api});
+
+  /// Optional API client override (tests).
+  final ApiRequest? api;
 
   @override
   State<GromApiTab> createState() => _GromApiTabState();
 }
 
 class _GromApiTabState extends State<GromApiTab> {
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api ?? ApiRequest();
 
   List<PersonalAccessToken> _tokens = [];
   bool _isLoading = true;
