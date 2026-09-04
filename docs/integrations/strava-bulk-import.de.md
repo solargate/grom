@@ -75,10 +75,19 @@ Ignorierte Spalten umfassen Col 7 (lokalisierte Distanz in km) — stattdessen C
 
 ## Ausrüstung
 
+`activities.csv` (Col 12) enthält den Anzeigenamen der Ausrüstung, während `bikes.csv`
+und `shoes.csv` die Bestandteile in getrennten Spalten führen (Col 1 = Spitzname,
+Col 2 = Marke, Col 3 = Modell). Die Spitzname-Spalte ist leer, wenn die Ausrüstung keinen
+eigenen Namen hat, deshalb gleicht Grom alle Kombinationen dieser Bestandteile ab und
+nicht nur den Spitznamen.
+
 1. Aktivitäts-Ausrüstungsname (Col 12) mit vorhandener Ausrüstung des Nutzers abgleichen.
-2. Falls nicht gefunden, in `bikes.csv` nachschlagen (Col 1 = Name) → `bike` erzeugen.
+2. Falls nicht gefunden, in `bikes.csv` nachschlagen → `bike` erzeugen.
 3. Sonst in `shoes.csv` nachschlagen → `shoes` erzeugen.
 4. Sonst `other`-Ausrüstung mit dem gegebenen Namen erzeugen.
+
+Ausrüstung aus `bikes.csv` / `shoes.csv` wird mit dem Spitznamen als Name angelegt (sonst
+`Marke Modell`), zusätzlich mit Marke und Modell.
 
 ## Locale-Erkennung
 
