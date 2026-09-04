@@ -428,13 +428,13 @@ jobs:
           name: android-aab
           path: dist
 
-      - name: Upload AAB to Play (closed testing draft)
+      - name: Upload AAB to Play (open testing draft)
         uses: r0adkll/upload-google-play@v1.1.5
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.solargate.grom
           releaseFiles: dist/grom-*.aab
-          tracks: alpha
+          tracks: beta
           status: draft
           releaseName: Grom ${{ needs.validate.outputs.version }}
           whatsNewDirectory: play/whatsnew
