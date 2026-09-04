@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CI:** Release CI uploads the Android AAB to Google Play open testing (`beta`) as a draft, instead of closed testing (`alpha`)
+
 ## [0.12.0] - 2026-09-04
 
 ### Google Play
