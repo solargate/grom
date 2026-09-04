@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized
+
 ## [0.12.0] - 2026-09-04
 
 ### Google Play

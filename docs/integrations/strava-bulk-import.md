@@ -75,10 +75,18 @@ Ignored columns include col 7 (localized distance in km) — use col 18 (meters)
 
 ## Equipment
 
+`activities.csv` (col 12) stores the gear display name, while `bikes.csv` and `shoes.csv`
+keep the parts in separate columns (col 1 = nickname, col 2 = brand, col 3 = model). The
+nickname column is empty when the gear has no custom name, so Grom matches on every
+combination of these parts instead of the nickname alone.
+
 1. Match activity equipment name (col 12) against the user's existing equipment.
-2. If not found, look up `bikes.csv` (col 1 = name) → create `bike`.
+2. If not found, look up `bikes.csv` → create `bike`.
 3. Else look up `shoes.csv` → create `shoes`.
 4. Else create `other` equipment with the given name.
+
+Gear from `bikes.csv` / `shoes.csv` is created with the nickname as name (falling back to
+`brand model`), plus brand and model.
 
 ## Locale detection
 
