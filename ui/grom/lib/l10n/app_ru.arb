@@ -479,33 +479,16 @@
     }
   },
   "stravaImportInProgress": "Импорт уже выполняется",
-  "healthSyncGoogleDrive": "Health Sync + Google Drive",
-  "healthSyncImportDescriptionBefore": "Вы можете использовать приложение ",
-  "healthSyncImportDescriptionLink": "Health Sync",
-  "healthSyncImportDescriptionAfter": " для синхронизации тренировок из различных сервисов с вашим Google Drive. Эти тренировки из Google Drive можно импортировать в Grom.",
-  "healthSyncPlayStoreUrl": "https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync",
-  "healthSyncSyncToggle": "Синхронизация Health Sync + Google Drive",
-  "healthSyncFolderLabel": "Папка Health Sync",
-  "healthSyncSync": "Синхронизация",
-  "healthSyncSynchronizing": "Синхронизация…",
-  "healthSyncImported": "Импортировано {count} тренировок",
-  "@healthSyncImported": {
+  "importTracksTitle": "Импорт треков",
+  "importTracksDescription": "Выберите один или несколько файлов GPX или FIT на устройстве. В системном выборе файлов при необходимости можно открыть Google Drive или другой источник. Каждый файл становится тренировкой; дубликаты пропускаются.",
+  "importTracksButton": "Импортировать треки",
+  "importTracksResult": "Импорт завершён: создано {created}, пропущено {skipped}, неверных {invalid}, ошибок {failed}",
+  "@importTracksResult": {
     "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "healthSyncNoNewWorkouts": "Новых тренировок не найдено",
-  "healthSyncFolderNotFound": "Папка Health Sync не найдена в Google Drive",
-  "healthSyncFolderEmpty": "Папка Health Sync пуста",
-  "healthSyncFolderNameRequired": "Укажите имя папки Health Sync",
-  "healthSyncFindFolder": "Найти папку Health Sync",
-  "healthSyncGoogleSignInCancelled": "Вход в Google отменён",
-  "healthSyncGoogleSignInFailed": "Не удалось войти в Google",
-  "healthSyncDriveAccessDenied": "Доступ к Google Drive запрещён",
-  "healthSyncSyncError": "Импорт Health Sync не удался: {message}",
-  "@healthSyncSyncError": {
-    "placeholders": {
-      "message": { "type": "String" }
+      "created": { "type": "int" },
+      "skipped": { "type": "int" },
+      "invalid": { "type": "int" },
+      "failed": { "type": "int" }
     }
   },
   "integrationTabGrom": "Grom",

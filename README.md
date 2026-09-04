@@ -24,7 +24,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
 - **Federation** — optional ActivityPub so instances can follow each other across the network
 - **Strava import** — bulk-import a Strava data export ZIP
-- **Health Sync** — import activities from Google Drive on Android (Health Sync exports)
+- **Import tracks** — multi-select GPX/FIT via the system file picker (web and Android)
 - **API tokens** — scoped personal access tokens (`grom_pat_…`) for workouts and equipment
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
 - **Locales** — English, Russian, and German in the Flutter UI
@@ -54,11 +54,11 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 
 - **[Docs index](docs/README.md)** — user and admin guides
 - [About the project](docs/about.md) — mission, pillars, and why Grom exists
-- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, Health Sync)
+- [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, track import)
 - [Approved Grom servers](docs/user/approved-servers.md) — Android server picker and how to list a public instance
 - [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)
 - [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
-- [Health Sync + Google Drive](docs/integrations/health-sync-google-drive.md) — Android import from Health Sync via Drive
+- [Import tracks](docs/integrations/import-tracks.md) — GPX/FIT via system file picker
 - [Install and run](docs/admin/install.md) — build and start the server
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset, captcha
 - [Privacy policy](docs/privacy.md)

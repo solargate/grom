@@ -20,7 +20,7 @@ This page is a short tour of the main screens (screenshots below are from Androi
 
 ## Workouts
 
-Your home feed lists activities with type, date, device, distance/time (and pace or elevation when relevant), plus a map preview when a GPS track is attached. On **Home**, the **My workouts** tab can filter by sport type: use the filter icon in the app bar (shown only on that tab when you have at least one used sport) to show toggle chips for sports from your profile. The same tab has a list/cards toggle (between filter and Health Sync when sync is shown): compact rows show sport icon, date, name, and distance or duration depending on the sport category; the choice is remembered on the device. Each card shows a social bar under the map and photos: likes on the left (thumb up to like or unlike someone else’s workout; tap the count for likers) and comments on the right (count + comment icon). You cannot like your own workouts; the like button stays disabled on yours. Anyone can comment on their own or others’ workouts. Tap the comment control to open the thread, add a comment (up to 1000 characters), or delete a comment you wrote (workout owners can also delete any comment on their workout).
+Your home feed lists activities with type, date, device, distance/time (and pace or elevation when relevant), plus a map preview when a GPS track is attached. On **Home**, the **My workouts** tab can filter by sport type: use the filter icon in the app bar (shown only on that tab when you have at least one used sport) to show toggle chips for sports from your profile. The same tab has a list/cards toggle (next to the filter when shown): compact rows show sport icon, date, name, and distance or duration depending on the sport category; the choice is remembered on the device. Each card shows a social bar under the map and photos: likes on the left (thumb up to like or unlike someone else’s workout; tap the count for likers) and comments on the right (count + comment icon). You cannot like your own workouts; the like button stays disabled on yours. Anyone can comment on their own or others’ workouts. Tap the comment control to open the thread, add a comment (up to 1000 characters), or delete a comment you wrote (workout owners can also delete any comment on their workout).
 
 ![Workout list on Android](../screenshots/workout-list.jpg)
 
@@ -50,6 +50,6 @@ When the operator enables ActivityPub federation, you can also follow athletes o
 
 From **Integration → Strava**, upload a [Strava bulk data export](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) ZIP. Grom imports activities, tracks, photos, and equipment. Column mapping and server-side behavior are documented in [Strava bulk import](../integrations/strava-bulk-import.md).
 
-## Health Sync + Google Drive (Android)
+## Import tracks
 
-On Android, **Integration** can enable Health Sync + Google Drive sync. Health Sync writes activity CSV/FIT/GPX files to Drive; Grom imports them from the Home sync button. Setup and OAuth notes: [Health Sync + Google Drive](../integrations/health-sync-google-drive.md).
+On **Integration** → **External services**, **Import tracks** opens the system file picker for one or more `.gpx` / `.fit` files (web and Android). Details and `external_id` dedup: [Import tracks](../integrations/import-tracks.md).

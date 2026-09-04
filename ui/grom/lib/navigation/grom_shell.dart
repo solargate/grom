@@ -1,10 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
@@ -24,7 +21,6 @@ import '../platform/shared_track_intent.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../session.dart';
-import '../services/health_sync_service.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
 import '../widgets/profile_menu.dart';
@@ -66,7 +62,6 @@ class _GromShellState extends State<GromShell> {
   Workout? _feedPhotoViewerWorkout;
 
   bool _isShellReady = false;
-  bool _healthSyncEnabled = false;
   StreamSubscription<SharedTrackPayload>? _sharedTrackSub;
   SharedTrackPayload? _pendingSharedTrack;
   bool _isProcessingSharedTrack = false;
@@ -80,15 +75,6 @@ class _GromShellState extends State<GromShell> {
   VoidCallback? _onToggleMyWorkoutsLayout;
 
   bool get _isLoggedIn => _nickname != null;
-  bool get _isAndroid =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-  bool get _showHealthSyncButton =>
-      _isAndroid &&
-      _healthSyncEnabled &&
-      _selectedDestination == GromDestination.home &&
-      !_isViewingWorkout &&
-      !_isViewingFeedPhoto &&
-      _isLoggedIn;
   bool get _showSportFilterButton =>
       _selectedDestination == GromDestination.home &&
       _sportFilterVisible &&
@@ -118,8 +104,6 @@ class _GromShellState extends State<GromShell> {
   @override
   void initState() {
     super.initState();
-    HealthSyncService.instance.addListener(_onHealthSyncChanged);
-    unawaited(_loadHealthSyncState());
     if (isMobileClient) {
       _sharedTrackSub = watchSharedTracks().listen(_handleIncomingSharedTrack);
     }
@@ -128,93 +112,8 @@ class _GromShellState extends State<GromShell> {
 
   @override
   void dispose() {
-    HealthSyncService.instance.removeListener(_onHealthSyncChanged);
     _sharedTrackSub?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadHealthSyncState() async {
-    await HealthSyncService.instance.loadFromStorage();
-    if (!mounted) {
-      return;
-    }
-    setState(() => _healthSyncEnabled = HealthSyncService.instance.enabled);
-  }
-
-  void _onHealthSyncChanged() {
-    if (!mounted) {
-      return;
-    }
-    setState(() => _healthSyncEnabled = HealthSyncService.instance.enabled);
-  }
-
-  Future<void> _runHealthSync() async {
-    final l10n = AppLocalizations.of(context)!;
-    final service = HealthSyncService.instance;
-
-    if (service.folderName.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.healthSyncFolderNameRequired)),
-      );
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 24),
-            Expanded(child: Text(l10n.healthSyncSynchronizing)),
-          ],
-        ),
-      ),
-    );
-
-    final result = await service.syncWorkouts();
-
-    if (!mounted) {
-      return;
-    }
-    Navigator.of(context, rootNavigator: true).pop();
-
-    final message = healthSyncResultSnackBarMessage(
-      result,
-      imported: l10n.healthSyncImported(result.importedCount),
-      noNewWorkouts: l10n.healthSyncNoNewWorkouts,
-      folderNotFound: l10n.healthSyncFolderNotFound,
-      folderEmpty: l10n.healthSyncFolderEmpty,
-      signInCancelled: l10n.healthSyncGoogleSignInCancelled,
-      signInFailed: l10n.healthSyncGoogleSignInFailed,
-      accessDenied: l10n.healthSyncDriveAccessDenied,
-      syncError: l10n.healthSyncSyncError,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-
-    if (result.kind == HealthSyncResultKind.imported) {
-      setState(() => _workoutRefreshToken++);
-    }
-  }
-
-  Widget? _buildHealthSyncHeaderButton() {
-    if (!_showHealthSyncButton) {
-      return null;
-    }
-
-    final l10n = AppLocalizations.of(context)!;
-    return IconButton(
-      tooltip: l10n.healthSyncSync,
-      onPressed: HealthSyncService.instance.syncing ? null : _runHealthSync,
-      icon: const Icon(Symbols.directory_sync),
-    );
   }
 
   Widget? _buildSportFilterHeaderButton() {
@@ -966,7 +865,11 @@ class _GromShellState extends State<GromShell> {
       case GromDestination.equipment:
         return const EquipmentPage();
       case GromDestination.integration:
-        return const IntegrationPage();
+        return IntegrationPage(
+          onWorkoutsImported: () {
+            setState(() => _workoutRefreshToken++);
+          },
+        );
       case GromDestination.login:
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -1019,7 +922,6 @@ class _GromShellState extends State<GromShell> {
         actions: [
           if (_showSportFilterButton) _buildSportFilterHeaderButton()!,
           if (_showMyWorkoutsLayoutButton) _buildMyWorkoutsLayoutHeaderButton()!,
-          if (_showHealthSyncButton) _buildHealthSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
           if (_isViewingProfile) _buildProfileMenu(),
         ],
@@ -1071,8 +973,6 @@ class _GromShellState extends State<GromShell> {
                             _buildSportFilterHeaderButton()!,
                           if (_showMyWorkoutsLayoutButton)
                             _buildMyWorkoutsLayoutHeaderButton()!,
-                          if (_showHealthSyncButton)
-                            _buildHealthSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
                           if (_isViewingProfile) _buildProfileMenu(),
                         ],

@@ -2747,7 +2747,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "health-sync/strava"
+                    "example": "device-import"
                 }
             }
         },
@@ -2981,6 +2981,10 @@ const docTemplate = `{
                 "speed_max_kmh": {
                     "type": "number",
                     "example": 32.4
+                },
+                "sport_type": {
+                    "type": "string",
+                    "example": "Run"
                 },
                 "start_date": {
                     "type": "string",

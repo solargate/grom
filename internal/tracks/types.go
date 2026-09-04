@@ -15,6 +15,7 @@ type LatLng struct {
 
 type Data struct {
 	Name                 string
+	SportType            string // Grom sport type id when known from the track; empty if unknown
 	StartTime            *time.Time
 	DurationSeconds      *int
 	DurationTotalSeconds *int

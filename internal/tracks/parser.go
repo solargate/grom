@@ -60,7 +60,8 @@ func parseGPX(data []byte) (*Data, error) {
 	}
 
 	result := &Data{
-		Name: gpxActivityName(gpxData),
+		Name:      gpxActivityName(gpxData),
+		SportType: gpxActivitySportType(gpxData),
 	}
 	points := make([]LatLng, 0)
 
@@ -115,7 +116,8 @@ func parseFIT(data []byte) (*Data, error) {
 	}
 
 	result := &Data{
-		Name: fitActivityName(activity),
+		Name:      fitActivityName(activity),
+		SportType: fitActivitySportType(activity),
 	}
 	points := make([]LatLng, 0, len(activity.Records))
 

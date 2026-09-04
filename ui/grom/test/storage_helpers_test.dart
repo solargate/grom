@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grom/auth_storage.dart';
 import 'package:grom/locale_storage.dart';
 import 'package:grom/server_storage.dart';
-import 'package:grom/services/health_sync_service.dart';
-import 'package:grom/services/health_sync_storage.dart';
 import 'package:grom/session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,7 +11,6 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await ServerStorage.clear();
     await AuthStorage.clear();
-    await HealthSyncService.instance.resetForLogout();
   });
 
   group('AuthStorage', () {
@@ -47,21 +44,14 @@ void main() {
 
     test('saveBaseUrl persists and clears auth when URL changes', () async {
       await AuthStorage.saveToken('old-token');
-      await HealthSyncStorage.saveEnabled(true);
-      await HealthSyncStorage.saveFolder(name: 'Health Sync', id: 'folder-1');
       await ServerStorage.saveBaseUrl('https://one.example');
       expect(await ServerStorage.getBaseUrl(), 'https://one.example');
       expect(ServerStorage.cachedBaseUrl, 'https://one.example');
       expect(await AuthStorage.getToken(), 'old-token');
-      expect(await HealthSyncStorage.loadEnabled(), isTrue);
 
       await ServerStorage.saveBaseUrl('https://two.example');
       expect(await ServerStorage.getBaseUrl(), 'https://two.example');
       expect(await AuthStorage.getToken(), isNull);
-      expect(await HealthSyncStorage.loadEnabled(), isFalse);
-      final folder = await HealthSyncStorage.loadFolder();
-      expect(folder.name, isEmpty);
-      expect(folder.id, isEmpty);
     });
 
     test('load restores cached base URL', () async {
@@ -95,19 +85,10 @@ void main() {
   });
 
   group('clearLocalSession', () {
-    test('clears auth token and Health Sync settings', () async {
+    test('clears auth token', () async {
       await AuthStorage.saveToken('abc');
-      await HealthSyncStorage.saveEnabled(true);
-      await HealthSyncStorage.saveFolder(name: 'Health Sync', id: 'folder-1');
-
       await clearLocalSession();
-
       expect(await AuthStorage.getToken(), isNull);
-      expect(await HealthSyncStorage.loadEnabled(), isFalse);
-      final folder = await HealthSyncStorage.loadFolder();
-      expect(folder.name, isEmpty);
-      expect(folder.id, isEmpty);
-      expect(HealthSyncService.instance.enabled, isFalse);
     });
   });
 }

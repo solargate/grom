@@ -1,6 +1,7 @@
 class ParsedTrackMetadata {
   ParsedTrackMetadata({
     this.name,
+    this.sportType,
     this.startDate,
     this.durationSeconds,
     this.durationTotalSeconds,
@@ -11,6 +12,7 @@ class ParsedTrackMetadata {
   });
 
   final String? name;
+  final String? sportType;
   final DateTime? startDate;
   final int? durationSeconds;
   final int? durationTotalSeconds;
@@ -22,8 +24,11 @@ class ParsedTrackMetadata {
   factory ParsedTrackMetadata.fromJson(Map<String, dynamic> json) {
     final rawName = json['name'];
     final name = rawName is String ? rawName.trim() : null;
+    final rawSport = json['sport_type'];
+    final sportType = rawSport is String ? rawSport.trim() : null;
     return ParsedTrackMetadata(
       name: (name == null || name.isEmpty) ? null : name,
+      sportType: (sportType == null || sportType.isEmpty) ? null : sportType,
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'] as String)
           : null,

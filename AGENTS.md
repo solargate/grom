@@ -58,7 +58,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 | `internal/version/` | Product version string (ldflags from `VERSION`) |
 | `internal/web/` | `embed` of Flutter web assets |
 | `ui/grom/` | Flutter app (`lib/`, `test/`) |
-| `testdata/` | Shared fixtures: `tracks/` (GPX/FIT), `integrations/health-sync/` |
+| `testdata/` | Shared fixtures: `tracks/` (GPX/FIT); `integrations/health-sync/` kept as legacy samples (unused by current import) |
 | `docs/` | Human documentation (EN + RU/DE via `*.ru.md` / `*.de.md`); index in `docs/README.md` (also MkDocs homepage) — not the same as `api/docs/` |
 | `mkdocs.yml` / `requirements.txt` | GitHub Pages docs site (Material + `mkdocs-static-i18n`) and catalog generator (PyYAML); `make docs` / `make catalog` use `.venv`. Pages workflow: `.github/workflows/pages.yml` |
 | `PRIVACY.md` | Stub linking to `docs/privacy.md` and Pages `/privacy/` |
@@ -70,7 +70,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
   - `docs/about.md` — project mission and pillars (EN + RU/DE)
   - `docs/user/` — end-user / client tour (web + Android)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
-  - `docs/integrations/` — third-party import guides (Strava ZIP, Health Sync + Google Drive)
+  - `docs/integrations/` — third-party import guides (Strava ZIP, Import tracks via system picker)
   - `docs/screenshots/` — images for README and user docs (shared across locales)
   - `docs/privacy.md` — privacy policy (English only; official text; root `PRIVACY.md` is a stub). Do not add `privacy.ru.md` / `privacy.de.md` — all locales link the same EN page via fallback.
 - **Index:** `docs/README.md` (short pitch, Features, screenshot teaser, then “I want to…”). MkDocs treats it as the site homepage (`index.html`). Do not add a parallel `docs/index.md`. Do not duplicate that TOC here; keep the feature list in sync with root `README.md` when capabilities change. Localized homepages: `README.ru.md`, `README.de.md`.
@@ -149,12 +149,12 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Shared `ErrorResponse`: keep a neutral schema `example` (e.g. `"bad request"`); put endpoint-specific meaning on `@Failure` descriptions, not per-status DTOs.
 - JSON/form DTOs live next to handlers in `api/v1`; domain models live in `internal/<pkg>/model.go`.
 - Logging: use `log/slog` via `internal/logging` (configured by `logging.level` / `logging.format`). Prefer structured attrs (`"workout_id", id`, `"err", err`), not interpolated/`fmt.Sprintf` message strings. Levels: DEBUG diagnostics; INFO lifecycle; WARN recoverable; ERROR failed ops. HTTP access logs go through `samber/slog-gin` in `api/v1/main.go` — do not restore `gin.Default()`. Do not add zap/zerolog/logrus; keep `log.Fatal` only for pre-slog bootstrap in `config.GetConfig`. Do **not** use `fmt.Print*` / `log.Print*` for server diagnostics. `fmt.Errorf` / `%w` for **returned errors** is fine and is not logging — reserve slog for side-effect diagnostics (especially when the error is swallowed or best-effort). CLI user-facing output in `cmd/grom` (`fmt.Printf` for migrate/gencerts/version) is separate from server logging.
-- Tests: colocated `*_test.go`; use `testdata/` (`tracks/`, `integrations/health-sync/`) for fixtures. Run `go test ./...` after backend changes.
+- Tests: colocated `*_test.go`; use `testdata/tracks/` for fixtures. Run `go test ./...` after backend changes.
 
 ### Flutter (`ui/grom`)
 
 - Structure: `pages/`, `widgets/`, `services/`, `models/`, `navigation/`, `platform/`
-- Platform splits use stub/io/web files — recording, Google Drive, file download, Strava archive picker, share intent, server scheme probe. Preserve that pattern. Do not expand iOS beyond existing scaffolding.
+- Platform splits use stub/io/web files — recording, file download, Strava archive picker, track file picker, share intent, server scheme probe. Preserve that pattern. Do not expand iOS beyond existing scaffolding.
 - API access: `lib/api_request.dart` + auth/server storage helpers.
 - User-facing strings: update ARB files under `lib/l10n/` (en/ru/de); do not hardcode UI copy when localization exists. Generated `app_localizations*.dart` are committed (`flutter: generate: true`). When adding sport/equipment types, also update the hand-written `sport_type_localizations.dart` / `equipment_type_localizations.dart` switches.
 - After Flutter UI changes that ship in the server binary, regenerate web embed: `make web` (or full `make grom`).
@@ -169,14 +169,14 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 
 ## Domain notes agents should respect
 
-1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`); newly allocated IDs are unique across all local users on the instance. `GET /workouts` is a cursor page `{items, next_cursor, has_more}` (`scope=feed|own`, default `feed`; `limit` default 20, max 100) — not a bare array. Optional `sport_types` (comma-separated) filters `scope=own` only; omit for all types; empty value yields an empty page; unknown ids are ignored. Import dedup uses `external_id` (`name` + `id`); `GET /workouts/external` checks whether that pair already exists. Strava sets `name=strava`; Health Sync sets `name=health-sync/{source}`.
-2. **Tracks:** parse/enrich via `internal/tracks`; attach through workout service, not by writing files from handlers alone. `POST /workouts/parse-track` is the client pre-create parse.
+1. **Workouts** are the core entity: metadata + optional track blob + media + map preview. IDs are short (`workouts.WorkoutIDLength`); newly allocated IDs are unique across all local users on the instance. `GET /workouts` is a cursor page `{items, next_cursor, has_more}` (`scope=feed|own`, default `feed`; `limit` default 20, max 100) — not a bare array. Optional `sport_types` (comma-separated) filters `scope=own` only; omit for all types; empty value yields an empty page; unknown ids are ignored. Import dedup uses `external_id` (`name` + `id`); `GET /workouts/external` checks whether that pair already exists. Strava sets `name=strava`; device file-picker import sets `name=device-import` with `id={basename_lower}:{sha256_16}`.
+2. **Tracks:** parse/enrich via `internal/tracks`; attach through workout service, not by writing files from handlers alone. `POST /workouts/parse-track` is the client pre-create parse (returns optional `sport_type` from FIT/GPX when known).
 3. **Social feed** merges local workouts with federated inbox content (`workouts.FeedService` + federation adapters).
 4. **Workout likes:** cannot like own workouts; API `GET/POST/DELETE /workouts/{id}/likes` (optional `owner` query like get workout). Responses expose `likes_count`, `liked_by_me`, `can_like`. Local likes via `workouts.LikesRepository`; file: `likes.yaml` per workout, federated cache/outbox under `federation/`; bbolt: `workout_likes` / `fed_workout_likes` / `like_activities`. `grom migrate-storage` copies local likes, federated like cache, and outbound Like activity ids between drivers. Federated like/unlike delivers ActivityPub `Like` / `Undo`; inbox applies remote likes and caches `likesCount` / `likedUsers` from Create objects. UI: `WorkoutLikeBar` on list cards and detail (likes left, comments right). JWT only (not PAT).
 5. **Workout comments:** can comment on own and others' workouts; API `GET/POST /workouts/{id}/comments`, `DELETE /workouts/{id}/comments/{commentId}` (optional `owner`). Text max 1000 chars; empty rejected. Delete allowed for comment author or workout owner. Responses expose `comments_count`; list items include `can_delete`. Local via `workouts.CommentsRepository`; file: `comments.yaml` (`comments_num` + `comments[]` with `id`, `user`, `datetime`, `text`, `note_id`); federated cache/outbox under `federation/`; bbolt: `workout_comments` / `fed_workout_comments` / `comment_activities`. Federated comment delivers ActivityPub `Create`/`Note` with `inReplyTo`; delete delivers `Delete` Note (owner delete of remote comment notifies author). Workout Create/Update embeds `commentsCount` / `comments`. UI dialog for list/add/delete. JWT only (not PAT).
 6. **Federation** (ActivityPub): WebFinger, actor, inbox/outbox, shared inbox under root paths (not only `/api/v1`). HTTP Signatures (cavage-12 / RSA-SHA256 via `code.superseriousbusiness.org/httpsig`): all outbound POSTs signed by the activity actor; outbound GETs signed by the instance actor at `GET /actor` (public, no AF). Inbound inbox POSTs require a valid signature whose key owner matches `activity.actor`. `federation.authorized_fetch` (default true) requires signatures on AP GETs except `/actor`. Delivery prefers remote `endpoints.sharedInbox` and dedupes fan-out by URL. Keep actor URLs consistent with `federation.domain`.
 7. **Strava import:** background jobs under `internal/integrations/strava`; column mapping and behavior are documented in `docs/integrations/strava-bulk-import.md`. JWT only (not PAT).
-8. **Health Sync:** Android-only client import from Google Drive (`ui/grom/lib/services/health_sync_*`, `platform/google_drive_*`). There is **no** backend Health Sync package — workouts are created through the normal API with `external_id`. Sign-out or a server URL change turns Drive import off. Docs: `docs/integrations/health-sync-google-drive.md`.
+8. **Import tracks:** client multi-select GPX/FIT via system file picker (`ui/grom/lib/services/device_track_import_*`, `platform/track_file_picker_*`) on web and Android. Workouts are created through the normal API with `external_id` (`device-import`). No Drive OAuth. Docs: `docs/integrations/import-tracks.md`.
 9. **Avatars:** local users + federated author avatar cache; public federation avatar routes differ from authenticated API avatar routes.
 10. **Speed chart:** pre-downsampled series (≤500 pts) written at track attach; `GET /workouts/{id}/speed` reads chart only. File driver: `speed-chart.json` blob (JSON for debuggability); bbolt driver: packed binary values in `speed_charts` / `fed_speed_charts` buckets (tracks/media stay on FS).
 11. **Heart rate chart:** same pattern as speed (`heartrate-chart.json` on file; packed binary in bbolt `heart_rate_charts` / `fed_heart_rate_charts`); `GET /workouts/{id}/heartrate`; `distance_m` omitted without GPS; X axis is distance km or elapsed minutes from first HR sample.
@@ -209,7 +209,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Hand-edit `api/docs/*` — regenerate with `make apidoc`.
 - Hand-edit `ui/grom/lib/generated/server_catalog.g.dart` — regenerate with `make catalog`.
 - Bypass auth middleware on protected `/api/v1` routes, or accept PAT on JWT-only routes (social, likes, comments, profile, integrations, account).
-- Add a backend Health Sync package; keep that flow client-side on Android.
+- Reintroduce Google Drive OAuth / Health Sync folder sync; keep track import as explicit system picker only.
 - Commit `cmd/grom/grom`, runtime `data/`, secrets, or personal config.
 - Expand scope into unrelated refactors; match the request.
 
@@ -225,7 +225,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Track parsing/stats | `internal/tracks/` |
 | Equipment mileage | `internal/equipment/distance/` |
 | Flutter screen/API | `ui/grom/lib/pages/`, `api_request.dart` |
-| Health Sync (Android) | `ui/grom/lib/services/health_sync_service.dart`, `platform/google_drive*.dart`; docs in `docs/integrations/health-sync-google-drive.md` |
+| Import tracks | `ui/grom/lib/services/device_track_import_service.dart`, `platform/track_file_picker*.dart`; docs in `docs/integrations/import-tracks.md` |
 | Sport / equipment types | `internal/workouts/sport_types.go`, `ui/grom/lib/models/sport_types.dart`; `internal/equipment`, `ui/grom/lib/models/equipment_types.dart` |
 | Config / TLS listen | `internal/config/`, `internal/server/`; human docs in `docs/admin/configuration.md` |
 | Password reset / mailer | `internal/auth/reset/`, `internal/mailer/`, `api/v1/auth_password.go`; docs in `docs/admin/configuration.md` |

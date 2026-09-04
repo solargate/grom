@@ -524,8 +524,8 @@ void main() {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {
       expect(request.url.path, '/api/v1/workouts/external');
-      expect(request.url.queryParameters['name'], 'health-sync/strava');
-      expect(request.url.queryParameters['id'], 'CYCLING 2026.07.30 16.26 Strava.csv');
+      expect(request.url.queryParameters['name'], 'device-import');
+      expect(request.url.queryParameters['id'], 'ride.fit:abcdef0123456789');
       return http.Response(
         jsonEncode({'exists': true}),
         200,
@@ -535,8 +535,8 @@ void main() {
 
     final exists = await ApiRequest(client: client).hasExternalID(
       token: 'tok',
-      name: 'health-sync/strava',
-      id: 'CYCLING 2026.07.30 16.26 Strava.csv',
+      name: 'device-import',
+      id: 'ride.fit:abcdef0123456789',
     );
     expect(exists, isTrue);
   });
@@ -548,8 +548,8 @@ void main() {
       expect(request.method, 'POST');
       expect(request, isA<http.MultipartRequest>());
       final multipart = request as http.MultipartRequest;
-      expect(multipart.fields['external_id_name'], 'health-sync/strava');
-      expect(multipart.fields['external_id_id'], 'CYCLING 2026.07.30 16.26 Strava.csv');
+      expect(multipart.fields['external_id_name'], 'device-import');
+      expect(multipart.fields['external_id_id'], 'ride.fit:abcdef0123456789');
       expect(multipart.fields['sport_type'], 'Ride');
       await bodyStream.drain();
       final body = jsonEncode({
@@ -574,8 +574,8 @@ void main() {
         'name': 'Synced',
         'sport_type': 'Ride',
         'start_date': '2026-07-30T16:26:00Z',
-        'external_id_name': 'health-sync/strava',
-        'external_id_id': 'CYCLING 2026.07.30 16.26 Strava.csv',
+        'external_id_name': 'device-import',
+        'external_id_id': 'ride.fit:abcdef0123456789',
       },
     );
     expect(workout.id, 'wid-1');

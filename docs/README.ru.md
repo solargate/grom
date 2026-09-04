@@ -18,7 +18,7 @@ Grom — self-hosted трекер тренировок с опциональны
 - **Комментарии** — комментарии к своим и чужим активностям (добавление/список/удаление); федеративные `Create`/`Delete` Note при включённом ActivityPub
 - **Федерация** — опциональный ActivityPub, чтобы инстансы могли подписываться друг на друга
 - **Импорт Strava** — массовый импорт ZIP-экспорта данных Strava
-- **Health Sync** — импорт активностей из Google Drive на Android (экспорт Health Sync)
+- **Импорт треков** — multi-select GPX/FIT через системный выбор файлов (web и Android)
 - **API-токены** — персональные токены с областями доступа (`grom_pat_…`) для тренировок и снаряжения
 - **Клиенты** — один Flutter UI в браузере (отдаётся сервером) и как Android APK
 - **Локали** — английский, русский и немецкий в Flutter UI
@@ -49,7 +49,7 @@ Grom — self-hosted трекер тренировок с опциональны
 | Выбрать публичный инстанс в Android или добавить свой в список | [Одобренные серверы Grom](user/approved-servers.md) |
 | Пользоваться Grom в браузере (тот же UI, что на Android) | Откройте базовый URL сервера после [установки](admin/install.md); см. [Обзор для пользователя](user/overview.md) |
 | Импортировать экспорт Strava (UI + как работает импорт) | [Массовый импорт Strava](integrations/strava-bulk-import.md) |
-| Импортировать активности Health Sync из Google Drive (Android) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
+| Импортировать треки GPX/FIT через системный выбор файлов | [Импорт треков](integrations/import-tracks.md) |
 | Создать API-токены для скриптов и внешних приложений | [API-токены Grom](user/grom-api-tokens.md) |
 | Удалить свой аккаунт | [Удаление аккаунта Grom](user/delete-account.md) |
 
@@ -65,7 +65,7 @@ Grom — self-hosted трекер тренировок с опциональны
 | Тема | Страница |
 |------|----------|
 | Сопоставление колонок ZIP Strava и поведение импорта | [Массовый импорт Strava](integrations/strava-bulk-import.md) |
-| Импорт Health Sync из Google Drive (Android-клиент) | [Health Sync + Google Drive](integrations/health-sync-google-drive.md) |
+| Мульти-импорт GPX/FIT (клиент) | [Импорт треков](integrations/import-tracks.md) |
 | Полный аннотированный конфиг | [`config.full.yaml`](https://github.com/solargate/grom/blob/master/cmd/grom/config-examples/config.full.yaml) |
 | HTTP API (Swagger UI) | На работающем сервере: `/api/docs/` (например `http://localhost:8080/api/docs/`); исходники OpenAPI в [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) |
 | Политика конфиденциальности | [Privacy Policy](privacy.md) |
