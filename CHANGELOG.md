@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-09-04
+
 ### Google Play
 
 - Import GPX/FIT tracks via the system file picker (Integration); Health Sync + Google Drive removed
@@ -311,7 +313,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.12.0...HEAD
+[0.12.0]: https://github.com/solargate/grom/releases/tag/0.12.0
 [0.11.0]: https://github.com/solargate/grom/releases/tag/0.11.0
 [0.10.0]: https://github.com/solargate/grom/releases/tag/0.10.0
 [0.9.1]: https://github.com/solargate/grom/releases/tag/0.9.1
