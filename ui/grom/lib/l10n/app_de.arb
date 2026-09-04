@@ -479,33 +479,16 @@
     }
   },
   "stravaImportInProgress": "Ein Import läuft bereits",
-  "healthSyncGoogleDrive": "Health Sync + Google Drive",
-  "healthSyncImportDescriptionBefore": "Sie können die ",
-  "healthSyncImportDescriptionLink": "Health Sync",
-  "healthSyncImportDescriptionAfter": "-App nutzen, um Trainingseinheiten aus verschiedenen Diensten mit Google Drive zu synchronisieren. Diese Trainingseinheiten aus Google Drive können in Grom importiert werden.",
-  "healthSyncPlayStoreUrl": "https://play.google.com/store/apps/details?id=nl.appyhapps.healthsync",
-  "healthSyncSyncToggle": "Health Sync + Google Drive Synchronisation",
-  "healthSyncFolderLabel": "Health Sync Ordner",
-  "healthSyncSync": "Synchronisieren",
-  "healthSyncSynchronizing": "Synchronisierung…",
-  "healthSyncImported": "{count} Trainingseinheiten importiert",
-  "@healthSyncImported": {
+  "importTracksTitle": "Tracks importieren",
+  "importTracksDescription": "Wählen Sie eine oder mehrere GPX- oder FIT-Dateien auf dem Gerät. Im System-Dateidialog können Sie bei Bedarf auch Google Drive oder andere Anbieter öffnen. Jede Datei wird zu einem Workout; Duplikate werden übersprungen.",
+  "importTracksButton": "Tracks importieren",
+  "importTracksResult": "Import abgeschlossen: {created} erstellt, {skipped} übersprungen, {invalid} ungültig, {failed} fehlgeschlagen",
+  "@importTracksResult": {
     "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "healthSyncNoNewWorkouts": "Keine neuen Trainingseinheiten gefunden",
-  "healthSyncFolderNotFound": "Health Sync Ordner in Google Drive nicht gefunden",
-  "healthSyncFolderEmpty": "Health Sync Ordner ist leer",
-  "healthSyncFolderNameRequired": "Geben Sie einen Health Sync Ordnernamen ein",
-  "healthSyncFindFolder": "Health Sync-Ordner suchen",
-  "healthSyncGoogleSignInCancelled": "Google-Anmeldung abgebrochen",
-  "healthSyncGoogleSignInFailed": "Google-Anmeldung fehlgeschlagen",
-  "healthSyncDriveAccessDenied": "Google Drive Zugriff verweigert",
-  "healthSyncSyncError": "Health Sync Import fehlgeschlagen: {message}",
-  "@healthSyncSyncError": {
-    "placeholders": {
-      "message": { "type": "String" }
+      "created": { "type": "int" },
+      "skipped": { "type": "int" },
+      "invalid": { "type": "int" },
+      "failed": { "type": "int" }
     }
   },
   "integrationTabGrom": "Grom",

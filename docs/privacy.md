@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-09-04
 
 This Privacy Policy describes how the **Grom** Android application and web client (“App”) and the open-source Grom software handle information.
 
@@ -22,7 +22,7 @@ If you use a third-party or self-hosted instance that you do not operate, the **
 
 | Role | Responsibility |
 |------|----------------|
-| **App publisher** (Play Store / this policy’s contact) | How the App accesses device data, local storage, and third-party services built into the client (for example map tiles and optional Google Drive). |
+| **App publisher** (Play Store / this policy’s contact) | How the App accesses device data, local storage, and third-party services built into the client (for example map tiles). |
 | **Server operator** | Account registration, workouts, media, social features, logs, and optional ActivityPub federation on the instance at the URL you configured. |
 | **You** | Choosing a trustworthy server URL and reviewing that operator’s practices when the instance is not yours. |
 
@@ -46,7 +46,7 @@ Optional, if the operator enables them: a captcha proof-of-work payload; passwor
 Depending on what you create, import, or record:
 
 - Workout metadata (sport type, title, description, times, distances, device name, equipment links, notes)
-- GPS tracks (precise location over time) from live recording, GPX/FIT import, Strava ZIP import (processed on the server), or Health Sync import
+- GPS tracks (precise location over time) from live recording, GPX/FIT import (including multi-file import via the system file picker), or Strava ZIP import (processed on the server)
 - Derived stats and charts (for example speed, elevation, cadence, power, heart rate, calories) when present in tracks or imports
 - Photos you attach to workouts
 - Avatar image
@@ -76,7 +76,6 @@ The App stores locally (for example via app preferences), including:
 - Chosen server URL
 - Session JWT
 - UI preferences (for example locale and auto-pause)
-- Optional Health Sync settings (for example Drive folder name and sync flags)
 
 Clearing app data or signing out removes local session data according to the App’s logout behavior. Uninstalling the App does **not** delete your account on the server—use **Delete account** on that instance.
 
@@ -96,15 +95,11 @@ All account and workout API traffic goes to the base URL you enter. Prefer HTTPS
 
 When the App shows maps, it may request map tiles from OpenStreetMap tile servers. Those requests typically include your device IP address and standard HTTP headers. See OpenStreetMap’s privacy information and tile usage policy. Map display is for showing routes and the recording UI, not for selling location data.
 
-### 3.3 Google Sign-In and Google Drive (optional, Android)
-
-If you enable **Health Sync + Google Drive** import, the App uses Google Sign-In and requests **read-only** Google Drive access to import activity files that you (or Health Sync) placed in Drive. Google processes sign-in under Google’s policies. The App reads those files on the device and uploads imported workouts to **your configured Grom server**. The App publisher does not keep a separate copy of your Drive contents outside that chosen server. You can revoke Drive access in your Google Account settings.
-
-### 3.4 ActivityPub federation (optional, server-side)
+### 3.3 ActivityPub federation (optional, server-side)
 
 If the operator enables federation, workout and social content may be delivered to or received from other federated servers according to ActivityPub. Remote operators may retain copies even after local deletion if they never receive a Delete activity. See the [account deletion](user/delete-account.md) documentation.
 
-### 3.5 Email (optional, server-side)
+### 3.4 Email (optional, server-side)
 
 If the operator enables a mailer, password-reset messages are sent via that operator’s configured email transport (for example SMTP). The App publisher does not send those emails unless they operate the instance you use.
 
@@ -114,7 +109,7 @@ If the operator enables a mailer, password-reset messages are sent via that oper
 |---------|----------|
 | Provide core features | Sign-in, workouts, tracks, photos, equipment, feed, likes, comments |
 | Live recording | GPS track while you record on Android |
-| Optional imports | Strava ZIP (on the server), Health Sync via Drive (on the device, then to the server) |
+| Optional imports | Strava ZIP (on the server), multi-file GPX/FIT via the system file picker (on the device, then to the server) |
 | Security | Auth tokens, optional captcha, rate limiting (may use IP on the server) |
 | Federation | Optional delivery of activities to remote inboxes |
 
@@ -127,7 +122,6 @@ The App publisher does not sell your data.
 Data may be disclosed or transferred when:
 
 - You choose a server operator (they host your account)
-- You use optional Google Drive import (Google)
 - Map tiles are loaded (tile provider)
 - Federation is enabled (remote ActivityPub servers)
 - Required by law or to protect rights, safety, or integrity of the service
@@ -149,7 +143,6 @@ You can:
 
 - Choose or change the server URL
 - Deny or revoke OS permissions (location, notifications, photos); some features will not work without them
-- Disable or disconnect Google Drive access
 - Delete individual workouts or media where the product allows
 - **Delete your account** in the App or web UI: Profile → Delete account (password required)
 
@@ -169,7 +162,7 @@ Because you may connect to a server in another country, your data may be process
 
 If you are in the European Economic Area or the United Kingdom, you may have rights under applicable law regarding access, rectification, erasure, restriction, objection, and data portability, and the right to lodge a complaint with a supervisory authority. To exercise rights regarding an instance operated by the App publisher, contact [solargate.team@gmail.com](mailto:solargate.team@gmail.com). For other instances, contact that operator.
 
-Processing on a publisher-operated instance is typically necessary to provide the service you request (account and workouts), and optional features such as background location or Google Drive import rely on your consent or affirmative use of those features.
+Processing on a publisher-operated instance is typically necessary to provide the service you request (account and workouts), and optional features such as background location rely on your consent or affirmative use of those features.
 
 ## 12. Changes
 

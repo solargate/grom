@@ -11,14 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
+- Import GPX/FIT tracks via the system file picker (Integration); Health Sync + Google Drive removed
 - My workouts list: rows sit flush with thin dividers instead of gaps between items
 
 ### Added
 
+- **UI:** Integration → **Import tracks**: multi-select `.gpx` / `.fit` via the system file picker (web and Android), progress bar, snackbar summary, and `external_id` dedup (`device-import` + file fingerprint)
+- **Server:** `POST /workouts/parse-track` returns optional `sport_type` parsed from FIT/GPX; add-workout and batch import apply it when present
 - **Server:** ActivityPub HTTP Signatures (cavage-12): signed outbound delivery and GETs (instance actor at `/actor`), required signatures on inbound inboxes, optional `federation.authorized_fetch` (default on), shared-inbox routing, and sharedInbox fan-out dedupe
 
 ### Changed
 
+- **Android:** Removed Health Sync + Google Drive OAuth import (`drive.readonly`); use system file picker instead (Drive may still appear in the OS picker sidebar without app OAuth)
+- **Docs:** Replaced Health Sync + Google Drive guide with [Import tracks](docs/integrations/import-tracks.md); privacy policy no longer describes Google Sign-In / Drive scopes
 - **UI:** My workouts list layout on mobile: rows are flush with full-width thin dividers instead of 8 px gaps; card layout and web unchanged
 - **Docs:** Federation configuration documents HTTP Signatures, authorized fetch, and the instance actor
 - **Docs:** documentation site custom domain [https://grom.solargate.team/](https://grom.solargate.team/) (was `https://solargate.github.io/grom/`)

@@ -45,7 +45,7 @@ nav:
       - Configuration: admin/configuration.md
   - Integrations:
       - Strava bulk import: integrations/strava-bulk-import.md
-      - Health Sync + Google Drive: integrations/health-sync-google-drive.md
+      - Import tracks: integrations/import-tracks.md
   - Privacy Policy: privacy.md
 
 plugins:
@@ -76,7 +76,7 @@ plugins:
             Configuration: Конфигурация
             Integrations: Интеграции
             Strava bulk import: Массовый импорт Strava
-            Health Sync + Google Drive: Health Sync + Google Drive
+            Import tracks: Импорт треков
             Privacy Policy: Политика конфиденциальности
         - locale: de
           name: Deutsch
@@ -95,7 +95,7 @@ plugins:
             Configuration: Konfiguration
             Integrations: Integrationen
             Strava bulk import: Strava-Massenimport
-            Health Sync + Google Drive: Health Sync + Google Drive
+            Import tracks: Tracks importieren
             Privacy Policy: Datenschutzrichtlinie
 
 markdown_extensions:

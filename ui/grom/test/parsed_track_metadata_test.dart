@@ -20,4 +20,27 @@ void main() {
     });
     expect(meta.name, isNull);
   });
+
+  test('ParsedTrackMetadata.fromJson reads optional sport_type', () {
+    final meta = ParsedTrackMetadata.fromJson({
+      'sport_type': '  Ride  ',
+      'has_gps': true,
+    });
+    expect(meta.sportType, 'Ride');
+  });
+
+  test('ParsedTrackMetadata.fromJson treats blank sport_type as absent', () {
+    final meta = ParsedTrackMetadata.fromJson({
+      'sport_type': '   ',
+      'has_gps': false,
+    });
+    expect(meta.sportType, isNull);
+  });
+
+  test('ParsedTrackMetadata.fromJson omits sport_type when missing', () {
+    final meta = ParsedTrackMetadata.fromJson({
+      'has_gps': true,
+    });
+    expect(meta.sportType, isNull);
+  });
 }

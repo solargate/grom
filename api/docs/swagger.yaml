@@ -161,7 +161,7 @@ definitions:
         example: CYCLING 2026.07.30 16.26 Strava.csv
         type: string
       name:
-        example: health-sync/strava
+        example: device-import
         type: string
     type: object
   v1.FollowRequest:
@@ -328,6 +328,9 @@ definitions:
       speed_max_kmh:
         example: 32.4
         type: number
+      sport_type:
+        example: Run
+        type: string
       start_date:
         example: "2026-07-05T14:30:00+03:00"
         type: string

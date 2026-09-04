@@ -22,7 +22,7 @@ import (
 )
 
 type ExternalIDRequest struct {
-	Name string `json:"name" example:"health-sync/strava"`
+	Name string `json:"name" example:"device-import"`
 	ID   string `json:"id" example:"CYCLING 2026.07.30 16.26 Strava.csv"`
 }
 
@@ -62,6 +62,7 @@ type ExternalIDExistsResponse struct {
 
 type ParseTrackResponse struct {
 	Name                 string   `json:"name,omitempty" example:"Morning run"`
+	SportType            string   `json:"sport_type,omitempty" example:"Run"`
 	StartDate            string   `json:"start_date,omitempty" example:"2026-07-05T14:30:00+03:00"`
 	Device               string   `json:"device,omitempty" example:"Garmin Edge 530"`
 	DurationSeconds      int      `json:"duration_seconds,omitempty" example:"3600"`
@@ -275,6 +276,7 @@ func toParseTrackResponse(data *tracks.Data) ParseTrackResponse {
 	meta := data.Metadata()
 	return ParseTrackResponse{
 		Name:                 meta.Name,
+		SportType:            meta.SportType,
 		StartDate:            meta.StartDate,
 		Device:               meta.Device,
 		DurationSeconds:      meta.DurationSeconds,

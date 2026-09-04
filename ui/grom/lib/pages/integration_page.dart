@@ -5,7 +5,9 @@ import 'external_integrations_tab.dart';
 import 'grom_api_tab.dart';
 
 class IntegrationPage extends StatelessWidget {
-  const IntegrationPage({super.key});
+  const IntegrationPage({super.key, this.onWorkoutsImported});
+
+  final VoidCallback? onWorkoutsImported;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +24,11 @@ class IntegrationPage extends StatelessWidget {
               Tab(text: l10n.integrationTabExternal),
             ],
           ),
-          const Expanded(
+          Expanded(
             child: TabBarView(
               children: [
-                GromApiTab(),
-                ExternalIntegrationsTab(),
+                const GromApiTab(),
+                ExternalIntegrationsTab(onWorkoutsImported: onWorkoutsImported),
               ],
             ),
           ),

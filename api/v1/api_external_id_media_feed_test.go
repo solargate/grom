@@ -22,10 +22,10 @@ func TestWorkoutExternalIDCheckAndConflict(t *testing.T) {
 			w := ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external", nil, token)
 			expectStatus(t, w, http.StatusBadRequest)
 
-			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=health-sync/strava", nil, token)
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=device-import", nil, token)
 			expectStatus(t, w, http.StatusBadRequest)
 
-			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=health-sync/strava&id=ride-1.csv", nil, token)
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=device-import&id=ride-1.csv", nil, token)
 			expectStatus(t, w, http.StatusOK)
 			if decodeObject(t, w)["exists"] != false {
 				t.Fatalf("expected exists=false: %s", w.Body.String())
@@ -37,18 +37,18 @@ func TestWorkoutExternalIDCheckAndConflict(t *testing.T) {
 				"start_date": "2026-07-30T16:26:00Z",
 				"distance":   12000,
 				"external_id": map[string]string{
-					"name": "health-sync/strava",
+					"name": "device-import",
 					"id":   "ride-1.csv",
 				},
 			}, token)
 			expectStatus(t, w, http.StatusCreated)
 			created := decodeObject(t, w)
 			ext, _ := created["external_id"].(map[string]any)
-			if ext["name"] != "health-sync/strava" || ext["id"] != "ride-1.csv" {
+			if ext["name"] != "device-import" || ext["id"] != "ride-1.csv" {
 				t.Fatalf("unexpected external_id: %#v", created["external_id"])
 			}
 
-			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=health-sync/strava&id=ride-1.csv", nil, token)
+			w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/external?name=device-import&id=ride-1.csv", nil, token)
 			expectStatus(t, w, http.StatusOK)
 			if decodeObject(t, w)["exists"] != true {
 				t.Fatalf("expected exists=true: %s", w.Body.String())
@@ -59,7 +59,7 @@ func TestWorkoutExternalIDCheckAndConflict(t *testing.T) {
 				"sport_type": "Ride",
 				"start_date": "2026-07-31T16:26:00Z",
 				"external_id": map[string]string{
-					"name": "health-sync/strava",
+					"name": "device-import",
 					"id":   "ride-1.csv",
 				},
 			}, token)
@@ -69,13 +69,13 @@ func TestWorkoutExternalIDCheckAndConflict(t *testing.T) {
 				"name":             "Multipart sync",
 				"sport_type":       "Ride",
 				"start_date":       "2026-08-01T10:00:00Z",
-				"external_id_name": "health-sync/garmin",
+				"external_id_name": "device-import",
 				"external_id_id":   "ride-2.csv",
 			}, nil)
 			expectStatus(t, w, http.StatusCreated)
 			created = decodeObject(t, w)
 			ext, _ = created["external_id"].(map[string]any)
-			if ext["name"] != "health-sync/garmin" || ext["id"] != "ride-2.csv" {
+			if ext["name"] != "device-import" || ext["id"] != "ride-2.csv" {
 				t.Fatalf("unexpected multipart external_id: %#v", created["external_id"])
 			}
 		})

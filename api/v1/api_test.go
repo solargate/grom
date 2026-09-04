@@ -281,6 +281,53 @@ func TestParseTrackEndpoint(t *testing.T) {
 	if name, _ := parsed["name"].(string); name != "Test track" {
 		t.Fatalf("expected name %q, got %#v", "Test track", parsed["name"])
 	}
+	if _, ok := parsed["sport_type"]; ok {
+		t.Fatalf("sample GPX has no type; sport_type should be omitted, got %#v", parsed["sport_type"])
+	}
+}
+
+func TestParseTrackEndpointSportType(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	typedGPX := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="grom-test">
+  <trk>
+    <name>Trail</name>
+    <type>running</type>
+    <trkseg>
+      <trkpt lat="55.7558" lon="37.6173">
+        <time>2026-07-06T08:40:00Z</time>
+      </trkpt>
+      <trkpt lat="55.7568" lon="37.6273">
+        <time>2026-07-06T09:40:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>`)
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts/parse-track", token, nil,
+		map[string][]filePart{
+			"track": {{filename: "trail.gpx", data: typedGPX}},
+		},
+	)
+	expectStatus(t, w, http.StatusOK)
+	parsed := decodeObject(t, w)
+	if sport, _ := parsed["sport_type"].(string); sport != "Run" {
+		t.Fatalf("GPX sport_type = %#v, want Run", parsed["sport_type"])
+	}
+
+	fit := readTestdata(t, "tracks/1-ride.fit")
+	w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts/parse-track", token, nil,
+		map[string][]filePart{
+			"track": {{filename: "1-ride.fit", data: fit}},
+		},
+	)
+	expectStatus(t, w, http.StatusOK)
+	parsed = decodeObject(t, w)
+	if sport, _ := parsed["sport_type"].(string); sport != "Ride" {
+		t.Fatalf("FIT sport_type = %#v, want Ride", parsed["sport_type"])
+	}
 }
 
 func TestUserSearch(t *testing.T) {

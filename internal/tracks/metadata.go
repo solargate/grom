@@ -5,6 +5,7 @@ import "time"
 // ParseTrackMetadata is the API-facing metadata extracted from a track file.
 type ParseTrackMetadata struct {
 	Name                 string   `json:"name,omitempty"`
+	SportType            string   `json:"sport_type,omitempty"`
 	StartDate            string   `json:"start_date,omitempty"`
 	Device               string   `json:"device,omitempty"`
 	DurationSeconds      int      `json:"duration_seconds,omitempty"`
@@ -40,8 +41,9 @@ func (d *Data) Metadata() ParseTrackMetadata {
 		return ParseTrackMetadata{}
 	}
 	meta := ParseTrackMetadata{
-		Name:   d.Name,
-		HasGPS: d.HasGPS(),
+		Name:      d.Name,
+		SportType: d.SportType,
+		HasGPS:    d.HasGPS(),
 	}
 	if d.StartTime != nil {
 		meta.StartDate = d.StartTime.Format(time.RFC3339)

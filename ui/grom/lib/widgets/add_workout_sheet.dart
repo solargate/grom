@@ -637,6 +637,20 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         }
         _speedMaxKmh = metadata.speedMaxKmh;
         _speedAvgKmh = metadata.speedAvgKmh;
+        final trackSport = metadata.sportType?.trim() ?? '';
+        if (trackSport.isNotEmpty && sportTypeById(trackSport) != null) {
+          _sportTypeId = trackSport;
+          _applyLastEquipmentForSport(trackSport);
+          final autoName =
+              _nameSync.nameForSportChange(sportTypeLabel(l10n, trackSport));
+          if (autoName != null) {
+            _setNameProgrammatically(autoName);
+          }
+        }
+        final trackName = metadata.name?.trim() ?? '';
+        if (trackName.isNotEmpty) {
+          _setNameProgrammatically(trackName);
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

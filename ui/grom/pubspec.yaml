@@ -42,6 +42,7 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.2
   file_picker: ^10.2.0
+  crypto: ^3.0.6
   image_picker: ^1.1.2
   image_cropper: ^8.0.2
   image: ^4.5.4
@@ -63,10 +64,6 @@ dependencies:
   cross_file: ^0.3.4
   fl_chart: ^1.2.0
   material_symbols_icons: ^4.2960.0
-  google_sign_in: ^6.2.2
-  googleapis: ^14.0.0
-  extension_google_sign_in_as_googleapis_auth: ^2.0.12
-  googleapis_auth: ^2.0.0
   altcha_widget: ^2.0.4
   flutter_svg: ^2.3.0
 
