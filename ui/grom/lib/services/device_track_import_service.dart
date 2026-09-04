@@ -61,11 +61,25 @@ class DeviceTrackImportState {
 }
 
 class DeviceTrackImportService extends ChangeNotifier {
-  DeviceTrackImportService._();
+  DeviceTrackImportService._({
+    ApiRequest? api,
+    Future<String?> Function()? tokenProvider,
+  })  : _api = api ?? ApiRequest(),
+        _tokenProvider = tokenProvider ?? AuthStorage.getToken;
 
   static final DeviceTrackImportService instance = DeviceTrackImportService._();
 
-  final ApiRequest _api = ApiRequest();
+  /// Test-only constructor with injectable API and auth token.
+  @visibleForTesting
+  factory DeviceTrackImportService.forTesting({
+    required ApiRequest api,
+    required Future<String?> Function() tokenProvider,
+  }) {
+    return DeviceTrackImportService._(api: api, tokenProvider: tokenProvider);
+  }
+
+  final ApiRequest _api;
+  final Future<String?> Function() _tokenProvider;
 
   DeviceTrackImportState _state = const DeviceTrackImportState();
   DeviceTrackImportState get state => _state;
@@ -90,7 +104,7 @@ class DeviceTrackImportService extends ChangeNotifier {
       return _state;
     }
 
-    final token = await AuthStorage.getToken();
+    final token = await _tokenProvider();
     if (token == null || files.isEmpty) {
       return _state;
     }
