@@ -20,7 +20,7 @@ New Strava apps start in single-player mode (only the app owner can authorize), 
 1. Open **Integration** → **External services** → **Strava** (Android only).
 2. Enable **Import workouts from Strava**.
 3. Enter Client ID and Client Secret.
-4. Tap **Connect with Strava**, authorize with scope `activity:read`, and confirm the status shows connected.
+4. Tap **Connect with Strava**, authorize with scope `activity:read`, and confirm the status shows **OK**.
 5. On **Home**, tap the sync icon in the app bar (same placement/behavior as the former Health Sync button).
 6. Grom shows a “Synchronizing…” dialog, then a snackbar with how many workouts were imported (or that none were new).
 

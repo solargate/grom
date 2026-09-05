@@ -1058,24 +1058,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get stravaApiImportToggle => 'Импорт тренировок из Strava';
 
   @override
-  String stravaApiImportHelp(int limit) {
-    return 'Создайте своё API-приложение Strava на strava.com/settings/api (нужна подписка Strava). Укажите Authorization Callback Domain = localhost. Введите Client ID и Client Secret, затем подключитесь. Синхронизация на Главной импортирует до $limit последних активностей и останавливается на первой уже импортированной тренировке (тот же external_id, что у архива). Для полной истории используйте импорт архива ниже. Импортируются только активности, видимые Everyone или Followers.';
-  }
-
-  @override
   String get stravaApiClientIdLabel => 'Strava client id';
 
   @override
   String get stravaApiClientSecretLabel => 'Strava client secret';
 
   @override
-  String get stravaApiConnectStatusDisconnected => 'Не подключено';
+  String get stravaApiConnectStatusDisconnected => 'Нет';
 
   @override
-  String get stravaApiConnectStatusConnected => 'Подключено';
+  String get stravaApiConnectStatusConnected => 'OK';
 
   @override
-  String get stravaApiConnectStatusFailed => 'Ошибка подключения';
+  String get stravaApiConnectStatusFailed => 'Ошибка';
 
   @override
   String get stravaApiConnectMissingCredentials =>

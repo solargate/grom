@@ -2080,12 +2080,6 @@ abstract class AppLocalizations {
   /// **'Import workouts from Strava'**
   String get stravaApiImportToggle;
 
-  /// No description provided for @stravaApiImportHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Create your own Strava API application at strava.com/settings/api (a Strava subscription is required). Set Authorization Callback Domain to localhost. Enter your Client ID and Client Secret, then connect. Sync on Home imports up to the {limit} most recent activities and stops at the first workout already imported (same external_id as the archive). For a full history, use the Strava archive import below. Only activities visible to Everyone or Followers are imported.'**
-  String stravaApiImportHelp(int limit);
-
   /// No description provided for @stravaApiClientIdLabel.
   ///
   /// In en, this message translates to:
@@ -2101,19 +2095,19 @@ abstract class AppLocalizations {
   /// No description provided for @stravaApiConnectStatusDisconnected.
   ///
   /// In en, this message translates to:
-  /// **'Not connected'**
+  /// **'No'**
   String get stravaApiConnectStatusDisconnected;
 
   /// No description provided for @stravaApiConnectStatusConnected.
   ///
   /// In en, this message translates to:
-  /// **'Connected'**
+  /// **'OK'**
   String get stravaApiConnectStatusConnected;
 
   /// No description provided for @stravaApiConnectStatusFailed.
   ///
   /// In en, this message translates to:
-  /// **'Connection failed'**
+  /// **'Error'**
   String get stravaApiConnectStatusFailed;
 
   /// No description provided for @stravaApiConnectMissingCredentials.

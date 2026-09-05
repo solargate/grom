@@ -1057,24 +1057,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stravaApiImportToggle => 'Import workouts from Strava';
 
   @override
-  String stravaApiImportHelp(int limit) {
-    return 'Create your own Strava API application at strava.com/settings/api (a Strava subscription is required). Set Authorization Callback Domain to localhost. Enter your Client ID and Client Secret, then connect. Sync on Home imports up to the $limit most recent activities and stops at the first workout already imported (same external_id as the archive). For a full history, use the Strava archive import below. Only activities visible to Everyone or Followers are imported.';
-  }
-
-  @override
   String get stravaApiClientIdLabel => 'Strava client id';
 
   @override
   String get stravaApiClientSecretLabel => 'Strava client secret';
 
   @override
-  String get stravaApiConnectStatusDisconnected => 'Not connected';
+  String get stravaApiConnectStatusDisconnected => 'No';
 
   @override
-  String get stravaApiConnectStatusConnected => 'Connected';
+  String get stravaApiConnectStatusConnected => 'OK';
 
   @override
-  String get stravaApiConnectStatusFailed => 'Connection failed';
+  String get stravaApiConnectStatusFailed => 'Error';
 
   @override
   String get stravaApiConnectMissingCredentials =>

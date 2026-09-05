@@ -456,17 +456,11 @@
   "integration": "Интеграция",
   "strava": "Strava",
   "stravaApiImportToggle": "Импорт тренировок из Strava",
-  "stravaApiImportHelp": "Создайте своё API-приложение Strava на strava.com/settings/api (нужна подписка Strava). Укажите Authorization Callback Domain = localhost. Введите Client ID и Client Secret, затем подключитесь. Синхронизация на Главной импортирует до {limit} последних активностей и останавливается на первой уже импортированной тренировке (тот же external_id, что у архива). Для полной истории используйте импорт архива ниже. Импортируются только активности, видимые Everyone или Followers.",
-  "@stravaApiImportHelp": {
-    "placeholders": {
-      "limit": { "type": "int" }
-    }
-  },
   "stravaApiClientIdLabel": "Strava client id",
   "stravaApiClientSecretLabel": "Strava client secret",
-  "stravaApiConnectStatusDisconnected": "Не подключено",
-  "stravaApiConnectStatusConnected": "Подключено",
-  "stravaApiConnectStatusFailed": "Ошибка подключения",
+  "stravaApiConnectStatusDisconnected": "Нет",
+  "stravaApiConnectStatusConnected": "OK",
+  "stravaApiConnectStatusFailed": "Ошибка",
   "stravaApiConnectMissingCredentials": "Введите Client ID и Client Secret",
   "stravaApiConnectCancelled": "Авторизация Strava отменена",
   "stravaApiConnectDenied": "Авторизация Strava отклонена",

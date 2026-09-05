@@ -20,7 +20,7 @@ Neue Strava-Apps starten im Single-Player-Modus (nur der App-Besitzer kann autor
 1. **Integration** → **Externe Dienste** → **Strava** öffnen (nur Android).
 2. **Trainings aus Strava importieren** aktivieren.
 3. Client ID und Client Secret eingeben.
-4. **Connect with Strava** tippen, Scope `activity:read` erteilen, Status „Verbunden“ prüfen.
+4. **Connect with Strava** tippen, Scope `activity:read` erteilen, Status **OK** prüfen.
 5. Auf **Start** das Sync-Symbol in der App-Leiste tippen (wie früher bei Health Sync).
 6. Dialog „Synchronisiere…“, danach Snackbar mit Importanzahl (oder keine neuen Trainings).
 

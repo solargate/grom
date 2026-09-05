@@ -251,11 +251,6 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
         ),
         if (_stravaApi.enabled) ...[
           const SizedBox(height: 8),
-          Text(
-            l10n.stravaApiImportHelp(kStravaApiSyncLimit),
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
           TextField(
             controller: _clientIdController,
             enabled: !busy,
