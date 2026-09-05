@@ -163,7 +163,7 @@ class StravaApiClient {
     final uri = Uri.parse('$kStravaApiBase/activities/$activityId/streams')
         .replace(
       queryParameters: {
-        'keys': 'latlng,time,altitude',
+        'keys': 'latlng,time,altitude,heartrate',
         'key_by_type': 'true',
       },
     );
@@ -214,6 +214,9 @@ class StravaApiClient {
     final altData = (byType['altitude'] is Map<String, dynamic>)
         ? (byType['altitude'] as Map<String, dynamic>)['data']
         : null;
+    final hrData = (byType['heartrate'] is Map<String, dynamic>)
+        ? (byType['heartrate'] as Map<String, dynamic>)['data']
+        : null;
 
     final points = <StravaStreamPoint>[];
     for (var i = 0; i < latlngData.length; i++) {
@@ -237,12 +240,20 @@ class StravaApiClient {
       if (altData is List && i < altData.length && altData[i] is num) {
         elevation = (altData[i] as num).toDouble();
       }
+      int? heartRateBpm;
+      if (hrData is List && i < hrData.length && hrData[i] is num) {
+        final bpm = (hrData[i] as num).toInt();
+        if (bpm >= 0) {
+          heartRateBpm = bpm;
+        }
+      }
       points.add(
         StravaStreamPoint(
           lat: lat,
           lon: lon,
           timeSeconds: timeSeconds,
           elevation: elevation,
+          heartRateBpm: heartRateBpm,
         ),
       );
     }

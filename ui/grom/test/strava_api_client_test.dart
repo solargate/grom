@@ -67,22 +67,61 @@ void main() {
     );
   });
 
-  test('getActivityTrackPoints reads key_by_type streams', () async {
+  test('getActivityTrackPoints reads key_by_type streams including HR', () async {
+    http.Request? seen;
+    final client = StravaApiClient(
+      httpClient: MockClient((request) async {
+        seen = request;
+        return http.Response(
+          jsonEncode({
+            'latlng': {
+              'data': [
+                [55.75, 37.61],
+                [0, 0],
+                [55.76, 37.62],
+              ],
+            },
+            'time': {
+              'data': [0, 30, 60],
+            },
+            'altitude': {
+              'data': [100, 101, 102],
+            },
+            'heartrate': {
+              'data': [120, 130, 145],
+            },
+          }),
+          200,
+        );
+      }),
+    );
+
+    final points = await client.getActivityTrackPoints(
+      accessToken: 'tok',
+      activityId: 9,
+    );
+    expect(seen!.url.queryParameters['keys'], 'latlng,time,altitude,heartrate');
+    expect(points, hasLength(2));
+    expect(points.first.lat, 55.75);
+    expect(points.first.timeSeconds, 0);
+    expect(points.first.elevation, 100);
+    expect(points.first.heartRateBpm, 120);
+    expect(points.last.lon, 37.62);
+    expect(points.last.heartRateBpm, 145);
+  });
+
+  test('getActivityTrackPoints omits HR when stream missing', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(
             jsonEncode({
               'latlng': {
                 'data': [
                   [55.75, 37.61],
-                  [0, 0],
                   [55.76, 37.62],
                 ],
               },
               'time': {
-                'data': [0, 30, 60],
-              },
-              'altitude': {
-                'data': [100, 101, 102],
+                'data': [0, 60],
               },
             }),
             200,
@@ -94,10 +133,7 @@ void main() {
       activityId: 9,
     );
     expect(points, hasLength(2));
-    expect(points.first.lat, 55.75);
-    expect(points.first.timeSeconds, 0);
-    expect(points.first.elevation, 100);
-    expect(points.last.lon, 37.62);
+    expect(points.every((p) => p.heartRateBpm == null), isTrue);
   });
 
   test('getActivityTrackPoints returns empty on 404', () async {

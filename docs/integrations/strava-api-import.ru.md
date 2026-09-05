@@ -34,7 +34,7 @@
 | Стоп | На первой активности, уже есть в Grom с `external_id.name=strava` и тем же id |
 | Видимость | Только `activity:read` — Everyone / Followers (не «Only You») |
 | Без GPS | Workout по summary без трека |
-| С GPS | GPX из streams Strava |
+| С GPS | GPX из streams Strava (включая пульс, если есть) |
 | Устройство | Берёт Strava `device_name`, если есть (иначе дефолт сервера `Grom App`) |
 | Фото | Best-effort через photos API; ошибка фото не валит workout |
 | Снаряжение | `equipment_ids` не передаётся → сервер берёт `last_equipment_by_sport` |

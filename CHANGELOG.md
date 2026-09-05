@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Open GPX/FIT tracks via "Open with"
 - Android: import recent Strava workouts via your own Strava API app (Home sync)
 - Strava API import keeps the original recording device name
+- Strava API import includes heart-rate when Strava provides it
 
 ### Added
 
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Android:** Strava API import embeds heart-rate from Strava streams into the synthetic GPX (`gpxtpx:hr`) so the server builds the HR chart and avg/max
 - **CI:** Release CI uploads the Android AAB to Google Play open testing (`beta`) as a draft, instead of closed testing (`alpha`)
 - **CI:** Verify runs Android JVM unit tests (`:app:testDebugUnitTest`); `make test-android-unit` / `make test` include them; commit the Android Gradle Wrapper for CI
 - **CI:** Android unit job writes `local.properties` (`flutter.sdk` / `sdk.dir`) before Gradle; uses `gradle/actions/setup-gradle@v5` (Node 24)

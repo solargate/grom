@@ -7,15 +7,20 @@ class StravaStreamPoint {
     required this.lon,
     this.timeSeconds,
     this.elevation,
+    this.heartRateBpm,
   });
 
   final double lat;
   final double lon;
   final int? timeSeconds;
   final double? elevation;
+  final int? heartRateBpm;
 }
 
-/// Builds a minimal GPX 1.1 document from Strava latlng (+ optional time/ele).
+/// Builds a minimal GPX 1.1 document from Strava latlng (+ optional time/ele/HR).
+///
+/// Heart rate is written as Garmin TrackPoint Extension (`gpxtpx:hr`) so the
+/// Grom server parser can build the HR chart and avg/max stats.
 List<int> buildGpxFromStravaStreams({
   required String name,
   required DateTime startDate,
@@ -29,7 +34,8 @@ List<int> buildGpxFromStravaStreams({
   buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
   buffer.writeln(
     '<gpx version="1.1" creator="grom-strava-api" '
-    'xmlns="http://www.topografix.com/GPX/1/1">',
+    'xmlns="http://www.topografix.com/GPX/1/1" '
+    'xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">',
   );
   buffer.writeln('<trk>');
   buffer.writeln('<name>${_escapeXml(name)}</name>');
@@ -43,6 +49,14 @@ List<int> buildGpxFromStravaStreams({
         ? startDate.toUtc().add(Duration(seconds: point.timeSeconds!))
         : startDate.toUtc();
     buffer.write('<time>${when.toIso8601String()}</time>');
+    final hr = point.heartRateBpm;
+    if (hr != null && hr >= 0) {
+      buffer.write(
+        '<extensions><gpxtpx:TrackPointExtension>'
+        '<gpxtpx:hr>$hr</gpxtpx:hr>'
+        '</gpxtpx:TrackPointExtension></extensions>',
+      );
+    }
     buffer.writeln('</trkpt>');
   }
   buffer.writeln('</trkseg>');
