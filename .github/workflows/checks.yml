@@ -21,13 +21,95 @@ jobs:
           cache: true
 
       - name: Vet
+        id: vet
         run: go vet ./...
 
       - name: Test
-        run: go test ./...
+        id: test
+        run: |
+          set -o pipefail
+          go test ./... -json | tee go-test.jsonl | python3 -c '
+          import json, sys
+          for line in sys.stdin:
+              try:
+                  obj = json.loads(line)
+              except json.JSONDecodeError:
+                  continue
+              if obj.get("Action") == "output" and obj.get("Output"):
+                  sys.stdout.write(obj["Output"])
+          '
 
       - name: Build smoke
+        id: build
         run: go build -o /dev/null ./cmd/grom
+
+      - name: Summary
+        if: always()
+        run: |
+          python3 <<'PY'
+          import json, os, pathlib
+
+          def mark(ok: bool) -> str:
+              return "✅" if ok else "❌"
+
+          go_version = os.popen("go env GOVERSION").read().strip() or "unknown"
+          vet_ok = os.environ.get("VET_OUTCOME") == "success"
+          test_ok = os.environ.get("TEST_OUTCOME") == "success"
+          build_ok = os.environ.get("BUILD_OUTCOME") == "success"
+
+          pkgs_pass = pkgs_fail = tests_pass = tests_fail = tests_skip = 0
+          path = pathlib.Path("go-test.jsonl")
+          if path.exists():
+              for line in path.read_text().splitlines():
+                  try:
+                      obj = json.loads(line)
+                  except json.JSONDecodeError:
+                      continue
+                  action = obj.get("Action")
+                  if action not in ("pass", "fail", "skip"):
+                      continue
+                  if "Test" in obj:
+                      if action == "pass":
+                          tests_pass += 1
+                      elif action == "fail":
+                          tests_fail += 1
+                      else:
+                          tests_skip += 1
+                  else:
+                      if action == "pass":
+                          pkgs_pass += 1
+                      elif action == "fail":
+                          pkgs_fail += 1
+
+          tests_line = f"{tests_pass} passed"
+          if tests_fail:
+              tests_line += f", {tests_fail} failed"
+          if tests_skip:
+              tests_line += f", {tests_skip} skipped"
+
+          pkgs_line = f"{pkgs_pass} passed"
+          if pkgs_fail:
+              pkgs_line += f", {pkgs_fail} failed"
+          if not path.exists():
+              pkgs_line = "n/a"
+              tests_line = "n/a"
+
+          summary = f"""### Go
+          | Check | Result |
+          | --- | --- |
+          | Go | `{go_version}` |
+          | `go vet ./...` | {mark(vet_ok)} |
+          | Packages | {pkgs_line} |
+          | Tests | {tests_line} |
+          | Build `./cmd/grom` | {mark(build_ok)} |
+          """
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write("\n".join(line.lstrip() for line in summary.strip().splitlines()) + "\n")
+          PY
+        env:
+          VET_OUTCOME: ${{ steps.vet.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
 
   flutter:
     name: Flutter
@@ -44,12 +126,129 @@ jobs:
           cache: true
 
       - name: Analyze
+        id: analyze
         working-directory: ui/grom
         run: flutter analyze
 
       - name: Test
+        id: test
         working-directory: ui/grom
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test --machine | tee flutter-test.jsonl | python3 -c '
+          import json, sys
+          for line in sys.stdin:
+              line = line.strip()
+              if not line or not line.startswith("{"):
+                  continue
+              try:
+                  obj = json.loads(line)
+              except json.JSONDecodeError:
+                  continue
+              if not isinstance(obj, dict):
+                  continue
+              # Print a short progress line for suite/test starts and results.
+              t = obj.get("type")
+              if t == "testStart" and not obj.get("test", {}).get("metadata", {}).get("skip"):
+                  name = obj.get("test", {}).get("name")
+                  if name and not name.startswith("loading "):
+                      print(f"  {name}", flush=True)
+              elif t == "testDone":
+                  result = obj.get("result")
+                  if result and result != "success" and not obj.get("hidden"):
+                      print(f"  -> {result}", flush=True)
+              elif t == "error":
+                  err = obj.get("error") or obj.get("stackTrace") or "error"
+                  print(f"  ERROR: {err}", flush=True)
+          '
+
+      - name: Summary
+        if: always()
+        working-directory: ui/grom
+        run: |
+          python3 <<'PY'
+          import json, os, pathlib, subprocess
+
+          def mark(ok: bool) -> str:
+              return "✅" if ok else "❌"
+
+          flutter_ver = subprocess.check_output(
+              ["flutter", "--version", "--machine"], text=True
+          )
+          try:
+              flutter_label = json.loads(flutter_ver).get("flutterVersion", "3.44.6")
+          except json.JSONDecodeError:
+              flutter_label = "3.44.6"
+
+          analyze_ok = os.environ.get("ANALYZE_OUTCOME") == "success"
+
+          passed = failed = skipped = 0
+          counted_ids = set()
+          path = pathlib.Path("flutter-test.jsonl")
+          if path.exists():
+              events = []
+              for line in path.read_text().splitlines():
+                  line = line.strip()
+                  if not line or not line.startswith("{"):
+                      continue
+                  try:
+                      obj = json.loads(line)
+                  except json.JSONDecodeError:
+                      continue
+                  if not isinstance(obj, dict):
+                      continue
+                  events.append(obj)
+              for obj in events:
+                  if obj.get("type") != "testStart":
+                      continue
+                  test = obj.get("test") or {}
+                  if test.get("metadata", {}).get("skip"):
+                      continue
+                  if obj.get("hidden") or test.get("metadata", {}).get("hidden"):
+                      continue
+                  # Skip synthetic "loading" tests from the reporter.
+                  name = test.get("name") or ""
+                  if name.startswith("loading "):
+                      continue
+                  tid = test.get("id")
+                  if tid is not None:
+                      counted_ids.add(tid)
+              for obj in events:
+                  if obj.get("type") != "testDone":
+                      continue
+                  if obj.get("hidden"):
+                      continue
+                  tid = obj.get("testID")
+                  if counted_ids and tid not in counted_ids:
+                      continue
+                  if obj.get("skipped"):
+                      skipped += 1
+                  elif obj.get("result") == "success":
+                      passed += 1
+                  elif obj.get("result") in ("failure", "error"):
+                      failed += 1
+
+          if path.exists():
+              tests_line = f"{passed} passed"
+              if failed:
+                  tests_line += f", {failed} failed"
+              if skipped:
+                  tests_line += f", {skipped} skipped"
+          else:
+              tests_line = "n/a"
+
+          summary = f"""### Flutter
+          | Check | Result |
+          | --- | --- |
+          | Flutter | `{flutter_label}` |
+          | `flutter analyze` | {mark(analyze_ok)} |
+          | Tests | {tests_line} |
+          """
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write("\n".join(line.lstrip() for line in summary.strip().splitlines()) + "\n")
+          PY
+        env:
+          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
 
   android-unit:
     name: Android unit
@@ -107,9 +306,49 @@ jobs:
         run: go install github.com/swaggo/swag/cmd/swag@v1.16.6
 
       - name: Check swagger docs are up to date
+        id: check
         run: |
           make apidoc
-          git diff --exit-code api/docs
+          if git diff --quiet -- api/docs; then
+            echo "sync=in sync" >> "$GITHUB_OUTPUT"
+          else
+            echo "sync=out of date" >> "$GITHUB_OUTPUT"
+            git diff --stat -- api/docs | tee swagger-diff.stat
+            {
+              echo
+              echo "<details><summary>api/docs diff</summary>"
+              echo
+              echo '```diff'
+              git diff -- api/docs | head -n 200
+              echo '```'
+              echo "</details>"
+            } > swagger-diff.md
+            git diff --exit-code -- api/docs
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          sync="${{ steps.check.outputs.sync }}"
+          if [ -z "$sync" ]; then
+            sync="n/a"
+          fi
+          if [ "${{ steps.check.outcome }}" = "success" ]; then
+            mark="✅"
+          else
+            mark="❌"
+          fi
+          {
+            echo "### Swagger"
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| swag | \`v1.16.6\` |"
+            echo "| \`make apidoc\` | ran |"
+            echo "| \`api/docs\` vs git | ${sync} ${mark} |"
+            if [ -f swagger-diff.md ]; then
+              cat swagger-diff.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   changelog:
     name: Changelog notes
@@ -119,7 +358,23 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Test changelog note extraction
+        id: test
         run: scripts/changelog_notes_test.sh
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.test.outcome }}" = "success" ]; then
+            mark="✅"
+          else
+            mark="❌"
+          fi
+          {
+            echo "### Changelog notes"
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| \`changelog_notes_test.sh\` | ${mark} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   catalog:
     name: Server catalog
@@ -139,9 +394,54 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test catalog generator
+        id: unit
         run: python scripts/server_catalog_test.py
 
       - name: Check generated catalog is up to date
+        id: sync
         run: |
           python scripts/server_catalog.py generate
-          git diff --exit-code ui/grom/lib/generated/server_catalog.g.dart
+          if git diff --quiet -- ui/grom/lib/generated/server_catalog.g.dart; then
+            echo "sync=in sync" >> "$GITHUB_OUTPUT"
+          else
+            echo "sync=out of date" >> "$GITHUB_OUTPUT"
+            git diff --stat -- ui/grom/lib/generated/server_catalog.g.dart | tee catalog-diff.stat
+            {
+              echo
+              echo "<details><summary>server_catalog.g.dart diff</summary>"
+              echo
+              echo '```diff'
+              git diff -- ui/grom/lib/generated/server_catalog.g.dart | head -n 200
+              echo '```'
+              echo "</details>"
+            } > catalog-diff.md
+            git diff --exit-code -- ui/grom/lib/generated/server_catalog.g.dart
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          unit_mark="✅"
+          if [ "${{ steps.unit.outcome }}" != "success" ]; then
+            unit_mark="❌"
+          fi
+          sync="${{ steps.sync.outputs.sync }}"
+          if [ -z "$sync" ]; then
+            sync="n/a"
+          fi
+          if [ "${{ steps.sync.outcome }}" = "success" ]; then
+            sync_mark="✅"
+          else
+            sync_mark="❌"
+          fi
+          {
+            echo "### Server catalog"
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Python | \`3.12\` |"
+            echo "| Generator tests | ${unit_mark} |"
+            echo "| \`server_catalog.g.dart\` vs git | ${sync} ${sync_mark} |"
+            if [ -f catalog-diff.md ]; then
+              cat catalog-diff.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
