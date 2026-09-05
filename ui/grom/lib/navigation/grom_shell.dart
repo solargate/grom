@@ -62,7 +62,7 @@ class _GromShellState extends State<GromShell> {
   Workout? _feedPhotoViewerWorkout;
 
   bool _isShellReady = false;
-  StreamSubscription<SharedTrackPayload>? _sharedTrackSub;
+  StreamSubscription<SharedTrackReceiveResult>? _sharedTrackSub;
   SharedTrackPayload? _pendingSharedTrack;
   bool _isProcessingSharedTrack = false;
 
@@ -105,7 +105,7 @@ class _GromShellState extends State<GromShell> {
   void initState() {
     super.initState();
     if (isMobileClient) {
-      _sharedTrackSub = watchSharedTracks().listen(_handleIncomingSharedTrack);
+      _sharedTrackSub = watchSharedTracks().listen(_handleSharedTrackResult);
     }
     _loadInitialData();
   }
@@ -206,7 +206,8 @@ class _GromShellState extends State<GromShell> {
           await clearLocalSession();
         }
       } catch (_) {
-        // Network or server errors: keep token, show logged-out UI.
+        // Network or server errors: keep token. Nickname stays null until a later
+        // successful /me; shared-track import still proceeds when a JWT exists.
       }
     }
 
@@ -241,7 +242,25 @@ class _GromShellState extends State<GromShell> {
     await _processPendingSharedTrack();
   }
 
-  void _handleIncomingSharedTrack(SharedTrackPayload payload) {
+  void _handleSharedTrackResult(SharedTrackReceiveResult result) {
+    if (!mounted) {
+      return;
+    }
+    if (result.readFailed) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.shareTrackReadFailed)),
+      );
+    } else if (result.unsupportedFormat) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.invalidTrackFormat)),
+      );
+    }
+    final payload = result.payload;
+    if (payload == null) {
+      return;
+    }
     _pendingSharedTrack = payload;
     if (_isShellReady) {
       unawaited(_processPendingSharedTrack());
@@ -260,7 +279,13 @@ class _GromShellState extends State<GromShell> {
 
     _isProcessingSharedTrack = true;
     try {
-      if (!_isLoggedIn) {
+      if (!sharedTrackImportAllowed(
+            isLoggedIn: _isLoggedIn,
+            token: await AuthStorage.getToken(),
+          )) {
+        if (!mounted) {
+          return;
+        }
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.shareTrackLoginRequired)),
@@ -270,6 +295,9 @@ class _GromShellState extends State<GromShell> {
       }
 
       if (isMobileClient && TrackRecordingService.instance.isActive) {
+        if (!mounted) {
+          return;
+        }
         final l10n = AppLocalizations.of(context)!;
         final discard = await showDialog<bool>(
           context: context,
