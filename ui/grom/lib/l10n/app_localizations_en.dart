@@ -1063,6 +1063,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stravaApiClientSecretLabel => 'Strava client secret';
 
   @override
+  String get stravaApiSyncLimitLabel => 'Workouts per sync';
+
+  @override
   String get stravaApiConnectStatusDisconnected => 'No';
 
   @override

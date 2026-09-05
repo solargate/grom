@@ -458,6 +458,7 @@
   "stravaApiImportToggle": "Импорт тренировок из Strava",
   "stravaApiClientIdLabel": "Strava client id",
   "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Тренировок за sync",
   "stravaApiConnectStatusDisconnected": "Нет",
   "stravaApiConnectStatusConnected": "OK",
   "stravaApiConnectStatusFailed": "Ошибка",

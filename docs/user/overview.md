@@ -50,7 +50,7 @@ When the operator enables ActivityPub federation, you can also follow athletes o
 
 From **Integration → Strava**, upload a [Strava bulk data export](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) ZIP. Grom imports activities, tracks, photos, and equipment. Column mapping and server-side behavior are documented in [Strava bulk import](../integrations/strava-bulk-import.md).
 
-On **Android** only, you can also enable **Import workouts from Strava** with your own Strava API Client ID/Secret, connect once via OAuth, then use the Home sync button to pull up to the 10 most recent activities (stops at the first already imported). Details: [Strava API import](../integrations/strava-api-import.md).
+On **Android** only, you can also enable **Import workouts from Strava** with your own Strava API Client ID/Secret, connect once via OAuth, then use the Home sync button to pull recent activities (count is configurable on the Integration screen, default 10; stops at the first already imported). Details: [Strava API import](../integrations/strava-api-import.md).
 
 ## Import tracks
 

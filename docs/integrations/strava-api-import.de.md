@@ -19,7 +19,7 @@ Neue Strava-Apps starten im Single-Player-Modus (nur der App-Besitzer kann autor
 
 1. **Integration** → **Externe Dienste** → **Strava** öffnen (nur Android).
 2. **Trainings aus Strava importieren** aktivieren.
-3. Client ID und Client Secret eingeben.
+3. Client ID, Client Secret und optional **Trainings pro Sync** eingeben (Standard **10**, max. **200**).
 4. **Connect with Strava** tippen, Scope `activity:read` erteilen, Status **OK** prüfen.
 5. Auf **Start** das Sync-Symbol in der App-Leiste tippen (wie früher bei Health Sync).
 6. Dialog „Synchronisiere…“, danach Snackbar mit Importanzahl (oder keine neuen Trainings).
@@ -30,7 +30,7 @@ Umschalter aus = Sync-Button ausgeblendet; Credentials/Tokens bleiben. Logout au
 
 | Regel | Verhalten |
 |-------|-----------|
-| Limit | Bis zu **10** neueste Aktivitäten (`kStravaApiSyncLimit`) |
+| Limit | Bis zur konfigurierbaren Anzahl **Trainings pro Sync** (Standard **10**, max. **200**) der neuesten Aktivitäten |
 | Reihenfolge | Neueste zuerst |
 | Stopp | Bei der ersten bereits vorhandenen Aktivität mit `external_id.name=strava` |
 | Sichtbarkeit | Nur `activity:read` — Everyone / Followers (nicht „Only You“) |

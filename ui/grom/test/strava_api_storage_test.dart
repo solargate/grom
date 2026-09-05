@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grom/services/strava_api_constants.dart';
 import 'package:grom/services/strava_api_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,16 +10,17 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('persists enabled flag and credentials', () async {
-    await StravaApiStorage.saveEnabled(true);
-    await StravaApiStorage.saveCredentials(
-      clientId: '12345',
-      clientSecret: 'secret',
-    );
+  test('persists sync limit with default and clamp', () async {
+    expect(await StravaApiStorage.loadSyncLimit(), kStravaApiSyncLimitDefault);
 
-    expect(await StravaApiStorage.loadEnabled(), isTrue);
-    expect(await StravaApiStorage.loadClientId(), '12345');
-    expect(await StravaApiStorage.loadClientSecret(), 'secret');
+    await StravaApiStorage.saveSyncLimit(25);
+    expect(await StravaApiStorage.loadSyncLimit(), 25);
+
+    await StravaApiStorage.saveSyncLimit(0);
+    expect(await StravaApiStorage.loadSyncLimit(), kStravaApiSyncLimitDefault);
+
+    await StravaApiStorage.saveSyncLimit(500);
+    expect(await StravaApiStorage.loadSyncLimit(), kStravaApiSyncLimitMax);
   });
 
   test('persists tokens and connected state', () async {

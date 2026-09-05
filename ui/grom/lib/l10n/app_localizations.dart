@@ -2092,6 +2092,12 @@ abstract class AppLocalizations {
   /// **'Strava client secret'**
   String get stravaApiClientSecretLabel;
 
+  /// No description provided for @stravaApiSyncLimitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts per sync'**
+  String get stravaApiSyncLimitLabel;
+
   /// No description provided for @stravaApiConnectStatusDisconnected.
   ///
   /// In en, this message translates to:

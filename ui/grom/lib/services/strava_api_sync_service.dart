@@ -98,12 +98,14 @@ class StravaApiSyncService extends ChangeNotifier {
   bool _syncing = false;
   String _clientId = '';
   String _clientSecret = '';
+  int _syncLimit = kStravaApiSyncLimitDefault;
 
   bool get enabled => _enabled;
   bool get connected => _connected;
   bool get syncing => _syncing;
   String get clientId => _clientId;
   String get clientSecret => _clientSecret;
+  int get syncLimit => _syncLimit;
 
   /// Home sync button: Android-only callers also gate on platform.
   bool get canSync => _enabled && _connected && !_syncing;
@@ -112,6 +114,7 @@ class StravaApiSyncService extends ChangeNotifier {
     _enabled = await StravaApiStorage.loadEnabled();
     _clientId = await StravaApiStorage.loadClientId();
     _clientSecret = await StravaApiStorage.loadClientSecret();
+    _syncLimit = await StravaApiStorage.loadSyncLimit();
     final tokens = await StravaApiStorage.loadTokens();
     _connected = tokens.connected && tokens.refreshToken.isNotEmpty;
     notifyListeners();
@@ -133,6 +136,11 @@ class StravaApiSyncService extends ChangeNotifier {
       clientId: _clientId,
       clientSecret: _clientSecret,
     );
+  }
+
+  Future<void> saveSyncLimitDraft(int? raw) async {
+    _syncLimit = clampStravaApiSyncLimit(raw);
+    await StravaApiStorage.saveSyncLimit(_syncLimit);
   }
 
   Future<StravaConnectResult> connect() async {
@@ -186,9 +194,11 @@ class StravaApiSyncService extends ChangeNotifier {
         );
       }
 
+      _syncLimit = await StravaApiStorage.loadSyncLimit();
+
       final activities = await _client.listAthleteActivities(
         accessToken: accessToken,
-        perPage: kStravaApiSyncLimit,
+        perPage: _syncLimit,
         page: 1,
       );
 

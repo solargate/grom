@@ -19,7 +19,7 @@ New Strava apps start in single-player mode (only the app owner can authorize), 
 
 1. Open **Integration** → **External services** → **Strava** (Android only).
 2. Enable **Import workouts from Strava**.
-3. Enter Client ID and Client Secret.
+3. Enter Client ID, Client Secret, and optionally **Workouts per sync** (default **10**, max **200**).
 4. Tap **Connect with Strava**, authorize with scope `activity:read`, and confirm the status shows **OK**.
 5. On **Home**, tap the sync icon in the app bar (same placement/behavior as the former Health Sync button).
 6. Grom shows a “Synchronizing…” dialog, then a snackbar with how many workouts were imported (or that none were new).
@@ -30,7 +30,7 @@ Turning the toggle **off** only hides the Home sync button; credentials and toke
 
 | Rule | Behavior |
 |------|----------|
-| Limit | Up to **10** most recent activities (`kStravaApiSyncLimit`) |
+| Limit | Up to the user-configured **Workouts per sync** count (default **10**, max **200**) of the most recent activities |
 | Order | Newest first |
 | Stop | Stops at the first activity that already exists in Grom with `external_id.name=strava` and matching id |
 | Visibility | `activity:read` only — Everyone / Followers activities (not “Only You”) |

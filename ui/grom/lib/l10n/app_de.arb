@@ -458,6 +458,7 @@
   "stravaApiImportToggle": "Trainings aus Strava importieren",
   "stravaApiClientIdLabel": "Strava client id",
   "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Trainings pro Sync",
   "stravaApiConnectStatusDisconnected": "Nein",
   "stravaApiConnectStatusConnected": "OK",
   "stravaApiConnectStatusFailed": "Fehler",

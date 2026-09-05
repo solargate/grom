@@ -1,5 +1,20 @@
-/// Max activities fetched from Strava API per Home sync.
-const kStravaApiSyncLimit = 10;
+/// Default / fallback for Home sync activity count (user-editable).
+const kStravaApiSyncLimitDefault = 10;
+
+/// Inclusive bounds for the sync limit field (Strava `per_page` max is 200).
+const kStravaApiSyncLimitMin = 1;
+const kStravaApiSyncLimitMax = 200;
+
+/// Clamp a user-entered sync limit; invalid values fall back to the default.
+int clampStravaApiSyncLimit(int? value) {
+  if (value == null || value < kStravaApiSyncLimitMin) {
+    return kStravaApiSyncLimitDefault;
+  }
+  if (value > kStravaApiSyncLimitMax) {
+    return kStravaApiSyncLimitMax;
+  }
+  return value;
+}
 
 /// `external_id.name` for Strava API and ZIP imports (shared namespace).
 const kStravaExternalIDName = 'strava';

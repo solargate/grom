@@ -95,7 +95,7 @@ class StravaApiClient {
 
   Future<List<StravaSummaryActivity>> listAthleteActivities({
     required String accessToken,
-    int perPage = kStravaApiSyncLimit,
+    int perPage = kStravaApiSyncLimitDefault,
     int page = 1,
   }) async {
     final uri = Uri.parse('$kStravaApiBase/athlete/activities').replace(

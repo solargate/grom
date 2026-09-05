@@ -1045,9 +1045,9 @@ class _GromShellState extends State<GromShell> {
             : null,
         title: Text(_contentHeaderTitle(l10n)),
         actions: [
-          if (_showStravaApiSyncButton) _buildStravaApiSyncHeaderButton()!,
           if (_showSportFilterButton) _buildSportFilterHeaderButton()!,
           if (_showMyWorkoutsLayoutButton) _buildMyWorkoutsLayoutHeaderButton()!,
+          if (_showStravaApiSyncButton) _buildStravaApiSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
           if (_isViewingProfile) _buildProfileMenu(),
         ],
@@ -1095,12 +1095,12 @@ class _GromShellState extends State<GromShell> {
                               ),
                             ),
                           ),
-                          if (_showStravaApiSyncButton)
-                            _buildStravaApiSyncHeaderButton()!,
                           if (_showSportFilterButton)
                             _buildSportFilterHeaderButton()!,
                           if (_showMyWorkoutsLayoutButton)
                             _buildMyWorkoutsLayoutHeaderButton()!,
+                          if (_showStravaApiSyncButton)
+                            _buildStravaApiSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
                           if (_isViewingProfile) _buildProfileMenu(),
                         ],

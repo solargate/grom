@@ -32,6 +32,8 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
   late final TapGestureRecognizer _stravaDownloadLinkRecognizer;
   late final TextEditingController _clientIdController;
   late final TextEditingController _clientSecretController;
+  late final TextEditingController _syncLimitController;
+  late final FocusNode _syncLimitFocus;
 
   bool _stravaConnectFailed = false;
   bool _connecting = false;
@@ -44,6 +46,15 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
     super.initState();
     _clientIdController = TextEditingController();
     _clientSecretController = TextEditingController();
+    _syncLimitController = TextEditingController(
+      text: '$kStravaApiSyncLimitDefault',
+    );
+    _syncLimitFocus = FocusNode()
+      ..addListener(() {
+        if (!_syncLimitFocus.hasFocus) {
+          _normalizeSyncLimitField();
+        }
+      });
     _stravaDownloadLinkRecognizer = TapGestureRecognizer()
       ..onTap = _openStravaDownloadUrl;
     _importService.addListener(_onImportChanged);
@@ -60,6 +71,7 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
     }
     _clientIdController.text = _stravaApi.clientId;
     _clientSecretController.text = _stravaApi.clientSecret;
+    _syncLimitController.text = '${_stravaApi.syncLimit}';
     setState(() {});
   }
 
@@ -68,6 +80,8 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
     _stravaDownloadLinkRecognizer.dispose();
     _clientIdController.dispose();
     _clientSecretController.dispose();
+    _syncLimitFocus.dispose();
+    _syncLimitController.dispose();
     _importService.removeListener(_onImportChanged);
     _trackImportService.removeListener(_onTrackImportChanged);
     _stravaApi.removeListener(_onStravaApiChanged);
@@ -148,6 +162,30 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
       clientId: _clientIdController.text,
       clientSecret: _clientSecretController.text,
     );
+  }
+
+  Future<void> _persistSyncLimitDraft() async {
+    final text = _syncLimitController.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+    final parsed = int.tryParse(text);
+    if (parsed == null) {
+      return;
+    }
+    await _stravaApi.saveSyncLimitDraft(parsed);
+  }
+
+  Future<void> _normalizeSyncLimitField() async {
+    final parsed = int.tryParse(_syncLimitController.text.trim());
+    await _stravaApi.saveSyncLimitDraft(parsed);
+    if (!mounted) {
+      return;
+    }
+    final normalized = '${_stravaApi.syncLimit}';
+    if (_syncLimitController.text != normalized) {
+      _syncLimitController.text = normalized;
+    }
   }
 
   Future<void> _connectStrava() async {
@@ -271,6 +309,18 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
               border: const OutlineInputBorder(),
             ),
             onChanged: (_) => _persistCredentialsDraft(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _syncLimitController,
+            focusNode: _syncLimitFocus,
+            enabled: !busy,
+            decoration: InputDecoration(
+              labelText: l10n.stravaApiSyncLimitLabel,
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (_) => _persistSyncLimitDraft(),
           ),
           const SizedBox(height: 16),
           Row(

@@ -1,8 +1,11 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'strava_api_constants.dart';
+
 const stravaApiEnabledStorageKey = 'strava_api_enabled';
 const stravaApiClientIdStorageKey = 'strava_api_client_id';
 const stravaApiClientSecretStorageKey = 'strava_api_client_secret';
+const stravaApiSyncLimitStorageKey = 'strava_api_sync_limit';
 const stravaApiAccessTokenStorageKey = 'strava_api_access_token';
 const stravaApiRefreshTokenStorageKey = 'strava_api_refresh_token';
 const stravaApiExpiresAtStorageKey = 'strava_api_expires_at';
@@ -41,6 +44,19 @@ class StravaApiStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(stravaApiClientIdStorageKey, clientId);
     await prefs.setString(stravaApiClientSecretStorageKey, clientSecret);
+  }
+
+  static Future<int> loadSyncLimit() async {
+    final prefs = await SharedPreferences.getInstance();
+    return clampStravaApiSyncLimit(prefs.getInt(stravaApiSyncLimitStorageKey));
+  }
+
+  static Future<void> saveSyncLimit(int limit) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      stravaApiSyncLimitStorageKey,
+      clampStravaApiSyncLimit(limit),
+    );
   }
 
   static Future<({

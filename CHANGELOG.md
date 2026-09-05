@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Android:** Strava API import (BYO Client ID/Secret on Integration, Connect with Strava OAuth, Home sync of up to 10 recent activities with `external_id` dedup, GPX from streams, best-effort photos)
+- **Android:** Strava API import (BYO Client ID/Secret on Integration, Connect with Strava OAuth, Home sync of recent activities with configurable count default 10, `external_id` dedup, GPX from streams, best-effort photos)
 - **Docs:** Strava API import guide (EN/RU/DE)
 
 ### Changed

@@ -458,6 +458,7 @@
   "stravaApiImportToggle": "Import workouts from Strava",
   "stravaApiClientIdLabel": "Strava client id",
   "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Workouts per sync",
   "stravaApiConnectStatusDisconnected": "No",
   "stravaApiConnectStatusConnected": "OK",
   "stravaApiConnectStatusFailed": "Error",
