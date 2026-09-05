@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **CI:** Release CI uploads the Android AAB to Google Play open testing (`beta`) as a draft, instead of closed testing (`alpha`)
 - **CI:** Verify runs Android JVM unit tests (`:app:testDebugUnitTest`); `make test-android-unit` / `make test` include them; commit the Android Gradle Wrapper for CI
-- **CI:** Android unit job uses `gradle/actions/setup-gradle@v5` (Node 24)
+- **CI:** Android unit job writes `local.properties` (`flutter.sdk` / `sdk.dir`) before Gradle; uses `gradle/actions/setup-gradle@v5` (Node 24)
 
 ### Fixed
 

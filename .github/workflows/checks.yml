@@ -77,6 +77,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      - name: Flutter pub get
+        working-directory: ui/grom
+        run: flutter pub get
+
+      - name: Write local.properties
+        working-directory: ui/grom/android
+        run: |
+          printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "${ANDROID_SDK_ROOT:-$ANDROID_HOME}" > local.properties
+
       - name: Unit tests
         working-directory: ui/grom/android
         run: ./gradlew :app:testDebugUnitTest --no-daemon
