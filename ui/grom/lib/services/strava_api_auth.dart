@@ -26,10 +26,14 @@ class StravaConnectResult {
 }
 
 class StravaApiAuth {
-  StravaApiAuth({http.Client? httpClient})
-      : _http = httpClient ?? http.Client();
+  StravaApiAuth({
+    http.Client? httpClient,
+    Future<String> Function(String authorizeUrl)? authenticate,
+  })  : _http = httpClient ?? http.Client(),
+        _authenticate = authenticate ?? authenticateStravaOAuth;
 
   final http.Client _http;
+  final Future<String> Function(String authorizeUrl) _authenticate;
 
   static Map<String, String> get _stravaHeaders => {
         'User-Agent': kStravaHttpUserAgent,
@@ -66,7 +70,7 @@ class StravaApiAuth {
     );
 
     try {
-      final redirectUrl = await authenticateStravaOAuth(
+      final redirectUrl = await _authenticate(
         buildAuthorizeUrl(clientId: id).toString(),
       );
       final redirect = Uri.parse(redirectUrl);
