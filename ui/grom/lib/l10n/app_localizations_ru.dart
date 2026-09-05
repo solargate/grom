@@ -1089,7 +1089,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get stravaApiConnectMissingScope =>
-      'Выдайте разрешение activity:read в Strava';
+      'Выдайте разрешения read и activity:read в Strava';
 
   @override
   String stravaApiConnectError(String message) {

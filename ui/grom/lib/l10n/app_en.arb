@@ -470,7 +470,7 @@
   "stravaApiConnectMissingCredentials": "Enter Client ID and Client Secret",
   "stravaApiConnectCancelled": "Strava authorization was cancelled",
   "stravaApiConnectDenied": "Strava authorization was denied",
-  "stravaApiConnectMissingScope": "Grant the activity:read permission in Strava",
+  "stravaApiConnectMissingScope": "Grant the read and activity:read permissions in Strava",
   "stravaApiConnectError": "Strava connect failed: {message}",
   "@stravaApiConnectError": {
     "placeholders": {

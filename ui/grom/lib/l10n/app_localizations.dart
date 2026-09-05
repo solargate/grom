@@ -2137,7 +2137,7 @@ abstract class AppLocalizations {
   /// No description provided for @stravaApiConnectMissingScope.
   ///
   /// In en, this message translates to:
-  /// **'Grant the activity:read permission in Strava'**
+  /// **'Grant the read and activity:read permissions in Strava'**
   String get stravaApiConnectMissingScope;
 
   /// No description provided for @stravaApiConnectError.

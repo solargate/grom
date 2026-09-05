@@ -1107,7 +1107,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get stravaApiConnectMissingScope =>
-      'Berechtigung activity:read in Strava erteilen';
+      'Berechtigungen read und activity:read in Strava erteilen';
 
   @override
   String stravaApiConnectError(String message) {

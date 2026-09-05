@@ -136,7 +136,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/Ucrop.CropTheme"/>
 
-        <!-- Strava OAuth redirect: grom://localhost/exchange_token -->
+        <!-- Strava OAuth redirect: grom://localhost -->
         <activity
             android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
             android:exported="true"
@@ -147,8 +147,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="grom"
-                    android:host="localhost"
-                    android:pathPrefix="/exchange_token" />
+                    android:host="localhost" />
             </intent-filter>
         </activity>
     </application>

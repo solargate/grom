@@ -31,13 +31,18 @@ class StravaApiAuth {
 
   final http.Client _http;
 
+  static Map<String, String> get _stravaHeaders => {
+        'User-Agent': kStravaHttpUserAgent,
+        'Accept': 'application/json',
+      };
+
   Uri buildAuthorizeUrl({required String clientId}) {
     return Uri.parse(kStravaAuthorizeUrl).replace(
       queryParameters: {
         'client_id': clientId,
         'redirect_uri': kStravaOAuthRedirectUri,
         'response_type': 'code',
-        'approval_prompt': 'auto',
+        'approval_prompt': 'force',
         'scope': kStravaOAuthScope,
       },
     );
@@ -175,19 +180,15 @@ class StravaApiAuth {
     required String clientSecret,
     required String code,
   }) async {
-    final response = await _http.post(
-      Uri.parse(kStravaTokenUrl),
-      body: {
+    // JSON body; do not send redirect_uri on token exchange (Strava docs omit it).
+    return _parseTokenResponse(
+      await _tokenRequest({
         'client_id': clientId,
         'client_secret': clientSecret,
         'code': code,
         'grant_type': 'authorization_code',
-      },
+      }),
     );
-    if (response.statusCode != 200) {
-      throw Exception(_tokenError(response));
-    }
-    return _parseTokenResponse(response.body);
   }
 
   Future<
@@ -201,19 +202,29 @@ class StravaApiAuth {
     required String clientSecret,
     required String refreshToken,
   }) async {
-    final response = await _http.post(
-      Uri.parse(kStravaTokenUrl),
-      body: {
+    return _parseTokenResponse(
+      await _tokenRequest({
         'client_id': clientId,
         'client_secret': clientSecret,
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
+      }),
+    );
+  }
+
+  Future<String> _tokenRequest(Map<String, String> params) async {
+    final response = await _http.post(
+      Uri.parse(kStravaTokenUrl),
+      headers: {
+        ..._stravaHeaders,
+        'Content-Type': 'application/json',
       },
+      body: jsonEncode(params),
     );
     if (response.statusCode != 200) {
       throw Exception(_tokenError(response));
     }
-    return _parseTokenResponse(response.body);
+    return response.body;
   }
 
   ({
@@ -243,16 +254,47 @@ class StravaApiAuth {
   }
 
   String _tokenError(http.Response response) {
+    final body = response.body.trim();
     try {
-      final json = jsonDecode(response.body);
+      final json = jsonDecode(body);
       if (json is Map<String, dynamic>) {
         final message = json['message'];
+        final errors = json['errors'];
+        if (errors is List && errors.isNotEmpty) {
+          final details = errors
+              .whereType<Map>()
+              .map((e) {
+                final field = e['field'];
+                final code = e['code'];
+                final resource = e['resource'];
+                return [
+                  if (resource != null) '$resource',
+                  if (field != null && '$field'.isNotEmpty) 'field=$field',
+                  if (code != null) 'code=$code',
+                ].join(' ');
+              })
+              .where((s) => s.isNotEmpty)
+              .join('; ');
+          if (message is String && message.isNotEmpty && details.isNotEmpty) {
+            return '$message ($details)';
+          }
+          if (details.isNotEmpty) {
+            return details;
+          }
+        }
         if (message is String && message.isNotEmpty) {
           return message;
         }
       }
     } catch (_) {
-      // Fall through.
+      // Non-JSON (often Cloudflare HTML on 403).
+    }
+    if (response.statusCode == 403) {
+      return 'token request forbidden (403). '
+          'Check Client ID/Secret, disable VPN if enabled, then retry Connect';
+    }
+    if (body.isNotEmpty && body.length < 200 && !body.startsWith('<')) {
+      return 'token request failed (${response.statusCode}): $body';
     }
     return 'token request failed (${response.statusCode})';
   }

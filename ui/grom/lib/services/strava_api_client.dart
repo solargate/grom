@@ -106,7 +106,11 @@ class StravaApiClient {
     );
     final response = await _http.get(
       uri,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'User-Agent': kStravaHttpUserAgent,
+        'Accept': 'application/json',
+      },
     );
     if (response.statusCode != 200) {
       throw StravaApiException(
@@ -131,7 +135,11 @@ class StravaApiClient {
     final uri = Uri.parse('$kStravaApiBase/activities/$activityId');
     final response = await _http.get(
       uri,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'User-Agent': kStravaHttpUserAgent,
+        'Accept': 'application/json',
+      },
     );
     if (response.statusCode != 200) {
       throw StravaApiException(
@@ -157,7 +165,11 @@ class StravaApiClient {
     );
     final response = await _http.get(
       uri,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'User-Agent': kStravaHttpUserAgent,
+        'Accept': 'application/json',
+      },
     );
     if (response.statusCode == 404) {
       return const [];
@@ -249,7 +261,11 @@ class StravaApiClient {
     try {
       final response = await _http.get(
         uri,
-        headers: {'Authorization': 'Bearer $accessToken'},
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'User-Agent': kStravaHttpUserAgent,
+          'Accept': 'application/json',
+        },
       );
       if (response.statusCode != 200) {
         return const [];
@@ -295,7 +311,10 @@ class StravaApiClient {
 
   Future<List<int>?> downloadBytes(String url) async {
     try {
-      final response = await _http.get(Uri.parse(url));
+      final response = await _http.get(
+        Uri.parse(url),
+        headers: {'User-Agent': kStravaHttpUserAgent},
+      );
       if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
         return null;
       }
