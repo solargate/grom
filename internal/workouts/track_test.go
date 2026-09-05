@@ -121,6 +121,25 @@ func TestStoreCreateWithTrack(t *testing.T) {
 		t.Fatalf("expected distance from track, got %v", created.Distance)
 	}
 
+	createdWithDevice, err := svc.CreateWithTrack("athlete", &workouts.Workout{
+		Name:            "GPX with device",
+		SportType:       "Run",
+		StartDate:       startDate.Add(time.Hour),
+		DurationSeconds: 0,
+		Distance:        0,
+		Device:          "Garmin Edge 530",
+	}, &workouts.TrackInput{
+		Filename: "sample.gpx",
+		Data:     gpxData,
+		Parsed:   parsed,
+	})
+	if err != nil {
+		t.Fatalf("CreateWithTrack with device: %v", err)
+	}
+	if createdWithDevice.Device != "Garmin Edge 530" {
+		t.Fatalf("device = %q, want %q", createdWithDevice.Device, "Garmin Edge 530")
+	}
+
 	expectedBase := "2026-07-06T084000Z-" + created.ID
 	workoutDir := filepath.Join(dir, "users", "athlete", "workouts", expectedBase)
 	if _, err := os.Stat(filepath.Join(workoutDir, tracks.TrackFileGPX)); err != nil {

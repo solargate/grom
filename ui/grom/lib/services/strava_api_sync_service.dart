@@ -332,6 +332,8 @@ class StravaApiSyncService extends ChangeNotifier {
       'distance': '${activity.distanceMeters}',
       'external_id_name': kStravaExternalIDName,
       'external_id_id': '${activity.id}',
+      if (activity.deviceName != null && activity.deviceName!.isNotEmpty)
+        'device': activity.deviceName!,
       if (activity.description != null && activity.description!.isNotEmpty)
         'description': activity.description!,
       if (activity.maxSpeedMs != null && activity.maxSpeedMs! > 0)

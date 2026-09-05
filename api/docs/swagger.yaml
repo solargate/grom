@@ -73,6 +73,9 @@ definitions:
       description:
         example: Easy session
         type: string
+      device:
+        example: Garmin Edge 530
+        type: string
       distance:
         example: 5200
         type: number
@@ -1733,6 +1736,8 @@ paths:
       description: Create a manual workout for the authenticated user. When equipment_ids
         is omitted, equipment is taken from the user's profile last_equipment_by_sport
         for the sport_type. An explicit empty equipment_ids list means no equipment.
+        Optional device sets the recording device label (default Grom App); a FIT
+        track's device overrides when present.
       parameters:
       - description: Workout data (JSON)
         in: body
@@ -1763,6 +1768,11 @@ paths:
         in: formData
         name: distance
         type: number
+      - description: Recording device label (multipart); omitted or empty defaults
+          to Grom App; FIT track device wins when present
+        in: formData
+        name: device
+        type: string
       - description: JSON array of equipment IDs; omit to use profile last_equipment_by_sport
           for sport_type; [] for none
         in: formData

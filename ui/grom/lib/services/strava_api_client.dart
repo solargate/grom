@@ -29,6 +29,7 @@ class StravaSummaryActivity {
     this.averageSpeedMs,
     this.totalElevationGain,
     this.description,
+    this.deviceName,
     this.totalPhotoCount = 0,
     this.hasMapPolyline = false,
   });
@@ -45,6 +46,7 @@ class StravaSummaryActivity {
   final double? averageSpeedMs;
   final double? totalElevationGain;
   final String? description;
+  final String? deviceName;
   final int totalPhotoCount;
   final bool hasMapPolyline;
 
@@ -58,6 +60,7 @@ class StravaSummaryActivity {
       final summary = map['summary_polyline'];
       hasPolyline = summary is String && summary.isNotEmpty;
     }
+    final deviceRaw = (json['device_name'] as String?)?.trim();
     return StravaSummaryActivity(
       id: (json['id'] as num).toInt(),
       name: (json['name'] as String?)?.trim() ?? '',
@@ -71,6 +74,7 @@ class StravaSummaryActivity {
       averageSpeedMs: (json['average_speed'] as num?)?.toDouble(),
       totalElevationGain: (json['total_elevation_gain'] as num?)?.toDouble(),
       description: (json['description'] as String?)?.trim(),
+      deviceName: (deviceRaw != null && deviceRaw.isNotEmpty) ? deviceRaw : null,
       totalPhotoCount: (json['total_photo_count'] as num?)?.toInt() ?? 0,
       hasMapPolyline: hasPolyline,
     );

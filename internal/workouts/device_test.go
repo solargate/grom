@@ -26,6 +26,24 @@ func TestStripStravaFromDevice(t *testing.T) {
 	}
 }
 
+func TestNormalizeDevice(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"", DeviceGrom},
+		{"  ", DeviceGrom},
+		{"Strava", DeviceGrom},
+		{"Garmin Edge 530", "Garmin Edge 530"},
+		{" Strava Garmin Edge 530 ", "Garmin Edge 530"},
+	}
+	for _, tt := range tests {
+		if got := NormalizeDevice(tt.in); got != tt.want {
+			t.Fatalf("NormalizeDevice(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestDeviceForTrackStripsStrava(t *testing.T) {
 	stravaWahoo := "Strava Wahoo ELEMNT"
 	parsed := &tracks.Data{Device: &stravaWahoo}

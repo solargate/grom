@@ -82,6 +82,51 @@ func TestWorkoutExternalIDCheckAndConflict(t *testing.T) {
 	}
 }
 
+func TestCreateWorkoutAcceptsDevice(t *testing.T) {
+	for _, driver := range []config.StorageDriver{config.StorageDriverFile, config.StorageDriverBBolt} {
+		t.Run(string(driver), func(t *testing.T) {
+			ta := setupTestAppWithDriver(t, driver)
+			ta.register(t, "alice", "alice@example.com", "password12")
+			token, _ := ta.login(t, "alice@example.com", "password12")
+
+			w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+				"name":       "From Strava",
+				"sport_type": "Ride",
+				"start_date": "2026-09-05T10:00:00Z",
+				"device":     "Garmin Edge 530",
+			}, token)
+			expectStatus(t, w, http.StatusCreated)
+			created := decodeObject(t, w)
+			if created["device"] != "Garmin Edge 530" {
+				t.Fatalf("json device = %#v, want Garmin Edge 530", created["device"])
+			}
+
+			w = ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token, map[string]string{
+				"name":       "Multipart device",
+				"sport_type": "Run",
+				"start_date": "2026-09-05T11:00:00Z",
+				"device":     "Wahoo ELEMNT",
+			}, nil)
+			expectStatus(t, w, http.StatusCreated)
+			created = decodeObject(t, w)
+			if created["device"] != "Wahoo ELEMNT" {
+				t.Fatalf("multipart device = %#v, want Wahoo ELEMNT", created["device"])
+			}
+
+			w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
+				"name":       "Default device",
+				"sport_type": "Run",
+				"start_date": "2026-09-05T12:00:00Z",
+			}, token)
+			expectStatus(t, w, http.StatusCreated)
+			created = decodeObject(t, w)
+			if created["device"] != workouts.DeviceGrom {
+				t.Fatalf("default device = %#v, want %q", created["device"], workouts.DeviceGrom)
+			}
+		})
+	}
+}
+
 func TestWorkoutMediaLimitAcrossDrivers(t *testing.T) {
 	pngData := tinyPNG(t)
 

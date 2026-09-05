@@ -24,6 +24,7 @@ void main() {
               'elapsed_time': 110,
               'distance': 1000,
               'map': {'summary_polyline': 'abc'},
+              'device_name': 'Garmin Edge 1030',
             },
           ]),
           200,
@@ -40,6 +41,7 @@ void main() {
     expect(list, hasLength(1));
     expect(list.first.id, 11);
     expect(list.first.hasMapPolyline, isTrue);
+    expect(list.first.deviceName, 'Garmin Edge 1030');
     expect(seen!.url.queryParameters['per_page'], '25');
     expect(seen!.url.queryParameters['page'], '2');
     expect(seen!.headers['authorization'], 'Bearer tok');

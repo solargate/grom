@@ -23,7 +23,12 @@ Map<String, dynamic> _workoutJson(String id) => {
       'media_files': <String>[],
     };
 
-Map<String, dynamic> _activityJson(int id, {String name = 'Activity'}) => {
+Map<String, dynamic> _activityJson(
+  int id, {
+  String name = 'Activity',
+  String? deviceName,
+}) =>
+    {
       'id': id,
       'name': name,
       'sport_type': 'Run',
@@ -33,6 +38,7 @@ Map<String, dynamic> _activityJson(int id, {String name = 'Activity'}) => {
       'elapsed_time': 620,
       'distance': 2000,
       'total_photo_count': 0,
+      if (deviceName != null) 'device_name': deviceName,
     };
 
 Future<void> _seedConnectedPrefs({int? syncLimit}) async {
@@ -277,6 +283,7 @@ void main() {
               ? 'yes'
               : 'no',
           'external': body.contains('strava') ? 'yes' : 'no',
+          'device': body.contains('Garmin Edge 530') ? 'yes' : 'no',
         };
         return http.Response(
           jsonEncode(_workoutJson('w1')),
@@ -289,7 +296,9 @@ void main() {
     final stravaClient = MockClient((request) async {
       if (request.url.path.endsWith('/athlete/activities')) {
         return http.Response(
-          jsonEncode([_activityJson(55, name: 'Indoor')]),
+          jsonEncode([
+            _activityJson(55, name: 'Indoor', deviceName: 'Garmin Edge 530'),
+          ]),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -299,7 +308,9 @@ void main() {
       }
       if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
         return http.Response(
-          jsonEncode(_activityJson(55, name: 'Indoor')),
+          jsonEncode(
+            _activityJson(55, name: 'Indoor', deviceName: 'Garmin Edge 530'),
+          ),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -321,6 +332,7 @@ void main() {
     expect(result.importedCount, 1);
     expect(createFields!['has_track'], 'no');
     expect(createFields!['external'], 'yes');
+    expect(createFields!['device'], 'yes');
   });
 
   test('stravaApiSyncResultSnackBarMessage maps kinds', () {

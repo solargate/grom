@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Open GPX/FIT tracks via "Open with"
 - Android: import recent Strava workouts via your own Strava API app (Home sync)
+- Strava API import keeps the original recording device name
 
 ### Added
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Android:** Strava API import sets workout `device` from Strava `device_name` (server accepts optional `device` on create; FIT track device still wins when present)
 - **Android:** Strava Connect OAuth uses a custom-scheme redirect and JSON token exchange without `redirect_uri`
 - **Android:** “Open with” for `.gpx` / `.fit` from Google Drive and similar apps (VIEW/EDIT on MainActivity with broad MIME; copy Drive content URIs to cache; reject non-tracks after open)
 - **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized

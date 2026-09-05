@@ -35,6 +35,7 @@ Umschalter aus = Sync-Button ausgeblendet; Credentials/Tokens bleiben. Logout au
 | Sichtbarkeit | Nur `activity:read` — Everyone / Followers (nicht „Only You“) |
 | Ohne GPS | Workout aus Summary ohne Track |
 | Mit GPS | GPX aus Strava-Streams |
+| Gerät | Nutzt Strava `device_name`, falls vorhanden (sonst Server-Default `Grom App`) |
 | Fotos | Best-effort über Photos-API; Foto-Fehler bricht das Workout nicht ab |
 | Ausrüstung | Kein `equipment_ids` → Server nutzt `last_equipment_by_sport` |
 
