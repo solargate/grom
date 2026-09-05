@@ -4,6 +4,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:flutter/foundation.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import 'shared_track_detect.dart';
 import 'shared_track_intent_stub.dart';
 
 export 'shared_track_intent_stub.dart' show SharedTrackPayload, SharedTrackReceiveResult;
@@ -26,17 +27,15 @@ Future<SharedTrackReceiveResult> takePendingSharedTrack() async {
   return result;
 }
 
-Stream<SharedTrackPayload> watchSharedTracks() {
+Stream<SharedTrackReceiveResult> watchSharedTracks() {
   if (!_isAndroid) {
     return const Stream.empty();
   }
 
-  return ReceiveSharingIntent.instance.getMediaStream().asyncExpand((files) async* {
+  return ReceiveSharingIntent.instance.getMediaStream().asyncMap((files) async {
     final result = await _resultFromSharedFiles(files);
     await ReceiveSharingIntent.instance.reset();
-    if (result.payload != null) {
-      yield result.payload!;
-    }
+    return result;
   });
 }
 
@@ -47,28 +46,39 @@ Future<SharedTrackReceiveResult> _resultFromSharedFiles(
   var hadCandidate = false;
 
   for (final file in files) {
-    if (!_looksLikeTrackFile(file)) {
+    if (!_looksLikeTrackCandidate(file)) {
       continue;
     }
     hadCandidate = true;
 
-    if (!_isSupportedSharedTrack(file)) {
-      continue;
-    }
-
-    final filename = _resolveTrackFilename(file);
-
+    late final Uint8List bytes;
     try {
-      final bytes = await XFile(file.path).readAsBytes();
-      return (
-        payload: (filename: filename, bytes: Uint8List.fromList(bytes)),
-        readFailed: false,
-        unsupportedFormat: false,
-      );
+      bytes = Uint8List.fromList(await XFile(file.path).readAsBytes());
     } catch (e) {
       debugPrint('Failed to read shared track: $e');
       readFailed = true;
+      continue;
     }
+
+    final fromPath = _filenameFromPath(file.path);
+    final kind = resolveSharedTrackKind(
+      filename: fromPath,
+      mimeType: file.mimeType,
+      bytes: bytes,
+    );
+    if (kind == null) {
+      continue;
+    }
+
+    final filename = sharedTrackKindFromFilename(fromPath) != null
+        ? fromPath
+        : filenameForSharedTrackKind(kind);
+
+    return (
+      payload: (filename: filename, bytes: bytes),
+      readFailed: false,
+      unsupportedFormat: false,
+    );
   }
 
   return (
@@ -78,49 +88,14 @@ Future<SharedTrackReceiveResult> _resultFromSharedFiles(
   );
 }
 
-bool _looksLikeTrackFile(SharedMediaFile file) {
-  if (_isSupportedTrackFilename(_filenameFromPath(file.path))) {
+bool _looksLikeTrackCandidate(SharedMediaFile file) {
+  if (sharedTrackKindFromFilename(_filenameFromPath(file.path)) != null) {
     return true;
   }
-  if (_trackFilenameForMime(file.mimeType) != null) {
+  if (sharedTrackKindFromPreciseMime(file.mimeType) != null) {
     return true;
   }
-
-  final mime = file.mimeType?.toLowerCase().trim();
-  return mime == 'application/octet-stream' || mime == '*/*';
-}
-
-bool _isSupportedSharedTrack(SharedMediaFile file) {
-  if (_isSupportedTrackFilename(_filenameFromPath(file.path))) {
-    return true;
-  }
-  return _trackFilenameForMime(file.mimeType) != null;
-}
-
-String _resolveTrackFilename(SharedMediaFile file) {
-  final fromPath = _filenameFromPath(file.path);
-  if (_isSupportedTrackFilename(fromPath)) {
-    return fromPath;
-  }
-  return _trackFilenameForMime(file.mimeType) ?? fromPath;
-}
-
-String? _trackFilenameForMime(String? mimeType) {
-  final mime = mimeType?.toLowerCase().trim();
-  if (mime == null || mime.isEmpty) {
-    return null;
-  }
-
-  return switch (mime) {
-    'application/gpx+xml' => 'track.gpx',
-    'application/vnd.ant.fit' => 'track.fit',
-    _ => null,
-  };
-}
-
-bool _isSupportedTrackFilename(String filename) {
-  final lower = filename.toLowerCase();
-  return lower.endsWith('.gpx') || lower.endsWith('.fit');
+  return isBroadSharedTrackMime(file.mimeType);
 }
 
 String _filenameFromPath(String path) {

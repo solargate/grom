@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Open GPX/FIT tracks via “Open with”
+
 ### Changed
 
 - **CI:** Release CI uploads the Android AAB to Google Play open testing (`beta`) as a draft, instead of closed testing (`alpha`)
 
 ### Fixed
 
+- **Android:** “Open with” for `.gpx` / `.fit` from Google Drive and similar apps (VIEW/EDIT on MainActivity with broad MIME; copy Drive content URIs to cache; reject non-tracks after open)
 - **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized
 
 ## [0.12.0] - 2026-09-04

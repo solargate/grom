@@ -12,6 +12,6 @@ Future<SharedTrackReceiveResult> takePendingSharedTrack() async {
   return (payload: null, readFailed: false, unsupportedFormat: false);
 }
 
-Stream<SharedTrackPayload> watchSharedTracks() {
+Stream<SharedTrackReceiveResult> watchSharedTracks() {
   return const Stream.empty();
 }
