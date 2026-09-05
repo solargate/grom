@@ -1,4 +1,4 @@
-.PHONY: all grom apidoc docs docs-serve venv catalog web cli android android-apk android-aab android-debug gencerts test test-go test-ui test-scripts clean
+.PHONY: all grom apidoc docs docs-serve venv catalog web cli android android-apk android-aab android-debug gencerts test test-go test-ui test-android-unit test-scripts clean
 
 VERSION := $(shell tr -d '[:space:]' < VERSION)
 BUILD_NUMBER ?= 1
@@ -58,7 +58,7 @@ android-debug: catalog
 gencerts:
 	cd cmd/grom && go run . gencerts --ip $(IP) --domain $(DOMAIN)
 
-test: test-go test-ui test-scripts
+test: test-go test-ui test-android-unit test-scripts
 
 test-go:
 	go test ./...
@@ -69,6 +69,9 @@ test-scripts: venv
 
 test-ui:
 	cd ui/grom && flutter test
+
+test-android-unit:
+	cd ui/grom/android && ./gradlew :app:testDebugUnitTest --no-daemon
 
 clean:
 	rm -f cmd/grom/grom

@@ -105,16 +105,17 @@ make docs          # MkDocs Material site → site/; creates `.venv` from requir
 make docs-serve    # mkdocs serve (live preview)
 make catalog       # validate server-catalog.yaml and generate ui/grom/lib/generated/server_catalog.g.dart
 make web           # catalog + flutter build web → internal/web/dist
-make test          # go test ./... && flutter test
+make test          # go + flutter + Android JVM unit + scripts
 make test-go
 make test-ui
+make test-android-unit  # :app:testDebugUnitTest (TrackIntentNormalize, etc.)
 make android-apk   # release APK
 make android-aab   # release App Bundle (Play)
 make gencerts IP=... DOMAIN=...
 make clean
 ```
 
-CI (`.github/workflows/verify.yml` → `checks.yml`) runs `go vet` / `go test`, `flutter analyze` / `flutter test`, `make apidoc` with `git diff --exit-code api/docs`, and `scripts/server_catalog.py generate` with `git diff --exit-code` on the generated Flutter catalog. Flutter version is pinned in the workflow files.
+CI (`.github/workflows/verify.yml` → `checks.yml`) runs `go vet` / `go test`, `flutter analyze` / `flutter test`, Android `:app:testDebugUnitTest`, `make apidoc` with `git diff --exit-code api/docs`, and `scripts/server_catalog.py generate` with `git diff --exit-code` on the generated Flutter catalog. Flutter version is pinned in the workflow files.
 
 Run server (from `cmd/grom` or with absolute config path):
 
@@ -158,7 +159,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - API access: `lib/api_request.dart` + auth/server storage helpers.
 - User-facing strings: update ARB files under `lib/l10n/` (en/ru/de); do not hardcode UI copy when localization exists. Generated `app_localizations*.dart` are committed (`flutter: generate: true`). When adding sport/equipment types, also update the hand-written `sport_type_localizations.dart` / `equipment_type_localizations.dart` switches.
 - After Flutter UI changes that ship in the server binary, regenerate web embed: `make web` (or full `make grom`).
-- Tests: `ui/grom/test/`; run `make test-ui`. CI also runs `flutter analyze` in `ui/grom`.
+- Tests: `ui/grom/test/`; run `make test-ui`. Android JVM unit tests: `make test-android-unit`. CI also runs `flutter analyze` in `ui/grom` and `:app:testDebugUnitTest`.
 
 ### Commits / scope
 
