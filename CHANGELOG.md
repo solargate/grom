@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-05
+
 ### Google Play
 
 - Open GPX/FIT tracks via "Open with"
@@ -340,7 +342,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.13.0...HEAD
+[0.13.0]: https://github.com/solargate/grom/releases/tag/0.13.0
 [0.12.0]: https://github.com/solargate/grom/releases/tag/0.12.0
 [0.11.0]: https://github.com/solargate/grom/releases/tag/0.11.0
 [0.10.0]: https://github.com/solargate/grom/releases/tag/0.10.0
