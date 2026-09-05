@@ -20,6 +20,10 @@ void main() {
         SharedTrackKind.gpx,
       );
       expect(
+        sharedTrackKindFromPreciseMime('application/gpx'),
+        SharedTrackKind.gpx,
+      );
+      expect(
         sharedTrackKindFromPreciseMime('application/x-gpx+xml'),
         SharedTrackKind.gpx,
       );
@@ -28,9 +32,36 @@ void main() {
         SharedTrackKind.fit,
       );
       expect(
+        sharedTrackKindFromPreciseMime('application/fit'),
+        SharedTrackKind.fit,
+      );
+      expect(
+        sharedTrackKindFromPreciseMime('application/x-fit'),
+        SharedTrackKind.fit,
+      );
+      expect(
         sharedTrackKindFromPreciseMime('application/octet-stream'),
         isNull,
       );
+    });
+  });
+
+  group('isBroadSharedTrackMime', () {
+    test('treats Drive-like types as broad', () {
+      expect(isBroadSharedTrackMime(null), isTrue);
+      expect(isBroadSharedTrackMime(''), isTrue);
+      expect(isBroadSharedTrackMime('application/octet-stream'), isTrue);
+      expect(isBroadSharedTrackMime('text/xml'), isTrue);
+      expect(isBroadSharedTrackMime('application/xml'), isTrue);
+      expect(isBroadSharedTrackMime('*/*'), isTrue);
+      expect(isBroadSharedTrackMime('image/png'), isFalse);
+    });
+  });
+
+  group('filenameForSharedTrackKind', () {
+    test('returns canonical names', () {
+      expect(filenameForSharedTrackKind(SharedTrackKind.gpx), 'track.gpx');
+      expect(filenameForSharedTrackKind(SharedTrackKind.fit), 'track.fit');
     });
   });
 
@@ -96,6 +127,18 @@ void main() {
           bytes: gpx,
         ),
         isNull,
+      );
+    });
+
+    test('sniffs text/xml as broad MIME', () {
+      final gpx = Uint8List.fromList(utf8.encode('<gpx></gpx>'));
+      expect(
+        resolveSharedTrackKind(
+          filename: 'document',
+          mimeType: 'text/xml',
+          bytes: gpx,
+        ),
+        SharedTrackKind.gpx,
       );
     });
   });

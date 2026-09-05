@@ -52,8 +52,10 @@ class MainActivity : FlutterActivity() {
             else -> null
         } ?: return intent
 
-        val fromName = mimeFromDisplayName(uri)
-        if (fromName != null && (intent.type.isNullOrBlank() || isGenericMime(intent.type))) {
+        val fromName = TrackIntentNormalize.mimeFromFileName(queryDisplayName(uri))
+        if (fromName != null &&
+            (intent.type.isNullOrBlank() || TrackIntentNormalize.isGenericMime(intent.type))
+        ) {
             intent.type = fromName
         }
         return intent
@@ -69,7 +71,7 @@ class MainActivity : FlutterActivity() {
             ?: return intent
 
         val displayName = queryDisplayName(uri)
-        val mime = mimeFromDisplayName(uri)
+        val mime = TrackIntentNormalize.mimeFromFileName(displayName)
             ?: intent.type?.takeIf { it.isNotBlank() && it != "*/*" }
             ?: contentResolver.getType(uri)?.takeIf { it.isNotBlank() }
             ?: "application/octet-stream"
@@ -80,7 +82,7 @@ class MainActivity : FlutterActivity() {
             return intent
         }
 
-        if (!uri.scheme.equals("content", ignoreCase = true)) {
+        if (!TrackIntentNormalize.shouldMaterializeContentUri(intent.action, uri.scheme)) {
             intent.type = mime
             return intent
         }
@@ -102,7 +104,9 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun copyUriToCache(uri: Uri, displayName: String?): File? {
-        val safeName = sanitizeFileName(displayName ?: uri.lastPathSegment ?: "shared_track")
+        val safeName = TrackIntentNormalize.sanitizeFileName(
+            displayName ?: uri.lastPathSegment ?: "shared_track",
+        )
         val target = File(cacheDir, "shared_tracks").apply { mkdirs() }.let { dir ->
             File(dir, "${System.currentTimeMillis()}_$safeName")
         }
@@ -119,26 +123,6 @@ class MainActivity : FlutterActivity() {
             Log.w(TAG, "copyUriToCache failed", e)
             target.delete()
             null
-        }
-    }
-
-    private fun sanitizeFileName(name: String): String {
-        val base = name.substringAfterLast('/').substringAfterLast('\\')
-        val cleaned = base.replace(Regex("[^A-Za-z0-9._-]"), "_")
-        return cleaned.ifBlank { "shared_track" }
-    }
-
-    private fun isGenericMime(type: String?): Boolean {
-        val mime = type?.lowercase()?.trim() ?: return true
-        return mime == "*/*" || mime == "application/octet-stream"
-    }
-
-    private fun mimeFromDisplayName(uri: Uri): String? {
-        val name = queryDisplayName(uri)?.lowercase().orEmpty()
-        return when {
-            name.endsWith(".gpx") -> "application/gpx+xml"
-            name.endsWith(".fit") -> "application/vnd.ant.fit"
-            else -> null
         }
     }
 

@@ -279,20 +279,25 @@ class _GromShellState extends State<GromShell> {
 
     _isProcessingSharedTrack = true;
     try {
-      if (!_isLoggedIn) {
-        final token = await AuthStorage.getToken();
-        if (token == null) {
-          final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.shareTrackLoginRequired)),
-          );
-          setState(() => _selectedDestination = GromDestination.login);
+      if (!sharedTrackImportAllowed(
+            isLoggedIn: _isLoggedIn,
+            token: await AuthStorage.getToken(),
+          )) {
+        if (!mounted) {
           return;
         }
-        // JWT present but /me not loaded yet (offline / slow) — still import.
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.shareTrackLoginRequired)),
+        );
+        setState(() => _selectedDestination = GromDestination.login);
+        return;
       }
 
       if (isMobileClient && TrackRecordingService.instance.isActive) {
+        if (!mounted) {
+          return;
+        }
         final l10n = AppLocalizations.of(context)!;
         final discard = await showDialog<bool>(
           context: context,
