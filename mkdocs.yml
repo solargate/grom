@@ -45,6 +45,7 @@ nav:
       - Configuration: admin/configuration.md
   - Integrations:
       - Strava bulk import: integrations/strava-bulk-import.md
+      - Strava API import: integrations/strava-api-import.md
       - Import tracks: integrations/import-tracks.md
   - Privacy Policy: privacy.md
 
@@ -76,6 +77,7 @@ plugins:
             Configuration: Конфигурация
             Integrations: Интеграции
             Strava bulk import: Массовый импорт Strava
+            Strava API import: Импорт через Strava API
             Import tracks: Импорт треков
             Privacy Policy: Политика конфиденциальности
         - locale: de
@@ -95,6 +97,7 @@ plugins:
             Configuration: Konfiguration
             Integrations: Integrationen
             Strava bulk import: Strava-Massenimport
+            Strava API import: Strava-API-Import
             Import tracks: Tracks importieren
             Privacy Policy: Datenschutzrichtlinie
 

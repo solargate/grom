@@ -39,3 +39,4 @@ Grom может импортировать один или несколько ф
 
 - [Обзор для пользователя](../user/overview.md)
 - [Массовый импорт Strava](strava-bulk-import.md) (серверный ZIP)
+- [Импорт через Strava API](strava-api-import.md) (Android BYO API sync)

@@ -1073,6 +1073,78 @@ class AppLocalizationsDe extends AppLocalizations {
   String get strava => 'Strava';
 
   @override
+  String get stravaApiImportToggle => 'Trainings aus Strava importieren';
+
+  @override
+  String stravaApiImportHelp(int limit) {
+    return 'Erstellen Sie Ihre eigene Strava-API-Anwendung unter strava.com/settings/api (Strava-Abo erforderlich). Setzen Sie Authorization Callback Domain auf localhost. Geben Sie Client ID und Client Secret ein und verbinden Sie sich. Die Synchronisation auf Start importiert bis zu $limit der neuesten Aktivitäten und stoppt bei der ersten bereits importierten Einheit (gleiche external_id wie beim Archiv). Für die vollständige Historie nutzen Sie den Archiv-Import unten. Es werden nur Aktivitäten mit Sichtbarkeit Everyone oder Followers importiert.';
+  }
+
+  @override
+  String get stravaApiClientIdLabel => 'Strava client id';
+
+  @override
+  String get stravaApiClientSecretLabel => 'Strava client secret';
+
+  @override
+  String get stravaApiConnectStatusDisconnected => 'Nicht verbunden';
+
+  @override
+  String get stravaApiConnectStatusConnected => 'Verbunden';
+
+  @override
+  String get stravaApiConnectStatusFailed => 'Verbindung fehlgeschlagen';
+
+  @override
+  String get stravaApiConnectMissingCredentials =>
+      'Client ID und Client Secret eingeben';
+
+  @override
+  String get stravaApiConnectCancelled => 'Strava-Autorisierung abgebrochen';
+
+  @override
+  String get stravaApiConnectDenied => 'Strava-Autorisierung abgelehnt';
+
+  @override
+  String get stravaApiConnectMissingScope =>
+      'Berechtigung activity:read in Strava erteilen';
+
+  @override
+  String stravaApiConnectError(String message) {
+    return 'Strava-Verbindung fehlgeschlagen: $message';
+  }
+
+  @override
+  String get stravaApiSyncing => 'Synchronisiere…';
+
+  @override
+  String stravaApiImported(int count) {
+    return '$count Trainings importiert';
+  }
+
+  @override
+  String get stravaApiNoNewWorkouts => 'Keine neuen Trainings gefunden';
+
+  @override
+  String get stravaApiNotConnected =>
+      'Zuerst auf dem Integrationsbildschirm mit Strava verbinden';
+
+  @override
+  String get stravaApiNotEnabled =>
+      'Strava-API-Import auf dem Integrationsbildschirm aktivieren';
+
+  @override
+  String get stravaApiAuthFailed => 'Strava-Authentifizierung fehlgeschlagen';
+
+  @override
+  String get stravaApiSyncCancelled => 'Strava-Synchronisation abgebrochen';
+
+  @override
+  String stravaApiSyncError(String message) {
+    return 'Strava-Synchronisation fehlgeschlagen: $message';
+  }
+
+  @override
   String get stravaImportDescriptionBefore =>
       'Sie können ein Archiv Ihrer Aktivitäten auf der ';
 

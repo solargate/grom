@@ -115,3 +115,9 @@ Import results include:
 ## Duplicate import
 
 If a workout with the same `external_id` (`name` = `strava` and matching `id`) already exists for the user, the activity is skipped.
+
+## Related
+
+- [Strava API import (Android)](strava-api-import.md)
+- [Import tracks](import-tracks.md)
+- [User overview](../user/overview.md)

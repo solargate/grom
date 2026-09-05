@@ -2074,6 +2074,126 @@ abstract class AppLocalizations {
   /// **'Strava'**
   String get strava;
 
+  /// No description provided for @stravaApiImportToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import workouts from Strava'**
+  String get stravaApiImportToggle;
+
+  /// No description provided for @stravaApiImportHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your own Strava API application at strava.com/settings/api (a Strava subscription is required). Set Authorization Callback Domain to localhost. Enter your Client ID and Client Secret, then connect. Sync on Home imports up to the {limit} most recent activities and stops at the first workout already imported (same external_id as the archive). For a full history, use the Strava archive import below. Only activities visible to Everyone or Followers are imported.'**
+  String stravaApiImportHelp(int limit);
+
+  /// No description provided for @stravaApiClientIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava client id'**
+  String get stravaApiClientIdLabel;
+
+  /// No description provided for @stravaApiClientSecretLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava client secret'**
+  String get stravaApiClientSecretLabel;
+
+  /// No description provided for @stravaApiConnectStatusDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get stravaApiConnectStatusDisconnected;
+
+  /// No description provided for @stravaApiConnectStatusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get stravaApiConnectStatusConnected;
+
+  /// No description provided for @stravaApiConnectStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get stravaApiConnectStatusFailed;
+
+  /// No description provided for @stravaApiConnectMissingCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Client ID and Client Secret'**
+  String get stravaApiConnectMissingCredentials;
+
+  /// No description provided for @stravaApiConnectCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava authorization was cancelled'**
+  String get stravaApiConnectCancelled;
+
+  /// No description provided for @stravaApiConnectDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava authorization was denied'**
+  String get stravaApiConnectDenied;
+
+  /// No description provided for @stravaApiConnectMissingScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant the activity:read permission in Strava'**
+  String get stravaApiConnectMissingScope;
+
+  /// No description provided for @stravaApiConnectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava connect failed: {message}'**
+  String stravaApiConnectError(String message);
+
+  /// No description provided for @stravaApiSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing…'**
+  String get stravaApiSyncing;
+
+  /// No description provided for @stravaApiImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} workouts'**
+  String stravaApiImported(int count);
+
+  /// No description provided for @stravaApiNoNewWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'No new workouts found'**
+  String get stravaApiNoNewWorkouts;
+
+  /// No description provided for @stravaApiNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with Strava on the Integration screen first'**
+  String get stravaApiNotConnected;
+
+  /// No description provided for @stravaApiNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Strava API import on the Integration screen'**
+  String get stravaApiNotEnabled;
+
+  /// No description provided for @stravaApiAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava authentication failed'**
+  String get stravaApiAuthFailed;
+
+  /// No description provided for @stravaApiSyncCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava sync was cancelled'**
+  String get stravaApiSyncCancelled;
+
+  /// No description provided for @stravaApiSyncError.
+  ///
+  /// In en, this message translates to:
+  /// **'Strava sync failed: {message}'**
+  String stravaApiSyncError(String message);
+
   /// No description provided for @stravaImportDescriptionBefore.
   ///
   /// In en, this message translates to:

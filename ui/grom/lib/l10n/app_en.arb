@@ -455,6 +455,46 @@
   "openStreetMapCopyrightLink": "OpenStreetMap copyright and license",
   "integration": "Integration",
   "strava": "Strava",
+  "stravaApiImportToggle": "Import workouts from Strava",
+  "stravaApiImportHelp": "Create your own Strava API application at strava.com/settings/api (a Strava subscription is required). Set Authorization Callback Domain to localhost. Enter your Client ID and Client Secret, then connect. Sync on Home imports up to the {limit} most recent activities and stops at the first workout already imported (same external_id as the archive). For a full history, use the Strava archive import below. Only activities visible to Everyone or Followers are imported.",
+  "@stravaApiImportHelp": {
+    "placeholders": {
+      "limit": { "type": "int" }
+    }
+  },
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiConnectStatusDisconnected": "Not connected",
+  "stravaApiConnectStatusConnected": "Connected",
+  "stravaApiConnectStatusFailed": "Connection failed",
+  "stravaApiConnectMissingCredentials": "Enter Client ID and Client Secret",
+  "stravaApiConnectCancelled": "Strava authorization was cancelled",
+  "stravaApiConnectDenied": "Strava authorization was denied",
+  "stravaApiConnectMissingScope": "Grant the activity:read permission in Strava",
+  "stravaApiConnectError": "Strava connect failed: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Synchronizing…",
+  "stravaApiImported": "Imported {count} workouts",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "No new workouts found",
+  "stravaApiNotConnected": "Connect with Strava on the Integration screen first",
+  "stravaApiNotEnabled": "Enable Strava API import on the Integration screen",
+  "stravaApiAuthFailed": "Strava authentication failed",
+  "stravaApiSyncCancelled": "Strava sync was cancelled",
+  "stravaApiSyncError": "Strava sync failed: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "You can download an archive of your workouts from the ",
   "stravaImportDescriptionLink": "Strava website",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

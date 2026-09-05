@@ -17,7 +17,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Workout likes** — like others’ activities, see counts and who liked; federated `Like` / `Undo` when ActivityPub is enabled
 - **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
 - **Federation** — optional ActivityPub so instances can follow each other across the network
-- **Strava import** — bulk-import a Strava data export ZIP
+- **Strava import** — bulk-import a Strava data export ZIP; on Android, optional BYO Strava API sync for recent activities
 - **Import tracks** — multi-select GPX/FIT via the system file picker (web and Android)
 - **API tokens** — scoped personal access tokens (`grom_pat_…`) for workouts and equipment
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
@@ -49,6 +49,7 @@ Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Instal
 | Pick a public instance in the Android app, or list yours | [Approved Grom servers](user/approved-servers.md) |
 | Use Grom in a browser (same UI as Android) | Open the server base URL after [install](admin/install.md); see [User overview](user/overview.md) |
 | Import a Strava export (UI + how import works) | [Strava bulk import](integrations/strava-bulk-import.md) |
+| Sync recent Strava activities via API (Android, BYO credentials) | [Strava API import](integrations/strava-api-import.md) |
 | Import GPX/FIT tracks via the system file picker | [Import tracks](integrations/import-tracks.md) |
 | Create API tokens for scripts and external apps | [Grom API tokens](user/grom-api-tokens.md) |
 | Delete my account | [Delete your Grom account](user/delete-account.md) |
@@ -65,6 +66,7 @@ Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Instal
 | Topic | Page |
 |-------|------|
 | Strava ZIP column mapping and import behavior | [Strava bulk import](integrations/strava-bulk-import.md) |
+| Strava API sync on Android (BYO Client ID/Secret) | [Strava API import](integrations/strava-api-import.md) |
 | Multi-file GPX/FIT import (client) | [Import tracks](integrations/import-tracks.md) |
 | Full annotated config | [`config.full.yaml`](https://github.com/solargate/grom/blob/master/cmd/grom/config-examples/config.full.yaml) |
 | HTTP API (Swagger UI) | On a running server: `/api/docs/` (e.g. `http://localhost:8080/api/docs/`); OpenAPI sources in [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) |

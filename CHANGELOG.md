@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Google Play
 
 - Open GPX/FIT tracks via "Open with"
+- Android: import recent Strava workouts via your own Strava API app (Home sync)
+
+### Added
+
+- **Android:** Strava API import (BYO Client ID/Secret on Integration, Connect with Strava OAuth, Home sync of up to 10 recent activities with `external_id` dedup, GPX from streams, best-effort photos)
+- **Docs:** Strava API import guide (EN/RU/DE)
 
 ### Changed
 
@@ -22,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Android:** Strava Connect OAuth redirect uses `grom://localhost/exchange_token` so Auth Tab returns to the app (http localhost showed ERR_CONNECTION_REFUSED)
 - **Android:** “Open with” for `.gpx` / `.fit` from Google Drive and similar apps (VIEW/EDIT on MainActivity with broad MIME; copy Drive content URIs to cache; reject non-tracks after open)
 - **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized
 

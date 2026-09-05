@@ -50,6 +50,8 @@ Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern
 
 Unter **Integration → Strava** laden Sie ein ZIP des [Strava-Massenexports](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) hoch. Grom importiert Aktivitäten, Tracks, Fotos und Ausrüstung. Spaltenzuordnung und serverseitiges Verhalten: [Strava-Massenimport](../integrations/strava-bulk-import.md).
 
+Nur unter **Android** können Sie zusätzlich **Trainings aus Strava importieren** mit eigener Strava-API-Client-ID/Secret aktivieren, einmal per OAuth verbinden und den Sync-Button auf Start nutzen (bis zu 10 neueste Aktivitäten, Stopp bei der ersten bereits importierten). Details: [Strava-API-Import](../integrations/strava-api-import.md).
+
 ## Tracks importieren
 
 Unter **Integration** → **External services** öffnet **Tracks importieren** den System-Dateidialog für eine oder mehrere `.gpx`-/`.fit`-Dateien (Web und Android). Details und `external_id`-Dedup: [Tracks importieren](../integrations/import-tracks.md).

@@ -46,7 +46,7 @@ Optional, if the operator enables them: a captcha proof-of-work payload; passwor
 Depending on what you create, import, or record:
 
 - Workout metadata (sport type, title, description, times, distances, device name, equipment links, notes)
-- GPS tracks (precise location over time) from live recording, GPX/FIT import (including multi-file import via the system file picker), or Strava ZIP import (processed on the server)
+- GPS tracks (precise location over time) from live recording, GPX/FIT import (including multi-file import via the system file picker), Strava ZIP import (processed on the server), or Android Strava API sync (device builds a track from Strava streams, then uploads to the server)
 - Derived stats and charts (for example speed, elevation, cadence, power, heart rate, calories) when present in tracks or imports
 - Photos you attach to workouts
 - Avatar image
@@ -109,7 +109,7 @@ If the operator enables a mailer, password-reset messages are sent via that oper
 |---------|----------|
 | Provide core features | Sign-in, workouts, tracks, photos, equipment, feed, likes, comments |
 | Live recording | GPS track while you record on Android |
-| Optional imports | Strava ZIP (on the server), multi-file GPX/FIT via the system file picker (on the device, then to the server) |
+| Optional imports | Strava ZIP (on the server), Strava API sync on Android using credentials stored only on the device, multi-file GPX/FIT via the system file picker (on the device, then to the server) |
 | Security | Auth tokens, optional captcha, rate limiting (may use IP on the server) |
 | Federation | Optional delivery of activities to remote inboxes |
 

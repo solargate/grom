@@ -455,6 +455,46 @@
   "openStreetMapCopyrightLink": "OpenStreetMap Urheberrecht und Lizenz",
   "integration": "Integration",
   "strava": "Strava",
+  "stravaApiImportToggle": "Trainings aus Strava importieren",
+  "stravaApiImportHelp": "Erstellen Sie Ihre eigene Strava-API-Anwendung unter strava.com/settings/api (Strava-Abo erforderlich). Setzen Sie Authorization Callback Domain auf localhost. Geben Sie Client ID und Client Secret ein und verbinden Sie sich. Die Synchronisation auf Start importiert bis zu {limit} der neuesten Aktivitäten und stoppt bei der ersten bereits importierten Einheit (gleiche external_id wie beim Archiv). Für die vollständige Historie nutzen Sie den Archiv-Import unten. Es werden nur Aktivitäten mit Sichtbarkeit Everyone oder Followers importiert.",
+  "@stravaApiImportHelp": {
+    "placeholders": {
+      "limit": { "type": "int" }
+    }
+  },
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiConnectStatusDisconnected": "Nicht verbunden",
+  "stravaApiConnectStatusConnected": "Verbunden",
+  "stravaApiConnectStatusFailed": "Verbindung fehlgeschlagen",
+  "stravaApiConnectMissingCredentials": "Client ID und Client Secret eingeben",
+  "stravaApiConnectCancelled": "Strava-Autorisierung abgebrochen",
+  "stravaApiConnectDenied": "Strava-Autorisierung abgelehnt",
+  "stravaApiConnectMissingScope": "Berechtigung activity:read in Strava erteilen",
+  "stravaApiConnectError": "Strava-Verbindung fehlgeschlagen: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Synchronisiere…",
+  "stravaApiImported": "{count} Trainings importiert",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "Keine neuen Trainings gefunden",
+  "stravaApiNotConnected": "Zuerst auf dem Integrationsbildschirm mit Strava verbinden",
+  "stravaApiNotEnabled": "Strava-API-Import auf dem Integrationsbildschirm aktivieren",
+  "stravaApiAuthFailed": "Strava-Authentifizierung fehlgeschlagen",
+  "stravaApiSyncCancelled": "Strava-Synchronisation abgebrochen",
+  "stravaApiSyncError": "Strava-Synchronisation fehlgeschlagen: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "Sie können ein Archiv Ihrer Aktivitäten auf der ",
   "stravaImportDescriptionLink": "Strava-Website",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

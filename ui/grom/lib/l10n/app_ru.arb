@@ -455,6 +455,46 @@
   "openStreetMapCopyrightLink": "Авторские права и лицензия OpenStreetMap",
   "integration": "Интеграция",
   "strava": "Strava",
+  "stravaApiImportToggle": "Импорт тренировок из Strava",
+  "stravaApiImportHelp": "Создайте своё API-приложение Strava на strava.com/settings/api (нужна подписка Strava). Укажите Authorization Callback Domain = localhost. Введите Client ID и Client Secret, затем подключитесь. Синхронизация на Главной импортирует до {limit} последних активностей и останавливается на первой уже импортированной тренировке (тот же external_id, что у архива). Для полной истории используйте импорт архива ниже. Импортируются только активности, видимые Everyone или Followers.",
+  "@stravaApiImportHelp": {
+    "placeholders": {
+      "limit": { "type": "int" }
+    }
+  },
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiConnectStatusDisconnected": "Не подключено",
+  "stravaApiConnectStatusConnected": "Подключено",
+  "stravaApiConnectStatusFailed": "Ошибка подключения",
+  "stravaApiConnectMissingCredentials": "Введите Client ID и Client Secret",
+  "stravaApiConnectCancelled": "Авторизация Strava отменена",
+  "stravaApiConnectDenied": "Авторизация Strava отклонена",
+  "stravaApiConnectMissingScope": "Выдайте разрешение activity:read в Strava",
+  "stravaApiConnectError": "Не удалось подключить Strava: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Синхронизация…",
+  "stravaApiImported": "Импортировано тренировок: {count}",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "Новых тренировок не найдено",
+  "stravaApiNotConnected": "Сначала подключите Strava на экране «Интеграция»",
+  "stravaApiNotEnabled": "Включите импорт через Strava API на экране «Интеграция»",
+  "stravaApiAuthFailed": "Ошибка аутентификации Strava",
+  "stravaApiSyncCancelled": "Синхронизация Strava отменена",
+  "stravaApiSyncError": "Ошибка синхронизации Strava: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "Вы можете выгрузить архив своих тренировок на ",
   "stravaImportDescriptionLink": "сайте Strava",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

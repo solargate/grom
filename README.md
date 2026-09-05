@@ -23,7 +23,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Workout likes** — like others’ activities, see counts and who liked; federated `Like` / `Undo` when ActivityPub is enabled
 - **Workout comments** — comment on own or others’ activities (add/list/delete); federated `Create`/`Delete` Note when ActivityPub is enabled
 - **Federation** — optional ActivityPub so instances can follow each other across the network
-- **Strava import** — bulk-import a Strava data export ZIP
+- **Strava import** — bulk-import a Strava data export ZIP; on Android, optional BYO Strava API sync for recent activities
 - **Import tracks** — multi-select GPX/FIT via the system file picker (web and Android)
 - **API tokens** — scoped personal access tokens (`grom_pat_…`) for workouts and equipment
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
@@ -59,6 +59,7 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 - [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)
 - [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
 - [Import tracks](docs/integrations/import-tracks.md) — GPX/FIT via system file picker
+- [Strava API import](docs/integrations/strava-api-import.md) — Android BYO Strava OAuth sync
 - [Install and run](docs/admin/install.md) — build and start the server
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset, captcha
 - [Privacy policy](docs/privacy.md)
