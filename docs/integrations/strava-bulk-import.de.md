@@ -116,3 +116,9 @@ Importergebnisse enthalten:
 ## Doppelter Import
 
 Existiert für den Nutzer bereits ein Workout mit derselben `external_id` (`name` = `strava` und passende `id`), wird die Aktivität übersprungen.
+
+## Verwandt
+
+- [Strava-API-Import (Android)](strava-api-import.md)
+- [Tracks importieren](import-tracks.md)
+- [Benutzerüberblick](../user/overview.md)

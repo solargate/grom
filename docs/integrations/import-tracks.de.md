@@ -39,3 +39,4 @@ Dateien ohne Endung `.gpx`/`.fit` gelten als ungültig. Parse-/Create-Fehler zä
 
 - [Benutzerübersicht](../user/overview.md)
 - [Strava-Massenimport](strava-bulk-import.md) (serverseitiger ZIP-Import)
+- [Strava-API-Import](strava-api-import.md) (Android BYO-API-Sync)

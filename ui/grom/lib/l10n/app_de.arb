@@ -455,6 +455,41 @@
   "openStreetMapCopyrightLink": "OpenStreetMap Urheberrecht und Lizenz",
   "integration": "Integration",
   "strava": "Strava",
+  "stravaApiImportToggle": "Trainings aus Strava importieren",
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Trainings pro Sync",
+  "stravaApiConnectStatusDisconnected": "Nein",
+  "stravaApiConnectStatusConnected": "OK",
+  "stravaApiConnectStatusFailed": "Fehler",
+  "stravaApiConnectMissingCredentials": "Client ID und Client Secret eingeben",
+  "stravaApiConnectCancelled": "Strava-Autorisierung abgebrochen",
+  "stravaApiConnectDenied": "Strava-Autorisierung abgelehnt",
+  "stravaApiConnectMissingScope": "Berechtigungen read und activity:read in Strava erteilen",
+  "stravaApiConnectError": "Strava-Verbindung fehlgeschlagen: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Synchronisiere…",
+  "stravaApiImported": "{count} Trainings importiert",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "Keine neuen Trainings gefunden",
+  "stravaApiNotConnected": "Zuerst auf dem Integrationsbildschirm mit Strava verbinden",
+  "stravaApiNotEnabled": "Strava-API-Import auf dem Integrationsbildschirm aktivieren",
+  "stravaApiAuthFailed": "Strava-Authentifizierung fehlgeschlagen",
+  "stravaApiSyncCancelled": "Strava-Synchronisation abgebrochen",
+  "stravaApiSyncError": "Strava-Synchronisation fehlgeschlagen: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "Sie können ein Archiv Ihrer Aktivitäten auf der ",
   "stravaImportDescriptionLink": "Strava-Website",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

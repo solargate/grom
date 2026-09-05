@@ -1389,7 +1389,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment.",
+                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -1444,6 +1444,12 @@ const docTemplate = `{
                         "type": "number",
                         "description": "Distance meters (multipart)",
                         "name": "distance",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Recording device label (multipart); omitted or empty defaults to Grom App; FIT track device wins when present",
+                        "name": "device",
                         "in": "formData"
                     },
                     {
@@ -2628,6 +2634,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Easy session"
+                },
+                "device": {
+                    "type": "string",
+                    "example": "Garmin Edge 530"
                 },
                 "distance": {
                     "type": "number",

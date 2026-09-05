@@ -455,6 +455,41 @@
   "openStreetMapCopyrightLink": "Авторские права и лицензия OpenStreetMap",
   "integration": "Интеграция",
   "strava": "Strava",
+  "stravaApiImportToggle": "Импорт тренировок из Strava",
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Тренировок за sync",
+  "stravaApiConnectStatusDisconnected": "Нет",
+  "stravaApiConnectStatusConnected": "OK",
+  "stravaApiConnectStatusFailed": "Ошибка",
+  "stravaApiConnectMissingCredentials": "Введите Client ID и Client Secret",
+  "stravaApiConnectCancelled": "Авторизация Strava отменена",
+  "stravaApiConnectDenied": "Авторизация Strava отклонена",
+  "stravaApiConnectMissingScope": "Выдайте разрешения read и activity:read в Strava",
+  "stravaApiConnectError": "Не удалось подключить Strava: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Синхронизация…",
+  "stravaApiImported": "Импортировано тренировок: {count}",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "Новых тренировок не найдено",
+  "stravaApiNotConnected": "Сначала подключите Strava на экране «Интеграция»",
+  "stravaApiNotEnabled": "Включите импорт через Strava API на экране «Интеграция»",
+  "stravaApiAuthFailed": "Ошибка аутентификации Strava",
+  "stravaApiSyncCancelled": "Синхронизация Strava отменена",
+  "stravaApiSyncError": "Ошибка синхронизации Strava: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "Вы можете выгрузить архив своих тренировок на ",
   "stravaImportDescriptionLink": "сайте Strava",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

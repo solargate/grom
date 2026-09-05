@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../api_request.dart';
 import '../auth_storage.dart';
@@ -21,6 +24,7 @@ import '../platform/shared_track_intent.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../session.dart';
+import '../services/strava_api_sync_service.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
 import '../widgets/profile_menu.dart';
@@ -74,7 +78,20 @@ class _GromShellState extends State<GromShell> {
   MyWorkoutsLayout _myWorkoutsLayout = MyWorkoutsLayout.cards;
   VoidCallback? _onToggleMyWorkoutsLayout;
 
+  bool _stravaApiEnabled = false;
+  bool _stravaApiConnected = false;
+
   bool get _isLoggedIn => _nickname != null;
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get _showStravaApiSyncButton =>
+      _isAndroid &&
+      _stravaApiEnabled &&
+      _stravaApiConnected &&
+      _selectedDestination == GromDestination.home &&
+      !_isViewingWorkout &&
+      !_isViewingFeedPhoto &&
+      _isLoggedIn;
   bool get _showSportFilterButton =>
       _selectedDestination == GromDestination.home &&
       _sportFilterVisible &&
@@ -104,6 +121,8 @@ class _GromShellState extends State<GromShell> {
   @override
   void initState() {
     super.initState();
+    StravaApiSyncService.instance.addListener(_onStravaApiChanged);
+    unawaited(_loadStravaApiState());
     if (isMobileClient) {
       _sharedTrackSub = watchSharedTracks().listen(_handleSharedTrackResult);
     }
@@ -112,8 +131,86 @@ class _GromShellState extends State<GromShell> {
 
   @override
   void dispose() {
+    StravaApiSyncService.instance.removeListener(_onStravaApiChanged);
     _sharedTrackSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadStravaApiState() async {
+    await StravaApiSyncService.instance.loadFromStorage();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _stravaApiEnabled = StravaApiSyncService.instance.enabled;
+      _stravaApiConnected = StravaApiSyncService.instance.connected;
+    });
+  }
+
+  void _onStravaApiChanged() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _stravaApiEnabled = StravaApiSyncService.instance.enabled;
+      _stravaApiConnected = StravaApiSyncService.instance.connected;
+    });
+  }
+
+  Future<void> _runStravaApiSync() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 24),
+            Expanded(child: Text(l10n.stravaApiSyncing)),
+          ],
+        ),
+      ),
+    );
+
+    final result = await StravaApiSyncService.instance.syncWorkouts();
+
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context, rootNavigator: true).pop();
+
+    final message = stravaApiSyncResultSnackBarMessage(
+      result,
+      imported: l10n.stravaApiImported,
+      noNewWorkouts: l10n.stravaApiNoNewWorkouts,
+      notConnected: l10n.stravaApiNotConnected,
+      notEnabled: l10n.stravaApiNotEnabled,
+      authFailed: l10n.stravaApiAuthFailed,
+      cancelled: l10n.stravaApiSyncCancelled,
+      syncError: l10n.stravaApiSyncError,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+
+    if (result.kind == StravaApiSyncResultKind.imported) {
+      setState(() => _workoutRefreshToken++);
+    }
+  }
+
+  Widget? _buildStravaApiSyncHeaderButton() {
+    if (!_showStravaApiSyncButton) {
+      return null;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    return IconButton(
+      tooltip: l10n.stravaApiImportToggle,
+      onPressed:
+          StravaApiSyncService.instance.syncing ? null : _runStravaApiSync,
+      icon: const Icon(Symbols.directory_sync),
+    );
   }
 
   Widget? _buildSportFilterHeaderButton() {
@@ -950,6 +1047,7 @@ class _GromShellState extends State<GromShell> {
         actions: [
           if (_showSportFilterButton) _buildSportFilterHeaderButton()!,
           if (_showMyWorkoutsLayoutButton) _buildMyWorkoutsLayoutHeaderButton()!,
+          if (_showStravaApiSyncButton) _buildStravaApiSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
           if (_isViewingProfile) _buildProfileMenu(),
         ],
@@ -1001,6 +1099,8 @@ class _GromShellState extends State<GromShell> {
                             _buildSportFilterHeaderButton()!,
                           if (_showMyWorkoutsLayoutButton)
                             _buildMyWorkoutsLayoutHeaderButton()!,
+                          if (_showStravaApiSyncButton)
+                            _buildStravaApiSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
                           if (_isViewingProfile) _buildProfileMenu(),
                         ],

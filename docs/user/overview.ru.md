@@ -50,6 +50,8 @@ Flutter-клиент Grom работает как **веб-UI** и как при
 
 В **Integration → Strava** загрузите ZIP [массового экспорта данных Strava](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export). Grom импортирует активности, треки, фото и снаряжение. Сопоставление колонок и поведение на сервере — в [Массовый импорт Strava](../integrations/strava-bulk-import.md).
 
+Только на **Android** можно также включить **Импорт тренировок из Strava** со своими Client ID/Secret API-приложения Strava, один раз подключиться через OAuth и использовать кнопку синхронизации на Главной (число последних активностей настраивается на экране «Интеграция», по умолчанию 10; стоп на первой уже импортированной). Подробности: [Импорт через Strava API](../integrations/strava-api-import.md).
+
 ## Импорт треков {#import-tracks}
 
 В **Integration** → **External services** блок **Импорт треков** открывает системный выбор одного или нескольких файлов `.gpx` / `.fit` (web и Android). Подробности и дедуп `external_id`: [Импорт треков](../integrations/import-tracks.md).

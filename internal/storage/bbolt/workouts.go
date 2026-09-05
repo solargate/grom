@@ -156,7 +156,7 @@ func (s *WorkoutsStore) allocateWorkoutID(tx *bolt.Tx) (string, error) {
 func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*workouts.Workout, error) {
 	workout.Name = workouts.TrimWorkoutName(workout.Name)
 	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
-	workout.Device = workouts.DeviceGrom
+	workout.Device = workouts.NormalizeDevice(workout.Device)
 
 	if err := os.MkdirAll(data.UserDir(s.dataDir, nickname), 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)

@@ -1054,6 +1054,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get strava => 'Strava';
 
   @override
+  String get stravaApiImportToggle => 'Import workouts from Strava';
+
+  @override
+  String get stravaApiClientIdLabel => 'Strava client id';
+
+  @override
+  String get stravaApiClientSecretLabel => 'Strava client secret';
+
+  @override
+  String get stravaApiSyncLimitLabel => 'Workouts per sync';
+
+  @override
+  String get stravaApiConnectStatusDisconnected => 'No';
+
+  @override
+  String get stravaApiConnectStatusConnected => 'OK';
+
+  @override
+  String get stravaApiConnectStatusFailed => 'Error';
+
+  @override
+  String get stravaApiConnectMissingCredentials =>
+      'Enter Client ID and Client Secret';
+
+  @override
+  String get stravaApiConnectCancelled => 'Strava authorization was cancelled';
+
+  @override
+  String get stravaApiConnectDenied => 'Strava authorization was denied';
+
+  @override
+  String get stravaApiConnectMissingScope =>
+      'Grant the read and activity:read permissions in Strava';
+
+  @override
+  String stravaApiConnectError(String message) {
+    return 'Strava connect failed: $message';
+  }
+
+  @override
+  String get stravaApiSyncing => 'Synchronizing…';
+
+  @override
+  String stravaApiImported(int count) {
+    return 'Imported $count workouts';
+  }
+
+  @override
+  String get stravaApiNoNewWorkouts => 'No new workouts found';
+
+  @override
+  String get stravaApiNotConnected =>
+      'Connect with Strava on the Integration screen first';
+
+  @override
+  String get stravaApiNotEnabled =>
+      'Enable Strava API import on the Integration screen';
+
+  @override
+  String get stravaApiAuthFailed => 'Strava authentication failed';
+
+  @override
+  String get stravaApiSyncCancelled => 'Strava sync was cancelled';
+
+  @override
+  String stravaApiSyncError(String message) {
+    return 'Strava sync failed: $message';
+  }
+
+  @override
   String get stravaImportDescriptionBefore =>
       'You can download an archive of your workouts from the ';
 

@@ -17,7 +17,7 @@ Der Server ist eine einzelne Go-Binary; der Flutter-Client erscheint als eingebe
 - **Likes** — fremde Aktivitäten liken, Zähler und Likes-Liste; föderierte `Like` / `Undo` bei aktiviertem ActivityPub
 - **Kommentare** — eigene und fremde Aktivitäten kommentieren (hinzufügen/auflisten/löschen); föderierte `Create`/`Delete` Note bei aktiviertem ActivityPub
 - **Föderation** — optionales ActivityPub, damit Instanzen sich netzwerkweit folgen können
-- **Strava-Import** — Massenimport eines Strava-Datenexport-ZIP
+- **Strava-Import** — Massenimport eines Strava-Datenexport-ZIP; unter Android optional Sync neuer Aktivitäten über die eigene Strava-API-App
 - **Tracks importieren** — Multi-Select GPX/FIT über den System-Dateidialog (Web und Android)
 - **API-Token** — persönliche Zugriffstoken mit Scopes (`grom_pat_…`) für Workouts und Ausrüstung
 - **Clients** — dieselbe Flutter-UI im Browser (vom Server ausgeliefert) und als Android-APK
@@ -49,6 +49,7 @@ Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und st
 | Eine öffentliche Instanz in Android wählen oder die eigene listen | [Freigegebene Grom-Server](user/approved-servers.md) |
 | Grom im Browser nutzen (gleiche UI wie Android) | Basis-URL des Servers nach der [Installation](admin/install.md) öffnen; siehe [Benutzerüberblick](user/overview.md) |
 | Einen Strava-Export importieren (UI + Importverhalten) | [Strava-Massenimport](integrations/strava-bulk-import.md) |
+| Aktuelle Strava-Aktivitäten per API synchronisieren (Android, eigene Credentials) | [Strava-API-Import](integrations/strava-api-import.md) |
 | GPX/FIT-Tracks über den System-Dateidialog importieren | [Tracks importieren](integrations/import-tracks.md) |
 | API-Token für Skripte und externe Apps erstellen | [Grom-API-Token](user/grom-api-tokens.md) |
 | Mein Konto löschen | [Grom-Konto löschen](user/delete-account.md) |
@@ -65,6 +66,7 @@ Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und st
 | Thema | Seite |
 |-------|-------|
 | Strava-ZIP-Spaltenzuordnung und Importverhalten | [Strava-Massenimport](integrations/strava-bulk-import.md) |
+| Strava-API-Sync unter Android (eigene Client-ID/Secret) | [Strava-API-Import](integrations/strava-api-import.md) |
 | Multi-Datei-GPX/FIT-Import (Client) | [Tracks importieren](integrations/import-tracks.md) |
 | Vollständige annotierte Konfiguration | [`config.full.yaml`](https://github.com/solargate/grom/blob/master/cmd/grom/config-examples/config.full.yaml) |
 | HTTP-API (Swagger UI) | Auf dem laufenden Server: `/api/docs/` (z. B. `http://localhost:8080/api/docs/`); OpenAPI-Quellen unter [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) |

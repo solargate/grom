@@ -34,6 +34,7 @@ type CreateWorkoutRequest struct {
 	DurationSeconds      int                `json:"duration_seconds" example:"3600"`
 	DurationTotalSeconds int                `json:"duration_total_seconds,omitempty" example:"3900"`
 	Distance             float64            `json:"distance" example:"5200"`
+	Device               string             `json:"device,omitempty" example:"Garmin Edge 530"`
 	SpeedMaxKmh          *float64           `json:"speed_max_kmh,omitempty" example:"32.5"`
 	SpeedAvgKmh          *float64           `json:"speed_avg_kmh,omitempty" example:"18.2"`
 	EquipmentIDs         []string           `json:"equipment_ids" example:"550e8400-e29b-41d4-a716-446655440000"`
@@ -48,6 +49,7 @@ type CreateWorkoutForm struct {
 	DurationSeconds      int                   `form:"duration_seconds"`
 	DurationTotalSeconds int                   `form:"duration_total_seconds"`
 	Distance             float64               `form:"distance"`
+	Device               string                `form:"device"`
 	SpeedMaxKmh          string                `form:"speed_max_kmh"`
 	SpeedAvgKmh          string                `form:"speed_avg_kmh"`
 	EquipmentIDs         string                `form:"equipment_ids"`
@@ -317,6 +319,7 @@ func workoutFromCreateRequest(req CreateWorkoutRequest, startDate time.Time, equ
 		DurationSeconds:      req.DurationSeconds,
 		DurationTotalSeconds: req.DurationTotalSeconds,
 		Distance:             req.Distance,
+		Device:               req.Device,
 		SpeedMaxKmh:          req.SpeedMaxKmh,
 		SpeedAvgKmh:          req.SpeedAvgKmh,
 		Equipment:            equipment,
@@ -457,7 +460,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 
 // createWorkout godoc
 // @Summary      Create workout
-// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment.
+// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present.
 // @Tags         workouts
 // @Accept       json
 // @Accept       mpfd
@@ -470,6 +473,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        start_date  formData  string  false  "Start date RFC3339 (multipart)"
 // @Param        duration_seconds  formData  int  false  "Duration seconds (multipart)"
 // @Param        distance  formData  number  false  "Distance meters (multipart)"
+// @Param        device  formData  string  false  "Recording device label (multipart); omitted or empty defaults to Grom App; FIT track device wins when present"
 // @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
@@ -726,6 +730,7 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		DurationSeconds:      form.DurationSeconds,
 		DurationTotalSeconds: form.DurationTotalSeconds,
 		Distance:             form.Distance,
+		Device:               form.Device,
 		SpeedMaxKmh:          speedMaxKmh,
 		SpeedAvgKmh:          speedAvgKmh,
 		Equipment:            equipmentItems,

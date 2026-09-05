@@ -49,7 +49,11 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 	workout.DurationTotalSeconds = durationTotalSeconds
 	workout.Distance = distanceMeters
 	workout.Track = trackName
-	workout.Device = deviceForTrack(trackName, parsed)
+	if trackDevice := deviceForTrack(trackName, parsed); trackDevice != DeviceGrom {
+		workout.Device = trackDevice
+	} else {
+		workout.Device = NormalizeDevice(workout.Device)
+	}
 
 	MergeTrackStats(workout, parsed, MergeModeTrackCreate)
 

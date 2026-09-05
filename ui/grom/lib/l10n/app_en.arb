@@ -455,6 +455,41 @@
   "openStreetMapCopyrightLink": "OpenStreetMap copyright and license",
   "integration": "Integration",
   "strava": "Strava",
+  "stravaApiImportToggle": "Import workouts from Strava",
+  "stravaApiClientIdLabel": "Strava client id",
+  "stravaApiClientSecretLabel": "Strava client secret",
+  "stravaApiSyncLimitLabel": "Workouts per sync",
+  "stravaApiConnectStatusDisconnected": "No",
+  "stravaApiConnectStatusConnected": "OK",
+  "stravaApiConnectStatusFailed": "Error",
+  "stravaApiConnectMissingCredentials": "Enter Client ID and Client Secret",
+  "stravaApiConnectCancelled": "Strava authorization was cancelled",
+  "stravaApiConnectDenied": "Strava authorization was denied",
+  "stravaApiConnectMissingScope": "Grant the read and activity:read permissions in Strava",
+  "stravaApiConnectError": "Strava connect failed: {message}",
+  "@stravaApiConnectError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "stravaApiSyncing": "Synchronizing…",
+  "stravaApiImported": "Imported {count} workouts",
+  "@stravaApiImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "stravaApiNoNewWorkouts": "No new workouts found",
+  "stravaApiNotConnected": "Connect with Strava on the Integration screen first",
+  "stravaApiNotEnabled": "Enable Strava API import on the Integration screen",
+  "stravaApiAuthFailed": "Strava authentication failed",
+  "stravaApiSyncCancelled": "Strava sync was cancelled",
+  "stravaApiSyncError": "Strava sync failed: {message}",
+  "@stravaApiSyncError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
   "stravaImportDescriptionBefore": "You can download an archive of your workouts from the ",
   "stravaImportDescriptionLink": "Strava website",
   "stravaDownloadArchiveUrl": "https://www.strava.com/athlete/download_my_account",

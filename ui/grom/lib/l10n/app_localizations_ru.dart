@@ -1055,6 +1055,76 @@ class AppLocalizationsRu extends AppLocalizations {
   String get strava => 'Strava';
 
   @override
+  String get stravaApiImportToggle => 'Импорт тренировок из Strava';
+
+  @override
+  String get stravaApiClientIdLabel => 'Strava client id';
+
+  @override
+  String get stravaApiClientSecretLabel => 'Strava client secret';
+
+  @override
+  String get stravaApiSyncLimitLabel => 'Тренировок за sync';
+
+  @override
+  String get stravaApiConnectStatusDisconnected => 'Нет';
+
+  @override
+  String get stravaApiConnectStatusConnected => 'OK';
+
+  @override
+  String get stravaApiConnectStatusFailed => 'Ошибка';
+
+  @override
+  String get stravaApiConnectMissingCredentials =>
+      'Введите Client ID и Client Secret';
+
+  @override
+  String get stravaApiConnectCancelled => 'Авторизация Strava отменена';
+
+  @override
+  String get stravaApiConnectDenied => 'Авторизация Strava отклонена';
+
+  @override
+  String get stravaApiConnectMissingScope =>
+      'Выдайте разрешения read и activity:read в Strava';
+
+  @override
+  String stravaApiConnectError(String message) {
+    return 'Не удалось подключить Strava: $message';
+  }
+
+  @override
+  String get stravaApiSyncing => 'Синхронизация…';
+
+  @override
+  String stravaApiImported(int count) {
+    return 'Импортировано тренировок: $count';
+  }
+
+  @override
+  String get stravaApiNoNewWorkouts => 'Новых тренировок не найдено';
+
+  @override
+  String get stravaApiNotConnected =>
+      'Сначала подключите Strava на экране «Интеграция»';
+
+  @override
+  String get stravaApiNotEnabled =>
+      'Включите импорт через Strava API на экране «Интеграция»';
+
+  @override
+  String get stravaApiAuthFailed => 'Ошибка аутентификации Strava';
+
+  @override
+  String get stravaApiSyncCancelled => 'Синхронизация Strava отменена';
+
+  @override
+  String stravaApiSyncError(String message) {
+    return 'Ошибка синхронизации Strava: $message';
+  }
+
+  @override
   String get stravaImportDescriptionBefore =>
       'Вы можете выгрузить архив своих тренировок на ';
 

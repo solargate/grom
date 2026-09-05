@@ -1,10 +1,15 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:grom/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/device_track_import_service.dart';
+import '../services/strava_api_auth.dart';
+import '../services/strava_api_constants.dart';
+import '../services/strava_api_sync_service.dart';
 import '../services/strava_import_service.dart';
 import 'about_page_url.dart' if (dart.library.html) 'about_page_url_web.dart';
 
@@ -15,30 +20,71 @@ class ExternalIntegrationsTab extends StatefulWidget {
   final VoidCallback? onWorkoutsImported;
 
   @override
-  State<ExternalIntegrationsTab> createState() => _ExternalIntegrationsTabState();
+  State<ExternalIntegrationsTab> createState() =>
+      _ExternalIntegrationsTabState();
 }
 
 class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
   final StravaImportService _importService = StravaImportService.instance;
   final DeviceTrackImportService _trackImportService =
       DeviceTrackImportService.instance;
+  final StravaApiSyncService _stravaApi = StravaApiSyncService.instance;
   late final TapGestureRecognizer _stravaDownloadLinkRecognizer;
+  late final TextEditingController _clientIdController;
+  late final TextEditingController _clientSecretController;
+  late final TextEditingController _syncLimitController;
+  late final FocusNode _syncLimitFocus;
+
+  bool _stravaConnectFailed = false;
+  bool _connecting = false;
+
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   @override
   void initState() {
     super.initState();
+    _clientIdController = TextEditingController();
+    _clientSecretController = TextEditingController();
+    _syncLimitController = TextEditingController(
+      text: '$kStravaApiSyncLimitDefault',
+    );
+    _syncLimitFocus = FocusNode()
+      ..addListener(() {
+        if (!_syncLimitFocus.hasFocus) {
+          _normalizeSyncLimitField();
+        }
+      });
     _stravaDownloadLinkRecognizer = TapGestureRecognizer()
       ..onTap = _openStravaDownloadUrl;
     _importService.addListener(_onImportChanged);
     _trackImportService.addListener(_onTrackImportChanged);
+    _stravaApi.addListener(_onStravaApiChanged);
     _importService.syncFromServer();
+    _loadStravaApiState();
+  }
+
+  Future<void> _loadStravaApiState() async {
+    await _stravaApi.loadFromStorage();
+    if (!mounted) {
+      return;
+    }
+    _clientIdController.text = _stravaApi.clientId;
+    _clientSecretController.text = _stravaApi.clientSecret;
+    _syncLimitController.text = '${_stravaApi.syncLimit}';
+    setState(() {});
   }
 
   @override
   void dispose() {
     _stravaDownloadLinkRecognizer.dispose();
+    _clientIdController.dispose();
+    _clientSecretController.dispose();
+    _syncLimitFocus.dispose();
+    _syncLimitController.dispose();
     _importService.removeListener(_onImportChanged);
     _trackImportService.removeListener(_onTrackImportChanged);
+    _stravaApi.removeListener(_onStravaApiChanged);
     super.dispose();
   }
 
@@ -49,6 +95,12 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
   }
 
   void _onTrackImportChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onStravaApiChanged() {
     if (mounted) {
       setState(() {});
     }
@@ -98,9 +150,80 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
     }
   }
 
+  Future<void> _onStravaApiToggle(bool enabled) async {
+    await _stravaApi.setEnabled(enabled);
+    if (!enabled) {
+      setState(() => _stravaConnectFailed = false);
+    }
+  }
+
+  Future<void> _persistCredentialsDraft() async {
+    await _stravaApi.saveCredentialsDraft(
+      clientId: _clientIdController.text,
+      clientSecret: _clientSecretController.text,
+    );
+  }
+
+  Future<void> _persistSyncLimitDraft() async {
+    final text = _syncLimitController.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+    final parsed = int.tryParse(text);
+    if (parsed == null) {
+      return;
+    }
+    await _stravaApi.saveSyncLimitDraft(parsed);
+  }
+
+  Future<void> _normalizeSyncLimitField() async {
+    final parsed = int.tryParse(_syncLimitController.text.trim());
+    await _stravaApi.saveSyncLimitDraft(parsed);
+    if (!mounted) {
+      return;
+    }
+    final normalized = '${_stravaApi.syncLimit}';
+    if (_syncLimitController.text != normalized) {
+      _syncLimitController.text = normalized;
+    }
+  }
+
+  Future<void> _connectStrava() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      _connecting = true;
+      _stravaConnectFailed = false;
+    });
+    await _persistCredentialsDraft();
+    final result = await _stravaApi.connect();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _connecting = false;
+      _stravaConnectFailed = result.kind != StravaConnectResultKind.connected &&
+          result.kind != StravaConnectResultKind.cancelled;
+    });
+
+    final message = switch (result.kind) {
+      StravaConnectResultKind.connected => l10n.stravaApiConnectStatusConnected,
+      StravaConnectResultKind.cancelled => l10n.stravaApiConnectCancelled,
+      StravaConnectResultKind.missingCredentials =>
+        l10n.stravaApiConnectMissingCredentials,
+      StravaConnectResultKind.missingScope =>
+        l10n.stravaApiConnectMissingScope,
+      StravaConnectResultKind.denied => l10n.stravaApiConnectDenied,
+      StravaConnectResultKind.error =>
+        l10n.stravaApiConnectError(result.message),
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Widget _buildImportTracksSection(AppLocalizations l10n, ThemeData theme) {
     final state = _trackImportService.state;
-    final busy = state.active || _importService.state.active;
+    final busy = state.active || _importService.state.active || _stravaApi.syncing;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,6 +262,98 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
     );
   }
 
+  Widget _buildStravaApiSection(AppLocalizations l10n, ThemeData theme) {
+    final busy = _connecting || _stravaApi.syncing || _importService.state.active;
+
+    final Color statusColor;
+    final String statusText;
+    if (_stravaApi.connected) {
+      statusColor = theme.colorScheme.primary;
+      statusText = l10n.stravaApiConnectStatusConnected;
+    } else if (_stravaConnectFailed) {
+      statusColor = theme.colorScheme.error;
+      statusText = l10n.stravaApiConnectStatusFailed;
+    } else {
+      statusColor = theme.colorScheme.onSurfaceVariant;
+      statusText = l10n.stravaApiConnectStatusDisconnected;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.stravaApiImportToggle),
+          value: _stravaApi.enabled,
+          onChanged: busy ? null : _onStravaApiToggle,
+        ),
+        if (_stravaApi.enabled) ...[
+          const SizedBox(height: 8),
+          TextField(
+            controller: _clientIdController,
+            enabled: !busy,
+            decoration: InputDecoration(
+              labelText: l10n.stravaApiClientIdLabel,
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (_) => _persistCredentialsDraft(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _clientSecretController,
+            enabled: !busy,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: l10n.stravaApiClientSecretLabel,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (_) => _persistCredentialsDraft(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _syncLimitController,
+            focusNode: _syncLimitFocus,
+            enabled: !busy,
+            decoration: InputDecoration(
+              labelText: l10n.stravaApiSyncLimitLabel,
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (_) => _persistSyncLimitDraft(),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.circle, size: 12, color: statusColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: statusColor),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: busy ? null : _connectStrava,
+                borderRadius: BorderRadius.circular(4),
+                child: Opacity(
+                  opacity: busy ? 0.5 : 1,
+                  child: SvgPicture.asset(
+                    kStravaConnectButtonAsset,
+                    height: 40,
+                    semanticsLabel: 'Connect with Strava',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -155,6 +370,7 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
           style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
+        if (_isAndroid) _buildStravaApiSection(l10n, theme),
         Text.rich(
           TextSpan(
             style: theme.textTheme.bodyMedium,
@@ -174,7 +390,7 @@ class _ExternalIntegrationsTabState extends State<ExternalIntegrationsTab> {
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: (state.active || trackBusy)
+          onPressed: (state.active || trackBusy || _stravaApi.syncing)
               ? null
               : _importService.pickAndImport,
           icon: const Icon(Icons.upload_file),

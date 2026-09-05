@@ -71,7 +71,7 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 	workout.ID = id
 	workout.Name = workouts.TrimWorkoutName(workout.Name)
 	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
-	workout.Device = workouts.DeviceGrom
+	workout.Device = workouts.NormalizeDevice(workout.Device)
 
 	return s.saveNewWorkout(nickname, workout)
 }

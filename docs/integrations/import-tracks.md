@@ -39,3 +39,4 @@ Older workouts imported via the removed Health Sync + Google Drive flow keep the
 
 - [User overview](../user/overview.md)
 - [Strava bulk import](strava-bulk-import.md) (server-side ZIP import)
+- [Strava API import](strava-api-import.md) (Android BYO API sync)

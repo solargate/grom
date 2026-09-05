@@ -1073,6 +1073,76 @@ class AppLocalizationsDe extends AppLocalizations {
   String get strava => 'Strava';
 
   @override
+  String get stravaApiImportToggle => 'Trainings aus Strava importieren';
+
+  @override
+  String get stravaApiClientIdLabel => 'Strava client id';
+
+  @override
+  String get stravaApiClientSecretLabel => 'Strava client secret';
+
+  @override
+  String get stravaApiSyncLimitLabel => 'Trainings pro Sync';
+
+  @override
+  String get stravaApiConnectStatusDisconnected => 'Nein';
+
+  @override
+  String get stravaApiConnectStatusConnected => 'OK';
+
+  @override
+  String get stravaApiConnectStatusFailed => 'Fehler';
+
+  @override
+  String get stravaApiConnectMissingCredentials =>
+      'Client ID und Client Secret eingeben';
+
+  @override
+  String get stravaApiConnectCancelled => 'Strava-Autorisierung abgebrochen';
+
+  @override
+  String get stravaApiConnectDenied => 'Strava-Autorisierung abgelehnt';
+
+  @override
+  String get stravaApiConnectMissingScope =>
+      'Berechtigungen read und activity:read in Strava erteilen';
+
+  @override
+  String stravaApiConnectError(String message) {
+    return 'Strava-Verbindung fehlgeschlagen: $message';
+  }
+
+  @override
+  String get stravaApiSyncing => 'Synchronisiere…';
+
+  @override
+  String stravaApiImported(int count) {
+    return '$count Trainings importiert';
+  }
+
+  @override
+  String get stravaApiNoNewWorkouts => 'Keine neuen Trainings gefunden';
+
+  @override
+  String get stravaApiNotConnected =>
+      'Zuerst auf dem Integrationsbildschirm mit Strava verbinden';
+
+  @override
+  String get stravaApiNotEnabled =>
+      'Strava-API-Import auf dem Integrationsbildschirm aktivieren';
+
+  @override
+  String get stravaApiAuthFailed => 'Strava-Authentifizierung fehlgeschlagen';
+
+  @override
+  String get stravaApiSyncCancelled => 'Strava-Synchronisation abgebrochen';
+
+  @override
+  String stravaApiSyncError(String message) {
+    return 'Strava-Synchronisation fehlgeschlagen: $message';
+  }
+
+  @override
   String get stravaImportDescriptionBefore =>
       'Sie können ein Archiv Ihrer Aktivitäten auf der ';
 

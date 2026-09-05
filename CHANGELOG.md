@@ -12,9 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Google Play
 
 - Open GPX/FIT tracks via "Open with"
+- Android: import recent Strava workouts via your own Strava API app (Home sync)
+- Strava API import keeps the original recording device name
+- Strava API import includes heart-rate when Strava provides it
+
+### Added
+
+- **Android:** Strava API import (BYO Client ID/Secret on Integration, Connect with Strava OAuth, Home sync of recent activities with configurable count default 10, `external_id` dedup, GPX from streams, best-effort photos)
+- **Docs:** Strava API import guide (EN/RU/DE)
 
 ### Changed
 
+- **Android:** Strava API import embeds heart-rate from Strava streams into the synthetic GPX (`gpxtpx:hr`) so the server builds the HR chart and avg/max
 - **CI:** Release CI uploads the Android AAB to Google Play open testing (`beta`) as a draft, instead of closed testing (`alpha`)
 - **CI:** Verify runs Android JVM unit tests (`:app:testDebugUnitTest`); `make test-android-unit` / `make test` include them; commit the Android Gradle Wrapper for CI
 - **CI:** Android unit job writes `local.properties` (`flutter.sdk` / `sdk.dir`) before Gradle; uses `gradle/actions/setup-gradle@v5` (Node 24)
@@ -22,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Android:** Strava API import sets workout `device` from Strava `device_name` (server accepts optional `device` on create; FIT track device still wins when present)
+- **Android:** Strava Connect OAuth uses a custom-scheme redirect and JSON token exchange without `redirect_uri`
 - **Android:** “Open with” for `.gpx` / `.fit` from Google Drive and similar apps (VIEW/EDIT on MainActivity with broad MIME; copy Drive content URIs to cache; reject non-tracks after open)
 - **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized
 
