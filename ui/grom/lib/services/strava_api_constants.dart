@@ -20,7 +20,6 @@ int clampStravaApiSyncLimit(int? value) {
 const kStravaExternalIDName = 'strava';
 
 /// OAuth redirect for Android (custom scheme so Auth Tab returns to the app).
-/// Authorization Callback Domain in the user's Strava API app: `localhost`.
 const kStravaOAuthRedirectUri = 'grom://localhost';
 
 /// Scopes requested for public / followers activities (no private-only).

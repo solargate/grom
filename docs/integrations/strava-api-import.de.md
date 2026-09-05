@@ -8,10 +8,9 @@ Für die vollständige Historie (oder ältere Aktivitäten) nutzen Sie den [Stra
 
 1. Strava-Konto mit aktivem Abo (von Strava für API-Apps verlangt).
 2. API-Anwendung unter [strava.com/settings/api](https://www.strava.com/settings/api) anlegen.
-3. **Authorization Callback Domain** auf `localhost` setzen (Grom nutzt Redirect-URI `grom://localhost`; ein Custom Scheme ist nötig, damit Android nach OAuth zur App zurückkehrt).
-4. **Client ID** und **Client Secret** in Grom eintragen.
+3. **Client ID** und **Client Secret** in Grom eintragen.
 
-Wenn Connect mit HTTP **403** beim Token-Austausch scheitert, VPN ausschalten und erneut versuchen: Cloudflare vor Strava blockiert mobile Clients manchmal. Prüfen Sie auch Client ID/Secret und Callback Domain `localhost`.
+Wenn Connect mit HTTP **403** beim Token-Austausch scheitert, prüfen Sie Client ID und Client Secret und versuchen Sie es erneut.
 
 Neue Strava-Apps starten im Single-Player-Modus (nur der App-Besitzer kann autorisieren) – passend für persönlichen BYO-Einsatz.
 

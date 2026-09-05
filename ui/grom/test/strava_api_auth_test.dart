@@ -129,7 +129,7 @@ void main() {
     );
   });
 
-  test('connect surfaces VPN hint on token 403 HTML', () async {
+  test('connect surfaces hint on token 403 HTML', () async {
     final auth = StravaApiAuth(
       httpClient: MockClient(
         (_) async => http.Response('<html>cloudflare</html>', 403),
@@ -139,8 +139,8 @@ void main() {
     );
     final result = await auth.connect(clientId: '1', clientSecret: 's');
     expect(result.kind, StravaConnectResultKind.error);
-    expect(result.message, contains('disable VPN'));
     expect(result.message, contains('403'));
+    expect(result.message, contains('Client ID/Secret'));
   });
 
   test('ensureAccessToken refreshes when near expiry', () async {

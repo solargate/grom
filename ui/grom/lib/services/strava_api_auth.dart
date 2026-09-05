@@ -295,7 +295,7 @@ class StravaApiAuth {
     }
     if (response.statusCode == 403) {
       return 'token request forbidden (403). '
-          'Check Client ID/Secret, disable VPN if enabled, then retry Connect';
+          'Check Client ID/Secret, then retry Connect';
     }
     if (body.isNotEmpty && body.length < 200 && !body.startsWith('<')) {
       return 'token request failed (${response.statusCode}): $body';

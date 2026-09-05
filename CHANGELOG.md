@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Android:** Strava Connect OAuth uses `grom://localhost` and JSON token exchange without `redirect_uri`; User-Agent set to avoid Cloudflare 403
+- **Android:** Strava Connect OAuth uses a custom-scheme redirect and JSON token exchange without `redirect_uri`
 - **Android:** “Open with” for `.gpx` / `.fit` from Google Drive and similar apps (VIEW/EDIT on MainActivity with broad MIME; copy Drive content URIs to cache; reject non-tracks after open)
 - **Server:** Strava bulk import: gear from `shoes.csv` / `bikes.csv` is matched by brand, model and nickname (as `activities.csv` writes them), so shoes no longer land in the `other` category and gear without a nickname is recognized
 

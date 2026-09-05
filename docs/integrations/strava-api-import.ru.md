@@ -8,10 +8,9 @@
 
 1. Аккаунт Strava с активной подпиской (Strava требует её для создания API-приложения).
 2. Создайте API-приложение на [strava.com/settings/api](https://www.strava.com/settings/api).
-3. Укажите **Authorization Callback Domain** = `localhost` (Grom использует redirect URI `grom://localhost`; custom scheme нужен, чтобы Android вернул управление в приложение после OAuth).
-4. Скопируйте **Client ID** и **Client Secret** в Grom.
+3. Скопируйте **Client ID** и **Client Secret** в Grom.
 
-Если Connect падает с HTTP **403** на обмене токена, повторите с выключенным VPN: Cloudflare перед Strava иногда блокирует мобильные клиенты. Также проверьте, что Client ID/Secret совпадают с API-приложением и Callback Domain = `localhost`.
+Если Connect падает с HTTP **403** на обмене токена, проверьте, что Client ID и Client Secret совпадают с API-приложением, и повторите попытку.
 
 Новые приложения Strava стартуют в single-player режиме (авторизоваться может только владелец app) — это подходит для личного BYO.
 
