@@ -136,6 +136,72 @@ void main() {
     expect(points.every((p) => p.heartRateBpm == null), isTrue);
   });
 
+  test('getActivityTrackPoints handles short HR stream and rejects negative',
+      () async {
+    final client = StravaApiClient(
+      httpClient: MockClient((_) async => http.Response(
+            jsonEncode({
+              'latlng': {
+                'data': [
+                  [55.75, 37.61],
+                  [55.76, 37.62],
+                  [55.77, 37.63],
+                ],
+              },
+              'time': {
+                'data': [0, 30, 60],
+              },
+              'heartrate': {
+                'data': [120, -1],
+              },
+            }),
+            200,
+          )),
+    );
+
+    final points = await client.getActivityTrackPoints(
+      accessToken: 'tok',
+      activityId: 9,
+    );
+    expect(points, hasLength(3));
+    expect(points[0].heartRateBpm, 120);
+    expect(points[1].heartRateBpm, isNull);
+    expect(points[2].heartRateBpm, isNull);
+  });
+
+  test('getActivityTrackPoints reads HR from array-shaped streams', () async {
+    final client = StravaApiClient(
+      httpClient: MockClient((_) async => http.Response(
+            jsonEncode([
+              {
+                'type': 'latlng',
+                'data': [
+                  [55.75, 37.61],
+                  [55.76, 37.62],
+                ],
+              },
+              {
+                'type': 'time',
+                'data': [0, 60],
+              },
+              {
+                'type': 'heartrate',
+                'data': [110, 130],
+              },
+            ]),
+            200,
+          )),
+    );
+
+    final points = await client.getActivityTrackPoints(
+      accessToken: 'tok',
+      activityId: 9,
+    );
+    expect(points, hasLength(2));
+    expect(points.first.heartRateBpm, 110);
+    expect(points.last.heartRateBpm, 130);
+  });
+
   test('getActivityTrackPoints returns empty on 404', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response('missing', 404)),

@@ -335,6 +335,105 @@ void main() {
     expect(createFields!['device'], 'yes');
   });
 
+  test('sync attaches GPX track with heart rate from streams', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = request.body;
+        createFields = {
+          'has_track': body.contains('name="track"') ||
+                  body.contains('filename="strava_55.gpx"')
+              ? 'yes'
+              : 'no',
+          'filename': body.contains('strava_55.gpx') ? 'yes' : 'no',
+          'gpxtpx_ns': body.contains(
+            'xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"',
+          )
+              ? 'yes'
+              : 'no',
+          'hr_120': body.contains('<gpxtpx:hr>120</gpxtpx:hr>') ? 'yes' : 'no',
+          'hr_145': body.contains('<gpxtpx:hr>145</gpxtpx:hr>') ? 'yes' : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([_activityJson(55, name: 'HR Run')]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        expect(
+          request.url.queryParameters['keys'],
+          'latlng,time,altitude,heartrate',
+        );
+        return http.Response(
+          jsonEncode({
+            'latlng': {
+              'data': [
+                [55.75, 37.61],
+                [55.76, 37.62],
+              ],
+            },
+            'time': {
+              'data': [0, 60],
+            },
+            'altitude': {
+              'data': [100.0, 102.0],
+            },
+            'heartrate': {
+              'data': [120, 145],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(_activityJson(55, name: 'HR Run')),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(result.importedCount, 1);
+    expect(createFields!['has_track'], 'yes');
+    expect(createFields!['filename'], 'yes');
+    expect(createFields!['gpxtpx_ns'], 'yes');
+    expect(createFields!['hr_120'], 'yes');
+    expect(createFields!['hr_145'], 'yes');
+  });
+
   test('stravaApiSyncResultSnackBarMessage maps kinds', () {
     expect(
       stravaApiSyncResultSnackBarMessage(

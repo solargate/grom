@@ -54,6 +54,25 @@ void main() {
     expect(xml, contains('<gpxtpx:hr>145</gpxtpx:hr>'));
   });
 
+  test('buildGpxFromStravaStreams embeds HR only on points that have it', () {
+    final bytes = buildGpxFromStravaStreams(
+      name: 'Sparse HR',
+      startDate: DateTime.utc(2026, 9, 5, 10, 0, 0),
+      points: const [
+        StravaStreamPoint(lat: 55.75, lon: 37.61, timeSeconds: 0),
+        StravaStreamPoint(
+          lat: 55.76,
+          lon: 37.62,
+          timeSeconds: 60,
+          heartRateBpm: 140,
+        ),
+      ],
+    );
+    final xml = utf8.decode(bytes);
+    expect('<gpxtpx:hr>'.allMatches(xml), hasLength(1));
+    expect(xml, contains('<gpxtpx:hr>140</gpxtpx:hr>'));
+  });
+
   test('buildGpxFromStravaStreams rejects short tracks', () {
     expect(
       () => buildGpxFromStravaStreams(
