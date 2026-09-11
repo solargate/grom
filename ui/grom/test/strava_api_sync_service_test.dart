@@ -381,6 +381,180 @@ void main() {
     expect(createFields!['speed_avg'], 'yes');
   });
 
+  test('sync with GPX track still sends Strava activity metrics', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = request.body;
+        createFields = {
+          'has_track': body.contains('name="track"') ||
+                  body.contains('filename="strava_77.gpx"')
+              ? 'yes'
+              : 'no',
+          'distance': body.contains('name="distance"') && body.contains('2000')
+              ? 'yes'
+              : 'no',
+          'elevation_gain': body.contains('name="elevation_gain"') &&
+                  body.contains('516')
+              ? 'yes'
+              : 'no',
+          'elevation_low':
+              body.contains('name="elevation_low"') && body.contains('10')
+                  ? 'yes'
+                  : 'no',
+          'elevation_high':
+              body.contains('name="elevation_high"') && body.contains('200')
+                  ? 'yes'
+                  : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final activity = _activityJson(
+      77,
+      name: 'Outdoor',
+      elevationGain: 516,
+      elevLow: 10,
+      elevHigh: 200,
+    );
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([activity]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response(
+          jsonEncode({
+            'latlng': {
+              'data': [
+                [55.75, 37.61],
+                [55.76, 37.62],
+              ],
+            },
+            'time': {
+              'data': [0, 60],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(activity),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(createFields!['has_track'], 'yes');
+    expect(createFields!['distance'], 'yes');
+    expect(createFields!['elevation_gain'], 'yes');
+    expect(createFields!['elevation_low'], 'yes');
+    expect(createFields!['elevation_high'], 'yes');
+  });
+
+  test('sync sends elevation_gain 0 and omits missing elev low/high', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = request.body;
+        final elevGainMatch = RegExp(
+          r'name="elevation_gain"[\s\S]*?\r?\n\r?\n([^\r\n]+)',
+        ).firstMatch(body);
+        createFields = {
+          'elevation_gain_value': elevGainMatch?.group(1) ?? '',
+          'elevation_low':
+              body.contains('name="elevation_low"') ? 'yes' : 'no',
+          'elevation_high':
+              body.contains('name="elevation_high"') ? 'yes' : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final activity = _activityJson(88, elevationGain: 0);
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([activity]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response('[]', 404);
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(activity),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(
+      double.tryParse(createFields!['elevation_gain_value'] ?? ''),
+      0,
+    );
+    expect(createFields!['elevation_low'], 'no');
+    expect(createFields!['elevation_high'], 'no');
+  });
+
   test('sync imports without track when streams unavailable', () async {
     await _seedConnectedPrefs();
     Map<String, String>? createFields;

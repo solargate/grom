@@ -122,6 +122,42 @@ func TestMergeTrackStatsCreatePreservesClientElevation(t *testing.T) {
 	}
 }
 
+func TestMergeTrackStatsCreatePreservesZeroElevationGain(t *testing.T) {
+	workout := &Workout{
+		ElevationGain: floatPtr(0),
+	}
+	stats := tracks.Stats{}
+	setExplicitFloatStat(&stats.ElevationGain, 100)
+
+	data := &tracks.Data{Stats: stats}
+	MergeTrackStats(workout, data, MergeModeTrackCreate)
+
+	if workout.ElevationGain == nil || *workout.ElevationGain != 0 {
+		t.Fatalf("elevation_gain = %v, want 0", workout.ElevationGain)
+	}
+}
+
+func TestMergeTrackStatsCreateFillsElevationWhenUnset(t *testing.T) {
+	workout := &Workout{}
+	stats := tracks.Stats{}
+	setExplicitFloatStat(&stats.ElevationGain, 77)
+	setExplicitFloatStat(&stats.ElevationLow, 5)
+	setExplicitFloatStat(&stats.ElevationHigh, 40)
+
+	data := &tracks.Data{Stats: stats}
+	MergeTrackStats(workout, data, MergeModeTrackCreate)
+
+	if workout.ElevationGain == nil || *workout.ElevationGain != 77 {
+		t.Fatalf("elevation_gain = %v, want 77", workout.ElevationGain)
+	}
+	if workout.ElevationLow == nil || *workout.ElevationLow != 5 {
+		t.Fatalf("elevation_low = %v, want 5", workout.ElevationLow)
+	}
+	if workout.ElevationHigh == nil || *workout.ElevationHigh != 40 {
+		t.Fatalf("elevation_high = %v, want 40", workout.ElevationHigh)
+	}
+}
+
 func TestMergeTrackStatsTempAvgKmm(t *testing.T) {
 	workout := &Workout{
 		DurationSeconds: 600,
