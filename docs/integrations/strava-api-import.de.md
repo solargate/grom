@@ -33,8 +33,9 @@ Umschalter aus = Sync-Button ausgeblendet; Credentials/Tokens bleiben. Logout au
 | Reihenfolge | Neueste zuerst |
 | Stopp | Bei der ersten bereits vorhandenen Aktivität mit `external_id.name=strava` |
 | Sichtbarkeit | Nur `activity:read` — Everyone / Followers (nicht „Only You“) |
+| Metriken | Distanz, Moving-/Elapsed-Zeit, Geschwindigkeiten und Höhe (`total_elevation_gain`, `elev_low`, `elev_high` falls vorhanden) kommen aus dem Strava-Activity-Objekt — nicht aus einer Neuberechnung des GPS-Tracks |
 | Ohne GPS | Workout aus Summary ohne Track |
-| Mit GPS | GPX aus Strava-Streams (inkl. Herzfrequenz, falls vorhanden) |
+| Mit GPS | GPX aus Strava-Streams (inkl. Herzfrequenz, falls vorhanden) für Karte/Charts; unvollständiges GPS ersetzt die Activity-Metriken nicht |
 | Gerät | Nutzt Strava `device_name`, falls vorhanden (sonst Server-Default `Grom App`) |
 | Fotos | Best-effort über Photos-API; Foto-Fehler bricht das Workout nicht ab |
 | Ausrüstung | Kein `equipment_ids` → Server nutzt `last_equipment_by_sport` |

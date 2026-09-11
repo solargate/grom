@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Strava API import keeps Strava distance, time, speed, and elevation even when the GPS track is incomplete
+
+### Fixed
+
+- **Server:** Creating a workout with a track no longer overwrites client-provided `start_date`, durations, `distance`, speeds, or elevation; the track fills only empty metrics (fixes Strava API import when GPS streams are incomplete)
+- **Android:** Strava API sync sends `elevation_gain` / `elevation_low` / `elevation_high` from the Strava activity when present
+- **Docs:** Strava API and bulk-import docs describe preserved activity metrics vs track attach
+
 ## [0.13.0] - 2026-09-05
 
 ### Google Play

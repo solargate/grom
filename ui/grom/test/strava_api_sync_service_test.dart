@@ -27,6 +27,11 @@ Map<String, dynamic> _activityJson(
   int id, {
   String name = 'Activity',
   String? deviceName,
+  double? elevationGain,
+  double? elevLow,
+  double? elevHigh,
+  double? maxSpeed,
+  double? averageSpeed,
 }) =>
     {
       'id': id,
@@ -39,6 +44,11 @@ Map<String, dynamic> _activityJson(
       'distance': 2000,
       'total_photo_count': 0,
       if (deviceName != null) 'device_name': deviceName,
+      if (elevationGain != null) 'total_elevation_gain': elevationGain,
+      if (elevLow != null) 'elev_low': elevLow,
+      if (elevHigh != null) 'elev_high': elevHigh,
+      if (maxSpeed != null) 'max_speed': maxSpeed,
+      if (averageSpeed != null) 'average_speed': averageSpeed,
     };
 
 Future<void> _seedConnectedPrefs({int? syncLimit}) async {
@@ -261,6 +271,114 @@ void main() {
     final result = await service.syncWorkouts();
     expect(result.kind, StravaApiSyncResultKind.authFailed);
     expect(result.message, 'Authorization Error');
+  });
+
+  test('sync sends Strava activity metrics including elevation', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = request.body;
+        createFields = {
+          'distance': body.contains('name="distance"') && body.contains('2000')
+              ? 'yes'
+              : 'no',
+          'duration': body.contains('name="duration_seconds"') &&
+                  body.contains('600')
+              ? 'yes'
+              : 'no',
+          'duration_total': body.contains('name="duration_total_seconds"') &&
+                  body.contains('620')
+              ? 'yes'
+              : 'no',
+          'elevation_gain': body.contains('name="elevation_gain"') &&
+                  body.contains('516')
+              ? 'yes'
+              : 'no',
+          'elevation_low':
+              body.contains('name="elevation_low"') && body.contains('10')
+                  ? 'yes'
+                  : 'no',
+          'elevation_high':
+              body.contains('name="elevation_high"') && body.contains('200')
+                  ? 'yes'
+                  : 'no',
+          'speed_max': body.contains('name="speed_max_kmh"') ? 'yes' : 'no',
+          'speed_avg': body.contains('name="speed_avg_kmh"') ? 'yes' : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([
+            _activityJson(
+              42,
+              elevationGain: 516,
+              elevLow: 10,
+              elevHigh: 200,
+              maxSpeed: 10,
+              averageSpeed: 5,
+            ),
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response('[]', 404);
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(
+            _activityJson(
+              42,
+              elevationGain: 516,
+              elevLow: 10,
+              elevHigh: 200,
+              maxSpeed: 10,
+              averageSpeed: 5,
+            ),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(createFields!['distance'], 'yes');
+    expect(createFields!['duration'], 'yes');
+    expect(createFields!['duration_total'], 'yes');
+    expect(createFields!['elevation_gain'], 'yes');
+    expect(createFields!['elevation_low'], 'yes');
+    expect(createFields!['elevation_high'], 'yes');
+    expect(createFields!['speed_max'], 'yes');
+    expect(createFields!['speed_avg'], 'yes');
   });
 
   test('sync imports without track when streams unavailable', () async {

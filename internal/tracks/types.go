@@ -31,23 +31,26 @@ func (d *Data) HasGPS() bool {
 	return d != nil && len(d.Points) >= 2
 }
 
+// ApplyToWorkout fills empty workout core metrics from the track.
+// Non-zero client values (start date, duration, distance) are preserved.
 func (d *Data) ApplyToWorkout(startDate *time.Time, durationSeconds *int, distanceMeters *float64) {
 	if d == nil {
 		return
 	}
-	if d.StartTime != nil {
+	if d.StartTime != nil && startDate.IsZero() {
 		*startDate = *d.StartTime
 	}
-	if d.DurationSeconds != nil {
+	if d.DurationSeconds != nil && *durationSeconds <= 0 {
 		*durationSeconds = *d.DurationSeconds
 	}
-	if d.DistanceMeters != nil {
+	if d.DistanceMeters != nil && *distanceMeters <= 0 {
 		*distanceMeters = *d.DistanceMeters
 	}
 }
 
+// ApplyDurationTotal fills duration_total_seconds from the track only when unset.
 func (d *Data) ApplyDurationTotal(durationTotalSeconds *int) {
-	if d == nil || durationTotalSeconds == nil {
+	if d == nil || durationTotalSeconds == nil || *durationTotalSeconds > 0 {
 		return
 	}
 	if d.DurationTotalSeconds != nil {

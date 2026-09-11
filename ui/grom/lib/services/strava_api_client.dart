@@ -28,6 +28,8 @@ class StravaSummaryActivity {
     this.maxSpeedMs,
     this.averageSpeedMs,
     this.totalElevationGain,
+    this.elevLow,
+    this.elevHigh,
     this.description,
     this.deviceName,
     this.totalPhotoCount = 0,
@@ -45,6 +47,8 @@ class StravaSummaryActivity {
   final double? maxSpeedMs;
   final double? averageSpeedMs;
   final double? totalElevationGain;
+  final double? elevLow;
+  final double? elevHigh;
   final String? description;
   final String? deviceName;
   final int totalPhotoCount;
@@ -73,6 +77,8 @@ class StravaSummaryActivity {
       maxSpeedMs: (json['max_speed'] as num?)?.toDouble(),
       averageSpeedMs: (json['average_speed'] as num?)?.toDouble(),
       totalElevationGain: (json['total_elevation_gain'] as num?)?.toDouble(),
+      elevLow: (json['elev_low'] as num?)?.toDouble(),
+      elevHigh: (json['elev_high'] as num?)?.toDouble(),
       description: (json['description'] as String?)?.trim(),
       deviceName: (deviceRaw != null && deviceRaw.isNotEmpty) ? deviceRaw : null,
       totalPhotoCount: (json['total_photo_count'] as num?)?.toInt() ?? 0,

@@ -5,7 +5,8 @@ import "github.com/solargate/grom/internal/tracks"
 type MergeMode int
 
 const (
-	// MergeModeTrackCreate applies track stats with priority over client-provided values.
+	// MergeModeTrackCreate fills empty workout metrics from the track; client-provided
+	// values (distance, durations, speeds, elevation, etc.) are preserved.
 	MergeModeTrackCreate MergeMode = iota
 	// MergeModeTrackAttach fills only empty workout metrics (preserves CSV/import data).
 	MergeModeTrackAttach
@@ -15,134 +16,96 @@ func MergeTrackStats(workout *Workout, data *tracks.Data, mode MergeMode) {
 	if workout == nil || data == nil {
 		return
 	}
+	_ = mode // create and attach both preserve client-provided metrics
 
 	stats := data.Stats
 	distanceMeters := workout.Distance
-	if data.DistanceMeters != nil && *data.DistanceMeters > 0 {
+	if distanceMeters <= 0 && data.DistanceMeters != nil && *data.DistanceMeters > 0 {
 		distanceMeters = *data.DistanceMeters
 	}
 	stats.FinalizePace(&distanceMeters)
 
-	mergeIntStat(&workout.DurationSeconds, stats.DurationSeconds, mode, true)
-	mergeIntStat(&workout.DurationTotalSeconds, stats.DurationTotalSeconds, mode, true)
+	mergeIntStat(&workout.DurationSeconds, stats.DurationSeconds, true)
+	mergeIntStat(&workout.DurationTotalSeconds, stats.DurationTotalSeconds, true)
 
-	mergeFloatPtr(&workout.SpeedMaxKmh, stats.SpeedMaxKmh, mode, true)
-	mergeFloatPtr(&workout.SpeedAvgKmh, stats.SpeedAvgKmh, mode, true)
-	mergeFloatPtr(&workout.ElevationGain, stats.ElevationGain, mode, false)
-	mergeFloatPtr(&workout.ElevationLoss, stats.ElevationLoss, mode, false)
-	mergeFloatPtr(&workout.ElevationLow, stats.ElevationLow, mode, false)
-	mergeFloatPtr(&workout.ElevationHigh, stats.ElevationHigh, mode, false)
-	mergeFloatPtr(&workout.GradeMax, stats.GradeMax, mode, false)
-	mergeFloatPtr(&workout.GradeAvg, stats.GradeAvg, mode, false)
-	mergeRoundedFloatPtr(&workout.CadenceMax, stats.CadenceMax, mode, false)
-	mergeRoundedFloatPtr(&workout.CadenceAvg, stats.CadenceAvg, mode, false)
-	mergeRoundedFloatPtr(&workout.HeartRateMax, stats.HeartRateMax, mode, false)
-	mergeRoundedFloatPtr(&workout.HeartRateAvg, stats.HeartRateAvg, mode, false)
-	mergeRoundedFloatPtr(&workout.WattsMax, stats.WattsMax, mode, false)
-	mergeRoundedFloatPtr(&workout.WattsAvg, stats.WattsAvg, mode, false)
-	mergeRoundedFloatPtr(&workout.Calories, stats.Calories, mode, false)
-	mergeFloatPtr(&workout.TemperatureMax, stats.TemperatureMax, mode, false)
-	mergeFloatPtr(&workout.TemperatureAvg, stats.TemperatureAvg, mode, false)
-	mergeIntPtr(&workout.StepsTotal, stats.StepsTotal, mode, false)
-	mergeIntPtr(&workout.CyclesTotal, stats.CyclesTotal, mode, false)
-	mergeIntPtr(&workout.SetsTotal, stats.SetsTotal, mode, false)
-	mergeIntPtr(&workout.RepsTotal, stats.RepsTotal, mode, false)
-	mergeStringPtr(&workout.TempAvgKmm, stats.TempAvgKmm, mode, false)
+	mergeFloatPtr(&workout.SpeedMaxKmh, stats.SpeedMaxKmh)
+	mergeFloatPtr(&workout.SpeedAvgKmh, stats.SpeedAvgKmh)
+	mergeFloatPtr(&workout.ElevationGain, stats.ElevationGain)
+	mergeFloatPtr(&workout.ElevationLoss, stats.ElevationLoss)
+	mergeFloatPtr(&workout.ElevationLow, stats.ElevationLow)
+	mergeFloatPtr(&workout.ElevationHigh, stats.ElevationHigh)
+	mergeFloatPtr(&workout.GradeMax, stats.GradeMax)
+	mergeFloatPtr(&workout.GradeAvg, stats.GradeAvg)
+	mergeRoundedFloatPtr(&workout.CadenceMax, stats.CadenceMax)
+	mergeRoundedFloatPtr(&workout.CadenceAvg, stats.CadenceAvg)
+	mergeRoundedFloatPtr(&workout.HeartRateMax, stats.HeartRateMax)
+	mergeRoundedFloatPtr(&workout.HeartRateAvg, stats.HeartRateAvg)
+	mergeRoundedFloatPtr(&workout.WattsMax, stats.WattsMax)
+	mergeRoundedFloatPtr(&workout.WattsAvg, stats.WattsAvg)
+	mergeRoundedFloatPtr(&workout.Calories, stats.Calories)
+	mergeFloatPtr(&workout.TemperatureMax, stats.TemperatureMax)
+	mergeFloatPtr(&workout.TemperatureAvg, stats.TemperatureAvg)
+	mergeIntPtr(&workout.StepsTotal, stats.StepsTotal)
+	mergeIntPtr(&workout.CyclesTotal, stats.CyclesTotal)
+	mergeIntPtr(&workout.SetsTotal, stats.SetsTotal)
+	mergeIntPtr(&workout.RepsTotal, stats.RepsTotal)
+	mergeStringPtr(&workout.TempAvgKmm, stats.TempAvgKmm)
 }
 
-func mergeIntStat(target *int, stat tracks.IntStat, mode MergeMode, allowCalculated bool) {
+func mergeIntStat(target *int, stat tracks.IntStat, allowCalculated bool) {
 	if stat.Value == nil || stat.Source == tracks.SourceNone {
 		return
 	}
 	if stat.Source == tracks.SourceCalculated && !allowCalculated {
 		return
 	}
-	if mode == MergeModeTrackAttach && *target > 0 {
+	if *target > 0 {
 		return
 	}
-	if mode == MergeModeTrackCreate {
-		if stat.Source == tracks.SourceExplicit {
-			*target = *stat.Value
-			return
-		}
-		if *target <= 0 {
-			*target = *stat.Value
-		}
-		return
-	}
-	if *target <= 0 {
-		*target = *stat.Value
-	}
+	*target = *stat.Value
 }
 
-func mergeFloatPtr(target **float64, stat tracks.FloatStat, mode MergeMode, trackPreferred bool) {
+func mergeFloatPtr(target **float64, stat tracks.FloatStat) {
 	if stat.Value == nil || stat.Source == tracks.SourceNone {
 		return
 	}
-	if mode == MergeModeTrackAttach && isSetFloatPtr(target) {
+	if isSetFloatPtr(target) {
 		return
 	}
-	if mode == MergeModeTrackCreate {
-		if trackPreferred || stat.Source == tracks.SourceExplicit || !isSetFloatPtr(target) {
-			v := *stat.Value
-			*target = &v
-		}
-		return
-	}
-	if !isSetFloatPtr(target) {
-		v := *stat.Value
-		*target = &v
-	}
+	v := *stat.Value
+	*target = &v
 }
 
-func mergeRoundedFloatPtr(target **float64, stat tracks.FloatStat, mode MergeMode, trackPreferred bool) {
+func mergeRoundedFloatPtr(target **float64, stat tracks.FloatStat) {
 	if stat.Value == nil || stat.Source == tracks.SourceNone {
 		return
 	}
 	rounded := float64(int(*stat.Value + 0.5))
 	clone := stat
 	clone.Value = &rounded
-	mergeFloatPtr(target, clone, mode, trackPreferred)
+	mergeFloatPtr(target, clone)
 }
 
-func mergeIntPtr(target **int, stat tracks.IntStat, mode MergeMode, trackPreferred bool) {
+func mergeIntPtr(target **int, stat tracks.IntStat) {
 	if stat.Value == nil || stat.Source == tracks.SourceNone {
 		return
 	}
-	if mode == MergeModeTrackAttach && isSetIntPtr(target) {
+	if isSetIntPtr(target) {
 		return
 	}
-	if mode == MergeModeTrackCreate {
-		if trackPreferred || stat.Source == tracks.SourceExplicit || !isSetIntPtr(target) {
-			v := *stat.Value
-			*target = &v
-		}
-		return
-	}
-	if !isSetIntPtr(target) {
-		v := *stat.Value
-		*target = &v
-	}
+	v := *stat.Value
+	*target = &v
 }
 
-func mergeStringPtr(target **string, stat tracks.StringStat, mode MergeMode, trackPreferred bool) {
+func mergeStringPtr(target **string, stat tracks.StringStat) {
 	if stat.Value == nil || stat.Source == tracks.SourceNone {
 		return
 	}
-	if mode == MergeModeTrackAttach && isSetStringPtr(target) {
+	if isSetStringPtr(target) {
 		return
 	}
-	if mode == MergeModeTrackCreate {
-		if trackPreferred || stat.Source == tracks.SourceExplicit || !isSetStringPtr(target) {
-			v := *stat.Value
-			*target = &v
-		}
-		return
-	}
-	if !isSetStringPtr(target) {
-		v := *stat.Value
-		*target = &v
-	}
+	v := *stat.Value
+	*target = &v
 }
 
 func isSetFloatPtr(v **float64) bool {

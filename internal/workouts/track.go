@@ -81,7 +81,7 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 }
 
 // AttachTrack saves a track file and map preview for an existing workout without
-// overwriting start_date, duration_seconds, or distance from the track.
+// overwriting client-provided start_date, durations, distance, speeds, or elevation.
 func (svc *Service) AttachTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
 	if workout == nil || workout.ID == "" {
 		return nil, ErrInvalidWorkout

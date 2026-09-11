@@ -212,6 +212,35 @@ void main() {
     );
   });
 
+  test('getActivity parses elevation fields', () async {
+    final client = StravaApiClient(
+      httpClient: MockClient((_) async => http.Response(
+            jsonEncode({
+              'id': 99,
+              'name': 'Climb',
+              'sport_type': 'Ride',
+              'type': 'Ride',
+              'start_date': '2026-09-05T10:00:00Z',
+              'moving_time': 1000,
+              'elapsed_time': 1100,
+              'distance': 15000,
+              'total_elevation_gain': 516,
+              'elev_low': 10.5,
+              'elev_high': 200.25,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          )),
+    );
+    final activity = await client.getActivity(
+      accessToken: 'tok',
+      activityId: 99,
+    );
+    expect(activity.totalElevationGain, 516);
+    expect(activity.elevLow, 10.5);
+    expect(activity.elevHigh, 200.25);
+  });
+
   test('listActivityPhotos picks largest url size', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(

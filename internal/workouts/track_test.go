@@ -77,6 +77,80 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	}
 }
 
+func TestStoreCreateWithTrackPreservesClientMetrics(t *testing.T) {
+	dir := t.TempDir()
+	blobs := blobfs.NewStore(dir)
+	charts := workouts.NewBlobSpeedChartStore(blobs)
+	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts)
+
+	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := tracks.Parse(gpxData, "sample.gpx")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	startDate := time.Date(2026, 7, 6, 10, 0, 0, 0, time.UTC)
+	elevGain := 516.0
+	elevLow := 10.0
+	elevHigh := 200.0
+	speedMax := 36.0
+	speedAvg := 18.0
+	created, err := svc.CreateWithTrack("athlete", &workouts.Workout{
+		Name:                 "Strava metrics",
+		SportType:            "Ride",
+		StartDate:            startDate,
+		DurationSeconds:      3600,
+		DurationTotalSeconds: 3900,
+		Distance:             25000,
+		SpeedMaxKmh:          &speedMax,
+		SpeedAvgKmh:          &speedAvg,
+		ElevationGain:        &elevGain,
+		ElevationLow:         &elevLow,
+		ElevationHigh:        &elevHigh,
+	}, &workouts.TrackInput{
+		Filename: "sample.gpx",
+		Data:     gpxData,
+		Parsed:   parsed,
+	})
+	if err != nil {
+		t.Fatalf("CreateWithTrack() error = %v", err)
+	}
+	if !created.StartDate.Equal(startDate) {
+		t.Fatalf("start_date = %v, want %v", created.StartDate, startDate)
+	}
+	if created.DurationSeconds != 3600 {
+		t.Fatalf("duration = %d, want 3600", created.DurationSeconds)
+	}
+	if created.DurationTotalSeconds != 3900 {
+		t.Fatalf("duration_total = %d, want 3900", created.DurationTotalSeconds)
+	}
+	if created.Distance != 25000 {
+		t.Fatalf("distance = %v, want 25000", created.Distance)
+	}
+	if created.SpeedMaxKmh == nil || *created.SpeedMaxKmh != 36 {
+		t.Fatalf("speed_max = %v, want 36", created.SpeedMaxKmh)
+	}
+	if created.SpeedAvgKmh == nil || *created.SpeedAvgKmh != 18 {
+		t.Fatalf("speed_avg = %v, want 18", created.SpeedAvgKmh)
+	}
+	if created.ElevationGain == nil || *created.ElevationGain != 516 {
+		t.Fatalf("elevation_gain = %v, want 516", created.ElevationGain)
+	}
+	if created.ElevationLow == nil || *created.ElevationLow != 10 {
+		t.Fatalf("elevation_low = %v, want 10", created.ElevationLow)
+	}
+	if created.ElevationHigh == nil || *created.ElevationHigh != 200 {
+		t.Fatalf("elevation_high = %v, want 200", created.ElevationHigh)
+	}
+	if created.Track != tracks.TrackFileGPX {
+		t.Fatalf("track = %q", created.Track)
+	}
+}
+
 func TestStoreCreateWithTrack(t *testing.T) {
 	dir := t.TempDir()
 	blobs := blobfs.NewStore(dir)
@@ -140,7 +214,7 @@ func TestStoreCreateWithTrack(t *testing.T) {
 		t.Fatalf("device = %q, want %q", createdWithDevice.Device, "Garmin Edge 530")
 	}
 
-	expectedBase := "2026-07-06T084000Z-" + created.ID
+	expectedBase := "2026-07-06T100000Z-" + created.ID
 	workoutDir := filepath.Join(dir, "users", "athlete", "workouts", expectedBase)
 	if _, err := os.Stat(filepath.Join(workoutDir, tracks.TrackFileGPX)); err != nil {
 		t.Fatalf("expected track file: %v", err)
