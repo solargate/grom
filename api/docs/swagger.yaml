@@ -85,6 +85,15 @@ definitions:
       duration_total_seconds:
         example: 3900
         type: integer
+      elevation_gain:
+        example: 516
+        type: number
+      elevation_high:
+        example: 200
+        type: number
+      elevation_low:
+        example: 10
+        type: number
       equipment_ids:
         example:
         - 550e8400-e29b-41d4-a716-446655440000
@@ -1737,7 +1746,9 @@ paths:
         is omitted, equipment is taken from the user's profile last_equipment_by_sport
         for the sport_type. An explicit empty equipment_ids list means no equipment.
         Optional device sets the recording device label (default Grom App); a FIT
-        track's device overrides when present.
+        track's device overrides when present. When a track is attached, client-provided
+        start_date, durations, distance, speeds, and elevation fields are preserved;
+        the track fills only empty metrics and supplies map/charts.
       parameters:
       - description: Workout data (JSON)
         in: body
@@ -1773,6 +1784,29 @@ paths:
         in: formData
         name: device
         type: string
+      - description: Max speed km/h (multipart); preserved when set with a track
+        in: formData
+        name: speed_max_kmh
+        type: number
+      - description: Average speed km/h (multipart); preserved when set with a track
+        in: formData
+        name: speed_avg_kmh
+        type: number
+      - description: Elevation gain meters (multipart); preserved when set with a
+          track
+        in: formData
+        name: elevation_gain
+        type: number
+      - description: Lowest elevation meters (multipart); preserved when set with
+          a track
+        in: formData
+        name: elevation_low
+        type: number
+      - description: Highest elevation meters (multipart); preserved when set with
+          a track
+        in: formData
+        name: elevation_high
+        type: number
       - description: JSON array of equipment IDs; omit to use profile last_equipment_by_sport
           for sport_type; [] for none
         in: formData

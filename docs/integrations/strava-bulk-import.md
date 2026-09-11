@@ -66,12 +66,12 @@ Ignored columns include col 7 (localized distance in km) — use col 18 (meters)
 
 ## Track handling: `AttachTrack` vs `CreateWithTrack`
 
-| Method | Use case | Overwrites CSV metrics |
-|--------|----------|------------------------|
-| `CreateWithTrack` | Manual workout upload in UI | Yes (`start_date`, `duration_seconds`, `distance`) |
-| `AttachTrack` | Strava import | **No** — CSV values are preserved |
+| Method | Use case | Overwrites client metrics |
+|--------|----------|---------------------------|
+| `CreateWithTrack` | Manual / multipart create with a track (including Strava API sync) | **No** — non-empty client `start_date`, durations, `distance`, speeds, and elevation fields are preserved; the track fills only empty metrics |
+| `AttachTrack` | Strava ZIP import | **No** — CSV values are preserved |
 
-`AttachTrack` still writes the track file, sets `device` from FIT when available, and generates `map-preview.webp` when GPS data exists.
+Both paths still write the track file, set `device` from FIT when available, and generate `map-preview.webp` when GPS data exists.
 
 ## Equipment
 

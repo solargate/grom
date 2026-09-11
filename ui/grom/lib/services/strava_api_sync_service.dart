@@ -340,6 +340,10 @@ class StravaApiSyncService extends ChangeNotifier {
         'speed_max_kmh': (activity.maxSpeedMs! * 3.6).toStringAsFixed(2),
       if (activity.averageSpeedMs != null && activity.averageSpeedMs! > 0)
         'speed_avg_kmh': (activity.averageSpeedMs! * 3.6).toStringAsFixed(2),
+      if (activity.totalElevationGain != null)
+        'elevation_gain': '${activity.totalElevationGain}',
+      if (activity.elevLow != null) 'elevation_low': '${activity.elevLow}',
+      if (activity.elevHigh != null) 'elevation_high': '${activity.elevHigh}',
     };
 
     await _api.createWorkoutMultipart(

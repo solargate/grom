@@ -36,7 +36,6 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 		StartDate:       startDate,
 		DurationSeconds: 0,
 		Distance:        0,
-		SpeedMaxKmh:     floatPtr(10),
 	}, &workouts.TrackInput{
 		Filename: "1-ride.fit",
 		Data:     fitData,
@@ -79,8 +78,4 @@ func TestStoreCreateWithFITWritesStatsYAML(t *testing.T) {
 			t.Fatalf("yaml missing %q:\n%s", needle, content)
 		}
 	}
-}
-
-func floatPtr(v float64) *float64 {
-	return &v
 }

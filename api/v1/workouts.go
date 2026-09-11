@@ -37,6 +37,9 @@ type CreateWorkoutRequest struct {
 	Device               string             `json:"device,omitempty" example:"Garmin Edge 530"`
 	SpeedMaxKmh          *float64           `json:"speed_max_kmh,omitempty" example:"32.5"`
 	SpeedAvgKmh          *float64           `json:"speed_avg_kmh,omitempty" example:"18.2"`
+	ElevationGain        *float64           `json:"elevation_gain,omitempty" example:"516"`
+	ElevationLow         *float64           `json:"elevation_low,omitempty" example:"10"`
+	ElevationHigh        *float64           `json:"elevation_high,omitempty" example:"200"`
 	EquipmentIDs         []string           `json:"equipment_ids" example:"550e8400-e29b-41d4-a716-446655440000"`
 	ExternalID           *ExternalIDRequest `json:"external_id,omitempty"`
 }
@@ -52,6 +55,9 @@ type CreateWorkoutForm struct {
 	Device               string                `form:"device"`
 	SpeedMaxKmh          string                `form:"speed_max_kmh"`
 	SpeedAvgKmh          string                `form:"speed_avg_kmh"`
+	ElevationGain        string                `form:"elevation_gain"`
+	ElevationLow         string                `form:"elevation_low"`
+	ElevationHigh        string                `form:"elevation_high"`
 	EquipmentIDs         string                `form:"equipment_ids"`
 	ExternalIDName       string                `form:"external_id_name"`
 	ExternalIDID         string                `form:"external_id_id"`
@@ -322,6 +328,9 @@ func workoutFromCreateRequest(req CreateWorkoutRequest, startDate time.Time, equ
 		Device:               req.Device,
 		SpeedMaxKmh:          req.SpeedMaxKmh,
 		SpeedAvgKmh:          req.SpeedAvgKmh,
+		ElevationGain:        req.ElevationGain,
+		ElevationLow:         req.ElevationLow,
+		ElevationHigh:        req.ElevationHigh,
 		Equipment:            equipment,
 		ExternalID:           externalIDFromRequest(req.ExternalID),
 	}
@@ -460,7 +469,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 
 // createWorkout godoc
 // @Summary      Create workout
-// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present.
+// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present. When a track is attached, client-provided start_date, durations, distance, speeds, and elevation fields are preserved; the track fills only empty metrics and supplies map/charts.
 // @Tags         workouts
 // @Accept       json
 // @Accept       mpfd
@@ -474,6 +483,11 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        duration_seconds  formData  int  false  "Duration seconds (multipart)"
 // @Param        distance  formData  number  false  "Distance meters (multipart)"
 // @Param        device  formData  string  false  "Recording device label (multipart); omitted or empty defaults to Grom App; FIT track device wins when present"
+// @Param        speed_max_kmh  formData  number  false  "Max speed km/h (multipart); preserved when set with a track"
+// @Param        speed_avg_kmh  formData  number  false  "Average speed km/h (multipart); preserved when set with a track"
+// @Param        elevation_gain  formData  number  false  "Elevation gain meters (multipart); preserved when set with a track"
+// @Param        elevation_low  formData  number  false  "Lowest elevation meters (multipart); preserved when set with a track"
+// @Param        elevation_high  formData  number  false  "Highest elevation meters (multipart); preserved when set with a track"
 // @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
@@ -721,6 +735,21 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid speed_avg_kmh"})
 		return
 	}
+	elevationGain, err := parseOptionalFloatForm(form.ElevationGain)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid elevation_gain"})
+		return
+	}
+	elevationLow, err := parseOptionalFloatForm(form.ElevationLow)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid elevation_low"})
+		return
+	}
+	elevationHigh, err := parseOptionalFloatForm(form.ElevationHigh)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid elevation_high"})
+		return
+	}
 
 	workout := &workouts.Workout{
 		Name:                 form.Name,
@@ -733,6 +762,9 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		Device:               form.Device,
 		SpeedMaxKmh:          speedMaxKmh,
 		SpeedAvgKmh:          speedAvgKmh,
+		ElevationGain:        elevationGain,
+		ElevationLow:         elevationLow,
+		ElevationHigh:        elevationHigh,
 		Equipment:            equipmentItems,
 		ExternalID:           externalIDFromForm(form.ExternalIDName, form.ExternalIDID),
 	}

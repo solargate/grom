@@ -33,8 +33,9 @@ Turning the toggle **off** only hides the Home sync button; credentials and toke
 | Order | Newest first |
 | Stop | Stops at the first activity that already exists in Grom with `external_id.name=strava` and matching id |
 | Visibility | `activity:read` only — Everyone / Followers activities (not “Only You”) |
+| Metrics | Distance, moving/elapsed time, speeds, and elevation (`total_elevation_gain`, `elev_low`, `elev_high` when present) come from the Strava activity object — not from recomputing the GPS track |
 | No GPS | Creates a workout from summary fields without a track |
-| With GPS | Builds a GPX from Strava streams (including heart-rate when present) and attaches it |
+| With GPS | Builds a GPX from Strava streams (including heart-rate when present) and attaches it for map/charts; incomplete GPS does not replace activity metrics |
 | Device | Uses Strava `device_name` when present (otherwise server default `Grom App`) |
 | Photos | Best-effort download via the activity photos API; failures do not fail the workout |
 | Equipment | `equipment_ids` omitted so the server applies `last_equipment_by_sport` |

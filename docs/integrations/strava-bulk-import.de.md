@@ -66,12 +66,12 @@ Ignorierte Spalten umfassen Col 7 (lokalisierte Distanz in km) — stattdessen C
 
 ## Track-Handling: `AttachTrack` vs `CreateWithTrack`
 
-| Methode | Anwendungsfall | Überschreibt CSV-Metriken |
-|---------|----------------|---------------------------|
-| `CreateWithTrack` | Manueller Workout-Upload in der UI | Ja (`start_date`, `duration_seconds`, `distance`) |
-| `AttachTrack` | Strava-Import | **Nein** — CSV-Werte bleiben erhalten |
+| Methode | Anwendungsfall | Überschreibt Client-Metriken |
+|---------|----------------|------------------------------|
+| `CreateWithTrack` | Manueller / Multipart-Create mit Track (inkl. Strava-API-Sync) | **Nein** — gesetzte Client-Werte für `start_date`, Dauern, `distance`, Geschwindigkeiten und Elevation bleiben erhalten; der Track füllt nur leere Felder |
+| `AttachTrack` | Strava-ZIP-Import | **Nein** — CSV-Werte bleiben erhalten |
 
-`AttachTrack` schreibt trotzdem die Track-Datei, setzt `device` aus FIT wenn verfügbar und erzeugt `map-preview.webp`, wenn GPS-Daten vorhanden sind.
+Beide Pfade schreiben die Track-Datei, setzen `device` aus FIT wenn verfügbar und erzeugen `map-preview.webp`, wenn GPS-Daten vorhanden sind.
 
 ## Ausrüstung
 

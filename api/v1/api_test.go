@@ -176,6 +176,103 @@ func TestWorkoutMultipartTrack(t *testing.T) {
 	}
 }
 
+func TestWorkoutMultipartPreservesClientMetricsWithTrack(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	gpx := readTestdata(t, "tracks/1-sample.gpx")
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+		map[string]string{
+			"name":                   "Strava-like",
+			"sport_type":             "Ride",
+			"start_date":             "2026-07-08T10:00:00Z",
+			"duration_seconds":       "3600",
+			"duration_total_seconds": "3900",
+			"distance":               "25000",
+			"speed_max_kmh":          "36",
+			"speed_avg_kmh":          "18",
+			"elevation_gain":         "516",
+			"elevation_low":          "10",
+			"elevation_high":         "200",
+		},
+		map[string][]filePart{
+			"track": {{filename: "sample.gpx", data: gpx}},
+		},
+	)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatal("expected workout id")
+	}
+	if created["track"] == nil || created["track"] == "" {
+		t.Fatalf("expected track, got %#v", created)
+	}
+	if created["distance"] != float64(25000) {
+		t.Fatalf("distance = %#v, want 25000", created["distance"])
+	}
+	if created["duration_seconds"] != float64(3600) {
+		t.Fatalf("duration_seconds = %#v, want 3600", created["duration_seconds"])
+	}
+	if created["duration_total_seconds"] != float64(3900) {
+		t.Fatalf("duration_total_seconds = %#v, want 3900", created["duration_total_seconds"])
+	}
+	if created["speed_max_kmh"] != float64(36) {
+		t.Fatalf("speed_max_kmh = %#v, want 36", created["speed_max_kmh"])
+	}
+	if created["speed_avg_kmh"] != float64(18) {
+		t.Fatalf("speed_avg_kmh = %#v, want 18", created["speed_avg_kmh"])
+	}
+	if created["elevation_gain"] != float64(516) {
+		t.Fatalf("elevation_gain = %#v, want 516", created["elevation_gain"])
+	}
+
+	stored, err := ta.app.Workouts.Get("alice", id)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if stored.ElevationLow == nil || *stored.ElevationLow != 10 {
+		t.Fatalf("elevation_low = %v, want 10", stored.ElevationLow)
+	}
+	if stored.ElevationHigh == nil || *stored.ElevationHigh != 200 {
+		t.Fatalf("elevation_high = %v, want 200", stored.ElevationHigh)
+	}
+}
+
+func TestWorkoutMultipartPreservesZeroElevationGain(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	gpx := readTestdata(t, "tracks/1-sample.gpx")
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+		map[string]string{
+			"name":           "Indoor",
+			"sport_type":     "Ride",
+			"start_date":     "2026-07-08T10:00:00Z",
+			"distance":       "20000",
+			"elevation_gain": "0",
+		},
+		map[string][]filePart{
+			"track": {{filename: "sample.gpx", data: gpx}},
+		},
+	)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	if created["elevation_gain"] != float64(0) {
+		t.Fatalf("elevation_gain = %#v, want 0", created["elevation_gain"])
+	}
+	id, _ := created["id"].(string)
+	stored, err := ta.app.Workouts.Get("alice", id)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if stored.ElevationGain == nil || *stored.ElevationGain != 0 {
+		t.Fatalf("stored elevation_gain = %v, want 0", stored.ElevationGain)
+	}
+}
+
 func TestSocialFollowAPI(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
