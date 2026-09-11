@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-09-11
+
 ### Google Play
 
 - Strava API import keeps Strava distance, time, speed, and elevation even when the GPS track is incomplete
@@ -352,7 +354,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.13.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.13.1...HEAD
+[0.13.1]: https://github.com/solargate/grom/releases/tag/0.13.1
 [0.13.0]: https://github.com/solargate/grom/releases/tag/0.13.0
 [0.12.0]: https://github.com/solargate/grom/releases/tag/0.12.0
 [0.11.0]: https://github.com/solargate/grom/releases/tag/0.11.0
