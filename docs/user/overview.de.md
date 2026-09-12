@@ -42,7 +42,7 @@ Verwalten Sie Fahrräder, Schuhe und anderes Gear. Einträge sind nach Kategorie
 
 ## Social und Föderation
 
-Folgen Sie anderen Nutzern derselben Instanz und browsen Sie einen gemeinsamen Feed. Liken und kommentieren Sie Workouts von Personen, denen Sie folgen (lokal oder föderiert); Zähler erscheinen in Listen- und Detailansichten.
+Folgen Sie anderen Nutzern derselben Instanz und browsen Sie einen gemeinsamen Feed. Unter **Benutzersuche** listet der Bildschirm alle anderen lokalen Benutzer des Servers (mit Icon-Schaltflächen Folgen/Entfolgen); die Suche nach Nickname oder Federations-Adresse bleibt verfügbar. Liken und kommentieren Sie Workouts von Personen, denen Sie folgen (lokal oder föderiert); Zähler erscheinen in Listen- und Detailansichten.
 
 Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern auf anderen Grom-Instanzen folgen (HTTPS auf dem Server erforderlich). Likes auf Remote-Workouts werden als ActivityPub-`Like` gesendet; Entfernen eines Likes sendet `Undo`. Kommentare zu Remote-Workouts gehen als `Create` Note mit `inReplyTo`; Löschen eines Kommentars sendet `Delete`. Eingehende Likes und Kommentare von anderen Instanzen aktualisieren das lokale Workout genauso. Kontolöschung und föderiertes Actor-`Delete` sind in [Grom-Konto löschen](delete-account.md) beschrieben.
 

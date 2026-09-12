@@ -343,3 +343,52 @@ func TestSearchLocalPrefix(t *testing.T) {
 		t.Fatalf("results = %#v", results)
 	}
 }
+
+func TestListLocalUsers(t *testing.T) {
+	withSocialConfig(t, false, "localhost")
+	dir := t.TempDir()
+	svc, usersRepo, _ := newSocialService(t, dir)
+
+	alice, err := usersRepo.Create("alice", "Alice", "alice@example.com", "password12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := usersRepo.Create("carol", "Carol", "carol@example.com", "password12"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := usersRepo.Create("bob", "Bob", "bob@example.com", "password12"); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := svc.ListLocalUsers(alice.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("len = %d, want 2: %#v", len(results), results)
+	}
+	if results[0].Nickname != "bob" || results[1].Nickname != "carol" {
+		t.Fatalf("want sorted bob, carol; got %#v", results)
+	}
+	for _, r := range results {
+		if r.Nickname == "alice" {
+			t.Fatalf("excluded user present: %#v", results)
+		}
+		if !r.IsLocal || r.Handle != r.Nickname+"@localhost" {
+			t.Fatalf("unexpected result: %#v", r)
+		}
+	}
+
+	svcAlone, usersAlone, _ := newSocialService(t, t.TempDir())
+	only, err := usersAlone.Create("only", "Only", "only@example.com", "password12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	empty, err := svcAlone.ListLocalUsers(only.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(empty) != 0 {
+		t.Fatalf("expected empty when alone, got %#v", empty)
+	}
+}

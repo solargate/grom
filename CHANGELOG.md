@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- User search shows local users with avatars and Follow/Unfollow icons
+
+### Added
+
+- **Server:** `GET /api/v1/users` lists all local users on the instance (excluding the current user)
+- **UI:** User search opens with the full local user catalog; empty search restores the catalog; search by query unchanged
+- **Docs:** User overview notes the local user list on User search
+
+### Changed
+
+- **UI:** User search Follow/Unfollow controls are icon-only (`person_add` / `person_remove`) to save space
+- **UI:** User search list rows show user avatars (same as Profile following/followers)
+- **Docs:** User overview notes icon Follow/Unfollow on User search
+
 ## [0.13.1] - 2026-09-11
 
 ### Google Play

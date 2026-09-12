@@ -31,6 +31,30 @@ func toUserSearchResults(items []social.UserSearchResult) []UserSearchResult {
 	return result
 }
 
+// listUsers godoc
+// @Summary      List local users
+// @Description  List all local users on this instance, excluding the current user
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}  UserSearchResult
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Router       /users [get]
+func (a *App) listUsers(ctx *gin.Context) {
+	userID, err := a.currentUserID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	results, err := a.Social.ListLocalUsers(userID)
+	if err != nil {
+		handleSocialError(ctx, err)
+		return
+	}
+	a.writeUserSearchResults(ctx, results)
+}
+
 // searchUsers godoc
 // @Summary      Search users
 // @Description  Search local users by nickname or resolve a federated handle
@@ -56,6 +80,10 @@ func (a *App) searchUsers(ctx *gin.Context) {
 		handleSocialError(ctx, err)
 		return
 	}
+	a.writeUserSearchResults(ctx, results)
+}
+
+func (a *App) writeUserSearchResults(ctx *gin.Context, results []social.UserSearchResult) {
 	if results == nil {
 		ctx.JSON(http.StatusOK, []UserSearchResult{})
 		return

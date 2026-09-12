@@ -1625,6 +1625,27 @@ paths:
       summary: Server status
       tags:
       - server-info
+  /users:
+    get:
+      description: List all local users on this instance, excluding the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.UserSearchResult'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List local users
+      tags:
+      - users
   /users/{nickname}/avatar:
     get:
       description: Return avatar image for a local user

@@ -238,6 +238,66 @@ void main() {
     );
   });
 
+  test('listLocalUsers GETs /users and parses results', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/users');
+      expect(request.url.query, isEmpty);
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode([
+          {
+            'nickname': 'bob',
+            'name': 'Bob',
+            'handle': 'bob@grom.example',
+            'is_local': true,
+            'has_avatar': true,
+            'avatar_url': '/api/v1/users/bob/avatar',
+          },
+          {
+            'nickname': 'carol',
+            'name': 'Carol',
+            'handle': 'carol@grom.example',
+            'is_local': true,
+            'has_avatar': false,
+          },
+        ]),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final users = await ApiRequest(client: client).listLocalUsers('tok');
+    expect(users, hasLength(2));
+    expect(users[0].nickname, 'bob');
+    expect(users[0].handle, 'bob@grom.example');
+    expect(users[0].isLocal, isTrue);
+    expect(users[0].hasAvatar, isTrue);
+    expect(users[0].avatarUrl, '/api/v1/users/bob/avatar');
+    expect(users[1].nickname, 'carol');
+    expect(users[1].hasAvatar, isFalse);
+    expect(users[1].avatarUrl, isNull);
+  });
+
+  test('listLocalUsers throws ApiException on error', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'unauthorized'}),
+        401,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    expect(
+      () => ApiRequest(client: client).listLocalUsers('bad'),
+      throwsA(
+        isA<ApiException>()
+            .having((e) => e.statusCode, 'statusCode', 401)
+            .having((e) => e.toString(), 'message', 'unauthorized'),
+      ),
+    );
+  });
+
   test('getServerInfo parses JSON and falls back on errors', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final okClient = MockClient((request) async {

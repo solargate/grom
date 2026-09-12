@@ -375,6 +375,7 @@
   "followers": "Подписчики",
   "followPending": "Ожидание",
   "noUsersFound": "Пользователи не найдены",
+  "noOtherUsersOnServer": "На этом сервере пока нет других пользователей",
   "noFollowingYet": "Вы ни на кого не подписаны",
   "noFollowersYet": "На вас пока никто не подписан",
   "searchByNicknameOrHandle": "Поиск по никнейму или федеративному адресу (@user@server)",
@@ -387,6 +388,7 @@
     }
   },
   "failedToSearchUsers": "Не удалось выполнить поиск пользователей",
+  "failedToLoadUsers": "Не удалось загрузить пользователей",
   "failedToLoadProfile": "Не удалось загрузить профиль",
   "editProfile": "Редактирование профиля",
   "profileActions": "Действия с профилем",

@@ -828,6 +828,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noUsersFound => 'No users found';
 
   @override
+  String get noOtherUsersOnServer => 'No other users on this server yet';
+
+  @override
   String get noFollowingYet => 'You are not following anyone yet';
 
   @override
@@ -844,6 +847,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToSearchUsers => 'Failed to search users';
+
+  @override
+  String get failedToLoadUsers => 'Failed to load users';
 
   @override
   String get failedToLoadProfile => 'Failed to load profile';
