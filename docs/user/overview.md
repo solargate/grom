@@ -42,7 +42,7 @@ Manage bikes, shoes, and other gear. Items are grouped by category; distance tot
 
 ## Social and federation
 
-Follow other users on the same instance and browse a shared feed. On **User search**, the screen lists all other local users on the server (with Follow/Unfollow); you can still search by nickname or federated handle. Like and comment on workouts from people you follow (local or federated); counts appear on list and detail screens.
+Follow other users on the same instance and browse a shared feed. On **User search**, the screen lists all other local users on the server (with icon Follow/Unfollow buttons); you can still search by nickname or federated handle. Like and comment on workouts from people you follow (local or federated); counts appear on list and detail screens.
 
 When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way. Account deletion and federated actor `Delete` behavior are described in [Delete your Grom account](delete-account.md).
 

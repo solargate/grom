@@ -262,9 +262,12 @@ class _UserSearchPageState extends State<UserSearchPage> {
                     subtitle: Text(
                       user.name.isNotEmpty ? '${user.name} · ${user.handle}' : user.handle,
                     ),
-                    trailing: FilledButton.tonal(
+                    trailing: IconButton.filledTonal(
                       onPressed: () => _toggleFollow(user),
-                      child: Text(isFollowing ? l10n.unfollow : l10n.follow),
+                      icon: Icon(
+                        isFollowing ? Icons.person_remove : Icons.person_add,
+                      ),
+                      tooltip: isFollowing ? l10n.unfollow : l10n.follow,
                     ),
                   );
                 },
