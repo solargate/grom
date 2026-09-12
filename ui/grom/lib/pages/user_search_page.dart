@@ -4,6 +4,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/social.dart';
+import '../widgets/user_avatar.dart';
 
 class UserSearchPage extends StatefulWidget {
   const UserSearchPage({super.key});
@@ -258,6 +259,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
                       (follow.status == 'active' || follow.status == 'pending');
 
                   return ListTile(
+                    leading: UserAvatar(
+                      nickname: user.nickname,
+                      hasAvatar: user.hasAvatar,
+                      avatarUrl: user.avatarUrl,
+                      authToken: _token,
+                      radius: 20,
+                    ),
                     title: Text(user.nickname),
                     subtitle: Text(
                       user.name.isNotEmpty ? '${user.name} · ${user.handle}' : user.handle,
