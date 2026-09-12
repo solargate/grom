@@ -7,14 +7,17 @@ import '../models/social.dart';
 import '../widgets/user_avatar.dart';
 
 class UserSearchPage extends StatefulWidget {
-  const UserSearchPage({super.key});
+  const UserSearchPage({super.key, this.api});
+
+  /// Optional API client override (tests).
+  final ApiRequest? api;
 
   @override
   State<UserSearchPage> createState() => _UserSearchPageState();
 }
 
 class _UserSearchPageState extends State<UserSearchPage> {
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api ?? ApiRequest();
   final _queryController = TextEditingController();
 
   List<UserSearchResult> _results = [];
