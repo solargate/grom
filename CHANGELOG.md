@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- User search shows all other local users on the server with Follow/Unfollow
+
+### Added
+
+- **Server:** `GET /api/v1/users` lists all local users on the instance (excluding the current user)
+- **UI:** User search opens with the full local user catalog; empty search restores the catalog; search by query unchanged
+- **Docs:** User overview notes the local user list on User search
+
 ## [0.13.1] - 2026-09-11
 
 ### Google Play

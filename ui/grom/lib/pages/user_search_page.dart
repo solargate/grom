@@ -18,6 +18,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
   List<UserSearchResult> _results = [];
   Map<String, FollowInfo> _followingByHandle = {};
+  bool _isCatalogMode = true;
   bool _isLoading = false;
   String? _error;
   String? _token;
@@ -25,7 +26,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
   @override
   void initState() {
     super.initState();
-    _loadFollowing();
+    _loadInitial();
   }
 
   @override
@@ -34,32 +35,91 @@ class _UserSearchPageState extends State<UserSearchPage> {
     super.dispose();
   }
 
-  Future<void> _loadFollowing() async {
+  Future<void> _loadInitial() async {
     final token = await AuthStorage.getToken();
     if (token == null) {
       return;
     }
     _token = token;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _isCatalogMode = true;
+    });
+
     try {
-      final following = await _api.listFollowing(token);
-      if (!mounted) return;
-      setState(() {
-        _followingByHandle = {
+      final catalog = await _api.listLocalUsers(token);
+      Map<String, FollowInfo> followingByHandle = {};
+      try {
+        final following = await _api.listFollowing(token);
+        followingByHandle = {
           for (final item in following) item.targetHandle: item,
         };
+      } catch (_) {
+        // Ignore: catalog still works without follow state.
+      }
+      if (!mounted) return;
+      setState(() {
+        _results = catalog;
+        _followingByHandle = followingByHandle;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
       });
     } catch (_) {
-      // Ignore: search still works without follow state.
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      setState(() {
+        _error = l10n.failedToLoadUsers;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadCatalog() async {
+    final token = _token ?? await AuthStorage.getToken();
+    if (token == null) {
+      return;
+    }
+    _token = token;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _isCatalogMode = true;
+    });
+
+    try {
+      final catalog = await _api.listLocalUsers(token);
+      if (!mounted) return;
+      setState(() {
+        _results = catalog;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      setState(() {
+        _error = l10n.failedToLoadUsers;
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _search() async {
     final query = _queryController.text.trim();
     if (query.isEmpty) {
-      setState(() {
-        _results = [];
-        _error = null;
-      });
+      await _loadCatalog();
       return;
     }
 
@@ -72,6 +132,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _isCatalogMode = false;
     });
 
     try {
@@ -130,6 +191,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final emptyMessage =
+        _isCatalogMode ? l10n.noOtherUsersOnServer : l10n.noUsersFound;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -177,7 +240,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
             Expanded(
               child: Center(
                 child: Text(
-                  l10n.noUsersFound,
+                  emptyMessage,
                   style: theme.textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),

@@ -3,6 +3,7 @@ package social
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -185,6 +186,25 @@ func (s *Service) SearchLocal(query string, excludeUserID string) ([]UserSearchR
 	for i := range usersList {
 		result = append(result, toSearchResult(&usersList[i], s.LocalHandle(usersList[i].Nickname), true))
 	}
+	return result, nil
+}
+
+// ListLocalUsers returns all local users except excludeUserID, sorted by nickname.
+func (s *Service) ListLocalUsers(excludeUserID string) ([]UserSearchResult, error) {
+	usersList, err := s.users.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]UserSearchResult, 0, len(usersList))
+	for i := range usersList {
+		if usersList[i].ID == excludeUserID {
+			continue
+		}
+		result = append(result, toSearchResult(&usersList[i], s.LocalHandle(usersList[i].Nickname), true))
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return strings.ToLower(result[i].Nickname) < strings.ToLower(result[j].Nickname)
+	})
 	return result, nil
 }
 

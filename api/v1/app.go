@@ -235,6 +235,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 
 		apiV1.GET("/profile", auth.AuthRequired(), a.getProfile)
 
+		apiV1.GET("/users", auth.AuthRequired(), a.listUsers)
 		apiV1.GET("/users/search", auth.AuthRequired(), a.searchUsers)
 		apiV1.GET("/users/:nickname/avatar", auth.AuthRequired(), a.getUserAvatar)
 		apiV1.GET("/federation/authors/:ownerKey/avatar", auth.AuthRequired(), a.getFederatedAuthorAvatar)

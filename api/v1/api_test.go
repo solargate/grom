@@ -441,6 +441,35 @@ func TestUserSearch(t *testing.T) {
 	}
 }
 
+func TestListUsers(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	ta.register(t, "carol", "carol@example.com", "password12")
+	ta.register(t, "bob", "bob@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/users", nil, "")
+	expectStatus(t, w, http.StatusUnauthorized)
+
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/users", nil, token)
+	expectStatus(t, w, http.StatusOK)
+	results := decodeList(t, w)
+	if len(results) != 2 {
+		t.Fatalf("len = %d, want 2: %#v", len(results), results)
+	}
+	if results[0]["nickname"] != "bob" || results[1]["nickname"] != "carol" {
+		t.Fatalf("want sorted bob, carol; got %#v", results)
+	}
+	for _, r := range results {
+		if r["nickname"] == "alice" {
+			t.Fatalf("current user should be excluded: %#v", results)
+		}
+		if r["is_local"] != true {
+			t.Fatalf("expected is_local: %#v", r)
+		}
+	}
+}
+
 func TestWorkoutTrackACL(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

@@ -1636,6 +1636,12 @@ abstract class AppLocalizations {
   /// **'No users found'**
   String get noUsersFound;
 
+  /// No description provided for @noOtherUsersOnServer.
+  ///
+  /// In en, this message translates to:
+  /// **'No other users on this server yet'**
+  String get noOtherUsersOnServer;
+
   /// No description provided for @noFollowingYet.
   ///
   /// In en, this message translates to:
@@ -1665,6 +1671,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to search users'**
   String get failedToSearchUsers;
+
+  /// No description provided for @failedToLoadUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load users'**
+  String get failedToLoadUsers;
 
   /// No description provided for @failedToLoadProfile.
   ///

@@ -881,6 +881,23 @@ class ApiRequest {
     throw _parseError(response);
   }
 
+  Future<List<UserSearchResult>> listLocalUsers(String token) async {
+    final response = await _client.get(
+      _uri('/api/v1/users'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map(
+              (item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
   Future<List<UserSearchResult>> searchUsers({
     required String token,
     required String query,

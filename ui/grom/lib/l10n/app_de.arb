@@ -375,6 +375,7 @@
   "followers": "Follower",
   "followPending": "Ausstehend",
   "noUsersFound": "Keine Benutzer gefunden",
+  "noOtherUsersOnServer": "Auf diesem Server gibt es noch keine anderen Benutzer",
   "noFollowingYet": "Sie folgen noch niemandem",
   "noFollowersYet": "Ihnen folgt noch niemand",
   "searchByNicknameOrHandle": "Suche nach Nickname oder Federations-Adresse (@user@server)",
@@ -387,6 +388,7 @@
     }
   },
   "failedToSearchUsers": "Benutzersuche fehlgeschlagen",
+  "failedToLoadUsers": "Benutzer konnten nicht geladen werden",
   "failedToLoadProfile": "Profil konnte nicht geladen werden",
   "editProfile": "Profil bearbeiten",
   "profileActions": "Profilaktionen",

@@ -829,6 +829,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noUsersFound => 'Пользователи не найдены';
 
   @override
+  String get noOtherUsersOnServer =>
+      'На этом сервере пока нет других пользователей';
+
+  @override
   String get noFollowingYet => 'Вы ни на кого не подписаны';
 
   @override
@@ -845,6 +849,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToSearchUsers => 'Не удалось выполнить поиск пользователей';
+
+  @override
+  String get failedToLoadUsers => 'Не удалось загрузить пользователей';
 
   @override
   String get failedToLoadProfile => 'Не удалось загрузить профиль';
