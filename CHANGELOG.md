@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- User search list rows align with the search field for more name space
+
+### Changed
+
+- **UI:** User search list rows align avatar and Follow with the search field edges for more nickname/handle space
+
 ## [0.14.0] - 2026-09-22
 
 ### Google Play

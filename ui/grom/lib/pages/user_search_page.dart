@@ -262,6 +262,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
                       (follow.status == 'active' || follow.status == 'pending');
 
                   return ListTile(
+                    contentPadding: EdgeInsets.zero,
                     leading: UserAvatar(
                       nickname: user.nickname,
                       hasAvatar: user.hasAvatar,
@@ -269,9 +270,15 @@ class _UserSearchPageState extends State<UserSearchPage> {
                       authToken: _token,
                       radius: 20,
                     ),
-                    title: Text(user.nickname),
+                    title: Text(
+                      user.nickname,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
-                      user.name.isNotEmpty ? '${user.name} · ${user.handle}' : user.handle,
+                      user.name.isNotEmpty
+                          ? '${user.name} · ${user.handle}'
+                          : user.handle,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     trailing: IconButton.filledTonal(
                       onPressed: () => _toggleFollow(user),
@@ -279,6 +286,10 @@ class _UserSearchPageState extends State<UserSearchPage> {
                         isFollowing ? Icons.person_remove : Icons.person_add,
                       ),
                       tooltip: isFollowing ? l10n.unfollow : l10n.follow,
+                      visualDensity: VisualDensity.compact,
+                      style: IconButton.styleFrom(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                   );
                 },
