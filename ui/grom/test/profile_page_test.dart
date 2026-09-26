@@ -213,7 +213,7 @@ void main() {
     await tester.tap(find.text('Followers: 0'));
     await tester.pumpAndSettle();
 
-    expect(find.text('No one is following you yet'), findsOneWidget);
+    expect(find.text('No followers'), findsOneWidget);
   });
 
   testWidgets('empty following dialog shows empty message', (tester) async {
@@ -233,6 +233,6 @@ void main() {
     await tester.tap(find.text('Following: 0'));
     await tester.pumpAndSettle();
 
-    expect(find.text('You are not following anyone yet'), findsOneWidget);
+    expect(find.text('No following'), findsOneWidget);
   });
 }
