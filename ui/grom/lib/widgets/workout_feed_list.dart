@@ -24,10 +24,14 @@ class WorkoutFeedList extends StatefulWidget {
     this.sportTypes,
     this.emptyMessage,
     this.layout = MyWorkoutsLayout.cards,
+    this.userHandle,
+    this.selfNickname,
   });
 
   final String nickname;
   final String scope;
+  final String? userHandle;
+  final String? selfNickname;
   final ScrollController scrollController;
   final int refreshToken;
   final bool federationEnabled;
@@ -85,6 +89,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
     if (widget.refreshToken != oldWidget.refreshToken ||
         widget.nickname != oldWidget.nickname ||
         widget.scope != oldWidget.scope ||
+        widget.userHandle != oldWidget.userHandle ||
         !_sameSportTypes(oldWidget.sportTypes, widget.sportTypes)) {
       _loadWorkouts(reset: true);
     }
@@ -145,13 +150,20 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
         throw ApiException('Not authenticated');
       }
 
-      final page = await _api.listWorkouts(
-        token,
-        scope: widget.scope,
-        limit: _pageLimit,
-        cursor: reset ? null : _nextCursor,
-        sportTypes: widget.sportTypes,
-      );
+      final page = widget.userHandle != null
+          ? await _api.listUserWorkouts(
+              token,
+              handle: widget.userHandle!,
+              limit: _pageLimit,
+              cursor: reset ? null : _nextCursor,
+            )
+          : await _api.listWorkouts(
+              token,
+              scope: widget.scope,
+              limit: _pageLimit,
+              cursor: reset ? null : _nextCursor,
+              sportTypes: widget.sportTypes,
+            );
       if (!mounted) return;
       setState(() {
         if (reset) {
@@ -257,6 +269,7 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
                       workout: workout,
                       authToken: _authToken ?? '',
                       federationEnabled: widget.federationEnabled,
+                      selfNickname: widget.selfNickname,
                       compact: compact,
                       onTap: () => widget.onWorkoutTap(workout),
                       onPhotoTap: (photoIndex) =>

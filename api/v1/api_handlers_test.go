@@ -250,9 +250,9 @@ func TestWorkoutMapPreviewAndMedia(t *testing.T) {
 	bobToken, _ := ta.login(t, "bob@example.com", "password12")
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/media/"+filename+"/preview?owner=alice", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/media/"+filename+"?owner=alice", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
 	expectStatus(t, w, http.StatusCreated)

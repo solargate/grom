@@ -120,6 +120,7 @@ type WorkoutListResponse struct {
 type WorkoutResponse struct {
 	ID                   string                 `json:"id" example:"38472901"`
 	Owner                string                 `json:"owner,omitempty" example:"solarwind"`
+	ObjectID             string                 `json:"object_id,omitempty" example:"https://grom.example/users/bob/workouts/38472901"`
 	Name                 string                 `json:"name" example:"Morning run"`
 	Description          string                 `json:"description,omitempty" example:"Easy session"`
 	SportType            string                 `json:"sport_type" example:"Run"`
@@ -408,6 +409,7 @@ func (a *App) workoutAccessOwners(ctx *gin.Context, viewerNickname string) ([]st
 
 func (a *App) resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (ownerNickname, workoutID string, err error) {
 	workoutID = ctx.Param("id")
+	objectID := strings.TrimSpace(ctx.Query("object_id"))
 	if auth.IsPAT(ctx) {
 		ownerNickname = strings.TrimSpace(ctx.Query("owner"))
 		if ownerNickname != "" && ownerNickname != viewerNickname {
@@ -419,15 +421,26 @@ func (a *App) resolveWorkoutOwner(ctx *gin.Context, viewerNickname string) (owne
 	if ownerNickname == "" {
 		ownerNickname = viewerNickname
 	}
+	if ownerNickname == viewerNickname {
+		return ownerNickname, workoutID, nil
+	}
+	// Any authenticated user may read local users' workouts.
+	if _, lookupErr := a.Users.FindByNickname(ownerNickname); lookupErr == nil {
+		return ownerNickname, workoutID, nil
+	}
 	followed, err := a.workoutAccessOwners(ctx, viewerNickname)
 	if err != nil {
 		return "", "", err
 	}
 	feedSvc := workouts.NewFeedService(a.Workouts, a.Blobs, config.Cfg.Federation.Domain)
-	if !feedSvc.CanAccessWorkout(viewerNickname, followed, ownerNickname) {
-		return "", "", workouts.ErrWorkoutNotFound
+	if feedSvc.CanAccessWorkout(viewerNickname, followed, ownerNickname) {
+		return ownerNickname, workoutID, nil
 	}
-	return ownerNickname, workoutID, nil
+	// Remote live proxy without follow: require object_id.
+	if objectID != "" {
+		return ownerNickname, workoutID, nil
+	}
+	return "", "", workouts.ErrWorkoutNotFound
 }
 
 func readTrackFile(file *multipart.FileHeader) ([]byte, error) {
@@ -910,10 +923,28 @@ func (a *App) getWorkoutSpeed(ctx *gin.Context) {
 	}
 
 	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" && !auth.IsPAT(ctx) {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveSpeedSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(w, samples))
+				return
+			}
+		}
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
 	workout, samples, err = a.Federation.Inbox().GetSpeedChart(nickname, owner, workoutID)
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveSpeedSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutSpeedResponse(w, samples))
+				return
+			}
+		}
+	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
@@ -966,10 +997,28 @@ func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
 	}
 
 	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" && !auth.IsPAT(ctx) {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveHeartRateSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutHeartRateResponse(w, samples))
+				return
+			}
+		}
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
 		return
 	}
 	workout, samples, err = a.Federation.Inbox().GetHeartRateChart(nickname, owner, workoutID)
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveHeartRateSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutHeartRateResponse(w, samples))
+				return
+			}
+		}
+	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
@@ -1028,6 +1077,17 @@ func (a *App) getWorkoutTrack(ctx *gin.Context) {
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
 			data, storageName, workoutName, err = a.Federation.Inbox().TrackFile(nickname, owner, workoutID)
+		}
+	}
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" && !auth.IsPAT(ctx) {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil && len(track) > 0 {
+				data = track
+				storageName = w.Track
+				workoutName = w.Name
+				err = nil
+			}
 		}
 	}
 	if err != nil {
@@ -1106,6 +1166,14 @@ func (a *App) getWorkoutMapPreview(ctx *gin.Context) {
 	data, err := a.Workouts.MapPreview(owner, workoutID)
 	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) && !auth.IsPAT(ctx) && a.Federation.Inbox() != nil {
 		data, err = a.Federation.Inbox().MapPreview(nickname, owner, workoutID)
+	}
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				data, err = a.liveMapPreview(w.Track, track)
+			}
+		}
 	}
 	if err != nil {
 		if errors.Is(err, workouts.ErrWorkoutNotFound) {

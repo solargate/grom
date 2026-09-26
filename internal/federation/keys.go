@@ -30,6 +30,11 @@ func instanceActorURL() string {
 }
 
 func workoutObjectURL(authorNickname, workoutID string) string {
+	return WorkoutObjectURL(authorNickname, workoutID)
+}
+
+// WorkoutObjectURL returns the ActivityPub object id for a local workout.
+func WorkoutObjectURL(authorNickname, workoutID string) string {
 	return fmt.Sprintf("%s/workouts/%s", actorURL(authorNickname), workoutID)
 }
 

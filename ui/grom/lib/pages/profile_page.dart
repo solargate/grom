@@ -6,7 +6,7 @@ import '../auth_storage.dart';
 import '../models/social.dart';
 import '../widgets/follow_list_dialog.dart';
 import '../widgets/profile_form_dialog.dart';
-import '../widgets/user_avatar.dart';
+import '../widgets/user_profile_view.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -35,9 +35,6 @@ class ProfilePageState extends State<ProfilePage> {
   List<FollowerInfo> _followers = [];
   bool _isLoading = true;
   String? _error;
-
-  int get _activeFollowingCount =>
-      _following.where((f) => f.status == 'active').length;
 
   @override
   void initState() {
@@ -116,6 +113,7 @@ class ProfilePageState extends State<ProfilePage> {
       context,
       followers: _followers,
       authToken: _authToken,
+      selfNickname: widget.nickname,
     );
   }
 
@@ -124,6 +122,7 @@ class ProfilePageState extends State<ProfilePage> {
       context,
       following: _following,
       authToken: _authToken,
+      selfNickname: widget.nickname,
     );
   }
 
@@ -160,98 +159,26 @@ class ProfilePageState extends State<ProfilePage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: openEditProfile,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    UserAvatar(
-                      nickname: widget.nickname,
-                      hasAvatar: _hasAvatar,
-                      avatarUrl: _avatarUrl,
-                      authToken: _authToken,
-                      radius: 28,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.nickname,
-                            style: theme.textTheme.titleLarge,
-                          ),
-                          if (_name.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              _name,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.edit_outlined,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
+          ProfileIdentityCard(
+            nickname: widget.nickname,
+            name: _name,
+            hasAvatar: _hasAvatar,
+            avatarUrl: _avatarUrl,
+            authToken: _authToken,
+            onTap: openEditProfile,
+            trailing: Icon(
+              Icons.edit_outlined,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _CountCard(
-                  label: l10n.followingCount(_activeFollowingCount),
-                  onTap: _openFollowing,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _CountCard(
-                  label: l10n.followersCount(_followers.length),
-                  onTap: _openFollowers,
-                ),
-              ),
-            ],
+          ProfileFollowCountCards(
+            followingCount: activeFollowingCount(_following),
+            followersCount: _followers.length,
+            onFollowingTap: _openFollowing,
+            onFollowersTap: _openFollowers,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CountCard extends StatelessWidget {
-  const _CountCard({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
       ),
     );
   }

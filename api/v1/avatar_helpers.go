@@ -11,34 +11,49 @@ func (a *App) localAvatarFieldsForUser(nickname string) (hasAvatar bool, avatarU
 	return avatars.FieldsStore(a.Blobs, nickname)
 }
 
-func (a *App) remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (bool, string) {
-	if follow == nil || follow.TargetIsLocal {
+// remoteUserAvatarFields caches a remote actor avatar into the viewer's federation
+// inbox and returns a same-origin API path. Never returns a cross-origin URL: Flutter
+// web (CanvasKit) blanks the page when NetworkImage loads remote avatars without CORS.
+func (a *App) remoteUserAvatarFields(viewerNickname, handle, nickname, name, remoteAvatarURL string) (bool, string) {
+	if viewerNickname == "" || handle == "" {
+		return false, ""
+	}
+	if a.Federation.Inbox() == nil {
 		return false, ""
 	}
 
-	if a.Federation.Inbox() == nil {
-		return follow.TargetAvatarURL != "", follow.TargetAvatarURL
-	}
-
-	hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follow.TargetHandle)
+	hasAvatar, avatarURL := a.Federation.Inbox().AuthorAvatarFields(viewerNickname, handle)
 	if hasAvatar {
 		return true, avatarURL
 	}
 
-	remoteURL := follow.TargetAvatarURL
-	if !strings.HasPrefix(remoteURL, "http://") && !strings.HasPrefix(remoteURL, "https://") {
+	if !strings.HasPrefix(remoteAvatarURL, "http://") && !strings.HasPrefix(remoteAvatarURL, "https://") {
 		return false, ""
 	}
 
 	_ = a.Federation.Inbox().EnsureAuthor(
 		viewerNickname,
+		handle,
+		nickname,
+		name,
+		remoteAvatarURL,
+		false,
+	)
+	return a.Federation.Inbox().AuthorAvatarFields(viewerNickname, handle)
+}
+
+func (a *App) remoteFollowAvatarFields(viewerNickname string, follow *social.Follow) (bool, string) {
+	if follow == nil || follow.TargetIsLocal {
+		return false, ""
+	}
+
+	return a.remoteUserAvatarFields(
+		viewerNickname,
 		follow.TargetHandle,
 		follow.TargetNickname,
 		follow.TargetName,
-		remoteURL,
-		false,
+		follow.TargetAvatarURL,
 	)
-	return a.Federation.Inbox().AuthorAvatarFields(viewerNickname, follow.TargetHandle)
 }
 
 func (a *App) cacheRemoteFollowAvatar(viewerNickname string, follow *social.Follow) {

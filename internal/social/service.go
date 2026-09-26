@@ -357,6 +357,46 @@ func (s *Service) ListFollowing(followerID string) ([]Follow, error) {
 	return s.follows.ListByFollower(followerID)
 }
 
+// FindFollowToHandle returns the viewer's follow targeting handle (any status), if any.
+func (s *Service) FindFollowToHandle(followerID, targetHandle string) (*Follow, error) {
+	targetHandle = strings.TrimSpace(targetHandle)
+	if targetHandle == "" {
+		return nil, ErrFollowNotFound
+	}
+	follows, err := s.follows.ListByFollower(followerID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range follows {
+		if strings.EqualFold(follows[i].TargetHandle, targetHandle) {
+			f := follows[i]
+			return &f, nil
+		}
+	}
+	return nil, ErrFollowNotFound
+}
+
+// ListFollowingForUserID lists follows for an arbitrary local user id.
+func (s *Service) ListFollowingForUserID(userID string) ([]Follow, error) {
+	return s.follows.ListByFollower(userID)
+}
+
+// ResolveLocalUser resolves a raw handle or nickname to a local user.
+func (s *Service) ResolveLocalUser(raw string) (*users.User, ParsedHandle, error) {
+	parsed, err := s.ParseHandle(raw)
+	if err != nil {
+		return nil, ParsedHandle{}, err
+	}
+	if !parsed.IsLocal {
+		return nil, parsed, ErrUserNotFound
+	}
+	user, err := s.users.FindByNickname(parsed.Nickname)
+	if err != nil {
+		return nil, parsed, ErrUserNotFound
+	}
+	return user, parsed, nil
+}
+
 // ListLocalNicknamesFollowingHandle returns nicknames of local users who actively follow targetHandle.
 func (s *Service) ListLocalNicknamesFollowingHandle(targetHandle string) ([]string, error) {
 	targetHandle = strings.TrimSpace(targetHandle)

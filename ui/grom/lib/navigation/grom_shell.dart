@@ -17,6 +17,7 @@ import '../pages/home_page.dart';
 import '../pages/integration_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/settings_page.dart';
+import '../pages/user_profile_page.dart';
 import '../pages/user_search_page.dart';
 import '../platform/is_mobile_client.dart';
 import '../platform/file_download.dart';
@@ -31,7 +32,9 @@ import '../widgets/profile_menu.dart';
 import '../widgets/track_recording_recovery_dialog.dart';
 import '../widgets/workout_detail_menu.dart';
 import 'grom_destination.dart';
+import 'grom_shell_scope.dart';
 import 'grom_side_menu.dart';
+import 'open_user_profile.dart';
 
 const kWideLayoutBreakpoint = 600.0;
 
@@ -64,6 +67,9 @@ class _GromShellState extends State<GromShell> {
   bool _isWorkoutMapExpanded = false;
   int? _workoutPhotoViewerIndex;
   Workout? _feedPhotoViewerWorkout;
+
+  final List<ViewingUser> _viewingUserStack = [];
+  GromDestination? _profileReturnDestination;
 
   bool _isShellReady = false;
   StreamSubscription<SharedTrackReceiveResult>? _sharedTrackSub;
@@ -104,19 +110,24 @@ class _GromShellState extends State<GromShell> {
       !_isViewingWorkout &&
       !_isViewingFeedPhoto &&
       _isLoggedIn;
-  bool get _isViewingWorkout =>
-      _selectedDestination == GromDestination.home && _viewingWorkout != null;
-  bool get _isViewingProfile =>
-      _selectedDestination == GromDestination.profile && !_isViewingWorkout;
+  bool get _isViewingOtherUser => _viewingUserStack.isNotEmpty;
+  bool get _isViewingWorkout => _viewingWorkout != null;
+  bool get _isViewingOwnProfile =>
+      _selectedDestination == GromDestination.profile &&
+      !_isViewingOtherUser &&
+      !_isViewingWorkout;
   bool get _isViewingFeedPhoto =>
       _selectedDestination == GromDestination.home &&
       _viewingWorkout == null &&
       _feedPhotoViewerWorkout != null &&
       _workoutPhotoViewerIndex != null;
   bool get _shouldShowHeaderBackButton =>
-      _isViewingWorkout || _isViewingFeedPhoto;
+      _isViewingWorkout || _isViewingFeedPhoto || _isViewingOtherUser;
   bool get _shouldInterceptPop =>
-      _isViewingWorkout || _isViewingFeedPhoto || !_selectedDestination.isHome;
+      _isViewingWorkout ||
+      _isViewingFeedPhoto ||
+      _isViewingOtherUser ||
+      !_selectedDestination.isHome;
 
   @override
   void initState() {
@@ -455,6 +466,14 @@ class _GromShellState extends State<GromShell> {
 
   void _onDestinationSelected(GromDestination destination) {
     setState(() {
+      if (destination == GromDestination.profile &&
+          _selectedDestination == GromDestination.profile &&
+          _isViewingOtherUser) {
+        _clearOtherUserView();
+        _clearWorkoutView();
+        _feedPhotoViewerWorkout = null;
+        return;
+      }
       if (destination == GromDestination.home &&
           _selectedDestination == GromDestination.home) {
         if (_viewingWorkout != null) {
@@ -473,20 +492,68 @@ class _GromShellState extends State<GromShell> {
         return;
       }
       _selectedDestination = destination;
-      if (destination != GromDestination.home) {
-        _viewingWorkout = null;
-        _isWorkoutMapExpanded = false;
-        _workoutPhotoViewerIndex = null;
-        _feedPhotoViewerWorkout = null;
+      _clearOtherUserView();
+      _viewingWorkout = null;
+      _isWorkoutMapExpanded = false;
+      _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
+    });
+  }
+
+  void _clearOtherUserView() {
+    _viewingUserStack.clear();
+    _profileReturnDestination = null;
+  }
+
+  void _clearWorkoutView() {
+    _viewingWorkout = null;
+    _isWorkoutMapExpanded = false;
+    _workoutPhotoViewerIndex = null;
+  }
+
+  void _openUserProfileInShell({
+    required String handle,
+    required String nickname,
+  }) {
+    if (isSelfProfile(
+      handle: handle,
+      nickname: nickname,
+      selfNickname: _nickname,
+    )) {
+      return;
+    }
+    if (_isViewingOtherUser &&
+        _viewingUserStack.isNotEmpty &&
+        _viewingUserStack.last.handle == handle &&
+        _viewingWorkout == null) {
+      return;
+    }
+    setState(() {
+      _clearWorkoutView();
+      _feedPhotoViewerWorkout = null;
+      if (!_isViewingOtherUser) {
+        _profileReturnDestination = _selectedDestination;
       }
+      if (_viewingUserStack.isEmpty ||
+          _viewingUserStack.last.handle != handle) {
+        _viewingUserStack.add(ViewingUser(handle: handle, nickname: nickname));
+      }
+      _selectedDestination = GromDestination.profile;
+    });
+  }
+
+  void _openWorkoutInShell(Workout workout) {
+    setState(() {
+      _viewingWorkout = workout;
+      _isWorkoutMapExpanded = false;
+      _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
     });
   }
 
   void _closeWorkoutDetail() {
     setState(() {
-      _viewingWorkout = null;
-      _isWorkoutMapExpanded = false;
-      _workoutPhotoViewerIndex = null;
+      _clearWorkoutView();
       _feedPhotoViewerWorkout = null;
     });
   }
@@ -515,6 +582,18 @@ class _GromShellState extends State<GromShell> {
     }
     if (_isViewingFeedPhoto) {
       _closeFeedPhotoViewer();
+      return;
+    }
+    if (_isViewingOtherUser) {
+      setState(() {
+        _viewingUserStack.removeLast();
+        if (_viewingUserStack.isEmpty) {
+          final returnTo =
+              _profileReturnDestination ?? GromDestination.home;
+          _profileReturnDestination = null;
+          _selectedDestination = returnTo;
+        }
+      });
       return;
     }
     if (!_selectedDestination.isHome) {
@@ -667,7 +746,7 @@ class _GromShellState extends State<GromShell> {
         return;
       }
 
-      final owner = _isOwnWorkout(workout) ? null : workout.ownerNickname;
+      final owner = _isOwnWorkout(workout) ? null : workout.apiOwnerQuery;
       final downloaded = await _api.downloadWorkoutTrack(
         token: token,
         workoutId: workout.id,
@@ -845,6 +924,9 @@ class _GromShellState extends State<GromShell> {
     if (_isViewingWorkout) {
       return _viewingWorkout!.name;
     }
+    if (_isViewingOtherUser) {
+      return _viewingUserStack.last.nickname;
+    }
     return _sectionTitle(l10n);
   }
 
@@ -862,6 +944,9 @@ class _GromShellState extends State<GromShell> {
       _federationEnabled = serverInfo.federationEnabled;
       _nickname = user.nickname;
       _selectedDestination = GromDestination.home;
+      _clearOtherUserView();
+      _clearWorkoutView();
+      _feedPhotoViewerWorkout = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.welcomeUser(user.nickname))),
@@ -889,6 +974,7 @@ class _GromShellState extends State<GromShell> {
       _isWorkoutMapExpanded = false;
       _workoutPhotoViewerIndex = null;
       _feedPhotoViewerWorkout = null;
+      _clearOtherUserView();
       _sportFilterVisible = false;
       _sportFilterExpanded = false;
       _onToggleSportFilter = null;
@@ -981,8 +1067,36 @@ class _GromShellState extends State<GromShell> {
           },
         );
       case GromDestination.userSearch:
-        return const UserSearchPage();
+        return UserSearchPage(
+          selfNickname: _nickname,
+          federationEnabled: _federationEnabled,
+        );
       case GromDestination.profile:
+        if (_isViewingOtherUser) {
+          final viewing = _viewingUserStack.last;
+          return UserProfilePage(
+            key: ValueKey(viewing.handle),
+            handle: viewing.handle,
+            viewerNickname: _nickname,
+            federationEnabled: _federationEnabled,
+            viewingWorkout: _viewingWorkout,
+            isMapExpanded: _isWorkoutMapExpanded,
+            onViewingWorkoutChanged: (workout) {
+              if (workout == null) {
+                _closeWorkoutDetail();
+              } else {
+                _openWorkoutInShell(workout);
+              }
+            },
+            onMapExpandedChanged: (expanded) {
+              setState(() => _isWorkoutMapExpanded = expanded);
+            },
+            photoViewerIndex: _workoutPhotoViewerIndex,
+            onPhotoViewerIndexChanged: (index) {
+              setState(() => _workoutPhotoViewerIndex = index);
+            },
+          );
+        }
         return ProfilePage(
           key: _profilePageKey,
           nickname: _nickname!,
@@ -1049,7 +1163,7 @@ class _GromShellState extends State<GromShell> {
           if (_showMyWorkoutsLayoutButton) _buildMyWorkoutsLayoutHeaderButton()!,
           if (_showStravaApiSyncButton) _buildStravaApiSyncHeaderButton()!,
           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
-          if (_isViewingProfile) _buildProfileMenu(),
+          if (_isViewingOwnProfile) _buildProfileMenu(),
         ],
       ),
       drawer: _isViewingWorkout ? null : _buildSideMenu(),
@@ -1102,7 +1216,7 @@ class _GromShellState extends State<GromShell> {
                           if (_showStravaApiSyncButton)
                             _buildStravaApiSyncHeaderButton()!,
                           if (_isViewingWorkout) _buildWorkoutDetailMenu(),
-                          if (_isViewingProfile) _buildProfileMenu(),
+                          if (_isViewingOwnProfile) _buildProfileMenu(),
                         ],
                       ),
                     ),
@@ -1122,21 +1236,25 @@ class _GromShellState extends State<GromShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return PopScope(
-      canPop: !_shouldInterceptPop,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          _handleShellBack();
-        }
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= kWideLayoutBreakpoint;
-          if (isWide) {
-            return _buildWideLayout(l10n);
+    return GromShellScope(
+      openUserProfile: _openUserProfileInShell,
+      openWorkout: _openWorkoutInShell,
+      child: PopScope(
+        canPop: !_shouldInterceptPop,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _handleShellBack();
           }
-          return _buildNarrowLayout(l10n);
         },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= kWideLayoutBreakpoint;
+            if (isWide) {
+              return _buildWideLayout(l10n);
+            }
+            return _buildNarrowLayout(l10n);
+          },
+        ),
       ),
     );
   }

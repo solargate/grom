@@ -16,6 +16,10 @@ When the operator enables captcha (`auth.captcha.enabled`), sign-in, registratio
 
 From **Profile**, use the overflow menu to edit your profile or **Delete account**. Full steps, what data is removed, and federation notes: [Delete your Grom account](delete-account.md).
 
+Tap another athlete (avatar or name on a workout card or detail, a row in **User search**, someone in Following/Followers, or a liker/comment author) to open their profile inside the main app shell: the side menu stays visible and **Profile** is selected. Your own taps do nothing. On someone else’s profile you can Follow or Unfollow, open their Following/Followers lists (and open further profiles from there), and browse their workouts like the home feed. Opening a workout from that list uses the in-shell detail screen; Back closes the workout, then returns through nested profiles, then to the section you came from (for example Home or User search). Choosing **Profile** in the side menu while viewing someone else switches to your own profile.
+
+Signed-in users can view **local** workouts on another user’s profile without following them first. For **federated** (remote Grom) athletes, the profile loads public outbox workouts when available; map, track, and charts use a live fetch. Likes and comments on remote workouts still require an active Follow (so the workout is in your federation inbox). Non-Grom fediverse accounts may show a profile card and Follow without a workout list.
+
 This page is a short tour of the main screens (screenshots below are from Android). Admin setup (install, config, TLS, federation) lives under [Admin docs](../README.md#admin). For the HTTP API, see Swagger at `/api/docs/` on a running server.
 
 ## Workouts
@@ -42,9 +46,9 @@ Manage bikes, shoes, and other gear. Items are grouped by category; distance tot
 
 ## Social and federation
 
-Follow other users on the same instance and browse a shared feed. On **User search**, the screen lists all other local users on the server (with icon Follow/Unfollow buttons); you can still search by nickname or federated handle. Like and comment on workouts from people you follow (local or federated); counts appear on list and detail screens.
+Follow other users on the same instance and browse a shared feed. On **User search**, the screen lists all other local users on the server (with icon Follow/Unfollow buttons); you can still search by nickname or federated handle. Tap a user row to open their profile. Like and comment on local workouts from any signed-in account; for federated workouts, likes and comments work after you follow (counts appear on list and detail screens).
 
-When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way. Account deletion and federated actor `Delete` behavior are described in [Delete your Grom account](delete-account.md).
+When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Remote Grom profiles can show public outbox workouts; likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way. Account deletion and federated actor `Delete` behavior are described in [Delete your Grom account](delete-account.md).
 
 ## Strava import
 

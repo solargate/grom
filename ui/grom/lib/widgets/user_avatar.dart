@@ -1,8 +1,28 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../api_request.dart';
 import '../server_storage.dart';
 import '../services/avatar_cache.dart';
+
+/// Whether [resolvedUrl] is an absolute http(s) URL on a different origin than
+/// the configured Grom server. CanvasKit NetworkImage of such URLs without CORS
+/// can blank the entire Flutter web app.
+@visibleForTesting
+bool isCrossOriginAvatarUrl(String resolvedUrl, {String? localBase}) {
+  if (resolvedUrl.isEmpty) {
+    return false;
+  }
+  if (!resolvedUrl.startsWith('http://') &&
+      !resolvedUrl.startsWith('https://')) {
+    return false;
+  }
+  final base = localBase ?? ServerStorage.cachedBaseUrl;
+  if (base == null || base.isEmpty) {
+    return true;
+  }
+  return !resolvedUrl.startsWith(base);
+}
 
 class UserAvatar extends StatefulWidget {
   const UserAvatar({
@@ -71,7 +91,9 @@ class _UserAvatarState extends State<UserAvatar> {
     final cacheVersion = AvatarCache.instance.versionFor(widget.nickname);
     final displayUrl = AvatarCache.withCacheBuster(resolvedUrl, cacheVersion);
     final imageHeaders = _imageHeaders(displayUrl);
-    final showPlaceholder = displayUrl.isEmpty || _imageFailed;
+    final skipNetwork = kIsWeb && isCrossOriginAvatarUrl(displayUrl);
+    final showPlaceholder =
+        displayUrl.isEmpty || _imageFailed || skipNetwork;
 
     Widget avatar = CircleAvatar(
       key: ValueKey(displayUrl),

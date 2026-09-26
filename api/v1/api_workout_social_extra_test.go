@@ -231,7 +231,7 @@ func TestWorkoutListIncludesSocialSummary(t *testing.T) {
 	}
 }
 
-func TestLikeWithoutFollowReturnsNotFound(t *testing.T) {
+func TestLikeWithoutFollowAllowedForLocal(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
 	ta.register(t, "bob", "bob@example.com", "password12")
@@ -245,9 +245,9 @@ func TestLikeWithoutFollowReturnsNotFound(t *testing.T) {
 	id, _ := decodeObject(t, w)["id"].(string)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts/"+id+"/likes?owner=bob", nil, aliceToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/likes?owner=bob", nil, aliceToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 }
 
 func TestWorkoutCommentRejectsOverlongRunes(t *testing.T) {

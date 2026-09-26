@@ -45,7 +45,7 @@ class _WorkoutPhotoViewerState extends State<WorkoutPhotoViewer> {
       };
 
   String _originalUrl(String filename) {
-    final owner = widget.workout.ownerNickname;
+    final owner = widget.workout.apiOwnerQuery ?? '';
     return _api.mediaOriginalUrl(
       widget.workout.id,
       filename,

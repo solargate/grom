@@ -252,7 +252,7 @@ func TestWorkoutCommentErrors(t *testing.T) {
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts/"+workoutID+"/comments?owner=bob", map[string]string{
 		"text": "no follow",
 	}, aliceToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/zzzzzzzz/comments?owner=bob", nil, aliceToken)
 	expectStatus(t, w, http.StatusNotFound)

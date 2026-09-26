@@ -7,6 +7,7 @@ import 'models/downloaded_track.dart';
 import 'models/equipment.dart';
 import 'models/parsed_track_metadata.dart';
 import 'models/social.dart';
+import 'models/user_public_profile.dart';
 import 'models/workout.dart';
 import 'models/workout_heartrate.dart';
 import 'models/workout_speed.dart';
@@ -710,10 +711,17 @@ class ApiRequest {
     throw _parseError(response);
   }
 
-  String mapPreviewUrl(String workoutId, {String? owner}) {
+  String mapPreviewUrl(String workoutId, {String? owner, String? objectId}) {
     var uri = _uri('/api/v1/workouts/$workoutId/map-preview');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     return uri.toString();
   }
@@ -722,11 +730,19 @@ class ApiRequest {
     String workoutId,
     String filename, {
     String? owner,
+    String? objectId,
   }) {
     final encoded = Uri.encodeComponent(filename);
     var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded/preview');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     return uri.toString();
   }
@@ -735,19 +751,34 @@ class ApiRequest {
     String workoutId,
     String filename, {
     String? owner,
+    String? objectId,
   }) {
     final encoded = Uri.encodeComponent(filename);
     var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     return uri.toString();
   }
 
-  String workoutTrackUrl(String workoutId, {String? owner}) {
+  String workoutTrackUrl(String workoutId, {String? owner, String? objectId}) {
     var uri = _uri('/api/v1/workouts/$workoutId/track');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     return uri.toString();
   }
@@ -756,10 +787,18 @@ class ApiRequest {
     required String token,
     required String workoutId,
     String? owner,
+    String? objectId,
   }) async {
     var uri = _uri('/api/v1/workouts/$workoutId/speed');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     final response = await _client.get(
       uri,
@@ -778,10 +817,18 @@ class ApiRequest {
     required String token,
     required String workoutId,
     String? owner,
+    String? objectId,
   }) async {
     var uri = _uri('/api/v1/workouts/$workoutId/heartrate');
+    final params = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
     }
     final response = await _client.get(
       uri,
@@ -801,11 +848,15 @@ class ApiRequest {
     required String workoutId,
     required String fallbackFilename,
     String? owner,
+    String? objectId,
     String? format,
   }) async {
     final query = <String, String>{};
     if (owner != null && owner.isNotEmpty) {
       query['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      query['object_id'] = objectId;
     }
     if (format == 'gpx') {
       query['format'] = 'gpx';
@@ -982,6 +1033,94 @@ class ApiRequest {
       return json
           .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
           .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Uri _userHandleUri(String handle, [String subPath = '']) {
+    final encoded = Uri.encodeComponent(handle);
+    final path = subPath.isEmpty
+        ? '/api/v1/users/$encoded'
+        : '/api/v1/users/$encoded/$subPath';
+    return _uri(path);
+  }
+
+  Future<UserPublicProfile> getUserProfile({
+    required String token,
+    required String handle,
+  }) async {
+    final response = await _client.get(
+      _userHandleUri(handle),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserPublicProfile.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<FollowInfo>> listUserFollowing({
+    required String token,
+    required String handle,
+  }) async {
+    final response = await _client.get(
+      _userHandleUri(handle, 'following'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => FollowInfo.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<List<FollowerInfo>> listUserFollowers({
+    required String token,
+    required String handle,
+  }) async {
+    final response = await _client.get(
+      _userHandleUri(handle, 'followers'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as List<dynamic>;
+      return json
+          .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<WorkoutListPage> listUserWorkouts(
+    String token, {
+    required String handle,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final params = <String, String>{'limit': '$limit'};
+    if (cursor != null && cursor.isNotEmpty) {
+      params['cursor'] = cursor;
+    }
+    final uri = _userHandleUri(handle, 'workouts')
+        .replace(queryParameters: params);
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutListPage.fromJson(json);
     }
 
     throw _parseError(response);

@@ -201,6 +201,7 @@ class Workout {
     this.likedByMe = false,
     this.canLike = false,
     this.commentsCount = 0,
+    this.objectId,
   });
 
   final String id;
@@ -231,8 +232,35 @@ class Workout {
   final bool likedByMe;
   final bool canLike;
   final int commentsCount;
+  final String? objectId;
 
   double get distanceKm => distance / 1000;
+
+  /// Query value for workout sub-resource APIs (`owner` param).
+  String? get apiOwnerQuery {
+    final o = ownerNickname;
+    if (o.isNotEmpty) {
+      return o;
+    }
+    final handle = author?.handle;
+    if (handle != null && handle.isNotEmpty) {
+      return handle;
+    }
+    return null;
+  }
+
+  /// Query params for workout sub-resource APIs.
+  Map<String, String> workoutResourceQuery() {
+    final params = <String, String>{};
+    final owner = apiOwnerQuery;
+    if (owner != null && owner.isNotEmpty) {
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId!.isNotEmpty) {
+      params['object_id'] = objectId!;
+    }
+    return params;
+  }
 
   String get ownerNickname =>
       owner.isNotEmpty ? owner : (author?.nickname ?? '');
@@ -284,6 +312,7 @@ class Workout {
       likedByMe: json['liked_by_me'] as bool? ?? false,
       canLike: json['can_like'] as bool? ?? false,
       commentsCount: json['comments_count'] as int? ?? 0,
+      objectId: json['object_id'] as String?,
     );
   }
 
@@ -292,6 +321,7 @@ class Workout {
     bool? likedByMe,
     bool? canLike,
     int? commentsCount,
+    String? objectId,
   }) {
     return Workout(
       id: id,
@@ -322,6 +352,7 @@ class Workout {
       likedByMe: likedByMe ?? this.likedByMe,
       canLike: canLike ?? this.canLike,
       commentsCount: commentsCount ?? this.commentsCount,
+      objectId: objectId ?? this.objectId,
     );
   }
 

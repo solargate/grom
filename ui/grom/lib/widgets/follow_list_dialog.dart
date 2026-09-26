@@ -2,23 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
 import '../models/social.dart';
+import '../navigation/open_user_profile.dart';
 import '../widgets/user_avatar.dart';
 
 Future<void> showFollowersDialog(
   BuildContext context, {
   required List<FollowerInfo> followers,
   String? authToken,
+  String? selfNickname,
+  bool federationEnabled = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  final hostContext = context;
   return showFollowListDialog(
     context,
     title: l10n.followers,
     emptyMessage: l10n.noFollowersYet,
     itemCount: followers.length,
-    itemBuilder: (context, index) {
+    itemBuilder: (dialogContext, index) {
       final follower = followers[index];
-      final theme = Theme.of(context);
+      final theme = Theme.of(dialogContext);
       return ListTile(
+        onTap: () {
+          Navigator.of(dialogContext).pop();
+          openUserProfile(
+            hostContext,
+            handle: follower.followerHandle,
+            nickname: follower.followerNickname,
+            selfNickname: selfNickname,
+            federationEnabled: federationEnabled,
+          );
+        },
         leading: UserAvatar(
           nickname: follower.followerNickname,
           hasAvatar: follower.followerHasAvatar,
@@ -44,17 +58,30 @@ Future<void> showFollowingDialog(
   BuildContext context, {
   required List<FollowInfo> following,
   String? authToken,
+  String? selfNickname,
+  bool federationEnabled = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  final hostContext = context;
   return showFollowListDialog(
     context,
     title: l10n.following,
     emptyMessage: l10n.noFollowingYet,
     itemCount: following.length,
-    itemBuilder: (context, index) {
+    itemBuilder: (dialogContext, index) {
       final follow = following[index];
-      final theme = Theme.of(context);
+      final theme = Theme.of(dialogContext);
       return ListTile(
+        onTap: () {
+          Navigator.of(dialogContext).pop();
+          openUserProfile(
+            hostContext,
+            handle: follow.targetHandle,
+            nickname: follow.targetNickname,
+            selfNickname: selfNickname,
+            federationEnabled: federationEnabled,
+          );
+        },
         leading: UserAvatar(
           nickname: follow.targetNickname,
           hasAvatar: follow.targetHasAvatar,

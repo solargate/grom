@@ -841,10 +841,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noOtherUsersOnServer => 'No other users on this server yet';
 
   @override
-  String get noFollowingYet => 'You are not following anyone yet';
+  String get noFollowingYet => 'No following';
 
   @override
-  String get noFollowersYet => 'No one is following you yet';
+  String get noFollowersYet => 'No followers';
 
   @override
   String get searchByNicknameOrHandle =>
@@ -863,6 +863,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Failed to load profile';
+
+  @override
+  String get failedToLoadUserProfile => 'Failed to load user profile';
+
+  @override
+  String get noWorkoutsFromUser => 'No workouts yet';
 
   @override
   String get editProfile => 'Edit profile';

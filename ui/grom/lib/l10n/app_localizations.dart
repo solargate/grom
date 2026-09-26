@@ -1657,13 +1657,13 @@ abstract class AppLocalizations {
   /// No description provided for @noFollowingYet.
   ///
   /// In en, this message translates to:
-  /// **'You are not following anyone yet'**
+  /// **'No following'**
   String get noFollowingYet;
 
   /// No description provided for @noFollowersYet.
   ///
   /// In en, this message translates to:
-  /// **'No one is following you yet'**
+  /// **'No followers'**
   String get noFollowersYet;
 
   /// No description provided for @searchByNicknameOrHandle.
@@ -1695,6 +1695,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load profile'**
   String get failedToLoadProfile;
+
+  /// No description provided for @failedToLoadUserProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load user profile'**
+  String get failedToLoadUserProfile;
+
+  /// No description provided for @noWorkoutsFromUser.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts yet'**
+  String get noWorkoutsFromUser;
 
   /// No description provided for @editProfile.
   ///

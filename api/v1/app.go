@@ -237,7 +237,11 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 
 		apiV1.GET("/users", auth.AuthRequired(), a.listUsers)
 		apiV1.GET("/users/search", auth.AuthRequired(), a.searchUsers)
-		apiV1.GET("/users/:nickname/avatar", auth.AuthRequired(), a.getUserAvatar)
+		apiV1.GET("/users/:handle/following", auth.AuthRequired(), a.listUserFollowing)
+		apiV1.GET("/users/:handle/followers", auth.AuthRequired(), a.listUserFollowers)
+		apiV1.GET("/users/:handle/workouts", auth.AuthRequired(), a.listUserWorkouts)
+		apiV1.GET("/users/:handle/avatar", auth.AuthRequired(), a.getUserAvatar)
+		apiV1.GET("/users/:handle", auth.AuthRequired(), a.getUserPublic)
 		apiV1.GET("/federation/authors/:ownerKey/avatar", auth.AuthRequired(), a.getFederatedAuthorAvatar)
 
 		socialGroup := apiV1.Group("/social", auth.AuthRequired())

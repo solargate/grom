@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/avatars"
@@ -22,6 +23,9 @@ func (a *App) registerFederationRoutes(router *gin.Engine) {
 	router.GET("/users/:nickname", a.actorHandler())
 	router.POST("/users/:nickname/inbox", a.inboxHandler())
 	router.GET("/users/:nickname/outbox", a.outboxHandler())
+	router.GET("/users/:nickname/followers", a.followersCollectionHandler())
+	router.GET("/users/:nickname/following", a.followingCollectionHandler())
+	router.GET("/users/:nickname/workouts/:id", a.workoutObjectHandler())
 	router.POST("/inbox", a.sharedInboxHandler())
 }
 
@@ -246,15 +250,171 @@ func (a *App) outboxHandler() gin.HandlerFunc {
 			ctx.Status(http.StatusUnauthorized)
 			return
 		}
+		nickname := ctx.Param("nickname")
+		user, err := a.Users.FindByNickname(nickname)
+		if err != nil {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		items, err := a.Workouts.List(user.Nickname)
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+		ordered := make([]any, 0, len(items))
+		for i := range items {
+			objectID := fed.WorkoutObjectURL(user.Nickname, items[i].ID)
+			activityID := objectID + "/activity"
+			// Lightweight Create: full payload (incl. track) is on the object URL.
+			object := map[string]any{
+				"id":              objectID,
+				"type":            "Workout",
+				"name":            items[i].Name,
+				"content":         items[i].Description,
+				"sportType":       items[i].SportType,
+				"startDate":       items[i].StartDate.UTC().Format(time.RFC3339),
+				"device":          items[i].Device,
+				"durationSeconds": items[i].DurationSeconds,
+				"distance":        items[i].Distance,
+				"track":           items[i].Track,
+			}
+			if items[i].HasMapPreview {
+				object["hasMapPreview"] = true
+			}
+			if items[i].HasMedia {
+				object["hasMedia"] = true
+				object["mediaFiles"] = items[i].MediaFiles
+			}
+			ordered = append(ordered, map[string]any{
+				"id":     activityID,
+				"type":   "Create",
+				"actor":  actorURL(user.Nickname),
+				"object": object,
+				"to":     []string{"https://www.w3.org/ns/activitystreams#Public"},
+			})
+		}
 		ctx.Header("Vary", "Signature, Accept")
 		ctx.Header("Content-Type", "application/activity+json")
 		ctx.JSON(http.StatusOK, gin.H{
 			"@context":     "https://www.w3.org/ns/activitystreams",
-			"id":           actorURL(ctx.Param("nickname")) + "/outbox",
+			"id":           actorURL(nickname) + "/outbox",
 			"type":         "OrderedCollection",
-			"totalItems":   0,
-			"orderedItems": []any{},
+			"totalItems":   len(ordered),
+			"orderedItems": ordered,
 		})
+	}
+}
+
+func (a *App) followersCollectionHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := a.requireAuthorizedFetch(ctx); err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+		nickname := ctx.Param("nickname")
+		user, err := a.Users.FindByNickname(nickname)
+		if err != nil {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		followers, err := a.Social.ListFollowers(user.ID)
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+		ordered := make([]any, 0, len(followers))
+		for _, f := range followers {
+			if f.FollowerIsLocal {
+				ordered = append(ordered, actorURL(f.FollowerNickname))
+				continue
+			}
+			if uri := actorURIFromHandle(f.FollowerHandle); uri != "" {
+				ordered = append(ordered, uri)
+			}
+		}
+		ctx.Header("Vary", "Signature, Accept")
+		ctx.Header("Content-Type", "application/activity+json")
+		ctx.JSON(http.StatusOK, gin.H{
+			"@context":     "https://www.w3.org/ns/activitystreams",
+			"id":           actorURL(nickname) + "/followers",
+			"type":         "OrderedCollection",
+			"totalItems":   len(ordered),
+			"orderedItems": ordered,
+		})
+	}
+}
+
+func (a *App) followingCollectionHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := a.requireAuthorizedFetch(ctx); err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+		nickname := ctx.Param("nickname")
+		user, err := a.Users.FindByNickname(nickname)
+		if err != nil {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		follows, err := a.Social.ListFollowingForUserID(user.ID)
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+		ordered := make([]any, 0, len(follows))
+		for i := range follows {
+			if follows[i].TargetIsLocal {
+				ordered = append(ordered, actorURL(follows[i].TargetNickname))
+				continue
+			}
+			if uri := actorURIFromHandle(follows[i].TargetHandle); uri != "" {
+				ordered = append(ordered, uri)
+			}
+		}
+		ctx.Header("Vary", "Signature, Accept")
+		ctx.Header("Content-Type", "application/activity+json")
+		ctx.JSON(http.StatusOK, gin.H{
+			"@context":     "https://www.w3.org/ns/activitystreams",
+			"id":           actorURL(nickname) + "/following",
+			"type":         "OrderedCollection",
+			"totalItems":   len(ordered),
+			"orderedItems": ordered,
+		})
+	}
+}
+
+func actorURIFromHandle(handle string) string {
+	at := strings.LastIndex(handle, "@")
+	if at <= 0 || at >= len(handle)-1 {
+		return ""
+	}
+	return fmt.Sprintf("https://%s/users/%s", handle[at+1:], handle[:at])
+}
+
+func (a *App) workoutObjectHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := a.requireAuthorizedFetch(ctx); err != nil {
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+		nickname := ctx.Param("nickname")
+		workoutID := ctx.Param("id")
+		workout, err := a.Workouts.Get(nickname, workoutID)
+		if err != nil {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		var trackData []byte
+		if workout.Track != "" {
+			data, _, _, trackErr := a.Workouts.TrackFile(nickname, workoutID)
+			if trackErr == nil {
+				trackData = data
+			}
+		}
+		object := fed.BuildPublicWorkoutObject(nickname, workout, trackData, nil)
+		ctx.Header("Vary", "Signature, Accept")
+		ctx.Header("Content-Type", "application/activity+json")
+		ctx.JSON(http.StatusOK, object)
 	}
 }
 

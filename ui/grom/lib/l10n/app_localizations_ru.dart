@@ -843,10 +843,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'На этом сервере пока нет других пользователей';
 
   @override
-  String get noFollowingYet => 'Вы ни на кого не подписаны';
+  String get noFollowingYet => 'Подписок нет';
 
   @override
-  String get noFollowersYet => 'На вас пока никто не подписан';
+  String get noFollowersYet => 'Подписчиков нет';
 
   @override
   String get searchByNicknameOrHandle =>
@@ -865,6 +865,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Не удалось загрузить профиль';
+
+  @override
+  String get failedToLoadUserProfile =>
+      'Не удалось загрузить профиль пользователя';
+
+  @override
+  String get noWorkoutsFromUser => 'Тренировок пока нет';
 
   @override
   String get editProfile => 'Редактирование профиля';

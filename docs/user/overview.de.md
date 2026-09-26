@@ -16,6 +16,10 @@ Wenn der Betreiber Captcha aktiviert (`auth.captcha.enabled`), zeigen Anmeldung,
 
 Unter **Profile** / „Profil“ können Sie über das Overflow-Menü das Profil bearbeiten oder **Delete account** / „Konto löschen“ wählen. Vollständige Schritte, welche Daten entfernt werden und Föderationshinweise: [Grom-Konto löschen](delete-account.md).
 
+Tippen Sie auf einen anderen Sportler (Avatar oder Name auf einer Workout-Karte/-Detailseite, eine Zeile in der **Benutzersuche**, jemanden in Following/Followers oder einen Like-/Kommentar-Autor), um dessen Profil innerhalb der Hauptnavigation zu öffnen: das Seitenmenü bleibt sichtbar und **Profil** ist ausgewählt. Tippen auf sich selbst tut nichts. Im fremden Profil können Sie folgen oder entfolgen, Following-/Followers-Listen öffnen (und von dort weitere Profile) und Workouts wie im Home-Feed durchblättern. Ein Workout aus dieser Liste öffnet die Detailansicht in der Shell; Zurück schließt das Workout, führt dann durch verschachtelte Profile und zurück zum Ausgangsbereich (z. B. Home oder Benutzersuche). Die Menüauswahl **Profil** wechselt während der Ansicht eines fremden Profils zu Ihrem eigenen Profil.
+
+Angemeldete Nutzer können **lokale** Workouts eines anderen Nutzers im Profil sehen, ohne ihm zuvor zu folgen. Bei **föderierten** (Remote-Grom-)Sportlern lädt das Profil öffentliche Outbox-Workouts, wenn verfügbar; Karte, Track und Diagramme nutzen einen Live-Abruf. Likes und Kommentare zu Remote-Workouts erfordern weiterhin ein aktives Follow (Workout in Ihrem Federation-Inbox). Nicht-Grom-Fediverse-Konten können eine Profilkarte und Follow ohne Workout-Liste zeigen.
+
 Diese Seite ist eine kurze Tour der wichtigsten Bildschirme (Screenshots unten von Android). Admin-Setup (Installation, Config, TLS, Föderation) steht unter [Admin-Dokumentation](../README.md#administration). Für die HTTP-API siehe Swagger unter `/api/docs/` auf dem laufenden Server.
 
 ## Workouts
@@ -42,9 +46,9 @@ Verwalten Sie Fahrräder, Schuhe und anderes Gear. Einträge sind nach Kategorie
 
 ## Social und Föderation
 
-Folgen Sie anderen Nutzern derselben Instanz und browsen Sie einen gemeinsamen Feed. Unter **Benutzersuche** listet der Bildschirm alle anderen lokalen Benutzer des Servers (mit Icon-Schaltflächen Folgen/Entfolgen); die Suche nach Nickname oder Federations-Adresse bleibt verfügbar. Liken und kommentieren Sie Workouts von Personen, denen Sie folgen (lokal oder föderiert); Zähler erscheinen in Listen- und Detailansichten.
+Folgen Sie anderen Nutzern derselben Instanz und browsen Sie einen gemeinsamen Feed. Unter **Benutzersuche** listet der Bildschirm alle anderen lokalen Benutzer des Servers (mit Icon-Schaltflächen Folgen/Entfolgen); die Suche nach Nickname oder Federations-Adresse bleibt verfügbar. Tippen Sie eine Benutzerzeile, um das Profil zu öffnen. Liken und kommentieren Sie lokale Workouts von jedem angemeldeten Konto; bei föderierten Workouts funktionieren Likes und Kommentare nach dem Folgen (Zähler erscheinen in Listen- und Detailansichten).
 
-Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern auf anderen Grom-Instanzen folgen (HTTPS auf dem Server erforderlich). Likes auf Remote-Workouts werden als ActivityPub-`Like` gesendet; Entfernen eines Likes sendet `Undo`. Kommentare zu Remote-Workouts gehen als `Create` Note mit `inReplyTo`; Löschen eines Kommentars sendet `Delete`. Eingehende Likes und Kommentare von anderen Instanzen aktualisieren das lokale Workout genauso. Kontolöschung und föderiertes Actor-`Delete` sind in [Grom-Konto löschen](delete-account.md) beschrieben.
+Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern auf anderen Grom-Instanzen folgen (HTTPS auf dem Server erforderlich). Remote-Grom-Profile können öffentliche Outbox-Workouts zeigen; Likes auf Remote-Workouts werden als ActivityPub-`Like` gesendet; Entfernen eines Likes sendet `Undo`. Kommentare zu Remote-Workouts gehen als `Create` Note mit `inReplyTo`; Löschen eines Kommentars sendet `Delete`. Eingehende Likes und Kommentare von anderen Instanzen aktualisieren das lokale Workout genauso. Kontolöschung und föderiertes Actor-`Delete` sind in [Grom-Konto löschen](delete-account.md) beschrieben.
 
 ## Strava-Import
 

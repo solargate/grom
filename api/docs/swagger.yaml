@@ -483,6 +483,29 @@ definitions:
         example: Alexander Cheryomukhin
         type: string
     type: object
+  v1.UserPublicProfileResponse:
+    properties:
+      avatar_url:
+        example: /api/v1/users/bob/avatar
+        type: string
+      handle:
+        example: bob@grom.example
+        type: string
+      has_avatar:
+        example: true
+        type: boolean
+      is_local:
+        example: true
+        type: boolean
+      name:
+        example: Bob
+        type: string
+      nickname:
+        example: bob
+        type: string
+      viewer_follow:
+        $ref: '#/definitions/v1.ViewerFollowResponse'
+    type: object
   v1.UserResponse:
     properties:
       avatar_url:
@@ -523,6 +546,15 @@ definitions:
         type: string
       nickname:
         example: bob
+        type: string
+    type: object
+  v1.ViewerFollowResponse:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: active
         type: string
     type: object
   v1.WorkoutAuthorResponse:
@@ -763,6 +795,9 @@ definitions:
         type: array
       name:
         example: Morning run
+        type: string
+      object_id:
+        example: https://grom.example/users/bob/workouts/38472901
         type: string
       owner:
         example: solarwind
@@ -1646,13 +1681,47 @@ paths:
       summary: List local users
       tags:
       - users
-  /users/{nickname}/avatar:
+  /users/{handle}:
+    get:
+      description: Return public identity for a local or remote user by nickname or
+        handle. Includes whether the viewer follows them.
+      parameters:
+      - description: Nickname or handle (URL-encoded)
+        in: path
+        name: handle
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.UserPublicProfileResponse'
+        "400":
+          description: Invalid handle
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get public user profile
+      tags:
+      - users
+  /users/{handle}/avatar:
     get:
       description: Return avatar image for a local user
       parameters:
-      - description: User nickname
+      - description: User nickname or handle
         in: path
-        name: nickname
+        name: handle
         required: true
         type: string
       produces:
@@ -1673,6 +1742,122 @@ paths:
       security:
       - BearerAuth: []
       summary: Get user avatar
+      tags:
+      - users
+  /users/{handle}/followers:
+    get:
+      description: Return followers of the given local user. Remote targets use a
+        best-effort ActivityPub followers collection when federation is enabled.
+      parameters:
+      - description: Nickname or handle (URL-encoded)
+        in: path
+        name: handle
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.FollowerResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List a user's followers
+      tags:
+      - users
+  /users/{handle}/following:
+    get:
+      description: Return users followed by the given local user. Remote targets return
+        an empty list or a best-effort ActivityPub following collection when federation
+        is enabled.
+      parameters:
+      - description: Nickname or handle (URL-encoded)
+        in: path
+        name: handle
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.FollowResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List a user's following
+      tags:
+      - users
+  /users/{handle}/workouts:
+    get:
+      description: Return a cursor page of workouts for the given user. Local users
+        are visible to any authenticated JWT. Remote Grom users are loaded from their
+        public outbox (no inbox write). Non-Grom remotes yield an empty page.
+      parameters:
+      - description: Nickname or handle (URL-encoded)
+        in: path
+        name: handle
+        required: true
+        type: string
+      - description: page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: opaque cursor from previous page next_cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List a user's workouts
       tags:
       - users
   /users/search:

@@ -860,10 +860,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Auf diesem Server gibt es noch keine anderen Benutzer';
 
   @override
-  String get noFollowingYet => 'Sie folgen noch niemandem';
+  String get noFollowingYet => 'Nichts abonniert';
 
   @override
-  String get noFollowersYet => 'Ihnen folgt noch niemand';
+  String get noFollowersYet => 'Keine Follower';
 
   @override
   String get searchByNicknameOrHandle =>
@@ -882,6 +882,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get failedToLoadProfile => 'Profil konnte nicht geladen werden';
+
+  @override
+  String get failedToLoadUserProfile =>
+      'Benutzerprofil konnte nicht geladen werden';
+
+  @override
+  String get noWorkoutsFromUser => 'Noch keine Workouts';
 
   @override
   String get editProfile => 'Profil bearbeiten';

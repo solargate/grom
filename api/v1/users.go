@@ -46,13 +46,18 @@ func (a *App) listUsers(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
+	viewerNickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
 
 	results, err := a.Social.ListLocalUsers(userID)
 	if err != nil {
 		handleSocialError(ctx, err)
 		return
 	}
-	a.writeUserSearchResults(ctx, results)
+	a.writeUserSearchResults(ctx, viewerNickname, results)
 }
 
 // searchUsers godoc
@@ -73,6 +78,11 @@ func (a *App) searchUsers(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid token"})
 		return
 	}
+	viewerNickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
 
 	query := ctx.Query("q")
 	results, err := a.Social.SearchLocal(query, userID)
@@ -80,10 +90,10 @@ func (a *App) searchUsers(ctx *gin.Context) {
 		handleSocialError(ctx, err)
 		return
 	}
-	a.writeUserSearchResults(ctx, results)
+	a.writeUserSearchResults(ctx, viewerNickname, results)
 }
 
-func (a *App) writeUserSearchResults(ctx *gin.Context, results []social.UserSearchResult) {
+func (a *App) writeUserSearchResults(ctx *gin.Context, viewerNickname string, results []social.UserSearchResult) {
 	if results == nil {
 		ctx.JSON(http.StatusOK, []UserSearchResult{})
 		return
@@ -92,7 +102,15 @@ func (a *App) writeUserSearchResults(ctx *gin.Context, results []social.UserSear
 	for i := range response {
 		if response[i].IsLocal {
 			response[i].HasAvatar, response[i].AvatarURL = a.localAvatarFieldsForUser(response[i].Nickname)
+			continue
 		}
+		response[i].HasAvatar, response[i].AvatarURL = a.remoteUserAvatarFields(
+			viewerNickname,
+			response[i].Handle,
+			response[i].Nickname,
+			response[i].Name,
+			response[i].AvatarURL,
+		)
 	}
 	ctx.JSON(http.StatusOK, response)
 }
