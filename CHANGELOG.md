@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Other profiles show Follow/Unfollow, follow counts, and their workout cards
 - Local workouts are visible to signed-in users without following first
 - Fix: searching a remote user with an avatar no longer blanks the web UI
+- Fix: remote Grom profiles show workout map previews and author avatars
 
 ### Added
 
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Server:** Remote Grom profile workout cards show map previews and author avatars (honor lightweight outbox `hasMapPreview`; cache same-origin author avatar on workout list)
 - **UI/Server:** Federated user search no longer blanks the Flutter web UI when the remote user has an avatar (same-origin cached avatar URL; skip unsafe cross-origin NetworkImage on web)
 
 ## [0.14.0] - 2026-09-22

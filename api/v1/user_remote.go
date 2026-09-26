@@ -61,7 +61,7 @@ func (a *App) fetchRemoteFollowers(parsed social.ParsedHandle) ([]FollowerRespon
 	return out, nil
 }
 
-func (a *App) listRemoteUserWorkouts(_ string, parsed social.ParsedHandle, cursor *workouts.Cursor, limit int) (WorkoutListResponse, error) {
+func (a *App) listRemoteUserWorkouts(viewerNickname string, parsed social.ParsedHandle, cursor *workouts.Cursor, limit int) (WorkoutListResponse, error) {
 	if !config.Cfg.Federation.Enabled {
 		return WorkoutListResponse{}, social.ErrRemoteNotReady
 	}
@@ -97,6 +97,22 @@ func (a *App) listRemoteUserWorkouts(_ string, parsed social.ParsedHandle, curso
 		filtered = filtered[:limit]
 	}
 
+	authorName := ""
+	remoteAvatarURL := ""
+	if a.federationDelivery != nil {
+		if remote, resolveErr := a.federationDelivery.ResolveRemote(parsed); resolveErr == nil {
+			authorName = remote.Name
+			remoteAvatarURL = remote.AvatarURL
+		}
+	}
+	hasAvatar, avatarURL := a.remoteUserAvatarFields(
+		viewerNickname,
+		parsed.Handle,
+		parsed.Nickname,
+		authorName,
+		remoteAvatarURL,
+	)
+
 	items := make([]WorkoutResponse, 0, len(filtered))
 	for _, ow := range filtered {
 		w := *ow.Workout
@@ -118,9 +134,11 @@ func (a *App) listRemoteUserWorkouts(_ string, parsed social.ParsedHandle, curso
 			Owner:   parsed.Nickname,
 			Author: workouts.FeedAuthor{
 				Nickname:  parsed.Nickname,
+				Name:      authorName,
 				Handle:    parsed.Handle,
 				IsLocal:   false,
-				HasAvatar: false,
+				HasAvatar: hasAvatar,
+				AvatarURL: avatarURL,
 			},
 		}
 		resp := toFeedWorkoutResponse(&feed)

@@ -52,6 +52,8 @@ func TestFetchOutboxWorkouts(t *testing.T) {
 						"startDate":       time.Date(2026, 1, 2, 3, 0, 0, 0, time.UTC).Format(time.RFC3339),
 						"durationSeconds": 3600,
 						"distance":        10000.0,
+						"track":           "track.gpx",
+						"hasMapPreview":   true,
 					},
 				},
 				map[string]any{
@@ -81,6 +83,9 @@ func TestFetchOutboxWorkouts(t *testing.T) {
 	}
 	if items[0].Workout.Name != "Trail" || items[0].ObjectID != objectURL {
 		t.Fatalf("unexpected item: %#v", items[0])
+	}
+	if !items[0].Workout.HasMapPreview {
+		t.Fatal("expected HasMapPreview from lightweight outbox object")
 	}
 	if !strings.HasSuffix(items[0].Workout.ID, workoutID) && items[0].Workout.ID != workoutID {
 		t.Fatalf("unexpected workout id: %q", items[0].Workout.ID)

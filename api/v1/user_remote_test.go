@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -144,6 +145,138 @@ func TestRemoteUserProfileWorkoutsViaOutbox(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/users/"+escaped+"/followers", nil, aliceToken)
 	expectStatus(t, w, http.StatusOK)
+}
+
+func TestRemoteUserWorkoutsMapPreviewAndAvatarFromOutbox(t *testing.T) {
+	ta := setupFederationTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+
+	workoutID := "mapav123"
+	objectURL := ""
+	pngData := readTestdata(t, "images/avatar-square.png")
+	gpx := readTestdata(t, "tracks/1-sample.gpx")
+	var remote *httptest.Server
+	remote = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		base := "https://" + r.Host
+		switch {
+		case strings.Contains(r.URL.Path, "/.well-known/webfinger"):
+			w.Header().Set("Content-Type", "application/jrd+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"subject": r.URL.Query().Get("resource"),
+				"links": []map[string]any{{
+					"rel":  "self",
+					"type": "application/activity+json",
+					"href": base + "/users/bob",
+				}},
+			})
+		case r.URL.Path == "/users/bob":
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":          "https://www.w3.org/ns/activitystreams",
+				"id":                base + "/users/bob",
+				"type":              "Person",
+				"preferredUsername": "bob",
+				"name":              "Bob Remote",
+				"inbox":             base + "/users/bob/inbox",
+				"outbox":            base + "/users/bob/outbox",
+				"icon": map[string]any{
+					"type": "Image",
+					"url":  base + "/users/bob/avatar",
+				},
+			})
+		case r.URL.Path == "/users/bob/avatar":
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write(pngData)
+		case r.URL.Path == "/users/bob/outbox":
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":   "https://www.w3.org/ns/activitystreams",
+				"id":         base + "/users/bob/outbox",
+				"type":       "OrderedCollection",
+				"totalItems": 1,
+				"orderedItems": []any{
+					map[string]any{
+						"id":    objectURL + "/activity",
+						"type":  "Create",
+						"actor": base + "/users/bob",
+						"object": map[string]any{
+							"id":              objectURL,
+							"type":            "Workout",
+							"name":            "Remote mapped run",
+							"sportType":       "Run",
+							"startDate":       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC).Format(time.RFC3339),
+							"durationSeconds": 1800,
+							"distance":        5000.0,
+							"track":           "track.gpx",
+							"hasMapPreview":   true,
+						},
+					},
+				},
+			})
+		case r.URL.Path == "/users/bob/workouts/"+workoutID:
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":        "https://www.w3.org/ns/activitystreams",
+				"id":              objectURL,
+				"type":            "Workout",
+				"name":            "Remote mapped run",
+				"sportType":       "Run",
+				"startDate":       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC).Format(time.RFC3339),
+				"durationSeconds": 1800,
+				"distance":        5000.0,
+				"track":           "track.gpx",
+				"trackData":       base64.StdEncoding.EncodeToString(gpx),
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer remote.Close()
+
+	host := remote.Listener.Addr().String()
+	objectURL = "https://" + host + "/users/bob/workouts/" + workoutID
+	ta.app.SetFederationHTTPClient(remote.Client())
+
+	handle := "bob@" + host
+	escaped := url.PathEscape(handle)
+
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/users/"+escaped+"/workouts", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	page := decodeObject(t, w)
+	items, _ := page["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("expected 1 remote workout, got %#v", page)
+	}
+	item, _ := items[0].(map[string]any)
+	if item["has_map_preview"] != true {
+		t.Fatalf("expected has_map_preview from outbox flag: %#v", item)
+	}
+	gotOID, _ := item["object_id"].(string)
+	if gotOID != objectURL {
+		t.Fatalf("object_id = %q, want %q", gotOID, objectURL)
+	}
+	author, _ := item["author"].(map[string]any)
+	if author["has_avatar"] != true {
+		t.Fatalf("expected author.has_avatar: %#v", author)
+	}
+	avatarURL, _ := author["avatar_url"].(string)
+	if !strings.HasPrefix(avatarURL, "/api/v1/federation/authors/") {
+		t.Fatalf("author.avatar_url = %q, want same-origin federation path", avatarURL)
+	}
+	if author["name"] != "Bob Remote" {
+		t.Fatalf("author.name = %#v", author["name"])
+	}
+
+	previewPath := "/api/v1/workouts/" + workoutID + "/map-preview?owner=bob&object_id=" + url.QueryEscape(objectURL)
+	w = ta.doJSON(t, http.MethodGet, previewPath, nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	if ct := w.Header().Get("Content-Type"); !strings.Contains(ct, "image/webp") {
+		t.Fatalf("map preview content-type = %q", ct)
+	}
+	if len(w.Body.Bytes()) == 0 {
+		t.Fatal("expected non-empty map preview body")
+	}
 }
 
 func TestRemoteUserSearchAvatarIsSameOrigin(t *testing.T) {

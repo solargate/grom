@@ -404,6 +404,15 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 		return nil, nil, nil, nil
 	}
 
+	// Lightweight outbox Creates advertise preview/media without embedding bytes.
+	workout.HasMapPreview = boolValue(object, "hasMapPreview")
+	if names := stringSliceValue(object, "mediaFiles"); len(names) > 0 {
+		workout.MediaFiles = names
+		workout.HasMedia = true
+	} else if boolValue(object, "hasMedia") {
+		workout.HasMedia = true
+	}
+
 	var trackData []byte
 	if workout.Track != "" {
 		if encoded := stringValue(object, "trackData"); encoded != "" {
@@ -421,6 +430,14 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 	mediaFiles, err := decodeMediaItems(object)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+	if len(mediaFiles) > 0 {
+		names := make([]string, 0, len(mediaFiles))
+		for _, m := range mediaFiles {
+			names = append(names, m.Filename)
+		}
+		workout.MediaFiles = names
+		workout.HasMedia = true
 	}
 	return &workout, trackData, mediaFiles, nil
 }
@@ -873,6 +890,31 @@ func decodeMediaItems(object map[string]any) ([]workouts.MediaFileInput, error) 
 func stringValue(m map[string]any, key string) string {
 	v, _ := m[key].(string)
 	return v
+}
+
+func boolValue(m map[string]any, key string) bool {
+	v, ok := m[key].(bool)
+	return ok && v
+}
+
+func stringSliceValue(m map[string]any, key string) []string {
+	raw, ok := m[key].([]any)
+	if !ok || len(raw) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(raw))
+	for _, item := range raw {
+		s, ok := item.(string)
+		if !ok {
+			continue
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 func intValue(m map[string]any, key string) int {
