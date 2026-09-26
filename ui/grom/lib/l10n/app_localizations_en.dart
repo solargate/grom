@@ -822,6 +822,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get followers => 'Followers';
 
   @override
+  String followersCount(int count) {
+    return 'Followers: $count';
+  }
+
+  @override
+  String followingCount(int count) {
+    return 'Following: $count';
+  }
+
+  @override
   String get followPending => 'Pending';
 
   @override

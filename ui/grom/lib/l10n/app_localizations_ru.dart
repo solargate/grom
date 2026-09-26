@@ -823,6 +823,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get followers => 'Подписчики';
 
   @override
+  String followersCount(int count) {
+    return 'Подписчики: $count';
+  }
+
+  @override
+  String followingCount(int count) {
+    return 'Подписки: $count';
+  }
+
+  @override
   String get followPending => 'Ожидание';
 
   @override

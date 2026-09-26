@@ -1624,6 +1624,18 @@ abstract class AppLocalizations {
   /// **'Followers'**
   String get followers;
 
+  /// No description provided for @followersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers: {count}'**
+  String followersCount(int count);
+
+  /// No description provided for @followingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Following: {count}'**
+  String followingCount(int count);
+
   /// No description provided for @followPending.
   ///
   /// In en, this message translates to:
