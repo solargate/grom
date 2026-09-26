@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/workout.dart';
-import '../pages/user_profile_page.dart';
-import '../pages/workout_detail_page.dart';
+import 'grom_shell_scope.dart';
 
 bool isSelfProfile({
   required String handle,
@@ -15,6 +14,7 @@ bool isSelfProfile({
   return nickname == selfNickname || handle == selfNickname;
 }
 
+/// Opens another user's profile inside [GromShell] (side nav stays).
 void openUserProfile(
   BuildContext context, {
   required String handle,
@@ -29,17 +29,14 @@ void openUserProfile(
   )) {
     return;
   }
-  Navigator.of(context, rootNavigator: true).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => UserProfilePage(
-        handle: handle,
-        viewerNickname: selfNickname,
-        federationEnabled: federationEnabled,
-      ),
-    ),
-  );
+  final scope = GromShellScope.maybeOf(context);
+  if (scope == null) {
+    return;
+  }
+  scope.openUserProfile(handle: handle, nickname: nickname);
 }
 
+/// Opens a workout detail inside [GromShell] (used from other-user profiles).
 void openWorkoutFromProfile(
   BuildContext context, {
   required Workout workout,
@@ -47,17 +44,9 @@ void openWorkoutFromProfile(
   bool federationEnabled = false,
   String? selfNickname,
 }) {
-  Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => Scaffold(
-        appBar: AppBar(),
-        body: WorkoutDetailView(
-          workout: workout,
-          authToken: authToken,
-          federationEnabled: federationEnabled,
-          selfNickname: selfNickname,
-        ),
-      ),
-    ),
-  );
+  final scope = GromShellScope.maybeOf(context);
+  if (scope == null) {
+    return;
+  }
+  scope.openWorkout(workout);
 }

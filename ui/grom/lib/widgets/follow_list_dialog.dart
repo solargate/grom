@@ -13,19 +13,20 @@ Future<void> showFollowersDialog(
   bool federationEnabled = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  final hostContext = context;
   return showFollowListDialog(
     context,
     title: l10n.followers,
     emptyMessage: l10n.noFollowersYet,
     itemCount: followers.length,
-    itemBuilder: (context, index) {
+    itemBuilder: (dialogContext, index) {
       final follower = followers[index];
-      final theme = Theme.of(context);
+      final theme = Theme.of(dialogContext);
       return ListTile(
         onTap: () {
-          Navigator.of(context).pop();
+          Navigator.of(dialogContext).pop();
           openUserProfile(
-            context,
+            hostContext,
             handle: follower.followerHandle,
             nickname: follower.followerNickname,
             selfNickname: selfNickname,
@@ -61,19 +62,20 @@ Future<void> showFollowingDialog(
   bool federationEnabled = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  final hostContext = context;
   return showFollowListDialog(
     context,
     title: l10n.following,
     emptyMessage: l10n.noFollowingYet,
     itemCount: following.length,
-    itemBuilder: (context, index) {
+    itemBuilder: (dialogContext, index) {
       final follow = following[index];
-      final theme = Theme.of(context);
+      final theme = Theme.of(dialogContext);
       return ListTile(
         onTap: () {
-          Navigator.of(context).pop();
+          Navigator.of(dialogContext).pop();
           openUserProfile(
-            context,
+            hostContext,
             handle: follow.targetHandle,
             nickname: follow.targetNickname,
             selfNickname: selfNickname,

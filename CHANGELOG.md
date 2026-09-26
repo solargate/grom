@@ -12,23 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Google Play
 
 - Open another athlete’s profile from the feed, search, likes, comments, and follow lists
+- Other profiles stay in the main app navigation with the side menu
 - Other profiles show Follow/Unfollow, follow counts, and their workout cards
 - Local workouts are visible to signed-in users without following first
 
 ### Added
 
-- **UI:** Tap another user (feed author, search, follow lists, likes, comments) to open their profile; Back returns through the navigation stack; nested profiles allowed
+- **UI:** Tap another user (feed author, search, follow lists, likes, comments) to open their profile inside the main shell (side menu stays; Profile selected); Back returns through nested profiles then to the previous section; workouts from other profiles open in-shell too
 - **UI:** Other-user profile shows Follow/Unfollow on the identity card, Following/Followers counts, and a paginated workout list (own Profile tab unchanged — no workout list)
 - **Server:** `GET /api/v1/users/{handle}` public profile (with `viewer_follow`); `…/following`, `…/followers`, `…/workouts` for local and remote (Grom) users
 - **Server:** Local users’ workouts readable by any JWT without a follow (PAT still own-only)
 - **Server:** ActivityPub outbox lists public Create workout activities; GET followers/following collections; GET `/users/{nick}/workouts/{id}` workout objects for live remote fetch
 - **Server:** Remote Grom profile workouts from outbox (`object_id`); map/track/charts via live object fetch without inbox write; likes/comments on remote still require Follow
-- **Docs:** User overview covers viewing other profiles and public local workouts
+- **Docs:** User overview covers viewing other profiles inside the shell (side menu, Back stack) and public local workouts
 
 ### Changed
 
 - **UI:** Profile replaces inline follower/following lists with compact count cards (Following left, Followers right); tap opens a dialog or sheet with the list (following count is active only; pending still appear in the list)
 - **UI:** User search list rows align avatar and Follow with the search field edges for more nickname/handle space
+- **UI:** Other-user profiles and their workouts no longer open as a full-screen route over the shell
 
 ## [0.14.0] - 2026-09-22
 

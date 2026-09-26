@@ -5,7 +5,8 @@ import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/social.dart';
 import '../models/user_public_profile.dart';
-import '../navigation/open_user_profile.dart';
+import '../models/workout.dart';
+import '../pages/workout_detail_page.dart';
 import '../widgets/follow_list_dialog.dart';
 import '../widgets/user_profile_view.dart';
 import '../widgets/workout_feed_list.dart';
@@ -17,12 +18,25 @@ class UserProfilePage extends StatefulWidget {
     this.viewerNickname,
     this.federationEnabled = false,
     this.api,
+    this.viewingWorkout,
+    this.isMapExpanded = false,
+    this.onViewingWorkoutChanged,
+    this.onMapExpandedChanged,
+    this.photoViewerIndex,
+    this.onPhotoViewerIndexChanged,
   });
 
   final String handle;
   final String? viewerNickname;
   final bool federationEnabled;
   final ApiRequest? api;
+
+  final Workout? viewingWorkout;
+  final bool isMapExpanded;
+  final ValueChanged<Workout?>? onViewingWorkoutChanged;
+  final ValueChanged<bool>? onMapExpandedChanged;
+  final int? photoViewerIndex;
+  final ValueChanged<int?>? onPhotoViewerIndexChanged;
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -50,6 +64,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant UserProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.handle != oldWidget.handle) {
+      _profile = null;
+      _following = [];
+      _followers = [];
+      _load();
+    }
   }
 
   @override
@@ -177,16 +202,41 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
+  void _openWorkout(Workout workout) {
+    widget.onViewingWorkoutChanged?.call(workout);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final profile = _profile;
+    final viewingWorkout = widget.viewingWorkout;
+    final showWorkoutDetail = viewingWorkout != null && _authToken != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(profile?.nickname ?? widget.handle),
-      ),
-      body: _buildBody(l10n),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Offstage(
+            offstage: showWorkoutDetail,
+            child: TickerMode(
+              enabled: !showWorkoutDetail,
+              child: _buildBody(l10n),
+            ),
+          ),
+        ),
+        if (showWorkoutDetail)
+          Positioned.fill(
+            child: WorkoutDetailView(
+              workout: viewingWorkout,
+              authToken: _authToken!,
+              federationEnabled: widget.federationEnabled,
+              selfNickname: widget.viewerNickname,
+              isMapExpanded: widget.isMapExpanded,
+              onMapExpandedChanged: widget.onMapExpandedChanged,
+              photoViewerIndex: widget.photoViewerIndex,
+              onPhotoViewerIndexChanged: widget.onPhotoViewerIndexChanged,
+            ),
+          ),
+      ],
     );
   }
 
@@ -268,31 +318,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
             scrollController: _scrollController,
             refreshToken: 0,
             federationEnabled: widget.federationEnabled,
-            onWorkoutTap: (workout) {
-              final token = _authToken;
-              if (token == null) {
-                return;
-              }
-              openWorkoutFromProfile(
-                context,
-                workout: workout,
-                authToken: token,
-                federationEnabled: widget.federationEnabled,
-                selfNickname: widget.viewerNickname,
-              );
-            },
+            onWorkoutTap: _openWorkout,
             onPhotoTap: (workout, photoIndex) {
-              final token = _authToken;
-              if (token == null) {
-                return;
-              }
-              openWorkoutFromProfile(
-                context,
-                workout: workout,
-                authToken: token,
-                federationEnabled: widget.federationEnabled,
-                selfNickname: widget.viewerNickname,
-              );
+              _openWorkout(workout);
             },
             onAuthTokenLoaded: (token) {
               if (_authToken != token) {

@@ -118,6 +118,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
 
   Future<void> _showLikes() async {
     final l10n = AppLocalizations.of(context)!;
+    final hostContext = context;
     try {
       final likes = await _api.getWorkoutLikes(
         token: widget.authToken,
@@ -132,7 +133,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (context) {
+        builder: (sheetContext) {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -142,7 +143,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                 children: [
                   Text(
                     l10n.workoutLikesTitle(likes.count.toString()),
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   if (users.isEmpty)
@@ -156,14 +157,14 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                         shrinkWrap: true,
                         itemCount: users.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
+                        itemBuilder: (itemContext, index) {
                           final user = users[index];
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             onTap: () {
-                              Navigator.of(context).pop();
+                              Navigator.of(itemContext).pop();
                               openUserProfile(
-                                context,
+                                hostContext,
                                 handle: user.handle,
                                 nickname: user.nickname,
                                 selfNickname: widget.selfNickname,
@@ -209,6 +210,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
 
   Future<void> _showComments() async {
     final l10n = AppLocalizations.of(context)!;
+    final hostContext = context;
     try {
       final initial = await _api.getWorkoutComments(
         token: widget.authToken,
@@ -231,6 +233,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
             canComment: _canComment,
             selfNickname: widget.selfNickname,
             federationEnabled: widget.federationEnabled,
+            hostContext: hostContext,
             initial: initial,
             onCountChanged: (count) {
               if (mounted) {
@@ -366,6 +369,7 @@ class _CommentsSheet extends StatefulWidget {
     required this.initial,
     required this.onCountChanged,
     required this.canComment,
+    required this.hostContext,
     this.selfNickname,
     this.federationEnabled = false,
   });
@@ -377,6 +381,7 @@ class _CommentsSheet extends StatefulWidget {
   final WorkoutCommentsResponse initial;
   final ValueChanged<int> onCountChanged;
   final bool canComment;
+  final BuildContext hostContext;
   final String? selfNickname;
   final bool federationEnabled;
 
@@ -536,7 +541,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                         onTap: () {
                           Navigator.of(context).pop();
                           openUserProfile(
-                            context,
+                            widget.hostContext,
                             handle: user.handle,
                             nickname: user.nickname,
                             selfNickname: widget.selfNickname,
