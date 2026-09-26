@@ -4,6 +4,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/social.dart';
+import '../widgets/follow_list_dialog.dart';
 import '../widgets/profile_form_dialog.dart';
 import '../widgets/user_avatar.dart';
 
@@ -11,16 +12,20 @@ class ProfilePage extends StatefulWidget {
   const ProfilePage({
     super.key,
     required this.nickname,
+    this.api,
   });
 
   final String nickname;
+
+  /// Optional API client override (tests).
+  final ApiRequest? api;
 
   @override
   State<ProfilePage> createState() => ProfilePageState();
 }
 
 class ProfilePageState extends State<ProfilePage> {
-  final ApiRequest _api = ApiRequest();
+  late final ApiRequest _api = widget.api ?? ApiRequest();
 
   String _name = '';
   bool _hasAvatar = false;
@@ -30,6 +35,9 @@ class ProfilePageState extends State<ProfilePage> {
   List<FollowerInfo> _followers = [];
   bool _isLoading = true;
   String? _error;
+
+  int get _activeFollowingCount =>
+      _following.where((f) => f.status == 'active').length;
 
   @override
   void initState() {
@@ -58,7 +66,9 @@ class ProfilePageState extends State<ProfilePage> {
         _name = me.name;
         _hasAvatar = me.hasAvatar;
         _avatarUrl = me.avatarUrl;
-        _following = following.where((f) => f.status == 'active' || f.status == 'pending').toList();
+        _following = following
+            .where((f) => f.status == 'active' || f.status == 'pending')
+            .toList();
         _followers = followers;
         _isLoading = false;
       });
@@ -99,6 +109,22 @@ class ProfilePageState extends State<ProfilePage> {
     if (result.saved) {
       await _load();
     }
+  }
+
+  Future<void> _openFollowers() {
+    return showFollowersDialog(
+      context,
+      followers: _followers,
+      authToken: _authToken,
+    );
+  }
+
+  Future<void> _openFollowing() {
+    return showFollowingDialog(
+      context,
+      following: _following,
+      authToken: _authToken,
+    );
   }
 
   @override
@@ -179,87 +205,53 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.followers,
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          if (_followers.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Text(
-                l10n.noFollowersYet,
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            )
-          else
-            ..._followers.map(
-              (follower) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: UserAvatar(
-                    nickname: follower.followerNickname,
-                    hasAvatar: follower.followerHasAvatar,
-                    avatarUrl: follower.followerAvatarUrl,
-                    authToken: _authToken,
-                    radius: 20,
-                  ),
-                  title: Text(follower.followerNickname),
-                  subtitle: Text(
-                    follower.followerName.isNotEmpty
-                        ? '${follower.followerName} · ${follower.followerHandle}'
-                        : follower.followerHandle,
-                  ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _CountCard(
+                  label: l10n.followersCount(_followers.length),
+                  onTap: _openFollowers,
                 ),
               ),
-            ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.following,
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          if (_following.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Text(
-                l10n.noFollowingYet,
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            )
-          else
-            ..._following.map(
-              (follow) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: UserAvatar(
-                    nickname: follow.targetNickname,
-                    hasAvatar: follow.targetHasAvatar,
-                    avatarUrl: follow.targetAvatarUrl,
-                    authToken: _authToken,
-                    radius: 20,
-                  ),
-                  title: Text(follow.targetNickname),
-                  subtitle: Text(
-                    follow.targetName.isNotEmpty
-                        ? '${follow.targetName} · ${follow.targetHandle}'
-                        : follow.targetHandle,
-                  ),
-                  trailing: follow.status == 'pending'
-                      ? Text(
-                          l10n.followPending,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      : null,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _CountCard(
+                  label: l10n.followingCount(_activeFollowingCount),
+                  onTap: _openFollowing,
                 ),
               ),
-            ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _CountCard extends StatelessWidget {
+  const _CountCard({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
       ),
     );
   }

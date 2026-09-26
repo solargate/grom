@@ -373,6 +373,22 @@
   "unfollow": "Unfollow",
   "following": "Following",
   "followers": "Followers",
+  "followersCount": "Followers: {count}",
+  "@followersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "followingCount": "Following: {count}",
+  "@followingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "followPending": "Pending",
   "noUsersFound": "No users found",
   "noOtherUsersOnServer": "No other users on this server yet",

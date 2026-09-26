@@ -373,6 +373,22 @@
   "unfollow": "Отписаться",
   "following": "Подписки",
   "followers": "Подписчики",
+  "followersCount": "Подписчики: {count}",
+  "@followersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "followingCount": "Подписки: {count}",
+  "@followingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "followPending": "Ожидание",
   "noUsersFound": "Пользователи не найдены",
   "noOtherUsersOnServer": "На этом сервере пока нет других пользователей",
