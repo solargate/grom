@@ -40,4 +40,47 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byIcon(Icons.person), findsOneWidget);
   });
+
+  group('isCrossOriginAvatarUrl', () {
+    test('relative and empty are same-origin', () {
+      expect(isCrossOriginAvatarUrl(''), isFalse);
+      expect(
+        isCrossOriginAvatarUrl(
+          '/api/v1/federation/authors/bob_remote/avatar',
+          localBase: 'https://grom.example',
+        ),
+        isFalse,
+      );
+    });
+
+    test('absolute local base is same-origin', () {
+      expect(
+        isCrossOriginAvatarUrl(
+          'https://grom.example/api/v1/users/bob/avatar',
+          localBase: 'https://grom.example',
+        ),
+        isFalse,
+      );
+    });
+
+    test('absolute other host is cross-origin', () {
+      expect(
+        isCrossOriginAvatarUrl(
+          'https://other.example/users/bob/avatar',
+          localBase: 'https://grom.example',
+        ),
+        isTrue,
+      );
+    });
+
+    test('absolute URL without known base is treated as cross-origin', () {
+      expect(
+        isCrossOriginAvatarUrl(
+          'https://other.example/users/bob/avatar',
+          localBase: null,
+        ),
+        isTrue,
+      );
+    });
+  });
 }

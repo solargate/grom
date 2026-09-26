@@ -95,19 +95,36 @@ class _UserProfilePageState extends State<UserProfilePage> {
         throw ApiException('Not authenticated');
       }
 
-      final results = await Future.wait([
-        _api.getUserProfile(token: token, handle: widget.handle),
-        _api.listUserFollowing(token: token, handle: widget.handle),
-        _api.listUserFollowers(token: token, handle: widget.handle),
-      ]);
+      final profile = await _api.getUserProfile(
+        token: token,
+        handle: widget.handle,
+      );
+
+      // Following/followers for remote users are best-effort (AP collections).
+      // Do not fail the whole profile when those endpoints error.
+      var following = <FollowInfo>[];
+      var followers = <FollowerInfo>[];
+      try {
+        following = await _api.listUserFollowing(
+          token: token,
+          handle: widget.handle,
+        );
+      } catch (_) {}
+      try {
+        followers = await _api.listUserFollowers(
+          token: token,
+          handle: widget.handle,
+        );
+      } catch (_) {}
+
       if (!mounted) return;
       setState(() {
         _authToken = token;
-        _profile = results[0] as UserPublicProfile;
-        _following = (results[1] as List<FollowInfo>)
+        _profile = profile;
+        _following = following
             .where((f) => f.status == 'active' || f.status == 'pending')
             .toList();
-        _followers = results[2] as List<FollowerInfo>;
+        _followers = followers;
         _isLoading = false;
       });
     } on ApiException catch (e) {

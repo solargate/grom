@@ -146,6 +146,86 @@ func TestRemoteUserProfileWorkoutsViaOutbox(t *testing.T) {
 	expectStatus(t, w, http.StatusOK)
 }
 
+func TestRemoteUserSearchAvatarIsSameOrigin(t *testing.T) {
+	ta := setupFederationTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+
+	pngData := readTestdata(t, "images/avatar-square.png")
+	var remote *httptest.Server
+	remote = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		base := "https://" + r.Host
+		switch {
+		case strings.Contains(r.URL.Path, "/.well-known/webfinger"):
+			w.Header().Set("Content-Type", "application/jrd+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"subject": r.URL.Query().Get("resource"),
+				"links": []map[string]any{{
+					"rel":  "self",
+					"type": "application/activity+json",
+					"href": base + "/users/bob",
+				}},
+			})
+		case r.URL.Path == "/users/bob":
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":          "https://www.w3.org/ns/activitystreams",
+				"id":                base + "/users/bob",
+				"type":              "Person",
+				"preferredUsername": "bob",
+				"name":              "Bob Remote",
+				"inbox":             base + "/users/bob/inbox",
+				"outbox":            base + "/users/bob/outbox",
+				"icon": map[string]any{
+					"type": "Image",
+					"url":  base + "/users/bob/avatar",
+				},
+			})
+		case r.URL.Path == "/users/bob/avatar":
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write(pngData)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer remote.Close()
+
+	host := remote.Listener.Addr().String()
+	ta.app.SetFederationHTTPClient(remote.Client())
+
+	handle := "bob@" + host
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/users/search?q="+url.QueryEscape(handle), nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	results := decodeList(t, w)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 search result, got %#v", results)
+	}
+	got := results[0]
+	if got["is_local"] != false {
+		t.Fatalf("expected remote: %#v", got)
+	}
+	if got["has_avatar"] != true {
+		t.Fatalf("expected has_avatar: %#v", got)
+	}
+	avatarURL, _ := got["avatar_url"].(string)
+	wantPrefix := "/api/v1/federation/authors/"
+	if !strings.HasPrefix(avatarURL, wantPrefix) {
+		t.Fatalf("avatar_url = %q, want same-origin prefix %q", avatarURL, wantPrefix)
+	}
+	if strings.HasPrefix(avatarURL, "http://") || strings.HasPrefix(avatarURL, "https://") {
+		t.Fatalf("avatar_url must not be absolute remote URL: %q", avatarURL)
+	}
+
+	escaped := url.PathEscape(handle)
+	w = ta.doJSON(t, http.MethodGet, "/api/v1/users/"+escaped, nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	profile := decodeObject(t, w)
+	profileAvatar, _ := profile["avatar_url"].(string)
+	if !strings.HasPrefix(profileAvatar, wantPrefix) {
+		t.Fatalf("profile avatar_url = %q, want same-origin prefix %q", profileAvatar, wantPrefix)
+	}
+}
+
 func TestLocalOutboxListsCreateWorkouts(t *testing.T) {
 	ta := setupFederationTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

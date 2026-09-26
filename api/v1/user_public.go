@@ -96,13 +96,25 @@ func (a *App) getUserPublic(ctx *gin.Context) {
 		return
 	}
 	r := results[0]
+	viewerNickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+	hasAvatar, avatarURL := a.remoteUserAvatarFields(
+		viewerNickname,
+		r.Handle,
+		r.Nickname,
+		r.Name,
+		r.AvatarURL,
+	)
 	ctx.JSON(http.StatusOK, UserPublicProfileResponse{
 		Nickname:     r.Nickname,
 		Name:         r.Name,
 		Handle:       r.Handle,
 		IsLocal:      false,
-		HasAvatar:    r.HasAvatar,
-		AvatarURL:    r.AvatarURL,
+		HasAvatar:    hasAvatar,
+		AvatarURL:    avatarURL,
 		ViewerFollow: a.viewerFollowResponse(viewerID, r.Handle),
 	})
 }

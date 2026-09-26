@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Other profiles stay in the main app navigation with the side menu
 - Other profiles show Follow/Unfollow, follow counts, and their workout cards
 - Local workouts are visible to signed-in users without following first
+- Fix: searching a remote user with an avatar no longer blanks the web UI
 
 ### Added
 
@@ -31,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI:** Profile replaces inline follower/following lists with compact count cards (Following left, Followers right); tap opens a dialog or sheet with the list (following count is active only; pending still appear in the list)
 - **UI:** User search list rows align avatar and Follow with the search field edges for more nickname/handle space
 - **UI:** Other-user profiles and their workouts no longer open as a full-screen route over the shell
+
+### Fixed
+
+- **UI/Server:** Federated user search no longer blanks the Flutter web UI when the remote user has an avatar (same-origin cached avatar URL; skip unsafe cross-origin NetworkImage on web)
 
 ## [0.14.0] - 2026-09-22
 
