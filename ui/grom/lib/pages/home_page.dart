@@ -444,6 +444,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
           scrollController: _scrollControllers[HomeFeedTab.feed]!,
           refreshToken: widget.refreshToken,
           federationEnabled: widget.federationEnabled,
+          selfNickname: widget.nickname,
           onWorkoutTap: _openWorkout,
           onPhotoTap: _openWorkoutPhoto,
           onAuthTokenLoaded: (token) {
@@ -462,6 +463,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         sportTypes: ownSportTypes,
         emptyMessage: ownEmptyMessage,
         layout: _myWorkoutsLayout,
+        selfNickname: widget.nickname,
         onWorkoutTap: _openWorkout,
         onPhotoTap: _openWorkoutPhoto,
         onAuthTokenLoaded: (token) {
@@ -542,6 +544,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               workout: viewingWorkout,
               authToken: _authToken!,
               federationEnabled: widget.federationEnabled,
+              selfNickname: widget.nickname,
               isMapExpanded: widget.isMapExpanded,
               onMapExpandedChanged: widget.onMapExpandedChanged,
               photoViewerIndex: widget.photoViewerIndex,

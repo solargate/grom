@@ -406,6 +406,8 @@
   "failedToSearchUsers": "Failed to search users",
   "failedToLoadUsers": "Failed to load users",
   "failedToLoadProfile": "Failed to load profile",
+  "failedToLoadUserProfile": "Failed to load user profile",
+  "noWorkoutsFromUser": "No workouts yet",
   "editProfile": "Edit profile",
   "profileActions": "Profile actions",
   "deleteAccount": "Delete account",

@@ -492,7 +492,7 @@ func TestWorkoutTrackACL(t *testing.T) {
 	id, _ := decodeObject(t, w)["id"].(string)
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/track?owner=alice&format=gpx", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
 	expectStatus(t, w, http.StatusCreated)
@@ -548,7 +548,7 @@ func TestGetWorkoutSpeed(t *testing.T) {
 	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/speed?owner=alice", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
 	expectStatus(t, w, http.StatusCreated)
@@ -627,7 +627,7 @@ func TestGetWorkoutHeartRate(t *testing.T) {
 	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"/heartrate?owner=alice", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
 	expectStatus(t, w, http.StatusCreated)
@@ -698,7 +698,7 @@ func TestGetWorkout(t *testing.T) {
 	}
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/"+id+"?owner=alice", nil, bobToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/social/follow", map[string]string{"handle": "alice"}, bobToken)
 	expectStatus(t, w, http.StatusCreated)

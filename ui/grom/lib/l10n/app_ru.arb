@@ -406,6 +406,8 @@
   "failedToSearchUsers": "Не удалось выполнить поиск пользователей",
   "failedToLoadUsers": "Не удалось загрузить пользователей",
   "failedToLoadProfile": "Не удалось загрузить профиль",
+  "failedToLoadUserProfile": "Не удалось загрузить профиль пользователя",
+  "noWorkoutsFromUser": "Тренировок пока нет",
   "editProfile": "Редактирование профиля",
   "profileActions": "Действия с профилем",
   "deleteAccount": "Удалить аккаунт",

@@ -1303,7 +1303,59 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{nickname}/avatar": {
+        "/users/{handle}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return public identity for a local or remote user by nickname or handle. Includes whether the viewer follows them.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get public user profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nickname or handle (URL-encoded)",
+                        "name": "handle",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UserPublicProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid handle",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{handle}/avatar": {
             "get": {
                 "security": [
                     {
@@ -1321,8 +1373,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User nickname",
-                        "name": "nickname",
+                        "description": "User nickname or handle",
+                        "name": "handle",
                         "in": "path",
                         "required": true
                     }
@@ -1342,6 +1394,180 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Avatar not found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{handle}/followers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return followers of the given local user. Remote targets use a best-effort ActivityPub followers collection when federation is enabled.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List a user's followers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nickname or handle (URL-encoded)",
+                        "name": "handle",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.FollowerResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{handle}/following": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return users followed by the given local user. Remote targets return an empty list or a best-effort ActivityPub following collection when federation is enabled.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List a user's following",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nickname or handle (URL-encoded)",
+                        "name": "handle",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.FollowResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{handle}/workouts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return a cursor page of workouts for the given user. Local users are visible to any authenticated JWT. Remote Grom users are loaded from their public outbox (no inbox write). Non-Grom remotes yield an empty page.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List a user's workouts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nickname or handle (URL-encoded)",
+                        "name": "handle",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "opaque cursor from previous page next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.WorkoutListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/v1.ErrorResponse"
                         }
@@ -3267,6 +3493,38 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.UserPublicProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "/api/v1/users/bob/avatar"
+                },
+                "handle": {
+                    "type": "string",
+                    "example": "bob@grom.example"
+                },
+                "has_avatar": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_local": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Bob"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "bob"
+                },
+                "viewer_follow": {
+                    "$ref": "#/definitions/v1.ViewerFollowResponse"
+                }
+            }
+        },
         "v1.UserResponse": {
             "type": "object",
             "properties": {
@@ -3322,6 +3580,19 @@ const docTemplate = `{
                 "nickname": {
                     "type": "string",
                     "example": "bob"
+                }
+            }
+        },
+        "v1.ViewerFollowResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
                 }
             }
         },
@@ -3662,6 +3933,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Morning run"
+                },
+                "object_id": {
+                    "type": "string",
+                    "example": "https://grom.example/users/bob/workouts/38472901"
                 },
                 "owner": {
                     "type": "string",

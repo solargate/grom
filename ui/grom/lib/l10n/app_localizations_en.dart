@@ -865,6 +865,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToLoadProfile => 'Failed to load profile';
 
   @override
+  String get failedToLoadUserProfile => 'Failed to load user profile';
+
+  @override
+  String get noWorkoutsFromUser => 'No workouts yet';
+
+  @override
   String get editProfile => 'Edit profile';
 
   @override

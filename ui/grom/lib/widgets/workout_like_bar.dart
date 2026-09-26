@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../api_request.dart';
 import '../models/workout.dart';
+import '../navigation/open_user_profile.dart';
 import '../platform/is_mobile_client.dart';
 import 'user_avatar.dart';
 import 'workout_map_preview.dart';
@@ -16,10 +17,14 @@ class WorkoutLikeBar extends StatefulWidget {
     required this.workout,
     required this.authToken,
     this.api,
+    this.selfNickname,
+    this.federationEnabled = false,
   });
 
   final Workout workout;
   final String authToken;
+  final String? selfNickname;
+  final bool federationEnabled;
 
   /// Optional injectable client for tests; production uses a default [ApiRequest].
   final ApiRequest? api;
@@ -36,9 +41,22 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
   late int _commentsCount = widget.workout.commentsCount;
   bool _isSaving = false;
 
-  String? get _owner => widget.workout.ownerNickname.isNotEmpty
-      ? widget.workout.ownerNickname
-      : null;
+  String? get _owner => widget.workout.apiOwnerQuery;
+
+  bool get _canComment {
+    if (widget.workout.canLike) {
+      return true;
+    }
+    final self = widget.selfNickname;
+    if (self == null || self.isEmpty) {
+      return false;
+    }
+    if (widget.workout.ownerNickname == self) {
+      return true;
+    }
+    final author = widget.workout.author;
+    return author != null && author.isLocal && author.nickname == self;
+  }
 
   @override
   void didUpdateWidget(covariant WorkoutLikeBar oldWidget) {
@@ -142,6 +160,16 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                           final user = users[index];
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              openUserProfile(
+                                context,
+                                handle: user.handle,
+                                nickname: user.nickname,
+                                selfNickname: widget.selfNickname,
+                                federationEnabled: widget.federationEnabled,
+                              );
+                            },
                             leading: UserAvatar(
                               nickname: user.nickname,
                               hasAvatar: user.hasAvatar,
@@ -200,6 +228,9 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
             authToken: widget.authToken,
             workoutId: widget.workout.id,
             owner: _owner,
+            canComment: _canComment,
+            selfNickname: widget.selfNickname,
+            federationEnabled: widget.federationEnabled,
             initial: initial,
             onCountChanged: (count) {
               if (mounted) {
@@ -293,7 +324,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                   ),
                   const Spacer(),
                   InkWell(
-                    onTap: _showComments,
+                    onTap: _canComment ? _showComments : null,
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -307,7 +338,7 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
                     ),
                   ),
                   IconButton(
-                    onPressed: _showComments,
+                    onPressed: _canComment ? _showComments : null,
                     style: iconButtonStyle,
                     icon: Icon(
                       Icons.comment_outlined,
@@ -334,6 +365,9 @@ class _CommentsSheet extends StatefulWidget {
     required this.owner,
     required this.initial,
     required this.onCountChanged,
+    required this.canComment,
+    this.selfNickname,
+    this.federationEnabled = false,
   });
 
   final ApiRequest api;
@@ -342,6 +376,9 @@ class _CommentsSheet extends StatefulWidget {
   final String? owner;
   final WorkoutCommentsResponse initial;
   final ValueChanged<int> onCountChanged;
+  final bool canComment;
+  final String? selfNickname;
+  final bool federationEnabled;
 
   @override
   State<_CommentsSheet> createState() => _CommentsSheetState();
@@ -496,6 +533,16 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       final user = comment.user;
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          openUserProfile(
+                            context,
+                            handle: user.handle,
+                            nickname: user.nickname,
+                            selfNickname: widget.selfNickname,
+                            federationEnabled: widget.federationEnabled,
+                          );
+                        },
                         leading: UserAvatar(
                           nickname: user.nickname,
                           hasAvatar: user.hasAvatar,
@@ -530,26 +577,27 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     },
                   ),
                 ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      maxLength: 1000,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: l10n.workoutCommentHint,
-                        border: const OutlineInputBorder(),
+              if (widget.canComment) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        maxLength: 1000,
+                        minLines: 1,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          hintText: l10n.workoutCommentHint,
+                          border: const OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => _submit(),
                       ),
-                      onSubmitted: (_) => _submit(),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _submitting ? null : _submit,
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: _submitting ? null : _submit,
                     icon: _submitting
                         ? const SizedBox(
                             width: 20,
@@ -561,6 +609,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   ),
                 ],
               ),
+              ],
             ],
           ),
         ),

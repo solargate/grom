@@ -11,8 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
-- Profile shows Following and Followers as compact count cards; tap to open the full list
-- User search list rows align with the search field for more name space
+- Open another athlete’s profile from the feed, search, likes, comments, and follow lists
+- Other profiles show Follow/Unfollow, follow counts, and their workout cards
+- Local workouts are visible to signed-in users without following first
+
+### Added
+
+- **UI:** Tap another user (feed author, search, follow lists, likes, comments) to open their profile; Back returns through the navigation stack; nested profiles allowed
+- **UI:** Other-user profile shows Follow/Unfollow on the identity card, Following/Followers counts, and a paginated workout list (own Profile tab unchanged — no workout list)
+- **Server:** `GET /api/v1/users/{handle}` public profile (with `viewer_follow`); `…/following`, `…/followers`, `…/workouts` for local and remote (Grom) users
+- **Server:** Local users’ workouts readable by any JWT without a follow (PAT still own-only)
+- **Server:** ActivityPub outbox lists public Create workout activities; GET followers/following collections; GET `/users/{nick}/workouts/{id}` workout objects for live remote fetch
+- **Server:** Remote Grom profile workouts from outbox (`object_id`); map/track/charts via live object fetch without inbox write; likes/comments on remote still require Follow
+- **Docs:** User overview covers viewing other profiles and public local workouts
 
 ### Changed
 

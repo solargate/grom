@@ -667,7 +667,7 @@ class _GromShellState extends State<GromShell> {
         return;
       }
 
-      final owner = _isOwnWorkout(workout) ? null : workout.ownerNickname;
+      final owner = _isOwnWorkout(workout) ? null : workout.apiOwnerQuery;
       final downloaded = await _api.downloadWorkoutTrack(
         token: token,
         workoutId: workout.id,
@@ -981,7 +981,10 @@ class _GromShellState extends State<GromShell> {
           },
         );
       case GromDestination.userSearch:
-        return const UserSearchPage();
+        return UserSearchPage(
+          selfNickname: _nickname,
+          federationEnabled: _federationEnabled,
+        );
       case GromDestination.profile:
         return ProfilePage(
           key: _profilePageKey,

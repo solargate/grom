@@ -867,6 +867,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get failedToLoadProfile => 'Не удалось загрузить профиль';
 
   @override
+  String get failedToLoadUserProfile =>
+      'Не удалось загрузить профиль пользователя';
+
+  @override
+  String get noWorkoutsFromUser => 'Тренировок пока нет';
+
+  @override
   String get editProfile => 'Редактирование профиля';
 
   @override

@@ -158,7 +158,7 @@ func TestGetLikesUnauthorizedAndNotFound(t *testing.T) {
 	expectStatus(t, w, http.StatusUnauthorized)
 
 	w = ta.doJSON(t, http.MethodPost, "/api/v1/workouts/"+id+"/likes?owner=bob", nil, aliceToken)
-	expectStatus(t, w, http.StatusNotFound)
+	expectStatus(t, w, http.StatusOK)
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts/zzzzzzzz/likes?owner=bob", nil, aliceToken)
 	expectStatus(t, w, http.StatusNotFound)

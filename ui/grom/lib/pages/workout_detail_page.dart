@@ -28,11 +28,13 @@ class WorkoutDetailView extends StatefulWidget {
     this.onMapExpandedChanged,
     this.photoViewerIndex,
     this.onPhotoViewerIndexChanged,
+    this.selfNickname,
   });
 
   final Workout workout;
   final String authToken;
   final bool federationEnabled;
+  final String? selfNickname;
   final bool isMapExpanded;
   final ValueChanged<bool>? onMapExpandedChanged;
   final int? photoViewerIndex;
@@ -96,9 +98,8 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       final series = await _api.getWorkoutSpeed(
         token: widget.authToken,
         workoutId: widget.workout.id,
-        owner: widget.workout.ownerNickname.isNotEmpty
-            ? widget.workout.ownerNickname
-            : null,
+        owner: widget.workout.apiOwnerQuery,
+        objectId: widget.workout.objectId,
       );
       if (!mounted) {
         return;
@@ -136,9 +137,8 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       final series = await _api.getWorkoutHeartRate(
         token: widget.authToken,
         workoutId: widget.workout.id,
-        owner: widget.workout.ownerNickname.isNotEmpty
-            ? widget.workout.ownerNickname
-            : null,
+        owner: widget.workout.apiOwnerQuery,
+        objectId: widget.workout.objectId,
       );
       if (!mounted) {
         return;
@@ -179,9 +179,8 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
         token: widget.authToken,
         workoutId: widget.workout.id,
         fallbackFilename: widget.workout.track,
-        owner: widget.workout.ownerNickname.isNotEmpty
-            ? widget.workout.ownerNickname
-            : null,
+        owner: widget.workout.apiOwnerQuery,
+        objectId: widget.workout.objectId,
         format: 'gpx',
       );
       final points = parseTrackPoints(downloaded.bytes, downloaded.filename);
@@ -342,6 +341,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             authToken: widget.authToken,
                             author: author,
                             federationEnabled: widget.federationEnabled,
+                            selfNickname: widget.selfNickname,
                             showEquipment: true,
                           ),
                         ),
@@ -367,6 +367,8 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                         WorkoutLikeBar(
                           workout: widget.workout,
                           authToken: widget.authToken,
+                          selfNickname: widget.selfNickname,
+                          federationEnabled: widget.federationEnabled,
                         ),
                         if (_hasSpeedChart)
                           Padding(

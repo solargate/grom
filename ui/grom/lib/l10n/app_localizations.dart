@@ -1696,6 +1696,18 @@ abstract class AppLocalizations {
   /// **'Failed to load profile'**
   String get failedToLoadProfile;
 
+  /// No description provided for @failedToLoadUserProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load user profile'**
+  String get failedToLoadUserProfile;
+
+  /// No description provided for @noWorkoutsFromUser.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts yet'**
+  String get noWorkoutsFromUser;
+
   /// No description provided for @editProfile.
   ///
   /// In en, this message translates to:

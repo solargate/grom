@@ -97,22 +97,28 @@ func (a *App) deleteMyAvatar(ctx *gin.Context) {
 // @Tags         users
 // @Produce      image/webp
 // @Security     BearerAuth
-// @Param        nickname  path  string  true  "User nickname"
+// @Param        handle  path  string  true  "User nickname or handle"
 // @Success      200  {file}  binary
 // @Failure      401  {object}  ErrorResponse  "Unauthorized"
 // @Failure      404  {object}  ErrorResponse  "Avatar not found"
-// @Router       /users/{nickname}/avatar [get]
+// @Router       /users/{handle}/avatar [get]
 func (a *App) getUserAvatar(ctx *gin.Context) {
 	if _, err := a.currentUserNickname(ctx); err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
 		return
 	}
 
-	nickname := strings.TrimSpace(ctx.Param("nickname"))
-	if nickname == "" {
+	raw := strings.TrimSpace(ctx.Param("handle"))
+	if raw == "" {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "avatar not found"})
 		return
 	}
+	parsed, err := a.Social.ParseHandle(raw)
+	if err != nil || !parsed.IsLocal {
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "avatar not found"})
+		return
+	}
+	nickname := parsed.Nickname
 
 	if _, err := a.Users.FindByNickname(nickname); err != nil {
 		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "avatar not found"})

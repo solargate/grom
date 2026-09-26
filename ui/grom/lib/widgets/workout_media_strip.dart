@@ -57,7 +57,7 @@ class _WorkoutMediaStripState extends State<WorkoutMediaStrip> {
       return const SizedBox.shrink();
     }
 
-    final owner = widget.workout.ownerNickname;
+    final owner = widget.workout.apiOwnerQuery ?? '';
     final headers = {'Authorization': 'Bearer ${widget.authToken}'};
 
     return LayoutBuilder(
@@ -87,7 +87,8 @@ class _WorkoutMediaStripState extends State<WorkoutMediaStrip> {
                     previewUrl: _api.mediaPreviewUrl(
                       widget.workout.id,
                       filename,
-                      owner: owner.isNotEmpty ? owner : null,
+                      owner: owner.isEmpty ? null : owner,
+                      objectId: widget.workout.objectId,
                     ),
                     headers: headers,
                     size: thumbSize,

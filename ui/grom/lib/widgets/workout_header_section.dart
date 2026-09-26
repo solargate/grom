@@ -8,6 +8,7 @@ import 'package:grom/models/workout.dart';
 import 'package:grom/models/workout_stats.dart';
 import 'package:grom/platform/is_mobile_client.dart';
 
+import '../navigation/open_user_profile.dart';
 import 'user_avatar.dart';
 import 'workout_field_separator.dart';
 
@@ -21,6 +22,7 @@ class WorkoutHeaderSection extends StatelessWidget {
     required this.authToken,
     this.author,
     this.federationEnabled = false,
+    this.selfNickname,
     this.descriptionMaxLines,
     this.statsMaxRows,
     this.showEquipment = false,
@@ -30,6 +32,7 @@ class WorkoutHeaderSection extends StatelessWidget {
   final String authToken;
   final WorkoutAuthor? author;
   final bool federationEnabled;
+  final String? selfNickname;
   final int? descriptionMaxLines;
 
   /// When set, only the first N rows of stats (3 per row) are shown.
@@ -37,6 +40,16 @@ class WorkoutHeaderSection extends StatelessWidget {
 
   /// When true, equipment is shown below the stats table (detail view).
   final bool showEquipment;
+
+  void _openAuthorProfile(BuildContext context, WorkoutAuthor author) {
+    openUserProfile(
+      context,
+      handle: author.handle,
+      nickname: author.nickname,
+      selfNickname: selfNickname,
+      federationEnabled: federationEnabled,
+    );
+  }
 
   String _authorLine(WorkoutAuthor author) {
     final displayName =
@@ -74,9 +87,18 @@ class WorkoutHeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (author != null) ...[
-          Text(
-            _authorLine(author!),
-            style: theme.textTheme.bodyMedium,
+          InkWell(
+            onTap: () => _openAuthorProfile(context, author!),
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                _authorLine(author!),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 4),
         ],
@@ -127,6 +149,7 @@ class WorkoutHeaderSection extends StatelessWidget {
                   avatarUrl: author!.avatarUrl,
                   authToken: authToken,
                   radius: _avatarRadius,
+                  onTap: () => _openAuthorProfile(context, author!),
                 ),
                 const SizedBox(height: 6),
                 CircleAvatar(

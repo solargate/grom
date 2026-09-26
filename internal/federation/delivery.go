@@ -490,6 +490,13 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 	return object
 }
 
+// BuildPublicWorkoutObject returns an ActivityPub Workout document (with @context) for authorized fetch.
+func BuildPublicWorkoutObject(authorNickname string, workout *workouts.Workout, trackData []byte, mediaFiles []workouts.MediaFileInput) map[string]any {
+	object := buildWorkoutObject(authorNickname, workout, trackData, mediaFiles)
+	object["@context"] = "https://www.w3.org/ns/activitystreams"
+	return object
+}
+
 func (d *Delivery) deliverWorkoutActivity(activityType, authorNickname string, workout *workouts.Workout, followerInboxes []string, trackData []byte, mediaFiles []workouts.MediaFileInput) error {
 	if len(followerInboxes) == 0 {
 		return nil

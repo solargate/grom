@@ -406,6 +406,8 @@
   "failedToSearchUsers": "Benutzersuche fehlgeschlagen",
   "failedToLoadUsers": "Benutzer konnten nicht geladen werden",
   "failedToLoadProfile": "Profil konnte nicht geladen werden",
+  "failedToLoadUserProfile": "Benutzerprofil konnte nicht geladen werden",
+  "noWorkoutsFromUser": "Noch keine Workouts",
   "editProfile": "Profil bearbeiten",
   "profileActions": "Profilaktionen",
   "deleteAccount": "Konto löschen",

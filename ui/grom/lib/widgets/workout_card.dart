@@ -16,11 +16,13 @@ class WorkoutCard extends StatelessWidget {
     this.compact = false,
     this.onTap,
     this.onPhotoTap,
+    this.selfNickname,
   });
 
   final Workout workout;
   final String authToken;
   final bool federationEnabled;
+  final String? selfNickname;
   final bool compact;
   final VoidCallback? onTap;
   final ValueChanged<int>? onPhotoTap;
@@ -52,7 +54,7 @@ class WorkoutCard extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, ThemeData theme) {
     final api = ApiRequest();
-    final owner = workout.ownerNickname;
+    final owner = workout.apiOwnerQuery;
     final EdgeInsets mapPadding;
     final EdgeInsets mediaPadding;
     if (compact) {
@@ -78,6 +80,7 @@ class WorkoutCard extends StatelessWidget {
             authToken: authToken,
             author: workout.author,
             federationEnabled: federationEnabled,
+            selfNickname: selfNickname,
             descriptionMaxLines: 2,
             statsMaxRows: 1,
           ),
@@ -87,7 +90,11 @@ class WorkoutCard extends StatelessWidget {
             padding: mapPadding,
             child: WorkoutMapPreview(
               child: Image.network(
-                api.mapPreviewUrl(workout.id, owner: owner),
+                api.mapPreviewUrl(
+                  workout.id,
+                  owner: owner,
+                  objectId: workout.objectId,
+                ),
                 headers: {'Authorization': 'Bearer $authToken'},
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
@@ -119,6 +126,7 @@ class WorkoutCard extends StatelessWidget {
         WorkoutLikeBar(
           workout: workout,
           authToken: authToken,
+          selfNickname: selfNickname,
         ),
       ],
     );

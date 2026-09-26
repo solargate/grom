@@ -884,6 +884,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get failedToLoadProfile => 'Profil konnte nicht geladen werden';
 
   @override
+  String get failedToLoadUserProfile =>
+      'Benutzerprofil konnte nicht geladen werden';
+
+  @override
+  String get noWorkoutsFromUser => 'Noch keine Workouts';
+
+  @override
   String get editProfile => 'Profil bearbeiten';
 
   @override

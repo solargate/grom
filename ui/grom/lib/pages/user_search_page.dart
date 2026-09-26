@@ -4,13 +4,21 @@ import 'package:grom/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../auth_storage.dart';
 import '../models/social.dart';
+import '../navigation/open_user_profile.dart';
 import '../widgets/user_avatar.dart';
 
 class UserSearchPage extends StatefulWidget {
-  const UserSearchPage({super.key, this.api});
+  const UserSearchPage({
+    super.key,
+    this.api,
+    this.selfNickname,
+    this.federationEnabled = false,
+  });
 
   /// Optional API client override (tests).
   final ApiRequest? api;
+  final String? selfNickname;
+  final bool federationEnabled;
 
   @override
   State<UserSearchPage> createState() => _UserSearchPageState();
@@ -263,12 +271,30 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
+                    onTap: () {
+                      openUserProfile(
+                        context,
+                        handle: user.handle,
+                        nickname: user.nickname,
+                        selfNickname: widget.selfNickname,
+                        federationEnabled: widget.federationEnabled,
+                      );
+                    },
                     leading: UserAvatar(
                       nickname: user.nickname,
                       hasAvatar: user.hasAvatar,
                       avatarUrl: user.avatarUrl,
                       authToken: _token,
                       radius: 20,
+                      onTap: () {
+                        openUserProfile(
+                          context,
+                          handle: user.handle,
+                          nickname: user.nickname,
+                          selfNickname: widget.selfNickname,
+                          federationEnabled: widget.federationEnabled,
+                        );
+                      },
                     ),
                     title: Text(
                       user.nickname,
