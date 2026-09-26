@@ -335,6 +335,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             scrollController: _scrollController,
             refreshToken: 0,
             federationEnabled: widget.federationEnabled,
+            api: _api,
             onWorkoutTap: _openWorkout,
             onPhotoTap: (workout, photoIndex) {
               _openWorkout(workout);
