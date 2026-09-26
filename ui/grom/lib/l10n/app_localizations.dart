@@ -1657,13 +1657,13 @@ abstract class AppLocalizations {
   /// No description provided for @noFollowingYet.
   ///
   /// In en, this message translates to:
-  /// **'You are not following anyone yet'**
+  /// **'No following'**
   String get noFollowingYet;
 
   /// No description provided for @noFollowersYet.
   ///
   /// In en, this message translates to:
-  /// **'No one is following you yet'**
+  /// **'No followers'**
   String get noFollowersYet;
 
   /// No description provided for @searchByNicknameOrHandle.

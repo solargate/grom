@@ -392,8 +392,8 @@
   "followPending": "Pending",
   "noUsersFound": "No users found",
   "noOtherUsersOnServer": "No other users on this server yet",
-  "noFollowingYet": "You are not following anyone yet",
-  "noFollowersYet": "No one is following you yet",
+  "noFollowingYet": "No following",
+  "noFollowersYet": "No followers",
   "searchByNicknameOrHandle": "Search by nickname or federated handle (@user@server)",
   "workoutByAuthor": "By {author}",
   "@workoutByAuthor": {

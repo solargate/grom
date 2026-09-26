@@ -841,10 +841,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noOtherUsersOnServer => 'No other users on this server yet';
 
   @override
-  String get noFollowingYet => 'You are not following anyone yet';
+  String get noFollowingYet => 'No following';
 
   @override
-  String get noFollowersYet => 'No one is following you yet';
+  String get noFollowersYet => 'No followers';
 
   @override
   String get searchByNicknameOrHandle =>

@@ -860,10 +860,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Auf diesem Server gibt es noch keine anderen Benutzer';
 
   @override
-  String get noFollowingYet => 'Sie folgen noch niemandem';
+  String get noFollowingYet => 'Nichts abonniert';
 
   @override
-  String get noFollowersYet => 'Ihnen folgt noch niemand';
+  String get noFollowersYet => 'Keine Follower';
 
   @override
   String get searchByNicknameOrHandle =>

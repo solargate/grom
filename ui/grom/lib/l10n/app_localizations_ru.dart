@@ -843,10 +843,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'На этом сервере пока нет других пользователей';
 
   @override
-  String get noFollowingYet => 'Вы ни на кого не подписаны';
+  String get noFollowingYet => 'Подписок нет';
 
   @override
-  String get noFollowersYet => 'На вас пока никто не подписан';
+  String get noFollowersYet => 'Подписчиков нет';
 
   @override
   String get searchByNicknameOrHandle =>

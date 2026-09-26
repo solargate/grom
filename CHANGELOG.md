@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **UI:** Empty states for following/followers lists are short in all locales (EN/RU/DE)
 - **UI:** Profile replaces inline follower/following lists with compact count cards (Following left, Followers right); tap opens a dialog or sheet with the list (following count is active only; pending still appear in the list)
 - **UI:** User search list rows align avatar and Follow with the search field edges for more nickname/handle space
 - **UI:** Other-user profiles and their workouts no longer open as a full-screen route over the shell

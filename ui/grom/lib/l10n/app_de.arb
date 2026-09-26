@@ -392,8 +392,8 @@
   "followPending": "Ausstehend",
   "noUsersFound": "Keine Benutzer gefunden",
   "noOtherUsersOnServer": "Auf diesem Server gibt es noch keine anderen Benutzer",
-  "noFollowingYet": "Sie folgen noch niemandem",
-  "noFollowersYet": "Ihnen folgt noch niemand",
+  "noFollowingYet": "Nichts abonniert",
+  "noFollowersYet": "Keine Follower",
   "searchByNicknameOrHandle": "Suche nach Nickname oder Federations-Adresse (@user@server)",
   "workoutByAuthor": "Von {author}",
   "@workoutByAuthor": {

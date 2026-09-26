@@ -392,8 +392,8 @@
   "followPending": "Ожидание",
   "noUsersFound": "Пользователи не найдены",
   "noOtherUsersOnServer": "На этом сервере пока нет других пользователей",
-  "noFollowingYet": "Вы ни на кого не подписаны",
-  "noFollowersYet": "На вас пока никто не подписан",
+  "noFollowingYet": "Подписок нет",
+  "noFollowersYet": "Подписчиков нет",
   "searchByNicknameOrHandle": "Поиск по никнейму или федеративному адресу (@user@server)",
   "workoutByAuthor": "Автор: {author}",
   "@workoutByAuthor": {
