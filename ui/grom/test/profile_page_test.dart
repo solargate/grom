@@ -130,6 +130,10 @@ void main() {
     expect(find.text('Followers: 2'), findsOneWidget);
     // Pending is excluded from the following count.
     expect(find.text('Following: 2'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Following: 2')).dx,
+      lessThan(tester.getTopLeft(find.text('Followers: 2')).dx),
+    );
     expect(find.text('bob'), findsNothing);
     expect(find.text('dave'), findsNothing);
   });

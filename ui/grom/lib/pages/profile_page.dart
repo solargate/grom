@@ -210,15 +210,15 @@ class ProfilePageState extends State<ProfilePage> {
             children: [
               Expanded(
                 child: _CountCard(
-                  label: l10n.followersCount(_followers.length),
-                  onTap: _openFollowers,
+                  label: l10n.followingCount(_activeFollowingCount),
+                  onTap: _openFollowing,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _CountCard(
-                  label: l10n.followingCount(_activeFollowingCount),
-                  onTap: _openFollowing,
+                  label: l10n.followersCount(_followers.length),
+                  onTap: _openFollowers,
                 ),
               ),
             ],
