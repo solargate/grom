@@ -215,4 +215,24 @@ void main() {
 
     expect(find.text('No one is following you yet'), findsOneWidget);
   });
+
+  testWidgets('empty following dialog shows empty message', (tester) async {
+    final client = profileClient();
+
+    await tester.pumpWidget(
+      wrap(
+        ProfilePage(
+          nickname: 'alice',
+          api: ApiRequest(client: client),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('Following: 0'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('You are not following anyone yet'), findsOneWidget);
+  });
 }
