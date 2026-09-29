@@ -8,7 +8,9 @@ const _semicirclesPerDegree = 11930464.7111;
 /// Builds a minimal activity FIT from Strava stream samples.
 ///
 /// GPS fields are omitted on samples without valid coordinates so indoor /
-/// strength workouts can still carry HR / speed / cadence / power series.
+/// strength workouts can still carry HR series. Sensor channels are written
+/// only when the stream has meaningful data for the activity (e.g. speed only
+/// when at least one sample has speed > 0).
 List<int> buildFitFromStravaStreams({
   required DateTime startDate,
   required List<StravaStreamSample> samples,
@@ -23,10 +25,21 @@ List<int> buildFitFromStravaStreams({
   double? maxWatts,
   double? calories,
 }) {
-  final usable = samples.where((s) => s.isUseful || s.timeSeconds != null).toList();
+  final usable =
+      samples.where((s) => s.isUseful || s.timeSeconds != null).toList();
   if (usable.length < 2) {
     throw ArgumentError('Need at least 2 stream samples for a FIT track');
   }
+
+  final includeSpeed = usable.any((s) => s.speedMps != null && s.speedMps! > 0);
+  final includeDistance =
+      usable.any((s) => s.distanceMeters != null && s.distanceMeters! > 0);
+  final includeHeartRate = usable.any((s) => s.heartRateBpm != null);
+  final includeCadence = usable.any((s) => s.cadenceRpm != null);
+  final includeWatts = usable.any((s) => s.watts != null);
+  final includeElevation = usable.any((s) => s.elevation != null);
+  final includeGrade = usable.any((s) => s.gradePercent != null);
+  final includeTemperature = usable.any((s) => s.temperatureC != null);
 
   final startUtc = startDate.toUtc();
   final encoder = Encode();
@@ -65,10 +78,10 @@ List<int> buildFitFromStravaStreams({
       record.setFieldValue(0, (sample.lat! * _semicirclesPerDegree).round());
       record.setFieldValue(1, (sample.lon! * _semicirclesPerDegree).round());
     }
-    if (sample.elevation != null) {
+    if (includeElevation && sample.elevation != null) {
       record.setFieldValue(2, sample.elevation); // altitude m (scaled by SDK)
     }
-    if (sample.heartRateBpm != null) {
+    if (includeHeartRate && sample.heartRateBpm != null) {
       final bpm = sample.heartRateBpm!.clamp(0, 254);
       record.setFieldValue(3, bpm);
       hrSum += bpm;
@@ -77,7 +90,7 @@ List<int> buildFitFromStravaStreams({
         hrMax = bpm;
       }
     }
-    if (sample.cadenceRpm != null) {
+    if (includeCadence && sample.cadenceRpm != null) {
       final cad = sample.cadenceRpm!.clamp(0, 254);
       record.setFieldValue(4, cad);
       cadSum += cad;
@@ -86,14 +99,15 @@ List<int> buildFitFromStravaStreams({
         cadMax = cad;
       }
     }
-    if (sample.distanceMeters != null) {
+    if (includeDistance && sample.distanceMeters != null) {
       record.setFieldValue(5, sample.distanceMeters);
       lastDistance = sample.distanceMeters;
     }
-    if (sample.speedMps != null) {
-      record.setFieldValue(6, sample.speedMps); // m/s
+    if (includeSpeed && sample.speedMps != null) {
+      // Keep in-series zeros when the channel is included.
+      record.setFieldValue(6, sample.speedMps);
     }
-    if (sample.watts != null) {
+    if (includeWatts && sample.watts != null) {
       final w = sample.watts!.clamp(0, 65534);
       record.setFieldValue(7, w);
       wattsSum += w;
@@ -102,10 +116,10 @@ List<int> buildFitFromStravaStreams({
         wattsMax = w;
       }
     }
-    if (sample.gradePercent != null) {
+    if (includeGrade && sample.gradePercent != null) {
       record.setFieldValue(9, sample.gradePercent);
     }
-    if (sample.temperatureC != null) {
+    if (includeTemperature && sample.temperatureC != null) {
       record.setFieldValue(13, sample.temperatureC);
     }
 

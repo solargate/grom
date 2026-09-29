@@ -35,7 +35,7 @@ Turning the toggle **off** only hides the Home sync button; credentials and toke
 | Visibility | `activity:read` only — Everyone / Followers activities (not “Only You”) |
 | Metrics | Distance, moving/elapsed time, speeds, elevation, heart rate, cadence, power, and calories come from the Strava activity object when present — not from recomputing the track |
 | Streams | Requests all Strava stream types (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); missing types are ignored |
-| Track | Always builds a FIT from streams when at least two useful samples exist (sensor and/or GPS). Records without valid GPS omit position fields so indoor/strength HR series still attach. Incomplete GPS does not replace activity metrics |
+| Track | Always builds a FIT from streams when at least two useful samples exist (sensor and/or GPS). Records without valid GPS omit position fields so indoor/strength HR series still attach. Empty or all-zero streams (e.g. speed) are omitted from the FIT so unused charts are not created. Incomplete GPS does not replace activity metrics |
 | No streams | Creates a workout from summary fields without a track (still sends avg/max HR, cadence, watts, calories when Strava provides them) |
 | Device | Uses Strava `device_name` when present (otherwise server default `Grom App`) |
 | Photos | Best-effort download via the activity photos API; failures do not fail the workout |

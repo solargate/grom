@@ -20,6 +20,7 @@ void main() {
 
     final hrs = <int>[];
     var sawPosition = false;
+    var sawSpeed = false;
     final decoder = Decode();
     decoder.onMesg = (Mesg mesg) {
       if (mesg.num != MesgNum.record) {
@@ -30,6 +31,9 @@ void main() {
       if (lat != null || lon != null) {
         sawPosition = true;
       }
+      if (mesg.getFieldValue(6) != null) {
+        sawSpeed = true;
+      }
       final hr = mesg.getFieldValue(3);
       if (hr is num) {
         hrs.add(hr.toInt());
@@ -38,7 +42,58 @@ void main() {
     decoder.read(Uint8List.fromList(bytes));
 
     expect(sawPosition, isFalse);
+    expect(sawSpeed, isFalse);
     expect(hrs, [110, 125, 140]);
+  });
+
+  test('buildFitFromStravaStreams omits all-zero speed stream', () {
+    final bytes = buildFitFromStravaStreams(
+      startDate: DateTime.utc(2026, 9, 5, 10),
+      samples: const [
+        StravaStreamSample(timeSeconds: 0, heartRateBpm: 110, speedMps: 0),
+        StravaStreamSample(timeSeconds: 30, heartRateBpm: 120, speedMps: 0),
+        StravaStreamSample(timeSeconds: 60, heartRateBpm: 130, speedMps: 0),
+      ],
+    );
+
+    var sawSpeed = false;
+    final decoder = Decode();
+    decoder.onMesg = (Mesg mesg) {
+      if (mesg.num == MesgNum.record && mesg.getFieldValue(6) != null) {
+        sawSpeed = true;
+      }
+    };
+    decoder.read(Uint8List.fromList(bytes));
+    expect(sawSpeed, isFalse);
+  });
+
+  test('buildFitFromStravaStreams keeps in-series zero speed when channel used',
+      () {
+    final bytes = buildFitFromStravaStreams(
+      startDate: DateTime.utc(2026, 9, 5, 10),
+      samples: const [
+        StravaStreamSample(timeSeconds: 0, speedMps: 2.0),
+        StravaStreamSample(timeSeconds: 1, speedMps: 0),
+        StravaStreamSample(timeSeconds: 2, speedMps: 3.0),
+      ],
+    );
+
+    final speeds = <double>[];
+    final decoder = Decode();
+    decoder.onMesg = (Mesg mesg) {
+      if (mesg.num != MesgNum.record) {
+        return;
+      }
+      final speed = mesg.getFieldValue(6);
+      if (speed is num) {
+        speeds.add(speed.toDouble());
+      }
+    };
+    decoder.read(Uint8List.fromList(bytes));
+    expect(speeds, hasLength(3));
+    expect(speeds[0], closeTo(2.0, 0.01));
+    expect(speeds[1], closeTo(0.0, 0.01));
+    expect(speeds[2], closeTo(3.0, 0.01));
   });
 
   test('buildFitFromStravaStreams includes GPS speed and keeps gap HR', () {

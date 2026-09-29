@@ -13,9 +13,10 @@ type SpeedPoint struct {
 }
 
 // SpeedSeriesKmh builds a per-sample speed series in km/h from track samples.
-// Explicit SpeedMps is preferred; otherwise speed is derived from consecutive
-// timed points (including across long gaps). Points without time are skipped
-// for the series, but still contribute to path distance.
+// Explicit SpeedMps is preferred; otherwise speed is derived only when there is
+// real motion data: a device DistanceM delta or a valid GPS segment between
+// consecutive timed points. Timed samples without GPS/distance/speed do not
+// invent a zero-speed series (e.g. heart-rate-only indoor tracks).
 // Inclusion of zero speeds follows SpeedChartZeroPolicy (NaN/Inf always dropped).
 //
 // DistanceM is meters from the start of the sample list: FIT DistanceM is used
@@ -55,8 +56,10 @@ func speedSeriesKmh(points []SamplePoint, policy ChartZeroPolicy) []SpeedPoint {
 		} else if prevTimed != nil {
 			dt := cur.Time.Sub(prevTimed.Time).Seconds()
 			if dt > 0 {
-				kmh = roundFloat(mpsToKmh(pointSpeedMps(*prevTimed, *cur, dt)))
-				have = true
+				if mps, ok := derivedMotionSpeedMps(*prevTimed, *cur, dt); ok {
+					kmh = roundFloat(mpsToKmh(mps))
+					have = true
+				}
 			}
 		}
 
@@ -73,6 +76,31 @@ func speedSeriesKmh(points []SamplePoint, policy ChartZeroPolicy) []SpeedPoint {
 		return nil
 	}
 	return out
+}
+
+// derivedMotionSpeedMps returns speed from device distance delta or valid GPS
+// path. It does not treat missing/invalid coordinates as a stationary segment.
+func derivedMotionSpeedMps(prev, cur SamplePoint, dtSeconds float64) (float64, bool) {
+	if dtSeconds <= 0 {
+		return 0, false
+	}
+	if prev.DistanceM != nil && cur.DistanceM != nil &&
+		validFloat(*prev.DistanceM) && validFloat(*cur.DistanceM) {
+		delta := *cur.DistanceM - *prev.DistanceM
+		if delta < 0 {
+			return 0, false
+		}
+		return delta / dtSeconds, true
+	}
+	if validCoord(prev.Lat, prev.Lng) && validCoord(cur.Lat, cur.Lng) {
+		dist := haversine(
+			LatLng{Lat: prev.Lat, Lng: prev.Lng},
+			LatLng{Lat: cur.Lat, Lng: cur.Lng},
+			earthRadiusMeters,
+		)
+		return dist / dtSeconds, true
+	}
+	return 0, false
 }
 
 func advancePathDistance(cum float64, prev, cur *SamplePoint) float64 {
