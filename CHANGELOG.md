@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Android:** Strava API sync sends heart rate, cadence, power, and calories from the Strava activity summary even when streams are unavailable
 
+## [0.15.0] - 2026-09-26
+
 ### Google Play
 
 - Open another athlete’s profile from the feed, search, likes, comments, and follow lists
