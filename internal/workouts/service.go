@@ -207,12 +207,15 @@ func (s *Service) writeSpeedChart(nickname, dirName string, parsed *tracks.Data)
 	if s.speedCharts == nil {
 		return fmt.Errorf("speed chart store is nil")
 	}
-	return s.speedCharts.WriteLocal(context.Background(), nickname, dirName, BuildSpeedChartSamples(parsed))
+	samples := BuildSpeedChartSamples(parsed)
+	// Empty series: WriteLocal deletes any stale chart (no empty blob written).
+	return s.speedCharts.WriteLocal(context.Background(), nickname, dirName, samples)
 }
 
 func (s *Service) writeHeartRateChart(nickname, dirName string, parsed *tracks.Data) error {
 	if s.heartRateCharts == nil {
 		return fmt.Errorf("heart rate chart store is nil")
 	}
-	return s.heartRateCharts.WriteLocal(context.Background(), nickname, dirName, BuildHeartRateChartSamples(parsed))
+	samples := BuildHeartRateChartSamples(parsed)
+	return s.heartRateCharts.WriteLocal(context.Background(), nickname, dirName, samples)
 }

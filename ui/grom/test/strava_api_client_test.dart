@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grom/services/strava_api_client.dart';
 import 'package:grom/services/strava_api_constants.dart';
+import 'package:grom/services/strava_api_streams.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -67,7 +68,7 @@ void main() {
     );
   });
 
-  test('getActivityTrackPoints reads key_by_type streams including HR', () async {
+  test('getActivityStreamSamples keeps HR when latlng has gaps', () async {
     http.Request? seen;
     final client = StravaApiClient(
       httpClient: MockClient((request) async {
@@ -96,21 +97,45 @@ void main() {
       }),
     );
 
-    final points = await client.getActivityTrackPoints(
+    final samples = await client.getActivityStreamSamples(
       accessToken: 'tok',
       activityId: 9,
     );
-    expect(seen!.url.queryParameters['keys'], 'latlng,time,altitude,heartrate');
-    expect(points, hasLength(2));
-    expect(points.first.lat, 55.75);
-    expect(points.first.timeSeconds, 0);
-    expect(points.first.elevation, 100);
-    expect(points.first.heartRateBpm, 120);
-    expect(points.last.lon, 37.62);
-    expect(points.last.heartRateBpm, 145);
+    expect(seen!.url.queryParameters['keys'], kStravaStreamKeys);
+    expect(samples, hasLength(3));
+    expect(samples[0].lat, 55.75);
+    expect(samples[0].heartRateBpm, 120);
+    expect(samples[1].hasGps, isFalse);
+    expect(samples[1].heartRateBpm, 130);
+    expect(samples[2].lon, 37.62);
+    expect(samples[2].heartRateBpm, 145);
   });
 
-  test('getActivityTrackPoints omits HR when stream missing', () async {
+  test('getActivityStreamSamples works without latlng (HR only)', () async {
+    final client = StravaApiClient(
+      httpClient: MockClient((_) async => http.Response(
+            jsonEncode({
+              'time': {
+                'data': [0, 30, 60],
+              },
+              'heartrate': {
+                'data': [110, 120, 130],
+              },
+            }),
+            200,
+          )),
+    );
+
+    final samples = await client.getActivityStreamSamples(
+      accessToken: 'tok',
+      activityId: 9,
+    );
+    expect(samples, hasLength(3));
+    expect(samples.every((s) => !s.hasGps), isTrue);
+    expect(samples.map((s) => s.heartRateBpm).toList(), [110, 120, 130]);
+  });
+
+  test('getActivityStreamSamples omits HR when stream missing', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(
             jsonEncode({
@@ -128,15 +153,15 @@ void main() {
           )),
     );
 
-    final points = await client.getActivityTrackPoints(
+    final samples = await client.getActivityStreamSamples(
       accessToken: 'tok',
       activityId: 9,
     );
-    expect(points, hasLength(2));
-    expect(points.every((p) => p.heartRateBpm == null), isTrue);
+    expect(samples, hasLength(2));
+    expect(samples.every((p) => p.heartRateBpm == null), isTrue);
   });
 
-  test('getActivityTrackPoints handles short HR stream and rejects negative',
+  test('getActivityStreamSamples handles short HR stream and rejects negative',
       () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(
@@ -159,17 +184,17 @@ void main() {
           )),
     );
 
-    final points = await client.getActivityTrackPoints(
+    final samples = await client.getActivityStreamSamples(
       accessToken: 'tok',
       activityId: 9,
     );
-    expect(points, hasLength(3));
-    expect(points[0].heartRateBpm, 120);
-    expect(points[1].heartRateBpm, isNull);
-    expect(points[2].heartRateBpm, isNull);
+    expect(samples, hasLength(3));
+    expect(samples[0].heartRateBpm, 120);
+    expect(samples[1].heartRateBpm, isNull);
+    expect(samples[2].heartRateBpm, isNull);
   });
 
-  test('getActivityTrackPoints reads HR from array-shaped streams', () async {
+  test('getActivityStreamSamples reads HR from array-shaped streams', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(
             jsonEncode([
@@ -193,26 +218,26 @@ void main() {
           )),
     );
 
-    final points = await client.getActivityTrackPoints(
+    final samples = await client.getActivityStreamSamples(
       accessToken: 'tok',
       activityId: 9,
     );
-    expect(points, hasLength(2));
-    expect(points.first.heartRateBpm, 110);
-    expect(points.last.heartRateBpm, 130);
+    expect(samples, hasLength(2));
+    expect(samples.first.heartRateBpm, 110);
+    expect(samples.last.heartRateBpm, 130);
   });
 
-  test('getActivityTrackPoints returns empty on 404', () async {
+  test('getActivityStreamSamples returns empty on 404', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response('missing', 404)),
     );
     expect(
-      await client.getActivityTrackPoints(accessToken: 'tok', activityId: 1),
+      await client.getActivityStreamSamples(accessToken: 'tok', activityId: 1),
       isEmpty,
     );
   });
 
-  test('getActivity parses elevation fields', () async {
+  test('getActivity parses elevation and sensor summary fields', () async {
     final client = StravaApiClient(
       httpClient: MockClient((_) async => http.Response(
             jsonEncode({
@@ -227,6 +252,12 @@ void main() {
               'total_elevation_gain': 516,
               'elev_low': 10.5,
               'elev_high': 200.25,
+              'average_heartrate': 140.2,
+              'max_heartrate': 178,
+              'average_cadence': 82.5,
+              'average_watts': 190,
+              'max_watts': 400,
+              'calories': 512.4,
             }),
             200,
             headers: {'content-type': 'application/json'},
@@ -239,6 +270,12 @@ void main() {
     expect(activity.totalElevationGain, 516);
     expect(activity.elevLow, 10.5);
     expect(activity.elevHigh, 200.25);
+    expect(activity.averageHeartrate, 140.2);
+    expect(activity.maxHeartrate, 178);
+    expect(activity.averageCadence, 82.5);
+    expect(activity.averageWatts, 190);
+    expect(activity.maxWatts, 400);
+    expect(activity.calories, 512.4);
   });
 
   test('listActivityPhotos picks largest url size', () async {
@@ -273,5 +310,30 @@ void main() {
       await client.listActivityPhotos(accessToken: 'tok', activityId: 3),
       isEmpty,
     );
+  });
+
+  test('parseStravaStreamsByType reads velocity cadence watts', () {
+    final samples = parseStravaStreamsByType({
+      'time': {
+        'data': [0, 1],
+      },
+      'velocity_smooth': {
+        'data': [2.5, 3.0],
+      },
+      'cadence': {
+        'data': [80, 90],
+      },
+      'watts': {
+        'data': [150, 200],
+      },
+      'distance': {
+        'data': [0.0, 3.0],
+      },
+    });
+    expect(samples, hasLength(2));
+    expect(samples.first.speedMps, 2.5);
+    expect(samples.last.cadenceRpm, 90);
+    expect(samples.last.watts, 200);
+    expect(samples.last.distanceMeters, 3.0);
   });
 }

@@ -33,12 +33,15 @@
 | Порядок | От новых к старым |
 | Стоп | На первой активности, уже есть в Grom с `external_id.name=strava` и тем же id |
 | Видимость | Только `activity:read` — Everyone / Followers (не «Only You») |
-| Метрики | Дистанция, moving/elapsed time, скорости и высота (`total_elevation_gain`, `elev_low`, `elev_high` при наличии) берутся из объекта активности Strava — не пересчитываются по GPS-треку |
-| Без GPS | Workout по summary без трека |
-| С GPS | GPX из streams Strava (включая пульс, если есть) для карты/графиков; неполный GPS не подменяет метрики активности |
-| Устройство | Берёт Strava `device_name`, если есть (иначе дефолт сервера `Grom App`) |
+| Метрики | Дистанция, moving/elapsed time, скорости, высота, пульс, каденс, мощность и калории берутся из объекта активности Strava при наличии — не пересчитываются по треку |
+| Streams | Запрашиваются все типы streams Strava (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); отсутствующие игнорируются |
+| Трек | Всегда собирается FIT из streams, если есть хотя бы две полезные точки (сенсоры и/или GPS). Без валидного GPS position не пишется — indoor/силовые с пульсом всё равно получают трек. Пустые или полностью нулевые streams (например скорость) в FIT не пишутся, чтобы не создавать ненужные графики. Неполный GPS не подменяет метрики активности |
+| Без streams | Workout по summary без трека (avg/max HR, cadence, watts, calories всё равно отправляются, если Strava их отдаёт) |
+| Устройство | Берёт Strava `device_name`, если есть: пишется в FIT (`product_name`) и в поле create `device` (иначе дефолт сервера `Grom App`). В FIT не ставится manufacturer=development, поэтому тренировка не получает метку «Development» |
 | Фото | Best-effort через photos API; ошибка фото не валит workout |
 | Снаряжение | `equipment_ids` не передаётся → сервер берёт `last_equipment_by_sport` |
+
+Уже импортированные активности sync не обновляет (удалите и импортируйте снова, если нужен исправленный трек).
 
 Дедуп совпадает с ZIP-импортом (`strava` + id активности Strava).
 

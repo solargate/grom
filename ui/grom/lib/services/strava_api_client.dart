@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'strava_api_constants.dart';
-import 'strava_api_gpx.dart';
+import 'strava_api_streams.dart';
 
 class StravaApiException implements Exception {
   StravaApiException(this.message, {this.statusCode});
@@ -30,6 +30,12 @@ class StravaSummaryActivity {
     this.totalElevationGain,
     this.elevLow,
     this.elevHigh,
+    this.averageHeartrate,
+    this.maxHeartrate,
+    this.averageCadence,
+    this.averageWatts,
+    this.maxWatts,
+    this.calories,
     this.description,
     this.deviceName,
     this.totalPhotoCount = 0,
@@ -49,6 +55,12 @@ class StravaSummaryActivity {
   final double? totalElevationGain;
   final double? elevLow;
   final double? elevHigh;
+  final double? averageHeartrate;
+  final double? maxHeartrate;
+  final double? averageCadence;
+  final double? averageWatts;
+  final double? maxWatts;
+  final double? calories;
   final String? description;
   final String? deviceName;
   final int totalPhotoCount;
@@ -79,6 +91,12 @@ class StravaSummaryActivity {
       totalElevationGain: (json['total_elevation_gain'] as num?)?.toDouble(),
       elevLow: (json['elev_low'] as num?)?.toDouble(),
       elevHigh: (json['elev_high'] as num?)?.toDouble(),
+      averageHeartrate: (json['average_heartrate'] as num?)?.toDouble(),
+      maxHeartrate: (json['max_heartrate'] as num?)?.toDouble(),
+      averageCadence: (json['average_cadence'] as num?)?.toDouble(),
+      averageWatts: (json['average_watts'] as num?)?.toDouble(),
+      maxWatts: (json['max_watts'] as num?)?.toDouble(),
+      calories: (json['calories'] as num?)?.toDouble(),
       description: (json['description'] as String?)?.trim(),
       deviceName: (deviceRaw != null && deviceRaw.isNotEmpty) ? deviceRaw : null,
       totalPhotoCount: (json['total_photo_count'] as num?)?.toInt() ?? 0,
@@ -161,15 +179,15 @@ class StravaApiClient {
     return StravaSummaryActivity.fromJson(json);
   }
 
-  /// Returns GPS points from streams, or empty if no usable latlng stream.
-  Future<List<StravaStreamPoint>> getActivityTrackPoints({
+  /// Returns index-aligned stream samples (GPS optional). Empty if none usable.
+  Future<List<StravaStreamSample>> getActivityStreamSamples({
     required String accessToken,
     required int activityId,
   }) async {
     final uri = Uri.parse('$kStravaApiBase/activities/$activityId/streams')
         .replace(
       queryParameters: {
-        'keys': 'latlng,time,altitude,heartrate',
+        'keys': kStravaStreamKeys,
         'key_by_type': 'true',
       },
     );
@@ -204,66 +222,7 @@ class StravaApiClient {
     if (byType == null) {
       return const [];
     }
-
-    final latlng = byType['latlng'];
-    if (latlng is! Map<String, dynamic>) {
-      return const [];
-    }
-    final latlngData = latlng['data'];
-    if (latlngData is! List || latlngData.length < 2) {
-      return const [];
-    }
-
-    final timeData = (byType['time'] is Map<String, dynamic>)
-        ? (byType['time'] as Map<String, dynamic>)['data']
-        : null;
-    final altData = (byType['altitude'] is Map<String, dynamic>)
-        ? (byType['altitude'] as Map<String, dynamic>)['data']
-        : null;
-    final hrData = (byType['heartrate'] is Map<String, dynamic>)
-        ? (byType['heartrate'] as Map<String, dynamic>)['data']
-        : null;
-
-    final points = <StravaStreamPoint>[];
-    for (var i = 0; i < latlngData.length; i++) {
-      final pair = latlngData[i];
-      if (pair is! List || pair.length < 2) {
-        continue;
-      }
-      final lat = (pair[0] as num?)?.toDouble();
-      final lon = (pair[1] as num?)?.toDouble();
-      if (lat == null || lon == null) {
-        continue;
-      }
-      if (lat == 0 && lon == 0) {
-        continue;
-      }
-      int? timeSeconds;
-      if (timeData is List && i < timeData.length && timeData[i] is num) {
-        timeSeconds = (timeData[i] as num).toInt();
-      }
-      double? elevation;
-      if (altData is List && i < altData.length && altData[i] is num) {
-        elevation = (altData[i] as num).toDouble();
-      }
-      int? heartRateBpm;
-      if (hrData is List && i < hrData.length && hrData[i] is num) {
-        final bpm = (hrData[i] as num).toInt();
-        if (bpm >= 0) {
-          heartRateBpm = bpm;
-        }
-      }
-      points.add(
-        StravaStreamPoint(
-          lat: lat,
-          lon: lon,
-          timeSeconds: timeSeconds,
-          elevation: elevation,
-          heartRateBpm: heartRateBpm,
-        ),
-      );
-    }
-    return points;
+    return parseStravaStreamsByType(byType);
   }
 
   /// Best-effort photo list; returns empty on failure or missing endpoint.

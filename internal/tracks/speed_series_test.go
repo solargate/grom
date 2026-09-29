@@ -158,4 +158,51 @@ func TestSpeedSeriesKmhEmpty(t *testing.T) {
 	}
 }
 
+func TestSpeedSeriesKmhOmitsTimedSamplesWithoutMotionData(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	hr := 120.0
+	points := []tracks.SamplePoint{
+		{Time: t0, HasTime: true, HeartRate: &hr},
+		{Time: t0.Add(30 * time.Second), HasTime: true, HeartRate: floatPtr(130)},
+		{Time: t0.Add(60 * time.Second), HasTime: true, HeartRate: floatPtr(140)},
+	}
+	if got := tracks.SpeedSeriesKmh(points); got != nil {
+		t.Fatalf("got %v, want nil for HR-only samples", got)
+	}
+}
+
+func TestSpeedSeriesKmhDerivedFromDeviceDistanceWithoutGPS(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	d0 := 0.0
+	d1 := 100.0
+	points := []tracks.SamplePoint{
+		{Time: t0, HasTime: true, DistanceM: &d0},
+		{Time: t0.Add(10 * time.Second), HasTime: true, DistanceM: &d1},
+	}
+	series := tracks.SpeedSeriesKmh(points)
+	if len(series) != 1 {
+		t.Fatalf("len = %d, want 1", len(series))
+	}
+	// 100 m / 10 s = 10 m/s = 36 km/h
+	if series[0].Kmh < 35.9 || series[0].Kmh > 36.1 {
+		t.Fatalf("kmh = %v, want 36", series[0].Kmh)
+	}
+}
+
+func TestSpeedSeriesKmhKeepsExplicitZeroBetweenNonZero(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	points := []tracks.SamplePoint{
+		{Time: t0, HasTime: true, SpeedMps: floatPtr(2)},
+		{Time: t0.Add(time.Second), HasTime: true, SpeedMps: floatPtr(0)},
+		{Time: t0.Add(2 * time.Second), HasTime: true, SpeedMps: floatPtr(3)},
+	}
+	series := tracks.SpeedSeriesKmh(points)
+	if len(series) != 3 {
+		t.Fatalf("len = %d, want 3", len(series))
+	}
+	if series[0].Kmh != 7.2 || series[1].Kmh != 0 || series[2].Kmh != 10.8 {
+		t.Fatalf("kmh = %v, %v, %v", series[0].Kmh, series[1].Kmh, series[2].Kmh)
+	}
+}
+
 func floatPtr(v float64) *float64 { return &v }

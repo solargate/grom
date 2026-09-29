@@ -33,12 +33,15 @@ Umschalter aus = Sync-Button ausgeblendet; Credentials/Tokens bleiben. Logout au
 | Reihenfolge | Neueste zuerst |
 | Stopp | Bei der ersten bereits vorhandenen Aktivität mit `external_id.name=strava` |
 | Sichtbarkeit | Nur `activity:read` — Everyone / Followers (nicht „Only You“) |
-| Metriken | Distanz, Moving-/Elapsed-Zeit, Geschwindigkeiten und Höhe (`total_elevation_gain`, `elev_low`, `elev_high` falls vorhanden) kommen aus dem Strava-Activity-Objekt — nicht aus einer Neuberechnung des GPS-Tracks |
-| Ohne GPS | Workout aus Summary ohne Track |
-| Mit GPS | GPX aus Strava-Streams (inkl. Herzfrequenz, falls vorhanden) für Karte/Charts; unvollständiges GPS ersetzt die Activity-Metriken nicht |
-| Gerät | Nutzt Strava `device_name`, falls vorhanden (sonst Server-Default `Grom App`) |
+| Metriken | Distanz, Moving-/Elapsed-Zeit, Geschwindigkeiten, Höhe, Herzfrequenz, Kadenz, Leistung und Kalorien kommen aus dem Strava-Activity-Objekt, sofern vorhanden — nicht aus einer Neuberechnung des Tracks |
+| Streams | Es werden alle Strava-Stream-Typen angefordert (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); fehlende Typen werden ignoriert |
+| Track | Immer ein FIT aus Streams, wenn mindestens zwei nutzbare Samples existieren (Sensor und/oder GPS). Ohne gültiges GPS werden Positionsfelder weggelassen, damit Indoor-/Kraft-HF-Serien trotzdem anhängen. Leere oder durchgängig null-wertige Streams (z. B. Geschwindigkeit) werden nicht ins FIT geschrieben, damit unnötige Charts entfallen. Unvollständiges GPS ersetzt die Activity-Metriken nicht |
+| Ohne Streams | Workout aus Summary ohne Track (avg/max HF, Kadenz, Watt, Kalorien werden trotzdem gesendet, wenn Strava sie liefert) |
+| Gerät | Nutzt Strava `device_name`, falls vorhanden: wird in das erzeugte FIT (`product_name`) und als Create-Feld `device` geschrieben (sonst Server-Default `Grom App`). Das FIT setzt kein manufacturer=development, damit das Training nicht als „Development“ erscheint |
 | Fotos | Best-effort über Photos-API; Foto-Fehler bricht das Workout nicht ab |
 | Ausrüstung | Kein `equipment_ids` → Server nutzt `last_equipment_by_sport` |
+
+Bereits importierte Aktivitäten werden vom Sync nicht aktualisiert (löschen und erneut importieren für einen korrigierten Track).
 
 Dedup nutzt denselben `external_id`-Namespace wie der ZIP-Import.
 

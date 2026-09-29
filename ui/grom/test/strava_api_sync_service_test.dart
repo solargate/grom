@@ -32,6 +32,12 @@ Map<String, dynamic> _activityJson(
   double? elevHigh,
   double? maxSpeed,
   double? averageSpeed,
+  double? averageHeartrate,
+  double? maxHeartrate,
+  double? averageCadence,
+  double? averageWatts,
+  double? maxWatts,
+  double? calories,
 }) =>
     {
       'id': id,
@@ -49,6 +55,12 @@ Map<String, dynamic> _activityJson(
       if (elevHigh != null) 'elev_high': elevHigh,
       if (maxSpeed != null) 'max_speed': maxSpeed,
       if (averageSpeed != null) 'average_speed': averageSpeed,
+      if (averageHeartrate != null) 'average_heartrate': averageHeartrate,
+      if (maxHeartrate != null) 'max_heartrate': maxHeartrate,
+      if (averageCadence != null) 'average_cadence': averageCadence,
+      if (averageWatts != null) 'average_watts': averageWatts,
+      if (maxWatts != null) 'max_watts': maxWatts,
+      if (calories != null) 'calories': calories,
     };
 
 Future<void> _seedConnectedPrefs({int? syncLimit}) async {
@@ -285,7 +297,7 @@ void main() {
         );
       }
       if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
-        final body = request.body;
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
         createFields = {
           'distance': body.contains('name="distance"') && body.contains('2000')
               ? 'yes'
@@ -381,7 +393,7 @@ void main() {
     expect(createFields!['speed_avg'], 'yes');
   });
 
-  test('sync with GPX track still sends Strava activity metrics', () async {
+  test('sync with FIT track still sends Strava activity metrics', () async {
     await _seedConnectedPrefs();
     Map<String, String>? createFields;
     final gromClient = MockClient((request) async {
@@ -393,10 +405,10 @@ void main() {
         );
       }
       if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
-        final body = request.body;
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
         createFields = {
           'has_track': body.contains('name="track"') ||
-                  body.contains('filename="strava_77.gpx"')
+                  body.contains('filename="strava_77.fit"')
               ? 'yes'
               : 'no',
           'distance': body.contains('name="distance"') && body.contains('2000')
@@ -495,7 +507,7 @@ void main() {
         );
       }
       if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
-        final body = request.body;
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
         final elevGainMatch = RegExp(
           r'name="elevation_gain"[\s\S]*?\r?\n\r?\n([^\r\n]+)',
         ).firstMatch(body);
@@ -568,7 +580,7 @@ void main() {
       }
       if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
         // Multipart: inspect body for external id field markers.
-        final body = request.body;
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
         createFields = {
           'has_track': body.contains('filename="track"') ||
                   body.contains('name="track"')
@@ -627,7 +639,7 @@ void main() {
     expect(createFields!['device'], 'yes');
   });
 
-  test('sync attaches GPX track with heart rate from streams', () async {
+  test('sync attaches FIT track with heart rate from streams', () async {
     await _seedConnectedPrefs();
     Map<String, String>? createFields;
     final gromClient = MockClient((request) async {
@@ -639,20 +651,21 @@ void main() {
         );
       }
       if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
-        final body = request.body;
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
         createFields = {
           'has_track': body.contains('name="track"') ||
-                  body.contains('filename="strava_55.gpx"')
+                  body.contains('filename="strava_55.fit"')
               ? 'yes'
               : 'no',
-          'filename': body.contains('strava_55.gpx') ? 'yes' : 'no',
-          'gpxtpx_ns': body.contains(
-            'xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"',
-          )
+          'filename': body.contains('strava_55.fit') ? 'yes' : 'no',
+          'fit_magic': body.contains('.FIT') ? 'yes' : 'no',
+          'device': body.contains('Garmin Edge 530') ? 'yes' : 'no',
+          'hr_fields': body.contains('heart_rate_avg') &&
+                  body.contains('140') &&
+                  body.contains('heart_rate_max') &&
+                  body.contains('145')
               ? 'yes'
               : 'no',
-          'hr_120': body.contains('<gpxtpx:hr>120</gpxtpx:hr>') ? 'yes' : 'no',
-          'hr_145': body.contains('<gpxtpx:hr>145</gpxtpx:hr>') ? 'yes' : 'no',
         };
         return http.Response(
           jsonEncode(_workoutJson('w1')),
@@ -665,7 +678,15 @@ void main() {
     final stravaClient = MockClient((request) async {
       if (request.url.path.endsWith('/athlete/activities')) {
         return http.Response(
-          jsonEncode([_activityJson(55, name: 'HR Run')]),
+          jsonEncode([
+            _activityJson(
+              55,
+              name: 'HR Run',
+              deviceName: 'Garmin Edge 530',
+              averageHeartrate: 140,
+              maxHeartrate: 145,
+            ),
+          ]),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -673,7 +694,7 @@ void main() {
       if (request.url.path.contains('/streams')) {
         expect(
           request.url.queryParameters['keys'],
-          'latlng,time,altitude,heartrate',
+          'time,latlng,distance,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth',
         );
         return http.Response(
           jsonEncode({
@@ -699,7 +720,13 @@ void main() {
       }
       if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
         return http.Response(
-          jsonEncode(_activityJson(55, name: 'HR Run')),
+          jsonEncode(_activityJson(
+            55,
+            name: 'HR Run',
+            deviceName: 'Garmin Edge 530',
+            averageHeartrate: 140,
+            maxHeartrate: 145,
+          )),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -721,9 +748,336 @@ void main() {
     expect(result.importedCount, 1);
     expect(createFields!['has_track'], 'yes');
     expect(createFields!['filename'], 'yes');
-    expect(createFields!['gpxtpx_ns'], 'yes');
-    expect(createFields!['hr_120'], 'yes');
-    expect(createFields!['hr_145'], 'yes');
+    expect(createFields!['fit_magic'], 'yes');
+    expect(createFields!['device'], 'yes');
+    expect(createFields!['hr_fields'], 'yes');
+  });
+
+  test('sync attaches FIT without GPS when only HR streams exist', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
+        createFields = {
+          'has_track': body.contains('filename="strava_77.fit"') ? 'yes' : 'no',
+          'fit_magic': body.contains('.FIT') ? 'yes' : 'no',
+          'hr_avg': body.contains('heart_rate_avg') && body.contains('128')
+              ? 'yes'
+              : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([
+            _activityJson(
+              77,
+              name: 'Strength',
+              averageHeartrate: 128,
+              maxHeartrate: 150,
+            ),
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response(
+          jsonEncode({
+            'time': {
+              'data': [0, 30, 60],
+            },
+            'heartrate': {
+              'data': [110, 128, 150],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(_activityJson(
+            77,
+            name: 'Strength',
+            averageHeartrate: 128,
+            maxHeartrate: 150,
+          )),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(createFields!['has_track'], 'yes');
+    expect(createFields!['fit_magic'], 'yes');
+    expect(createFields!['hr_avg'], 'yes');
+  });
+
+  test('sync sends HR summary fields when streams unavailable', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
+        createFields = {
+          'has_track': body.contains('filename="') ? 'yes' : 'no',
+          'hr_avg': body.contains('heart_rate_avg') && body.contains('122')
+              ? 'yes'
+              : 'no',
+          'calories': body.contains('calories') && body.contains('300')
+              ? 'yes'
+              : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([
+            _activityJson(
+              88,
+              name: 'No streams',
+              averageHeartrate: 122,
+              maxHeartrate: 160,
+              calories: 300,
+            ),
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response('[]', 404);
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(_activityJson(
+            88,
+            name: 'No streams',
+            averageHeartrate: 122,
+            maxHeartrate: 160,
+            calories: 300,
+          )),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(createFields!['has_track'], 'no');
+    expect(createFields!['hr_avg'], 'yes');
+    expect(createFields!['calories'], 'yes');
+  });
+
+  test('sync imports without track when streams fetch fails', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
+        createFields = {
+          'has_track': body.contains('filename="') ? 'yes' : 'no',
+          'external': body.contains('external_id_id') && body.contains('91')
+              ? 'yes'
+              : 'no',
+          'hr_avg': body.contains('heart_rate_avg') && body.contains('130')
+              ? 'yes'
+              : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([
+            _activityJson(91, name: 'Streams fail', averageHeartrate: 130),
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response('server error', 500);
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(
+            _activityJson(91, name: 'Streams fail', averageHeartrate: 130),
+          ),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(result.importedCount, 1);
+    expect(createFields!['has_track'], 'no');
+    expect(createFields!['external'], 'yes');
+    expect(createFields!['hr_avg'], 'yes');
+  });
+
+  test('sync sends cadence_max from stream samples', () async {
+    await _seedConnectedPrefs();
+    Map<String, String>? createFields;
+    final gromClient = MockClient((request) async {
+      if (request.url.path.endsWith('/workouts/external')) {
+        return http.Response(
+          jsonEncode({'exists': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'POST' && request.url.path.endsWith('/workouts')) {
+        final body = latin1.decode(request.bodyBytes, allowInvalid: true);
+        createFields = {
+          'has_track': body.contains('filename="strava_66.fit"') ? 'yes' : 'no',
+          'cadence_avg': body.contains('cadence_avg') && body.contains('88')
+              ? 'yes'
+              : 'no',
+          'cadence_max': body.contains('cadence_max') && body.contains('96')
+              ? 'yes'
+              : 'no',
+        };
+        return http.Response(
+          jsonEncode(_workoutJson('w1')),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+    final activity = _activityJson(
+      66,
+      name: 'Cadence ride',
+      averageCadence: 88,
+    );
+    final stravaClient = MockClient((request) async {
+      if (request.url.path.endsWith('/athlete/activities')) {
+        return http.Response(
+          jsonEncode([activity]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path.contains('/streams')) {
+        return http.Response(
+          jsonEncode({
+            'time': {
+              'data': [0, 30, 60],
+            },
+            'cadence': {
+              'data': [80, 96, 90],
+            },
+            'heartrate': {
+              'data': [110, 120, 115],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (RegExp(r'/activities/\d+$').hasMatch(request.url.path)) {
+        return http.Response(
+          jsonEncode(activity),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      fail('unexpected ${request.url}');
+    });
+
+    final service = StravaApiSyncService.forTesting(
+      api: ApiRequest(client: gromClient),
+      auth: StravaApiAuth(
+        httpClient: MockClient((_) async => fail('no refresh')),
+      ),
+      client: StravaApiClient(httpClient: stravaClient),
+      tokenProvider: () async => 'grom-jwt',
+    );
+    await service.loadFromStorage();
+    final result = await service.syncWorkouts();
+    expect(result.kind, StravaApiSyncResultKind.imported);
+    expect(createFields!['has_track'], 'yes');
+    expect(createFields!['cadence_avg'], 'yes');
+    expect(createFields!['cadence_max'], 'yes');
   });
 
   test('stravaApiSyncResultSnackBarMessage maps kinds', () {
