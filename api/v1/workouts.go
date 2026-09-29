@@ -40,6 +40,13 @@ type CreateWorkoutRequest struct {
 	ElevationGain        *float64           `json:"elevation_gain,omitempty" example:"516"`
 	ElevationLow         *float64           `json:"elevation_low,omitempty" example:"10"`
 	ElevationHigh        *float64           `json:"elevation_high,omitempty" example:"200"`
+	HeartRateAvg         *float64           `json:"heart_rate_avg,omitempty" example:"130"`
+	HeartRateMax         *float64           `json:"heart_rate_max,omitempty" example:"187"`
+	CadenceAvg           *float64           `json:"cadence_avg,omitempty" example:"84"`
+	CadenceMax           *float64           `json:"cadence_max,omitempty" example:"110"`
+	WattsAvg             *float64           `json:"watts_avg,omitempty" example:"180"`
+	WattsMax             *float64           `json:"watts_max,omitempty" example:"350"`
+	Calories             *float64           `json:"calories,omitempty" example:"415"`
 	EquipmentIDs         []string           `json:"equipment_ids" example:"550e8400-e29b-41d4-a716-446655440000"`
 	ExternalID           *ExternalIDRequest `json:"external_id,omitempty"`
 }
@@ -58,6 +65,13 @@ type CreateWorkoutForm struct {
 	ElevationGain        string                `form:"elevation_gain"`
 	ElevationLow         string                `form:"elevation_low"`
 	ElevationHigh        string                `form:"elevation_high"`
+	HeartRateAvg         string                `form:"heart_rate_avg"`
+	HeartRateMax         string                `form:"heart_rate_max"`
+	CadenceAvg           string                `form:"cadence_avg"`
+	CadenceMax           string                `form:"cadence_max"`
+	WattsAvg             string                `form:"watts_avg"`
+	WattsMax             string                `form:"watts_max"`
+	Calories             string                `form:"calories"`
 	EquipmentIDs         string                `form:"equipment_ids"`
 	ExternalIDName       string                `form:"external_id_name"`
 	ExternalIDID         string                `form:"external_id_id"`
@@ -332,6 +346,13 @@ func workoutFromCreateRequest(req CreateWorkoutRequest, startDate time.Time, equ
 		ElevationGain:        req.ElevationGain,
 		ElevationLow:         req.ElevationLow,
 		ElevationHigh:        req.ElevationHigh,
+		HeartRateAvg:         req.HeartRateAvg,
+		HeartRateMax:         req.HeartRateMax,
+		CadenceAvg:           req.CadenceAvg,
+		CadenceMax:           req.CadenceMax,
+		WattsAvg:             req.WattsAvg,
+		WattsMax:             req.WattsMax,
+		Calories:             req.Calories,
 		Equipment:            equipment,
 		ExternalID:           externalIDFromRequest(req.ExternalID),
 	}
@@ -482,7 +503,7 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 
 // createWorkout godoc
 // @Summary      Create workout
-// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present. When a track is attached, client-provided start_date, durations, distance, speeds, and elevation fields are preserved; the track fills only empty metrics and supplies map/charts.
+// @Description  Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present. When a track is attached, client-provided start_date, durations, distance, speeds, elevation, heart rate, cadence, power, and calories are preserved; the track fills only empty metrics and supplies map/charts.
 // @Tags         workouts
 // @Accept       json
 // @Accept       mpfd
@@ -501,6 +522,13 @@ func handleCreateWorkoutError(ctx *gin.Context, err error) {
 // @Param        elevation_gain  formData  number  false  "Elevation gain meters (multipart); preserved when set with a track"
 // @Param        elevation_low  formData  number  false  "Lowest elevation meters (multipart); preserved when set with a track"
 // @Param        elevation_high  formData  number  false  "Highest elevation meters (multipart); preserved when set with a track"
+// @Param        heart_rate_avg  formData  number  false  "Average heart rate bpm (multipart); preserved when set with a track"
+// @Param        heart_rate_max  formData  number  false  "Max heart rate bpm (multipart); preserved when set with a track"
+// @Param        cadence_avg  formData  number  false  "Average cadence (multipart); preserved when set with a track"
+// @Param        cadence_max  formData  number  false  "Max cadence (multipart); preserved when set with a track"
+// @Param        watts_avg  formData  number  false  "Average power watts (multipart); preserved when set with a track"
+// @Param        watts_max  formData  number  false  "Max power watts (multipart); preserved when set with a track"
+// @Param        calories  formData  number  false  "Calories (multipart); preserved when set with a track"
 // @Param        equipment_ids  formData  string  false  "JSON array of equipment IDs; omit to use profile last_equipment_by_sport for sport_type; [] for none"
 // @Param        track  formData  file  false  "Track file FIT or GPX (multipart)"
 // @Success      201   {object}  WorkoutResponse
@@ -763,6 +791,41 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid elevation_high"})
 		return
 	}
+	heartRateAvg, err := parseOptionalFloatForm(form.HeartRateAvg)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid heart_rate_avg"})
+		return
+	}
+	heartRateMax, err := parseOptionalFloatForm(form.HeartRateMax)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid heart_rate_max"})
+		return
+	}
+	cadenceAvg, err := parseOptionalFloatForm(form.CadenceAvg)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid cadence_avg"})
+		return
+	}
+	cadenceMax, err := parseOptionalFloatForm(form.CadenceMax)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid cadence_max"})
+		return
+	}
+	wattsAvg, err := parseOptionalFloatForm(form.WattsAvg)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid watts_avg"})
+		return
+	}
+	wattsMax, err := parseOptionalFloatForm(form.WattsMax)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid watts_max"})
+		return
+	}
+	calories, err := parseOptionalFloatForm(form.Calories)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid calories"})
+		return
+	}
 
 	workout := &workouts.Workout{
 		Name:                 form.Name,
@@ -778,6 +841,13 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		ElevationGain:        elevationGain,
 		ElevationLow:         elevationLow,
 		ElevationHigh:        elevationHigh,
+		HeartRateAvg:         heartRateAvg,
+		HeartRateMax:         heartRateMax,
+		CadenceAvg:           cadenceAvg,
+		CadenceMax:           cadenceMax,
+		WattsAvg:             wattsAvg,
+		WattsMax:             wattsMax,
+		Calories:             calories,
 		Equipment:            equipmentItems,
 		ExternalID:           externalIDFromForm(form.ExternalIDName, form.ExternalIDID),
 	}

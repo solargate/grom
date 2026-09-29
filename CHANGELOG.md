@@ -9,7 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.15.0] - 2026-09-26
+### Google Play
+
+- Strava API sync attaches FIT tracks with heart rate even for indoor and strength workouts
+- Strava imports keep cadence, power, and calories from the activity when available
+
+### Added
+
+- **Server:** `POST /workouts` accepts optional `heart_rate_avg` / `heart_rate_max`, `cadence_avg` / `cadence_max`, `watts_avg` / `watts_max`, and `calories` (JSON and multipart); preserved when a track is attached
+- **Android:** Strava API sync builds a FIT from all available Strava streams (not GPX), including HR/speed without GPS for indoor and strength activities
+- **Docs:** Strava API import docs describe FIT tracks, full stream keys, and summary sensor metrics
+
+### Changed
+
+- **Android:** Strava API sync sends heart rate, cadence, power, and calories from the Strava activity summary even when streams are unavailable
 
 ### Google Play
 

@@ -33,12 +33,15 @@ Turning the toggle **off** only hides the Home sync button; credentials and toke
 | Order | Newest first |
 | Stop | Stops at the first activity that already exists in Grom with `external_id.name=strava` and matching id |
 | Visibility | `activity:read` only — Everyone / Followers activities (not “Only You”) |
-| Metrics | Distance, moving/elapsed time, speeds, and elevation (`total_elevation_gain`, `elev_low`, `elev_high` when present) come from the Strava activity object — not from recomputing the GPS track |
-| No GPS | Creates a workout from summary fields without a track |
-| With GPS | Builds a GPX from Strava streams (including heart-rate when present) and attaches it for map/charts; incomplete GPS does not replace activity metrics |
+| Metrics | Distance, moving/elapsed time, speeds, elevation, heart rate, cadence, power, and calories come from the Strava activity object when present — not from recomputing the track |
+| Streams | Requests all Strava stream types (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); missing types are ignored |
+| Track | Always builds a FIT from streams when at least two useful samples exist (sensor and/or GPS). Records without valid GPS omit position fields so indoor/strength HR series still attach. Incomplete GPS does not replace activity metrics |
+| No streams | Creates a workout from summary fields without a track (still sends avg/max HR, cadence, watts, calories when Strava provides them) |
 | Device | Uses Strava `device_name` when present (otherwise server default `Grom App`) |
 | Photos | Best-effort download via the activity photos API; failures do not fail the workout |
 | Equipment | `equipment_ids` omitted so the server applies `last_equipment_by_sport` |
+
+Already-imported activities are not updated by sync (delete and re-import if you need a corrected track).
 
 Duplicate detection uses the same `external_id` namespace as the ZIP importer (`strava` + Strava activity id), so API and archive imports do not create duplicates for the same activity.
 

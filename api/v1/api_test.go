@@ -240,6 +240,97 @@ func TestWorkoutMultipartPreservesClientMetricsWithTrack(t *testing.T) {
 	}
 }
 
+func TestWorkoutMultipartAcceptsSensorSummaryWithoutTrack(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+		map[string]string{
+			"name":             "Indoor strength",
+			"sport_type":       "WeightTraining",
+			"start_date":       "2026-07-08T10:00:00Z",
+			"duration_seconds": "1800",
+			"distance":         "0",
+			"heart_rate_avg":   "120",
+			"heart_rate_max":   "155",
+			"cadence_avg":      "70",
+			"cadence_max":      "90",
+			"watts_avg":        "100",
+			"watts_max":        "200",
+			"calories":         "250",
+		},
+		nil,
+	)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatal("expected workout id")
+	}
+	if created["heart_rate_avg"] != float64(120) {
+		t.Fatalf("heart_rate_avg = %#v, want 120", created["heart_rate_avg"])
+	}
+	if created["heart_rate_max"] != float64(155) {
+		t.Fatalf("heart_rate_max = %#v, want 155", created["heart_rate_max"])
+	}
+	if created["calories"] != float64(250) {
+		t.Fatalf("calories = %#v, want 250", created["calories"])
+	}
+	if track, _ := created["track"].(string); track != "" {
+		t.Fatalf("expected no track, got %q", track)
+	}
+
+	stored, err := ta.app.Workouts.Get("alice", id)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if stored.CadenceAvg == nil || *stored.CadenceAvg != 70 {
+		t.Fatalf("cadence_avg = %v, want 70", stored.CadenceAvg)
+	}
+	if stored.CadenceMax == nil || *stored.CadenceMax != 90 {
+		t.Fatalf("cadence_max = %v, want 90", stored.CadenceMax)
+	}
+	if stored.WattsAvg == nil || *stored.WattsAvg != 100 {
+		t.Fatalf("watts_avg = %v, want 100", stored.WattsAvg)
+	}
+	if stored.WattsMax == nil || *stored.WattsMax != 200 {
+		t.Fatalf("watts_max = %v, want 200", stored.WattsMax)
+	}
+}
+
+func TestWorkoutMultipartPreservesClientHeartRateWithTrack(t *testing.T) {
+	ta := setupTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	token, _ := ta.login(t, "alice@example.com", "password12")
+
+	gpx := readTestdata(t, "tracks/1-sample.gpx")
+	w := ta.doMultipart(t, http.MethodPost, "/api/v1/workouts", token,
+		map[string]string{
+			"name":           "HR override",
+			"sport_type":     "Run",
+			"start_date":     "2026-07-08T10:00:00Z",
+			"heart_rate_avg": "111",
+			"heart_rate_max": "199",
+			"calories":       "333",
+		},
+		map[string][]filePart{
+			"track": {{filename: "sample.gpx", data: gpx}},
+		},
+	)
+	expectStatus(t, w, http.StatusCreated)
+	created := decodeObject(t, w)
+	if created["heart_rate_avg"] != float64(111) {
+		t.Fatalf("heart_rate_avg = %#v, want 111", created["heart_rate_avg"])
+	}
+	if created["heart_rate_max"] != float64(199) {
+		t.Fatalf("heart_rate_max = %#v, want 199", created["heart_rate_max"])
+	}
+	if created["calories"] != float64(333) {
+		t.Fatalf("calories = %#v, want 333", created["calories"])
+	}
+}
+
 func TestWorkoutMultipartPreservesZeroElevationGain(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

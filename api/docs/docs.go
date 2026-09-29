@@ -1649,7 +1649,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present. When a track is attached, client-provided start_date, durations, distance, speeds, and elevation fields are preserved; the track fills only empty metrics and supplies map/charts.",
+                "description": "Create a manual workout for the authenticated user. When equipment_ids is omitted, equipment is taken from the user's profile last_equipment_by_sport for the sport_type. An explicit empty equipment_ids list means no equipment. Optional device sets the recording device label (default Grom App); a FIT track's device overrides when present. When a track is attached, client-provided start_date, durations, distance, speeds, elevation, heart rate, cadence, power, and calories are preserved; the track fills only empty metrics and supplies map/charts.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -1740,6 +1740,48 @@ const docTemplate = `{
                         "type": "number",
                         "description": "Highest elevation meters (multipart); preserved when set with a track",
                         "name": "elevation_high",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Average heart rate bpm (multipart); preserved when set with a track",
+                        "name": "heart_rate_avg",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Max heart rate bpm (multipart); preserved when set with a track",
+                        "name": "heart_rate_max",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Average cadence (multipart); preserved when set with a track",
+                        "name": "cadence_avg",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Max cadence (multipart); preserved when set with a track",
+                        "name": "cadence_max",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Average power watts (multipart); preserved when set with a track",
+                        "name": "watts_avg",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Max power watts (multipart); preserved when set with a track",
+                        "name": "watts_max",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Calories (multipart); preserved when set with a track",
+                        "name": "calories",
                         "in": "formData"
                     },
                     {
@@ -2921,6 +2963,18 @@ const docTemplate = `{
                 "start_date"
             ],
             "properties": {
+                "cadence_avg": {
+                    "type": "number",
+                    "example": 84
+                },
+                "cadence_max": {
+                    "type": "number",
+                    "example": 110
+                },
+                "calories": {
+                    "type": "number",
+                    "example": 415
+                },
                 "description": {
                     "type": "string",
                     "example": "Easy session"
@@ -2965,6 +3019,14 @@ const docTemplate = `{
                 "external_id": {
                     "$ref": "#/definitions/v1.ExternalIDRequest"
                 },
+                "heart_rate_avg": {
+                    "type": "number",
+                    "example": 130
+                },
+                "heart_rate_max": {
+                    "type": "number",
+                    "example": 187
+                },
                 "name": {
                     "type": "string",
                     "example": "Morning run"
@@ -2984,6 +3046,14 @@ const docTemplate = `{
                 "start_date": {
                     "type": "string",
                     "example": "2026-07-05T14:30:00+03:00"
+                },
+                "watts_avg": {
+                    "type": "number",
+                    "example": 180
+                },
+                "watts_max": {
+                    "type": "number",
+                    "example": 350
                 }
             }
         },

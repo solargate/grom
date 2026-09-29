@@ -5,9 +5,10 @@ import '../auth_storage.dart';
 import 'strava_api_auth.dart';
 import 'strava_api_client.dart';
 import 'strava_api_constants.dart';
-import 'strava_api_gpx.dart';
+import 'strava_api_fit.dart';
 import 'strava_api_sport_map.dart';
 import 'strava_api_storage.dart';
+import 'strava_api_streams.dart';
 
 enum StravaApiSyncResultKind {
   imported,
@@ -287,18 +288,28 @@ class StravaApiSyncService extends ChangeNotifier {
 
     List<int>? trackBytes;
     String? trackFilename;
+    List<StravaStreamSample> samples = const [];
     try {
-      final points = await _client.getActivityTrackPoints(
+      samples = await _client.getActivityStreamSamples(
         accessToken: accessToken,
         activityId: activity.id,
       );
-      if (points.length >= 2) {
-        trackBytes = buildGpxFromStravaStreams(
-          name: name,
+      if (stravaSamplesWorthTrack(samples)) {
+        trackBytes = buildFitFromStravaStreams(
           startDate: activity.startDate,
-          points: points,
+          samples: samples,
+          elapsedSeconds: activity.elapsedTime > 0 ? activity.elapsedTime : null,
+          movingSeconds: activity.movingTime > 0 ? activity.movingTime : null,
+          distanceMeters:
+              activity.distanceMeters > 0 ? activity.distanceMeters : null,
+          averageHeartrate: activity.averageHeartrate,
+          maxHeartrate: activity.maxHeartrate,
+          averageCadence: activity.averageCadence,
+          averageWatts: activity.averageWatts,
+          maxWatts: activity.maxWatts,
+          calories: activity.calories,
         );
-        trackFilename = 'strava_${activity.id}.gpx';
+        trackFilename = 'strava_${activity.id}.fit';
       }
     } catch (_) {
       // Import without track.
@@ -323,6 +334,8 @@ class StravaApiSyncService extends ChangeNotifier {
       }
     }
 
+    final streamCadenceMax = _maxInt(samples.map((s) => s.cadenceRpm));
+
     final fields = <String, String>{
       'name': name,
       'sport_type': sportType,
@@ -344,6 +357,20 @@ class StravaApiSyncService extends ChangeNotifier {
         'elevation_gain': '${activity.totalElevationGain}',
       if (activity.elevLow != null) 'elevation_low': '${activity.elevLow}',
       if (activity.elevHigh != null) 'elevation_high': '${activity.elevHigh}',
+      if (activity.averageHeartrate != null && activity.averageHeartrate! > 0)
+        'heart_rate_avg': activity.averageHeartrate!.toStringAsFixed(0),
+      if (activity.maxHeartrate != null && activity.maxHeartrate! > 0)
+        'heart_rate_max': activity.maxHeartrate!.toStringAsFixed(0),
+      if (activity.averageCadence != null && activity.averageCadence! > 0)
+        'cadence_avg': activity.averageCadence!.toStringAsFixed(0),
+      if (streamCadenceMax != null && streamCadenceMax > 0)
+        'cadence_max': '$streamCadenceMax',
+      if (activity.averageWatts != null && activity.averageWatts! > 0)
+        'watts_avg': activity.averageWatts!.toStringAsFixed(0),
+      if (activity.maxWatts != null && activity.maxWatts! > 0)
+        'watts_max': activity.maxWatts!.toStringAsFixed(0),
+      if (activity.calories != null && activity.calories! > 0)
+        'calories': activity.calories!.toStringAsFixed(0),
     };
 
     await _api.createWorkoutMultipart(
@@ -368,4 +395,17 @@ class StravaApiSyncService extends ChangeNotifier {
     }
     return '.jpg';
   }
+}
+
+int? _maxInt(Iterable<int?> values) {
+  int? max;
+  for (final v in values) {
+    if (v == null) {
+      continue;
+    }
+    if (max == null || v > max) {
+      max = v;
+    }
+  }
+  return max;
 }

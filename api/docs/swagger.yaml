@@ -70,6 +70,15 @@ definitions:
     type: object
   v1.CreateWorkoutRequest:
     properties:
+      cadence_avg:
+        example: 84
+        type: number
+      cadence_max:
+        example: 110
+        type: number
+      calories:
+        example: 415
+        type: number
       description:
         example: Easy session
         type: string
@@ -102,6 +111,12 @@ definitions:
         type: array
       external_id:
         $ref: '#/definitions/v1.ExternalIDRequest'
+      heart_rate_avg:
+        example: 130
+        type: number
+      heart_rate_max:
+        example: 187
+        type: number
       name:
         example: Morning run
         type: string
@@ -117,6 +132,12 @@ definitions:
       start_date:
         example: "2026-07-05T14:30:00+03:00"
         type: string
+      watts_avg:
+        example: 180
+        type: number
+      watts_max:
+        example: 350
+        type: number
     required:
     - name
     - sport_type
@@ -1953,8 +1974,9 @@ paths:
         for the sport_type. An explicit empty equipment_ids list means no equipment.
         Optional device sets the recording device label (default Grom App); a FIT
         track's device overrides when present. When a track is attached, client-provided
-        start_date, durations, distance, speeds, and elevation fields are preserved;
-        the track fills only empty metrics and supplies map/charts.
+        start_date, durations, distance, speeds, elevation, heart rate, cadence, power,
+        and calories are preserved; the track fills only empty metrics and supplies
+        map/charts.
       parameters:
       - description: Workout data (JSON)
         in: body
@@ -2012,6 +2034,35 @@ paths:
           a track
         in: formData
         name: elevation_high
+        type: number
+      - description: Average heart rate bpm (multipart); preserved when set with a
+          track
+        in: formData
+        name: heart_rate_avg
+        type: number
+      - description: Max heart rate bpm (multipart); preserved when set with a track
+        in: formData
+        name: heart_rate_max
+        type: number
+      - description: Average cadence (multipart); preserved when set with a track
+        in: formData
+        name: cadence_avg
+        type: number
+      - description: Max cadence (multipart); preserved when set with a track
+        in: formData
+        name: cadence_max
+        type: number
+      - description: Average power watts (multipart); preserved when set with a track
+        in: formData
+        name: watts_avg
+        type: number
+      - description: Max power watts (multipart); preserved when set with a track
+        in: formData
+        name: watts_max
+        type: number
+      - description: Calories (multipart); preserved when set with a track
+        in: formData
+        name: calories
         type: number
       - description: JSON array of equipment IDs; omit to use profile last_equipment_by_sport
           for sport_type; [] for none
