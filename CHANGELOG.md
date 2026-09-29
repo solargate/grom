@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-29
+
 ### Google Play
 
 - Strava API sync attaches FIT tracks with heart rate even for indoor and strength workouts
@@ -430,7 +432,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.16.0...HEAD
+[0.16.0]: https://github.com/solargate/grom/releases/tag/0.16.0
 [0.15.0]: https://github.com/solargate/grom/releases/tag/0.15.0
 [0.14.0]: https://github.com/solargate/grom/releases/tag/0.14.0
 [0.13.1]: https://github.com/solargate/grom/releases/tag/0.13.1
