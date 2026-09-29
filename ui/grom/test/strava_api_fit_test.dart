@@ -156,6 +156,64 @@ void main() {
     );
   });
 
+  test('buildFitFromStravaStreams embeds Strava device as product_name', () {
+    final bytes = buildFitFromStravaStreams(
+      startDate: DateTime.utc(2026, 9, 5, 10),
+      deviceName: 'Garmin Edge 530',
+      samples: const [
+        StravaStreamSample(timeSeconds: 0, heartRateBpm: 110),
+        StravaStreamSample(timeSeconds: 30, heartRateBpm: 125),
+      ],
+    );
+
+    String? productName;
+    int? manufacturer;
+    final decoder = Decode();
+    decoder.onMesg = (Mesg mesg) {
+      if (mesg.num != MesgNum.fileId) {
+        return;
+      }
+      manufacturer = mesg.getFieldValue(1) as int?;
+      final name = mesg.getFieldValue(8);
+      if (name != null) {
+        productName = name.toString();
+      }
+    };
+    decoder.read(Uint8List.fromList(bytes));
+
+    expect(manufacturer, isNull);
+    expect(productName, 'Garmin Edge 530');
+  });
+
+  test('buildFitFromStravaStreams omits development manufacturer without device',
+      () {
+    final bytes = buildFitFromStravaStreams(
+      startDate: DateTime.utc(2026, 9, 5, 10),
+      samples: const [
+        StravaStreamSample(timeSeconds: 0, heartRateBpm: 110),
+        StravaStreamSample(timeSeconds: 30, heartRateBpm: 125),
+      ],
+    );
+
+    int? manufacturer;
+    String? productName;
+    final decoder = Decode();
+    decoder.onMesg = (Mesg mesg) {
+      if (mesg.num != MesgNum.fileId) {
+        return;
+      }
+      manufacturer = mesg.getFieldValue(1) as int?;
+      final name = mesg.getFieldValue(8);
+      if (name != null) {
+        productName = name.toString();
+      }
+    };
+    decoder.read(Uint8List.fromList(bytes));
+
+    expect(manufacturer, isNot(255));
+    expect(productName, isNull);
+  });
+
   test('stravaSamplesWorthTrack requires two useful samples', () {
     expect(
       stravaSamplesWorthTrack(const [

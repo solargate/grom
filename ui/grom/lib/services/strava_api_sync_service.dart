@@ -298,6 +298,7 @@ class StravaApiSyncService extends ChangeNotifier {
         trackBytes = buildFitFromStravaStreams(
           startDate: activity.startDate,
           samples: samples,
+          deviceName: activity.deviceName,
           elapsedSeconds: activity.elapsedTime > 0 ? activity.elapsedTime : null,
           movingSeconds: activity.movingTime > 0 ? activity.movingTime : null,
           distanceMeters:

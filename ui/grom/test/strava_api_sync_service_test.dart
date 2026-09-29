@@ -659,6 +659,7 @@ void main() {
               : 'no',
           'filename': body.contains('strava_55.fit') ? 'yes' : 'no',
           'fit_magic': body.contains('.FIT') ? 'yes' : 'no',
+          'device': body.contains('Garmin Edge 530') ? 'yes' : 'no',
           'hr_fields': body.contains('heart_rate_avg') &&
                   body.contains('140') &&
                   body.contains('heart_rate_max') &&
@@ -681,6 +682,7 @@ void main() {
             _activityJson(
               55,
               name: 'HR Run',
+              deviceName: 'Garmin Edge 530',
               averageHeartrate: 140,
               maxHeartrate: 145,
             ),
@@ -721,6 +723,7 @@ void main() {
           jsonEncode(_activityJson(
             55,
             name: 'HR Run',
+            deviceName: 'Garmin Edge 530',
             averageHeartrate: 140,
             maxHeartrate: 145,
           )),
@@ -746,6 +749,7 @@ void main() {
     expect(createFields!['has_track'], 'yes');
     expect(createFields!['filename'], 'yes');
     expect(createFields!['fit_magic'], 'yes');
+    expect(createFields!['device'], 'yes');
     expect(createFields!['hr_fields'], 'yes');
   });
 

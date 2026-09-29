@@ -14,6 +14,7 @@ const _semicirclesPerDegree = 11930464.7111;
 List<int> buildFitFromStravaStreams({
   required DateTime startDate,
   required List<StravaStreamSample> samples,
+  String? deviceName,
   int? elapsedSeconds,
   int? movingSeconds,
   double? distanceMeters,
@@ -46,10 +47,15 @@ List<int> buildFitFromStravaStreams({
   encoder.open();
 
   final createdFitTs = _toFitTimestamp(startUtc);
+  final trimmedDevice = deviceName?.trim();
   final fileId = Mesg.fromMesgNum(MesgNum.fileId);
   fileId.setFieldValue(0, 4); // type = activity
-  fileId.setFieldValue(1, 255); // manufacturer = development
-  fileId.setFieldValue(2, 0); // product
+  // Do not set manufacturer=development (255): the server maps that to
+  // "Development" and would overwrite the client/form device. With only
+  // product_name set, extractDevice returns the Strava string as-is.
+  if (trimmedDevice != null && trimmedDevice.isNotEmpty) {
+    fileId.setFieldValue(8, trimmedDevice); // product_name
+  }
   fileId.setFieldValue(4, createdFitTs);
   encoder.writeMesgDefinition(MesgDefinition.fromMesg(fileId));
   encoder.writeMesg(fileId);

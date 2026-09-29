@@ -37,7 +37,7 @@ Umschalter aus = Sync-Button ausgeblendet; Credentials/Tokens bleiben. Logout au
 | Streams | Es werden alle Strava-Stream-Typen angefordert (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); fehlende Typen werden ignoriert |
 | Track | Immer ein FIT aus Streams, wenn mindestens zwei nutzbare Samples existieren (Sensor und/oder GPS). Ohne gültiges GPS werden Positionsfelder weggelassen, damit Indoor-/Kraft-HF-Serien trotzdem anhängen. Leere oder durchgängig null-wertige Streams (z. B. Geschwindigkeit) werden nicht ins FIT geschrieben, damit unnötige Charts entfallen. Unvollständiges GPS ersetzt die Activity-Metriken nicht |
 | Ohne Streams | Workout aus Summary ohne Track (avg/max HF, Kadenz, Watt, Kalorien werden trotzdem gesendet, wenn Strava sie liefert) |
-| Gerät | Nutzt Strava `device_name`, falls vorhanden (sonst Server-Default `Grom App`) |
+| Gerät | Nutzt Strava `device_name`, falls vorhanden: wird in das erzeugte FIT (`product_name`) und als Create-Feld `device` geschrieben (sonst Server-Default `Grom App`). Das FIT setzt kein manufacturer=development, damit das Training nicht als „Development“ erscheint |
 | Fotos | Best-effort über Photos-API; Foto-Fehler bricht das Workout nicht ab |
 | Ausrüstung | Kein `equipment_ids` → Server nutzt `last_equipment_by_sport` |
 

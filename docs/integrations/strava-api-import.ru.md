@@ -37,7 +37,7 @@
 | Streams | Запрашиваются все типы streams Strava (`time`, `latlng`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`); отсутствующие игнорируются |
 | Трек | Всегда собирается FIT из streams, если есть хотя бы две полезные точки (сенсоры и/или GPS). Без валидного GPS position не пишется — indoor/силовые с пульсом всё равно получают трек. Пустые или полностью нулевые streams (например скорость) в FIT не пишутся, чтобы не создавать ненужные графики. Неполный GPS не подменяет метрики активности |
 | Без streams | Workout по summary без трека (avg/max HR, cadence, watts, calories всё равно отправляются, если Strava их отдаёт) |
-| Устройство | Берёт Strava `device_name`, если есть (иначе дефолт сервера `Grom App`) |
+| Устройство | Берёт Strava `device_name`, если есть: пишется в FIT (`product_name`) и в поле create `device` (иначе дефолт сервера `Grom App`). В FIT не ставится manufacturer=development, поэтому тренировка не получает метку «Development» |
 | Фото | Best-effort через photos API; ошибка фото не валит workout |
 | Снаряжение | `equipment_ids` не передаётся → сервер берёт `last_equipment_by_sport` |
 
