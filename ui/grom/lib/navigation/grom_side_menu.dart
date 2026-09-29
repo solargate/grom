@@ -107,86 +107,90 @@ class GromSideMenu extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return NavigationDrawer(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: _onDestinationSelected,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(28, 16, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                serverTitle,
-                style: theme.textTheme.titleLarge,
-              ),
-              if (nickname != null) ...[
-                const SizedBox(height: 4),
+    // Keep destinations clickable, but skip them in Tab / Shift+Tab order
+    // (wide permanent side menu and narrow drawer).
+    return ExcludeFocusTraversal(
+      child: NavigationDrawer(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onDestinationSelected,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  nickname!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  serverTitle,
+                  style: theme.textTheme.titleLarge,
                 ),
+                if (nickname != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    nickname!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.home_outlined),
-          selectedIcon: const Icon(Icons.home),
-          label: Text(l10n.home),
-        ),
-        if (isLoggedIn) ...[
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.person_search_outlined),
-            selectedIcon: const Icon(Icons.person_search),
-            label: Text(l10n.userSearch),
+            ),
           ),
           NavigationDrawerDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: Text(l10n.profile),
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: Text(l10n.home),
+          ),
+          if (isLoggedIn) ...[
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.person_search_outlined),
+              selectedIcon: const Icon(Icons.person_search),
+              label: Text(l10n.userSearch),
+            ),
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person),
+              label: Text(l10n.profile),
+            ),
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.inventory_2_outlined),
+              selectedIcon: const Icon(Icons.inventory_2),
+              label: Text(l10n.equipment),
+            ),
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.integration_instructions_outlined),
+              selectedIcon: const Icon(Icons.integration_instructions),
+              label: Text(l10n.integration),
+            ),
+          ] else ...[
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.login_outlined),
+              selectedIcon: const Icon(Icons.login),
+              label: Text(l10n.signIn),
+            ),
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.person_add_outlined),
+              selectedIcon: const Icon(Icons.person_add),
+              label: Text(l10n.register),
+            ),
+          ],
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: Text(l10n.settings),
           ),
           NavigationDrawerDestination(
-            icon: const Icon(Icons.inventory_2_outlined),
-            selectedIcon: const Icon(Icons.inventory_2),
-            label: Text(l10n.equipment),
+            icon: const Icon(Icons.info_outline),
+            selectedIcon: const Icon(Icons.info),
+            label: Text(l10n.about),
           ),
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.integration_instructions_outlined),
-            selectedIcon: const Icon(Icons.integration_instructions),
-            label: Text(l10n.integration),
-          ),
-        ] else ...[
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.login_outlined),
-            selectedIcon: const Icon(Icons.login),
-            label: Text(l10n.signIn),
-          ),
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.person_add_outlined),
-            selectedIcon: const Icon(Icons.person_add),
-            label: Text(l10n.register),
-          ),
+          if (isLoggedIn)
+            NavigationDrawerDestination(
+              icon: const Icon(Icons.logout_outlined),
+              selectedIcon: const Icon(Icons.logout),
+              label: Text(l10n.signOut),
+            ),
         ],
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.settings_outlined),
-          selectedIcon: const Icon(Icons.settings),
-          label: Text(l10n.settings),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.info_outline),
-          selectedIcon: const Icon(Icons.info),
-          label: Text(l10n.about),
-        ),
-        if (isLoggedIn)
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.logout_outlined),
-            selectedIcon: const Icon(Icons.logout),
-            label: Text(l10n.signOut),
-          ),
-      ],
+      ),
     );
   }
 }
