@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **UI:** Pace values show a localized `/km` (RU `/км`) unit in stats and on the pace chart (tooltip, average, best)
+- **UI:** Pace values show a localized `/km` unit in stats and on the pace chart (tooltip, average, best)
 
 ## [0.16.0] - 2026-09-29
 
