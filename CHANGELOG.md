@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Running and walking workouts show a pace chart instead of speed (average and best pace)
+
+### Added
+
+- **UI:** Foot-category workouts (run, walk, hike, etc.) show a pace chart on the detail screen instead of speed, with average and best pace; other sports keep the speed chart
+- **Docs:** User overview notes pace vs speed charts by sport category
+
 ## [0.16.0] - 2026-09-29
 
 ### Google Play

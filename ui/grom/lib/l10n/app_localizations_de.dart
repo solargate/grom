@@ -237,6 +237,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutPace => 'Tempo';
 
   @override
+  String get workoutPaceAvg => 'Ø Tempo';
+
+  @override
+  String get workoutPaceBest => 'Bestes Tempo';
+
+  @override
   String get workoutElevationGain => 'Höhenmeter';
 
   @override

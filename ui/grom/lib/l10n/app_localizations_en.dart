@@ -231,6 +231,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutPace => 'Pace';
 
   @override
+  String get workoutPaceAvg => 'Avg. pace';
+
+  @override
+  String get workoutPaceBest => 'Best pace';
+
+  @override
   String get workoutElevationGain => 'Elevation gain';
 
   @override

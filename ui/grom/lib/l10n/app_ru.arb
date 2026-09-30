@@ -84,6 +84,8 @@
   "workoutDuration": "Время",
   "workoutDistance": "Расстояние",
   "workoutPace": "Темп",
+  "workoutPaceAvg": "Средний темп",
+  "workoutPaceBest": "Лучший темп",
   "workoutElevationGain": "Набор высоты",
   "workoutSpeedAvg": "Средняя скорость",
   "workoutSpeedMax": "Максимальная скорость",

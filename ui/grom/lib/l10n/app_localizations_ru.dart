@@ -232,6 +232,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutPace => 'Темп';
 
   @override
+  String get workoutPaceAvg => 'Средний темп';
+
+  @override
+  String get workoutPaceBest => 'Лучший темп';
+
+  @override
   String get workoutElevationGain => 'Набор высоты';
 
   @override

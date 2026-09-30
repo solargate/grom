@@ -4,8 +4,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
+import '../models/sport_types.dart';
 import '../models/workout.dart';
 import '../models/workout_heartrate.dart';
+import '../models/workout_pace.dart';
 import '../models/workout_speed.dart';
 import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
@@ -14,6 +16,7 @@ import '../widgets/workout_like_bar.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
 import '../widgets/workout_media_strip.dart';
+import '../widgets/workout_pace_chart.dart';
 import '../widgets/workout_photo_viewer.dart';
 import '../widgets/workout_record_map.dart';
 import '../widgets/workout_speed_chart.dart';
@@ -65,8 +68,20 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
 
   bool get _hasGpsMap => widget.workout.hasMapPreview;
 
+  bool get _isFootSportType => isFootSport(widget.workout.sportType);
+
+  List<WorkoutPaceSample> get _paceSamples =>
+      paceSamplesFromSpeed(_speedSamples ?? const []);
+
+  bool get _hasPaceChart =>
+      _isFootSportType && _paceSamples.length >= 2;
+
   bool get _hasSpeedChart =>
-      _speedSamples != null && _speedSamples!.length >= 2;
+      !_isFootSportType &&
+      _speedSamples != null &&
+      _speedSamples!.length >= 2;
+
+  bool get _hasMotionChart => _hasPaceChart || _hasSpeedChart;
 
   bool get _hasHeartRateChart =>
       _heartRateSamples != null && _heartRateSamples!.length >= 2;
@@ -370,7 +385,28 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                           selfNickname: widget.selfNickname,
                           federationEnabled: widget.federationEnabled,
                         ),
-                        if (_hasSpeedChart)
+                        if (_hasPaceChart)
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              (widget.workout.hasMedia || _hasGpsMap) ? 0 : 16,
+                              16,
+                              16,
+                            ),
+                            child: WorkoutPaceChart(
+                              samples: _paceSamples,
+                              paceAvgSec: resolveAvgPaceSec(
+                                tempAvgKmm: widget.workout.tempAvgKmm,
+                                speedAvgKmh: _speedAvgKmh,
+                                samples: _paceSamples,
+                              ),
+                              paceBestSec: resolveBestPaceSec(
+                                speedMaxKmh: _speedMaxKmh,
+                                samples: _paceSamples,
+                              ),
+                            ),
+                          )
+                        else if (_hasSpeedChart)
                           Padding(
                             padding: EdgeInsets.fromLTRB(
                               16,
@@ -406,7 +442,7 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                               16,
                               (widget.workout.hasMedia ||
                                       _hasGpsMap ||
-                                      _hasSpeedChart ||
+                                      _hasMotionChart ||
                                       _isLoadingSpeed)
                                   ? 0
                                   : 16,

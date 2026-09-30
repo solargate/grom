@@ -84,6 +84,8 @@
   "workoutDuration": "Zeit",
   "workoutDistance": "Distanz",
   "workoutPace": "Tempo",
+  "workoutPaceAvg": "Ø Tempo",
+  "workoutPaceBest": "Bestes Tempo",
   "workoutElevationGain": "Höhenmeter",
   "workoutSpeedAvg": "Ø Geschwindigkeit",
   "workoutSpeedMax": "Max. Geschwindigkeit",

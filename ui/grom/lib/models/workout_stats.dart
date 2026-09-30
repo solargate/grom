@@ -15,10 +15,6 @@ class WorkoutStatItem {
 
 const workoutStatsPerRow = 3;
 
-bool _isFootSport(String sportType) {
-  return sportTypeById(sportType)?.category == SportCategory.foot;
-}
-
 bool _hasPositiveNumber(num? value) => value != null && value > 0;
 
 bool _hasPositiveInt(int? value) => value != null && value > 0;
@@ -66,7 +62,7 @@ List<WorkoutStatItem> buildWorkoutStats(
   }
 
   final pace = workout.tempAvgKmm?.trim();
-  if (_isFootSport(workout.sportType) && pace != null && pace.isNotEmpty) {
+  if (isFootSport(workout.sportType) && pace != null && pace.isNotEmpty) {
     stats.add(
       WorkoutStatItem(
         label: l10n.workoutPace,
