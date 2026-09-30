@@ -1,3 +1,5 @@
+import 'package:grom/l10n/app_localizations.dart';
+
 import 'workout_speed.dart';
 
 /// One pace sample (seconds per km) derived from a speed chart point.
@@ -80,6 +82,16 @@ String formatPaceMmSs(double paceSec) {
   final mins = total ~/ 60;
   final secs = total % 60;
   return '$mins:${secs.toString().padLeft(2, '0')}';
+}
+
+/// Formats pace with localized unit (e.g. `6:00 /km`).
+String formatPaceWithUnit(AppLocalizations l10n, double paceSec) {
+  return l10n.paceMinKm(formatPaceMmSs(paceSec));
+}
+
+/// Appends the localized pace unit to an already formatted `m:ss` string.
+String formatPaceStringWithUnit(AppLocalizations l10n, String paceMmSs) {
+  return l10n.paceMinKm(paceMmSs);
 }
 
 bool _hasPositive(double? value) => value != null && value > 0;

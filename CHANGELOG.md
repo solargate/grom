@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI:** Foot-category workouts (run, walk, hike, etc.) show a pace chart on the detail screen instead of speed, with average and best pace; other sports keep the speed chart
 - **Docs:** User overview notes pace vs speed charts by sport category
 
+### Changed
+
+- **UI:** Pace values show a localized `/km` (RU `/км`) unit in stats and on the pace chart (tooltip, average, best)
+
 ## [0.16.0] - 2026-09-29
 
 ### Google Play

@@ -160,7 +160,10 @@ class WorkoutPaceChart extends StatelessWidget {
                               theme.colorScheme.inverseSurface,
                           getTooltipItems: (touchedSpots) {
                             return touchedSpots.map((spot) {
-                              final paceText = formatPaceMmSs(-spot.y);
+                              final paceText = formatPaceWithUnit(
+                                l10n,
+                                -spot.y,
+                              );
                               final distanceText = formatDistanceKm(
                                 l10n,
                                 spot.x * 1000,
@@ -211,14 +214,14 @@ class WorkoutPaceChart extends StatelessWidget {
                   const SizedBox(height: 12),
                   _PaceStatRow(
                     label: l10n.workoutPaceAvg,
-                    value: formatPaceMmSs(paceAvgSec!),
+                    value: formatPaceWithUnit(l10n, paceAvgSec!),
                   ),
                 ],
                 if (paceBestSec != null && paceBestSec! > 0) ...[
                   const SizedBox(height: 4),
                   _PaceStatRow(
                     label: l10n.workoutPaceBest,
-                    value: formatPaceMmSs(paceBestSec!),
+                    value: formatPaceWithUnit(l10n, paceBestSec!),
                   ),
                 ],
               ],

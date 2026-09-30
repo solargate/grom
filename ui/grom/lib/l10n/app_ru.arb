@@ -332,6 +332,14 @@
       }
     }
   },
+  "paceMinKm": "{pace} /км",
+  "@paceMinKm": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Для записи трека нужен доступ к геолокации",
   "notificationPermissionDenied": "Для записи трека нужно разрешение на показ уведомлений",

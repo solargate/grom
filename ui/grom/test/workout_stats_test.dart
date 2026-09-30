@@ -73,7 +73,7 @@ void main() {
     final stats = buildWorkoutStats(l10n, workout(sportType: 'Hike'));
     expect(stats.map((s) => s.label).first, 'Distance');
     expect(stats[1].label, 'Pace');
-    expect(stats[1].value, '6:00');
+    expect(stats[1].value, '6:00 /km');
   });
 
   test('chunkWorkoutStats respects maxRows', () {

@@ -2,6 +2,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/models/workout.dart';
+import 'package:grom/models/workout_pace.dart';
 
 class WorkoutStatItem {
   const WorkoutStatItem({
@@ -66,7 +67,7 @@ List<WorkoutStatItem> buildWorkoutStats(
     stats.add(
       WorkoutStatItem(
         label: l10n.workoutPace,
-        value: pace,
+        value: formatPaceStringWithUnit(l10n, pace),
       ),
     );
   }

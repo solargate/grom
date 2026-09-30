@@ -704,6 +704,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String paceMinKm(String pace) {
+    return '$pace /km';
+  }
+
+  @override
   String get speedUnavailable => '—';
 
   @override

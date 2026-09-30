@@ -1378,6 +1378,12 @@ abstract class AppLocalizations {
   /// **'{speed} km/h'**
   String speedKmh(String speed);
 
+  /// No description provided for @paceMinKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} /km'**
+  String paceMinKm(String pace);
+
   /// No description provided for @speedUnavailable.
   ///
   /// In en, this message translates to:

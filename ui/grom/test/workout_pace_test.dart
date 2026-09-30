@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grom/l10n/app_localizations_en.dart';
+import 'package:grom/l10n/app_localizations_ru.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/models/workout_pace.dart';
 import 'package:grom/models/workout_speed.dart';
@@ -33,6 +35,16 @@ void main() {
     test('omits non-positive speed', () {
       expect(speedKmhToPaceSec(0), isNull);
       expect(speedKmhToPaceSec(-1), isNull);
+    });
+  });
+
+  group('formatPaceWithUnit', () {
+    test('appends localized unit', () {
+      final en = AppLocalizationsEn();
+      final ru = AppLocalizationsRu();
+      expect(formatPaceWithUnit(en, 360), '6:00 /km');
+      expect(formatPaceWithUnit(ru, 360), '6:00 /км');
+      expect(formatPaceStringWithUnit(en, '5:30'), '5:30 /km');
     });
   });
 

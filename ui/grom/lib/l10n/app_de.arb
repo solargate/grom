@@ -332,6 +332,14 @@
       }
     }
   },
+  "paceMinKm": "{pace} /km",
+  "@paceMinKm": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Standortberechtigung ist für die Trackaufzeichnung erforderlich",
   "notificationPermissionDenied": "Benachrichtigungsberechtigung ist für die Aufzeichnung erforderlich",

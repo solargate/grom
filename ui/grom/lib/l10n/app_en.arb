@@ -332,6 +332,14 @@
       }
     }
   },
+  "paceMinKm": "{pace} /km",
+  "@paceMinKm": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
   "speedUnavailable": "—",
   "locationPermissionDenied": "Location permission is required to record a workout track",
   "notificationPermissionDenied": "Notification permission is required to show the recording status",
