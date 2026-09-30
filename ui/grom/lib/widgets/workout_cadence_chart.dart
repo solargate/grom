@@ -218,9 +218,7 @@ class WorkoutCadenceChart extends StatelessWidget {
                           dotData: const FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: kWorkoutCadenceChartColor.withValues(
-                              alpha: 0.2,
-                            ),
+                            color: kWorkoutCadenceChartColor,
                           ),
                         ),
                       ],
