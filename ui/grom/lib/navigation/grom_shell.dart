@@ -648,6 +648,8 @@ class _GromShellState extends State<GromShell> {
         elevationGain: updated.elevationGain,
         heartRateAvg: updated.heartRateAvg,
         heartRateMax: updated.heartRateMax,
+        cadenceAvg: updated.cadenceAvg,
+        cadenceMax: updated.cadenceMax,
         stepsTotal: updated.stepsTotal,
         calories: updated.calories,
         owner: workout.owner.isNotEmpty ? workout.owner : updated.owner,

@@ -55,13 +55,13 @@ Stop the server before running this command.`,
 		if err != nil {
 			return fmt.Errorf("migrate-storage failed: %w", err)
 		}
-		fmt.Printf("Migrated metadata: users=%d profiles=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d local_likes=%d fed_likes=%d like_activities=%d local_comments=%d fed_comments=%d comment_activities=%d local_speed_charts=%d local_hr_charts=%d fed_speed_charts=%d fed_hr_charts=%d pats=%d\n",
+		fmt.Printf("Migrated metadata: users=%d profiles=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d local_likes=%d fed_likes=%d like_activities=%d local_comments=%d fed_comments=%d comment_activities=%d local_speed_charts=%d local_hr_charts=%d local_cadence_charts=%d fed_speed_charts=%d fed_hr_charts=%d fed_cadence_charts=%d pats=%d\n",
 			result.Users, result.Profiles, result.Equipment, result.Follows, result.Workouts,
 			result.FedFollowers, result.FedAuthors, result.FedInboxWorkouts,
 			result.LocalLikes, result.FedLikes, result.LikeActivities,
 			result.LocalComments, result.FedComments, result.CommentActivities,
-			result.LocalSpeedCharts, result.LocalHeartRateCharts,
-			result.FedSpeedCharts, result.FedHeartRateCharts,
+			result.LocalSpeedCharts, result.LocalHeartRateCharts, result.LocalCadenceCharts,
+			result.FedSpeedCharts, result.FedHeartRateCharts, result.FedCadenceCharts,
 			result.PersonalAccessTokens)
 		fmt.Println("Note: password-reset tokens are not copied; in-flight reset links become invalid.")
 		if migrateDryRun {

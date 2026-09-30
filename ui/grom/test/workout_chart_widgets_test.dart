@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grom/app_theme.dart';
 import 'package:grom/l10n/app_localizations.dart';
+import 'package:grom/models/workout_cadence.dart';
 import 'package:grom/models/workout_heartrate.dart';
 import 'package:grom/models/workout_pace.dart';
 import 'package:grom/models/workout_speed.dart';
+import 'package:grom/widgets/workout_cadence_chart.dart';
 import 'package:grom/widgets/workout_heartrate_chart.dart';
 import 'package:grom/widgets/workout_pace_chart.dart';
 import 'package:grom/widgets/workout_speed_chart.dart';
@@ -123,5 +125,79 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.byType(WorkoutHeartRateChart), findsOneWidget);
+  });
+
+  testWidgets('WorkoutCadenceChart hides when fewer than 2 samples', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        WorkoutCadenceChart(
+          samples: [
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10),
+              cadence: 80,
+            ),
+          ],
+          hasGps: false,
+          sportType: 'Ride',
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('Cadence'), findsNothing);
+  });
+
+  testWidgets('WorkoutCadenceChart hides for Wheelchair', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        WorkoutCadenceChart(
+          samples: [
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10),
+              cadence: 80,
+            ),
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10, 1),
+              cadence: 90,
+            ),
+          ],
+          hasGps: false,
+          sportType: 'Wheelchair',
+        ),
+      ),
+    );
+    expect(find.text('Cadence'), findsNothing);
+  });
+
+  testWidgets('WorkoutCadenceChart renders with display ×2 for Run', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        WorkoutCadenceChart(
+          samples: [
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10),
+              cadence: 80,
+              distanceM: 0,
+            ),
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10, 1),
+              cadence: 90,
+              distanceM: 200,
+            ),
+          ],
+          hasGps: true,
+          sportType: 'Run',
+          cadenceAvg: 85,
+          cadenceMax: 90,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(WorkoutCadenceChart), findsOneWidget);
+    expect(find.text('Cadence'), findsOneWidget);
+    expect(find.text('Avg. cadence'), findsOneWidget);
+    expect(find.text('Max. cadence'), findsOneWidget);
+    expect(find.text('170 spm'), findsOneWidget);
+    expect(find.text('180 spm'), findsOneWidget);
   });
 }

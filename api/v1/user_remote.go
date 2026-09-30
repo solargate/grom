@@ -199,3 +199,11 @@ func (a *App) liveHeartRateSamples(trackName string, trackData []byte) []workout
 	}
 	return workouts.BuildHeartRateChartSamples(parsed)
 }
+
+func (a *App) liveCadenceSamples(trackName string, trackData []byte) []workouts.CadenceSample {
+	parsed, err := tracks.Parse(trackData, trackName)
+	if err != nil {
+		return nil
+	}
+	return workouts.BuildCadenceChartSamples(parsed)
+}

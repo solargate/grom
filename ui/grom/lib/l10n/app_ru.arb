@@ -91,9 +91,28 @@
   "workoutSpeedMax": "Максимальная скорость",
   "workoutSpeedChartTitle": "Скорость",
   "workoutHeartRateChartTitle": "Пульс",
+  "workoutCadenceChartTitle": "Каденс",
   "workoutTotalTime": "Общее время",
   "workoutHeartRateAvg": "Средний пульс",
   "workoutHeartRateMax": "Максимальный пульс",
+  "workoutCadenceAvg": "Средний каденс",
+  "workoutCadenceMax": "Максимальный каденс",
+  "cadenceRpm": "{value} об/мин",
+  "@cadenceRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "cadenceStepsPerMin": "{value} шаг/мин",
+  "@cadenceStepsPerMin": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "chartMinutes": "{value} мин",
   "@chartMinutes": {
     "placeholders": {

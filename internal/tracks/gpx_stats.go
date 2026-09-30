@@ -7,7 +7,7 @@ import (
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
-func extractGPXStats(gpxData *gpx.GPX, hasGPS bool) (Stats, []SpeedPoint, []HeartRatePoint) {
+func extractGPXStats(gpxData *gpx.GPX, hasGPS bool) (Stats, []SpeedPoint, []HeartRatePoint, []CadencePoint) {
 	samples := gpxSamplePoints(gpxData)
 	stats := calculateStatsFromSamples(samples)
 
@@ -22,7 +22,7 @@ func extractGPXStats(gpxData *gpx.GPX, hasGPS bool) (Stats, []SpeedPoint, []Hear
 		}
 	}
 
-	return stats, SpeedSeriesKmh(samples), HeartRateSeries(samples, hasGPS)
+	return stats, SpeedSeriesKmh(samples), HeartRateSeries(samples, hasGPS), CadenceSeries(samples, hasGPS)
 }
 
 func gpxSamplePoints(gpxData *gpx.GPX) []SamplePoint {
@@ -62,7 +62,7 @@ func applyGPXExtensionNode(sample *SamplePoint, node gpx.ExtensionNode) {
 			sample.HeartRate = &v
 		}
 	case name == "cad":
-		if v, ok := parseExtensionFloat(value); ok && v > 0 {
+		if v, ok := parseExtensionFloat(value); ok && AcceptCadenceForSample(v) {
 			sample.Cadence = &v
 		}
 	case name == "atemp" || name == "temp":

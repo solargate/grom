@@ -2106,6 +2106,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/workouts/{id}/cadence": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return the precomputed cadence chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists. Values are raw device/track units; clients may scale for foot sports. distance_m is omitted when the track has no GPS; has_gps indicates whether the X axis should use distance.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workouts"
+                ],
+                "summary": "Get workout cadence series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workout ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workout owner nickname (required for followed users' workouts)",
+                        "name": "owner",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.WorkoutCadenceResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Workout not found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/workouts/{id}/comments": {
             "get": {
                 "security": [
@@ -3695,6 +3753,46 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.WorkoutCadenceResponse": {
+            "type": "object",
+            "properties": {
+                "cadence_avg": {
+                    "type": "number",
+                    "example": 84
+                },
+                "cadence_max": {
+                    "type": "number",
+                    "example": 110
+                },
+                "has_gps": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "samples": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.WorkoutCadenceSampleResponse"
+                    }
+                }
+            }
+        },
+        "v1.WorkoutCadenceSampleResponse": {
+            "type": "object",
+            "properties": {
+                "cadence": {
+                    "type": "number",
+                    "example": 84
+                },
+                "distance_m": {
+                    "type": "number",
+                    "example": 12.5
+                },
+                "t": {
+                    "type": "string",
+                    "example": "2026-07-05T14:30:01Z"
+                }
+            }
+        },
         "v1.WorkoutCommentCreateResponse": {
             "type": "object",
             "properties": {
@@ -3920,6 +4018,14 @@ const docTemplate = `{
             "properties": {
                 "author": {
                     "$ref": "#/definitions/v1.WorkoutAuthorResponse"
+                },
+                "cadence_avg": {
+                    "type": "number",
+                    "example": 84
+                },
+                "cadence_max": {
+                    "type": "number",
+                    "example": 110
                 },
                 "calories": {
                     "type": "number",

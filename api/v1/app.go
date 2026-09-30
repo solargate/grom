@@ -42,9 +42,9 @@ type App struct {
 	Location          string
 	TempDir           string
 
-	federationOnce      sync.Once
-	federationDelivery  *federation.Delivery
-	federationInboxProc *federation.InboxProcessor
+	federationOnce        sync.Once
+	federationDelivery    *federation.Delivery
+	federationInboxProc   *federation.InboxProcessor
 	federationKeyResolver federation.KeyResolver
 	federationHTTPKeys    *federation.HTTPKeyResolver
 
@@ -260,6 +260,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.GET("/:id/track", workoutRead, a.getWorkoutTrack)
 		workoutGroup.GET("/:id/speed", workoutRead, a.getWorkoutSpeed)
 		workoutGroup.GET("/:id/heartrate", workoutRead, a.getWorkoutHeartRate)
+		workoutGroup.GET("/:id/cadence", workoutRead, a.getWorkoutCadence)
 		workoutGroup.GET("/:id/map-preview", workoutRead, a.getWorkoutMapPreview)
 		workoutGroup.GET("/:id/media/:filename/preview", workoutRead, a.getWorkoutMediaPreview)
 		workoutGroup.GET("/:id/media/:filename", workoutRead, a.getWorkoutMediaOriginal)

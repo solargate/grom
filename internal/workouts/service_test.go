@@ -17,7 +17,8 @@ func TestServiceAttachTrackWritesSpeedAndHeartRateCharts(t *testing.T) {
 	blobs := blobfs.NewStore(dir)
 	speedCharts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, speedCharts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, speedCharts, hrCharts, cadenceCharts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {

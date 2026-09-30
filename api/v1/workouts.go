@@ -149,6 +149,8 @@ type WorkoutResponse struct {
 	ElevationGain        *float64               `json:"elevation_gain,omitempty" example:"77"`
 	HeartRateMax         *float64               `json:"heart_rate_max,omitempty" example:"187"`
 	HeartRateAvg         *float64               `json:"heart_rate_avg,omitempty" example:"130"`
+	CadenceMax           *float64               `json:"cadence_max,omitempty" example:"110"`
+	CadenceAvg           *float64               `json:"cadence_avg,omitempty" example:"84"`
 	StepsTotal           *int                   `json:"steps_total,omitempty" example:"2583"`
 	Calories             *float64               `json:"calories,omitempty" example:"415"`
 	Track                string                 `json:"track,omitempty" example:"track.gpx"`
@@ -193,6 +195,21 @@ type WorkoutHeartRateResponse struct {
 	HasGPS       bool                             `json:"has_gps" example:"true"`
 }
 
+// WorkoutCadenceSampleResponse is one point of the per-workout cadence series.
+type WorkoutCadenceSampleResponse struct {
+	T         string   `json:"t" example:"2026-07-05T14:30:01Z"`
+	Cadence   float64  `json:"cadence" example:"84"`
+	DistanceM *float64 `json:"distance_m,omitempty" example:"12.5"`
+}
+
+// WorkoutCadenceResponse is the cadence series for a workout detail chart.
+type WorkoutCadenceResponse struct {
+	Samples    []WorkoutCadenceSampleResponse `json:"samples"`
+	CadenceMax *float64                       `json:"cadence_max,omitempty" example:"110"`
+	CadenceAvg *float64                       `json:"cadence_avg,omitempty" example:"84"`
+	HasGPS     bool                           `json:"has_gps" example:"true"`
+}
+
 type WorkoutEquipmentItem struct {
 	ID   string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name string `json:"name" example:"Gravel bike"`
@@ -231,6 +248,8 @@ func toWorkoutResponse(workout *workouts.Workout) WorkoutResponse {
 		ElevationGain:        workout.ElevationGain,
 		HeartRateMax:         workout.HeartRateMax,
 		HeartRateAvg:         workout.HeartRateAvg,
+		CadenceMax:           workout.CadenceMax,
+		CadenceAvg:           workout.CadenceAvg,
 		StepsTotal:           workout.StepsTotal,
 		Calories:             workout.Calories,
 		Track:                workout.Track,
@@ -278,6 +297,27 @@ func toWorkoutHeartRateResponse(workout *workouts.Workout, samples []workouts.He
 		HeartRateMax: workout.HeartRateMax,
 		HeartRateAvg: workout.HeartRateAvg,
 		HasGPS:       hasGPS,
+	}
+}
+
+func toWorkoutCadenceResponse(workout *workouts.Workout, samples []workouts.CadenceSample) WorkoutCadenceResponse {
+	outSamples := make([]WorkoutCadenceSampleResponse, 0, len(samples))
+	hasGPS := false
+	for _, s := range samples {
+		if s.DistanceM != nil {
+			hasGPS = true
+		}
+		outSamples = append(outSamples, WorkoutCadenceSampleResponse{
+			T:         s.Time.UTC().Format(time.RFC3339),
+			Cadence:   s.Cadence,
+			DistanceM: s.DistanceM,
+		})
+	}
+	return WorkoutCadenceResponse{
+		Samples:    outSamples,
+		CadenceMax: workout.CadenceMax,
+		CadenceAvg: workout.CadenceAvg,
+		HasGPS:     hasGPS,
 	}
 }
 
@@ -1098,6 +1138,80 @@ func (a *App) getWorkoutHeartRate(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, toWorkoutHeartRateResponse(workout, samples))
+}
+
+// getWorkoutCadence godoc
+// @Summary      Get workout cadence series
+// @Description  Return the precomputed cadence chart series (up to 500 points). Use owner query for followed users' workouts (same as track/media). Empty samples when no chart exists. Values are raw device/track units; clients may scale for foot sports. distance_m is omitted when the track has no GPS; has_gps indicates whether the X axis should use distance.
+// @Tags         workouts
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id     path   string  true   "Workout ID"
+// @Param        owner  query  string  false  "Workout owner nickname (required for followed users' workouts)"
+// @Success      200  {object}  WorkoutCadenceResponse
+// @Failure      401  {object}  ErrorResponse  "Unauthorized"
+// @Failure      404  {object}  ErrorResponse  "Workout not found"
+// @Failure      500  {object}  ErrorResponse  "Internal server error"
+// @Router       /workouts/{id}/cadence [get]
+func (a *App) getWorkoutCadence(ctx *gin.Context) {
+	nickname, err := a.currentUserNickname(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
+		return
+	}
+
+	owner, workoutID, err := a.resolveWorkoutOwner(ctx, nickname)
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to resolve workout", err)
+		return
+	}
+
+	workout, samples, err := a.Workouts.GetCadenceChart(owner, workoutID)
+	if err == nil {
+		ctx.JSON(http.StatusOK, toWorkoutCadenceResponse(workout, samples))
+		return
+	}
+	if !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		respondInternal(ctx, "failed to load workout cadence", err)
+		return
+	}
+
+	if auth.IsPAT(ctx) || a.Federation.Inbox() == nil {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" && !auth.IsPAT(ctx) {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveCadenceSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutCadenceResponse(w, samples))
+				return
+			}
+		}
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+		return
+	}
+	workout, samples, err = a.Federation.Inbox().GetCadenceChart(nickname, owner, workoutID)
+	if err != nil && errors.Is(err, workouts.ErrWorkoutNotFound) {
+		if objectID := strings.TrimSpace(ctx.Query("object_id")); objectID != "" {
+			w, track, _, liveErr := a.liveRemoteWorkout(objectID)
+			if liveErr == nil {
+				samples = a.liveCadenceSamples(w.Track, track)
+				ctx.JSON(http.StatusOK, toWorkoutCadenceResponse(w, samples))
+				return
+			}
+		}
+	}
+	if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "workout not found"})
+			return
+		}
+		respondInternal(ctx, "failed to load workout cadence", err)
+		return
+	}
+	ctx.JSON(http.StatusOK, toWorkoutCadenceResponse(workout, samples))
 }
 
 // getWorkoutTrack godoc

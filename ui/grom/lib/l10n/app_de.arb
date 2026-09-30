@@ -91,9 +91,28 @@
   "workoutSpeedMax": "Max. Geschwindigkeit",
   "workoutSpeedChartTitle": "Geschwindigkeit",
   "workoutHeartRateChartTitle": "Puls",
+  "workoutCadenceChartTitle": "Kadenz",
   "workoutTotalTime": "Gesamtzeit",
   "workoutHeartRateAvg": "Ø Puls",
   "workoutHeartRateMax": "Max. Puls",
+  "workoutCadenceAvg": "Ø Kadenz",
+  "workoutCadenceMax": "Max. Kadenz",
+  "cadenceRpm": "{value} U/min",
+  "@cadenceRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "cadenceStepsPerMin": "{value} Schritte/min",
+  "@cadenceStepsPerMin": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "chartMinutes": "{value} Min",
   "@chartMinutes": {
     "placeholders": {

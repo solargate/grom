@@ -83,10 +83,11 @@ func parseGPX(data []byte) (*Data, error) {
 		result.StartTime = &start
 	}
 
-	stats, speedSeries, hrSeries := extractGPXStats(gpxData, result.HasGPS())
+	stats, speedSeries, hrSeries, cadSeries := extractGPXStats(gpxData, result.HasGPS())
 	result.Stats = stats
 	result.SpeedSeries = speedSeries
 	result.HeartRateSeries = hrSeries
+	result.CadenceSeries = cadSeries
 	populateLegacyDurationFields(result)
 
 	length := gpxData.Length2D()
@@ -167,10 +168,11 @@ func parseFIT(data []byte) (*Data, error) {
 		}
 	}
 
-	stats, speedSeries, hrSeries := extractFITStats(activity, result.HasGPS())
+	stats, speedSeries, hrSeries, cadSeries := extractFITStats(activity, result.HasGPS())
 	result.Stats = stats
 	result.SpeedSeries = speedSeries
 	result.HeartRateSeries = hrSeries
+	result.CadenceSeries = cadSeries
 	populateLegacyDurationFields(result)
 
 	if result.DurationSeconds == nil && hasTimestamp && !lastTimestamp.Before(firstTimestamp) {

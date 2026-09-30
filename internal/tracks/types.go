@@ -24,6 +24,7 @@ type Data struct {
 	Points               []LatLng
 	SpeedSeries          []SpeedPoint
 	HeartRateSeries      []HeartRatePoint
+	CadenceSeries        []CadencePoint
 	Stats                Stats
 }
 

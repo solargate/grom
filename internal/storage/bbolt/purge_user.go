@@ -143,10 +143,12 @@ func (b *Backend) deleteNicknamePrefixedBuckets(nickname string) error {
 			bucketFedWorkoutComments,
 			bucketFedSpeedCharts,
 			bucketFedHeartRateCharts,
+			bucketFedCadenceCharts,
 			bucketWorkoutLikes,
 			bucketWorkoutComments,
 			bucketSpeedCharts,
 			bucketHeartRateCharts,
+			bucketCadenceCharts,
 			bucketEquipment,
 			bucketWorkouts,
 		} {

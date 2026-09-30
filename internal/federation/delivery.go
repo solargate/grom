@@ -426,6 +426,12 @@ func buildWorkoutObject(authorNickname string, workout *workouts.Workout, trackD
 	if workout.HeartRateAvg != nil && *workout.HeartRateAvg > 0 {
 		object["heartRateAvg"] = *workout.HeartRateAvg
 	}
+	if workout.CadenceAvg != nil && *workout.CadenceAvg > 0 {
+		object["cadenceAvg"] = *workout.CadenceAvg
+	}
+	if workout.CadenceMax != nil && *workout.CadenceMax > 0 {
+		object["cadenceMax"] = *workout.CadenceMax
+	}
 	if workout.StepsTotal != nil && *workout.StepsTotal > 0 {
 		object["stepsTotal"] = *workout.StepsTotal
 	}

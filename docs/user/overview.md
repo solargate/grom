@@ -28,7 +28,7 @@ Your home feed lists activities with type, date, device, distance/time (and pace
 
 ![Workout list on Android](../screenshots/workout-list.jpg)
 
-Open a workout for the full card: interactive map (when a track is present), photo gallery, the same social bar as in the list, a speed-over-distance chart with average and maximum speed (or a pace chart with average and best pace for running and walking sports), and a heart-rate chart (distance when GPS is present, otherwise elapsed minutes) with average and maximum heart rate. Tap a chart to see values at that point.
+Open a workout for the full card: interactive map (when a track is present), photo gallery, the same social bar as in the list, a speed-over-distance chart with average and maximum speed (or a pace chart with average and best pace for running and walking sports), a heart-rate chart (distance when GPS is present, otherwise elapsed minutes) with average and maximum heart rate, and a cadence chart for cycling and foot sports (except wheelchair) when the track has cadence data — rpm for cycling, steps/min for running and walking (display values follow Strava’s foot cadence convention). Average cadence also appears in the stats grid when available. Tap a chart to see values at that point.
 
 You can create workouts manually, import GPX/FIT tracks, attach photos, and link equipment. When editing a workout you can add or remove photos (up to 20). On create, the workout name defaults to the localized sport type and follows sport changes until you edit it. On Android you can also record a live GPS track (see below).
 

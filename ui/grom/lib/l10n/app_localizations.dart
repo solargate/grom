@@ -562,6 +562,12 @@ abstract class AppLocalizations {
   /// **'Heart rate'**
   String get workoutHeartRateChartTitle;
 
+  /// No description provided for @workoutCadenceChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cadence'**
+  String get workoutCadenceChartTitle;
+
   /// No description provided for @workoutTotalTime.
   ///
   /// In en, this message translates to:
@@ -579,6 +585,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Max. heart rate'**
   String get workoutHeartRateMax;
+
+  /// No description provided for @workoutCadenceAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. cadence'**
+  String get workoutCadenceAvg;
+
+  /// No description provided for @workoutCadenceMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max. cadence'**
+  String get workoutCadenceMax;
+
+  /// No description provided for @cadenceRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} rpm'**
+  String cadenceRpm(String value);
+
+  /// No description provided for @cadenceStepsPerMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} spm'**
+  String cadenceStepsPerMin(String value);
 
   /// No description provided for @chartMinutes.
   ///

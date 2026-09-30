@@ -91,9 +91,28 @@
   "workoutSpeedMax": "Max. speed",
   "workoutSpeedChartTitle": "Speed",
   "workoutHeartRateChartTitle": "Heart rate",
+  "workoutCadenceChartTitle": "Cadence",
   "workoutTotalTime": "Total time",
   "workoutHeartRateAvg": "Avg. heart rate",
   "workoutHeartRateMax": "Max. heart rate",
+  "workoutCadenceAvg": "Avg. cadence",
+  "workoutCadenceMax": "Max. cadence",
+  "cadenceRpm": "{value} rpm",
+  "@cadenceRpm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "cadenceStepsPerMin": "{value} spm",
+  "@cadenceStepsPerMin": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "chartMinutes": "{value} min",
   "@chartMinutes": {
     "placeholders": {

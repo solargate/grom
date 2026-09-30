@@ -108,6 +108,11 @@ bool isFootSport(String sportType) {
   return sportTypeById(sportType)?.category == SportCategory.foot;
 }
 
+/// Whether [sportType] is in the cycle category.
+bool isCycleSport(String sportType) {
+  return sportTypeById(sportType)?.category == SportCategory.cycle;
+}
+
 /// Default sport for a new workout: last known type if it is in the catalog,
 /// otherwise [defaultSportTypeId] (`Run`).
 String resolveDefaultSportTypeId(String? fromLastWorkout) {

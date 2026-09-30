@@ -14,6 +14,7 @@ const (
 	PreviewPrefix      = "preview-"
 	SpeedChartFileJSON     = "speed-chart.json"
 	HeartRateChartFileJSON = "heartrate-chart.json"
+	CadenceChartFileJSON   = "cadence-chart.json"
 )
 
 // WorkoutDirName returns the workout directory basename ({startDate}-{id}).
@@ -39,7 +40,7 @@ func WorkoutMapPreview(nickname, workoutDirName string) string {
 }
 
 // WorkoutSpeed returns the logical storage key for a workout chart sidecar file
-// (speed-chart.json or heartrate-chart.json on the file driver).
+// (speed-chart.json, heartrate-chart.json, or cadence-chart.json on the file driver).
 func WorkoutSpeed(nickname, workoutDirName, filename string) string {
 	return filepath.Join(data.UsersSubdir, nickname, "workouts", workoutDirName, filename)
 }
@@ -85,7 +86,7 @@ func FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID string) string
 }
 
 // FederatedInboxSpeed returns the logical storage key for a federated workout
-// chart sidecar (speed-chart.json or heartrate-chart.json on the file driver).
+// chart sidecar (speed-chart.json, heartrate-chart.json, or cadence-chart.json on the file driver).
 func FederatedInboxSpeed(viewerNickname, ownerKey, workoutID, filename string) string {
 	return filepath.Join(FederatedInboxOwnerDir(viewerNickname, ownerKey), workoutID+"_"+filename)
 }

@@ -15,6 +15,7 @@ void main() {
     double? speedAvgKmh = 10,
     double? elevationGain = 80,
     double? heartRateAvg = 145,
+    double? cadenceAvg,
     int? stepsTotal = 9000,
     double? calories = 500,
   }) {
@@ -31,6 +32,7 @@ void main() {
       speedAvgKmh: speedAvgKmh,
       elevationGain: elevationGain,
       heartRateAvg: heartRateAvg,
+      cadenceAvg: cadenceAvg,
       stepsTotal: stepsTotal,
       calories: calories,
     );
@@ -74,6 +76,37 @@ void main() {
     expect(stats.map((s) => s.label).first, 'Distance');
     expect(stats[1].label, 'Pace');
     expect(stats[1].value, '6:00 /km');
+  });
+
+  test('avg cadence is last and scaled for foot sports', () {
+    final stats = buildWorkoutStats(
+      l10n,
+      workout(sportType: 'Run', cadenceAvg: 90),
+    );
+    expect(stats.last.label, 'Avg. cadence');
+    expect(stats.last.value, '180 spm');
+  });
+
+  test('avg cadence uses rpm for cycle sports', () {
+    final stats = buildWorkoutStats(
+      l10n,
+      workout(sportType: 'Ride', tempAvgKmm: null, cadenceAvg: 90),
+    );
+    expect(stats.last.label, 'Avg. cadence');
+    expect(stats.last.value, '90 rpm');
+  });
+
+  test('avg cadence omitted for Wheelchair and unsupported sports', () {
+    expect(
+      buildWorkoutStats(l10n, workout(sportType: 'Wheelchair', cadenceAvg: 80))
+          .any((s) => s.label == 'Avg. cadence'),
+      isFalse,
+    );
+    expect(
+      buildWorkoutStats(l10n, workout(sportType: 'Swim', cadenceAvg: 80))
+          .any((s) => s.label == 'Avg. cadence'),
+      isFalse,
+    );
   });
 
   test('chunkWorkoutStats respects maxRows', () {

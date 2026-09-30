@@ -25,9 +25,11 @@ var (
 	bucketCommentActivities   = []byte("comment_activities")
 	bucketSpeedCharts         = []byte("speed_charts")
 	bucketFedSpeedCharts      = []byte("fed_speed_charts")
-	bucketHeartRateCharts     = []byte("heart_rate_charts")
-	bucketFedHeartRateCharts  = []byte("fed_heart_rate_charts")
-	bucketResetTokens         = []byte("reset_tokens")
+	bucketHeartRateCharts      = []byte("heart_rate_charts")
+	bucketFedHeartRateCharts   = []byte("fed_heart_rate_charts")
+	bucketCadenceCharts        = []byte("cadence_charts")
+	bucketFedCadenceCharts     = []byte("fed_cadence_charts")
+	bucketResetTokens          = []byte("reset_tokens")
 	bucketPersonalAccessTokens = []byte("personal_access_tokens")
 )
 
@@ -58,6 +60,8 @@ var allBuckets = [][]byte{
 	bucketFedSpeedCharts,
 	bucketHeartRateCharts,
 	bucketFedHeartRateCharts,
+	bucketCadenceCharts,
+	bucketFedCadenceCharts,
 	bucketResetTokens,
 	bucketPersonalAccessTokens,
 }
