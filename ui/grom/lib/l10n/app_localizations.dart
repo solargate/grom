@@ -520,6 +520,18 @@ abstract class AppLocalizations {
   /// **'Pace'**
   String get workoutPace;
 
+  /// No description provided for @workoutPaceAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. pace'**
+  String get workoutPaceAvg;
+
+  /// No description provided for @workoutPaceBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best pace'**
+  String get workoutPaceBest;
+
   /// No description provided for @workoutElevationGain.
   ///
   /// In en, this message translates to:
@@ -1365,6 +1377,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{speed} km/h'**
   String speedKmh(String speed);
+
+  /// No description provided for @paceMinKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} /km'**
+  String paceMinKm(String pace);
 
   /// No description provided for @speedUnavailable.
   ///

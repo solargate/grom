@@ -237,6 +237,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutPace => 'Tempo';
 
   @override
+  String get workoutPaceAvg => 'Ø Tempo';
+
+  @override
+  String get workoutPaceBest => 'Bestes Tempo';
+
+  @override
   String get workoutElevationGain => 'Höhenmeter';
 
   @override
@@ -695,6 +701,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String speedKmh(String speed) {
     return '$speed km/h';
+  }
+
+  @override
+  String paceMinKm(String pace) {
+    return '$pace /km';
   }
 
   @override

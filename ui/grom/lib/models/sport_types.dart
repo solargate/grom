@@ -103,6 +103,11 @@ SportTypeInfo? sportTypeById(String id) {
   return null;
 }
 
+/// Whether [sportType] is in the foot category (run / walk / hike / wheelchair).
+bool isFootSport(String sportType) {
+  return sportTypeById(sportType)?.category == SportCategory.foot;
+}
+
 /// Default sport for a new workout: last known type if it is in the catalog,
 /// otherwise [defaultSportTypeId] (`Run`).
 String resolveDefaultSportTypeId(String? fromLastWorkout) {
