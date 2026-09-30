@@ -6,6 +6,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/workout_pace.dart';
 
+import 'chart_axis.dart';
 import 'workout_map_preview.dart';
 import 'workout_speed_chart.dart';
 
@@ -54,7 +55,7 @@ class WorkoutPaceChart extends StatelessWidget {
       maxX = minX + 0.1;
     }
 
-    final yAxis = _computeInvertedPaceYAxisBounds(
+    final yAxis = computeInvertedPaceYAxisBounds(
       minSeriesY: minSeriesY,
       maxSeriesY: maxSeriesY,
     );
@@ -231,31 +232,6 @@ class WorkoutPaceChart extends StatelessWidget {
       },
     );
   }
-}
-
-class _PaceYAxisBounds {
-  const _PaceYAxisBounds({required this.bottom, required this.top});
-
-  final double bottom;
-  final double top;
-}
-
-/// Y bounds for negated pace series (faster = higher / less negative).
-_PaceYAxisBounds _computeInvertedPaceYAxisBounds({
-  required double minSeriesY,
-  required double maxSeriesY,
-  double paddingSec = 30,
-}) {
-  // Series Y is -paceSec; expand slow end downward and fast end upward.
-  final yBottom = minSeriesY - paddingSec;
-  var yTop = maxSeriesY + paddingSec;
-  if (yTop >= 0) {
-    yTop = math.min(-1.0, maxSeriesY / 2);
-  }
-  if (yTop <= yBottom) {
-    yTop = yBottom + 1;
-  }
-  return _PaceYAxisBounds(bottom: yBottom, top: yTop);
 }
 
 class _PaceStatRow extends StatelessWidget {

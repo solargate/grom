@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
 import '../api_request.dart';
-import '../models/sport_types.dart';
 import '../models/workout.dart';
 import '../models/workout_heartrate.dart';
 import '../models/workout_pace.dart';
@@ -68,18 +67,18 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
 
   bool get _hasGpsMap => widget.workout.hasMapPreview;
 
-  bool get _isFootSportType => isFootSport(widget.workout.sportType);
-
   List<WorkoutPaceSample> get _paceSamples =>
       paceSamplesFromSpeed(_speedSamples ?? const []);
 
-  bool get _hasPaceChart =>
-      _isFootSportType && _paceSamples.length >= 2;
+  bool get _hasPaceChart => hasPaceChart(
+        sportType: widget.workout.sportType,
+        paceSamples: _paceSamples,
+      );
 
-  bool get _hasSpeedChart =>
-      !_isFootSportType &&
-      _speedSamples != null &&
-      _speedSamples!.length >= 2;
+  bool get _hasSpeedChart => hasSpeedChart(
+        sportType: widget.workout.sportType,
+        speedSamples: _speedSamples,
+      );
 
   bool get _hasMotionChart => _hasPaceChart || _hasSpeedChart;
 

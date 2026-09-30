@@ -1,6 +1,25 @@
 import 'package:grom/l10n/app_localizations.dart';
 
+import 'sport_types.dart';
 import 'workout_speed.dart';
+
+/// Whether the detail screen should show a pace chart (foot sport + ≥2 samples).
+bool hasPaceChart({
+  required String sportType,
+  required List<WorkoutPaceSample> paceSamples,
+}) {
+  return isFootSport(sportType) && paceSamples.length >= 2;
+}
+
+/// Whether the detail screen should show a speed chart (non-foot + ≥2 samples).
+bool hasSpeedChart({
+  required String sportType,
+  required List<WorkoutSpeedSample>? speedSamples,
+}) {
+  return !isFootSport(sportType) &&
+      speedSamples != null &&
+      speedSamples.length >= 2;
+}
 
 /// One pace sample (seconds per km) derived from a speed chart point.
 class WorkoutPaceSample {
