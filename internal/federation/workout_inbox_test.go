@@ -131,6 +131,45 @@ func TestWorkoutInboxStoreSaveFITWritesHeartRateChart(t *testing.T) {
 	}
 }
 
+func TestWorkoutInboxStoreSaveFITWritesCadenceChart(t *testing.T) {
+	dir := t.TempDir()
+	store := newTestInboxStore(dir)
+
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	workout := &workouts.Workout{
+		ID:              "87654322",
+		Name:            "Remote cadence ride",
+		SportType:       "Ride",
+		StartDate:       time.Date(2026, 7, 8, 11, 0, 0, 0, time.UTC),
+		DurationSeconds: 3600,
+		Distance:        20000,
+		Track:           tracks.TrackFileFIT,
+	}
+	ownerHandle := "rider@remote.test"
+
+	if err := store.Save("viewer", ownerHandle, workout, fitData, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	_, samples, err := store.GetCadenceChart("viewer", "rider", "87654322")
+	if err != nil {
+		t.Fatalf("GetCadenceChart() error = %v", err)
+	}
+	if len(samples) < 2 {
+		t.Fatalf("expected cadence chart samples, got %d", len(samples))
+	}
+
+	ownerKey := OwnerKeyFromHandle(ownerHandle)
+	cadenceKey := keys.FederatedInboxSpeed("viewer", ownerKey, "87654322", keys.CadenceChartFileJSON)
+	if _, err := os.Stat(filepath.Join(dir, cadenceKey)); err != nil {
+		t.Fatalf("expected federated cadence-chart.json: %v", err)
+	}
+}
+
 func TestWorkoutInboxStoreDelete(t *testing.T) {
 	dir := t.TempDir()
 	store := newTestInboxStore(dir)

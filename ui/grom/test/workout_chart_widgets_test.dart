@@ -200,4 +200,35 @@ void main() {
     expect(find.text('170 spm'), findsOneWidget);
     expect(find.text('180 spm'), findsOneWidget);
   });
+
+  testWidgets('WorkoutCadenceChart renders rpm for Ride without ×2', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        WorkoutCadenceChart(
+          samples: [
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10),
+              cadence: 80,
+              distanceM: 0,
+            ),
+            WorkoutCadenceSample(
+              time: DateTime.utc(2026, 7, 8, 10, 1),
+              cadence: 90,
+              distanceM: 200,
+            ),
+          ],
+          hasGps: true,
+          sportType: 'Ride',
+          cadenceAvg: 85,
+          cadenceMax: 90,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Cadence'), findsOneWidget);
+    expect(find.text('85 rpm'), findsOneWidget);
+    expect(find.text('90 rpm'), findsOneWidget);
+    expect(find.textContaining('spm'), findsNothing);
+  });
 }

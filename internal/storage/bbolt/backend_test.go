@@ -227,6 +227,7 @@ func TestWorkoutsUpdateMigratesChartsOnStartDateChange(t *testing.T) {
 	ctx := context.Background()
 	speedStore := storebbolt.NewSpeedChartStore(b.DB())
 	hrStore := storebbolt.NewHeartRateChartStore(b.DB())
+	cadenceStore := storebbolt.NewCadenceChartStore(b.DB())
 	speedSamples := []workouts.SpeedSample{
 		{Time: start, SpeedKmh: 22.5, DistanceM: 0},
 		{Time: start.Add(time.Minute), SpeedKmh: 25, DistanceM: 400},
@@ -236,11 +237,18 @@ func TestWorkoutsUpdateMigratesChartsOnStartDateChange(t *testing.T) {
 		{Time: start, BPM: 120, DistanceM: &dist},
 		{Time: start.Add(time.Minute), BPM: 140, DistanceM: &dist},
 	}
+	cadenceSamples := []workouts.CadenceSample{
+		{Time: start, Cadence: 80, DistanceM: &dist},
+		{Time: start.Add(time.Minute), Cadence: 95, DistanceM: &dist},
+	}
 	if err := speedStore.WriteLocal(ctx, "alice", oldDirName, speedSamples); err != nil {
 		t.Fatalf("write speed chart: %v", err)
 	}
 	if err := hrStore.WriteLocal(ctx, "alice", oldDirName, hrSamples); err != nil {
 		t.Fatalf("write heart rate chart: %v", err)
+	}
+	if err := cadenceStore.WriteLocal(ctx, "alice", oldDirName, cadenceSamples); err != nil {
+		t.Fatalf("write cadence chart: %v", err)
 	}
 
 	// Simulate edit form truncating seconds (old bug trigger).
@@ -273,6 +281,14 @@ func TestWorkoutsUpdateMigratesChartsOnStartDateChange(t *testing.T) {
 	}
 	if len(gotHR) != 2 || gotHR[1].BPM != 140 {
 		t.Fatalf("heart rate chart after rename = %#v", gotHR)
+	}
+
+	_, gotCadence, err := svc.GetCadenceChart("alice", created.ID)
+	if err != nil {
+		t.Fatalf("GetCadenceChart: %v", err)
+	}
+	if len(gotCadence) != 2 || gotCadence[1].Cadence != 95 {
+		t.Fatalf("cadence chart after rename = %#v", gotCadence)
 	}
 
 	oldSpeed, err := speedStore.ReadLocal(ctx, "alice", oldDirName)

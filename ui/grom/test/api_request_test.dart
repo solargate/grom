@@ -580,6 +580,73 @@ void main() {
     expect(series.heartRateMax, 140);
   });
 
+  test('getWorkoutCadence requests owner and parses samples', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/v1/workouts/wid/cadence');
+      expect(request.url.queryParameters['owner'], 'alice');
+      expect(request.headers['Authorization'], 'Bearer tok');
+      return http.Response(
+        jsonEncode({
+          'samples': [
+            {
+              't': '2026-07-08T10:00:00Z',
+              'cadence': 80,
+              'distance_m': 10,
+            },
+            {
+              't': '2026-07-08T10:00:10Z',
+              'cadence': 90,
+              'distance_m': 40,
+            },
+          ],
+          'has_gps': true,
+          'cadence_avg': 85,
+          'cadence_max': 90,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final series = await ApiRequest(client: client).getWorkoutCadence(
+      token: 'tok',
+      workoutId: 'wid',
+      owner: 'alice',
+    );
+    expect(series.samples, hasLength(2));
+    expect(series.samples.first.cadence, 80);
+    expect(series.hasGps, isTrue);
+    expect(series.cadenceMax, 90);
+  });
+
+  test('getWorkoutCadence parses has_gps false and empty distance', () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/v1/workouts/wid/cadence');
+      return http.Response(
+        jsonEncode({
+          'samples': [
+            {'t': '2026-07-08T10:00:00Z', 'cadence': 70},
+            {'t': '2026-07-08T10:01:00Z', 'cadence': 90},
+          ],
+          'has_gps': false,
+          'cadence_avg': 80,
+          'cadence_max': 90,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final series = await ApiRequest(client: client).getWorkoutCadence(
+      token: 'tok',
+      workoutId: 'wid',
+    );
+    expect(series.hasGps, isFalse);
+    expect(series.samples.first.distanceM, isNull);
+    expect(series.cadenceMax, 90);
+  });
+
   test('hasExternalID returns exists flag from API', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {

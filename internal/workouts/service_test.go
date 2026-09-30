@@ -60,6 +60,37 @@ func TestServiceAttachTrackWritesSpeedAndHeartRateCharts(t *testing.T) {
 	}
 	// Sample GPX may lack HR; chart store may still be empty — speed is required.
 	_ = hrSamples
+
+	fitData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-ride.fit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fitParsed, err := tracks.Parse(fitData, "ride.fit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ride, err := svc.Create("athlete", &workouts.Workout{
+		Name:      "Cadence chart test",
+		SportType: "Ride",
+		StartDate: time.Date(2026, 7, 7, 10, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AttachTrack("athlete", ride, &workouts.TrackInput{
+		Filename: "ride.fit",
+		Data:     fitData,
+		Parsed:   fitParsed,
+	}); err != nil {
+		t.Fatalf("AttachTrack FIT: %v", err)
+	}
+	_, cadenceSamples, err := svc.GetCadenceChart("athlete", ride.ID)
+	if err != nil {
+		t.Fatalf("GetCadenceChart: %v", err)
+	}
+	if len(cadenceSamples) < 2 {
+		t.Fatalf("expected cadence chart samples after FIT attach, got %d", len(cadenceSamples))
+	}
 }
 
 func TestServiceDeleteRemovesWorkout(t *testing.T) {

@@ -153,6 +153,10 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	if err != nil || len(wantHR) < 1 {
 		t.Fatalf("file HR chart: len=%d err=%v", len(wantHR), err)
 	}
+	_, wantCadence, err := fileBackend.Workouts().GetCadenceChart("alice", fitWorkout.ID)
+	if err != nil || len(wantCadence) < 2 {
+		t.Fatalf("file cadence chart: len=%d err=%v", len(wantCadence), err)
+	}
 	_ = fileBackend.Close()
 
 	if _, err := migrate.Run(migrate.Options{
@@ -181,6 +185,13 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	if len(gotHR) != len(wantHR) {
 		t.Fatalf("bbolt HR len=%d want %d", len(gotHR), len(wantHR))
 	}
+	_, gotCadence, err := boltBackend.Workouts().GetCadenceChart("alice", fitWorkout.ID)
+	if err != nil {
+		t.Fatalf("bbolt GetCadenceChart: %v", err)
+	}
+	if len(gotCadence) != len(wantCadence) {
+		t.Fatalf("bbolt cadence len=%d want %d", len(gotCadence), len(wantCadence))
+	}
 	_ = boltBackend.Close()
 
 	// Remove JSON chart blobs so bbolt→file must rewrite them from binary buckets.
@@ -192,6 +203,7 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	for _, e := range entries {
 		_ = os.Remove(filepath.Join(gpxDir, e.Name(), "speed-chart.json"))
 		_ = os.Remove(filepath.Join(gpxDir, e.Name(), "heartrate-chart.json"))
+		_ = os.Remove(filepath.Join(gpxDir, e.Name(), "cadence-chart.json"))
 	}
 
 	if _, err := migrate.Run(migrate.Options{
@@ -214,6 +226,10 @@ func TestMigratePreservesLocalCharts(t *testing.T) {
 	_, roundHR, err := fileBackend2.Workouts().GetHeartRateChart("alice", fitWorkout.ID)
 	if err != nil || len(roundHR) != len(wantHR) {
 		t.Fatalf("round-trip HR len=%d want %d err=%v", len(roundHR), len(wantHR), err)
+	}
+	_, roundCadence, err := fileBackend2.Workouts().GetCadenceChart("alice", fitWorkout.ID)
+	if err != nil || len(roundCadence) != len(wantCadence) {
+		t.Fatalf("round-trip cadence len=%d want %d err=%v", len(roundCadence), len(wantCadence), err)
 	}
 }
 

@@ -2,6 +2,7 @@ package workouts_test
 
 import (
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -64,5 +65,31 @@ func TestCadenceChartBinaryRoundTrip(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].Cadence != 70 || got[1].Cadence != 95 {
 		t.Fatalf("got %#v", got)
+	}
+}
+
+func TestBuildCadenceChartSamplesWithoutGPSOmitsDistance(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 1, 0, time.UTC)
+	parsed := &tracks.Data{
+		CadenceSeries: []tracks.CadencePoint{
+			{Time: t0, Cadence: 70},
+			{Time: t0.Add(time.Minute), Cadence: 95},
+		},
+	}
+	got := workouts.BuildCadenceChartSamples(parsed)
+	if len(got) != 2 {
+		t.Fatalf("len = %d", len(got))
+	}
+	for i, s := range got {
+		if s.DistanceM != nil {
+			t.Fatalf("sample[%d] DistanceM = %v, want nil", i, *s.DistanceM)
+		}
+	}
+	data, err := workouts.MarshalCadenceChart(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "distance_m") {
+		t.Fatalf("distance_m should be omitted: %s", data)
 	}
 }

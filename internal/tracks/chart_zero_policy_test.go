@@ -30,6 +30,21 @@ func TestAcceptHeartRateBPMPolicies(t *testing.T) {
 	}
 }
 
+func TestAcceptCadencePolicies(t *testing.T) {
+	if !AcceptCadence(0, ChartZeroKeep) {
+		t.Fatal("keep should accept 0")
+	}
+	if AcceptCadence(0, ChartZeroOmit) {
+		t.Fatal("omit should reject 0")
+	}
+	if AcceptCadence(math.NaN(), ChartZeroKeep) || AcceptCadence(math.Inf(1), ChartZeroOmit) {
+		t.Fatal("NaN/Inf must be rejected")
+	}
+	if AcceptCadence(-1, ChartZeroKeep) {
+		t.Fatal("negatives must be rejected")
+	}
+}
+
 func TestSpeedSeriesKmhOmitDropsZero(t *testing.T) {
 	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
 	nan := math.NaN()
@@ -91,6 +106,38 @@ func TestHeartRateSeriesKeepIncludesZero(t *testing.T) {
 	}
 	series := heartRateSeries(points, false, ChartZeroKeep)
 	if len(series) != 2 || series[0].BPM != 0 || series[1].BPM != 150 {
+		t.Fatalf("got %+v", series)
+	}
+}
+
+func TestCadenceSeriesOmitDropsZero(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	nan := math.NaN()
+	points := []SamplePoint{
+		{Time: t0, HasTime: true, Cadence: floatPtr(0)},
+		{Time: t0.Add(time.Second), HasTime: true, Cadence: &nan},
+		{Time: t0.Add(2 * time.Second), HasTime: false, Cadence: floatPtr(100)},
+		{Time: t0.Add(3 * time.Second), HasTime: true},
+		{Time: t0.Add(4 * time.Second), HasTime: true, Cadence: floatPtr(95)},
+	}
+	series := cadenceSeries(points, false, ChartZeroOmit)
+	if len(series) != 1 || series[0].Cadence != 95 {
+		t.Fatalf("got %+v", series)
+	}
+}
+
+func TestCadenceSeriesKeepIncludesZero(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	nan := math.NaN()
+	points := []SamplePoint{
+		{Time: t0, HasTime: true, Cadence: floatPtr(0)},
+		{Time: t0.Add(time.Second), HasTime: true, Cadence: &nan},
+		{Time: t0.Add(2 * time.Second), HasTime: false, Cadence: floatPtr(100)},
+		{Time: t0.Add(3 * time.Second), HasTime: true},
+		{Time: t0.Add(4 * time.Second), HasTime: true, Cadence: floatPtr(95)},
+	}
+	series := cadenceSeries(points, false, ChartZeroKeep)
+	if len(series) != 2 || series[0].Cadence != 0 || series[1].Cadence != 95 {
 		t.Fatalf("got %+v", series)
 	}
 }
