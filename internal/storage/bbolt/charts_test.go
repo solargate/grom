@@ -44,6 +44,91 @@ func TestSpeedChartStoreLocalRoundTripAndDelete(t *testing.T) {
 	}
 }
 
+func TestCadenceChartStoreLocalRoundTripAndDelete(t *testing.T) {
+	b := openTestBackend(t)
+	store := storebbolt.NewCadenceChartStore(b.DB())
+	ctx := context.Background()
+	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	d0 := 0.0
+	d1 := 200.0
+	samples := []workouts.CadenceSample{
+		{Time: start, Cadence: 80, DistanceM: &d0},
+		{Time: start.Add(time.Minute), Cadence: 90, DistanceM: &d1},
+	}
+
+	if err := store.WriteLocal(ctx, "alice", "dir-1", samples); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.ReadLocal(ctx, "alice", "dir-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[1].Cadence != 90 {
+		t.Fatalf("got %#v", got)
+	}
+
+	if err := store.WriteLocal(ctx, "alice", "dir-1", nil); err != nil {
+		t.Fatal(err)
+	}
+	got, err = store.ReadLocal(ctx, "alice", "dir-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected empty after clear, got %#v", got)
+	}
+}
+
+func TestCadenceChartStoreFederatedRoundTrip(t *testing.T) {
+	b := openTestBackend(t)
+	store := storebbolt.NewCadenceChartStore(b.DB())
+	ctx := context.Background()
+	start := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	dist := 50.0
+	samples := []workouts.CadenceSample{
+		{Time: start, Cadence: 70, DistanceM: &dist},
+		{Time: start.Add(time.Minute), Cadence: 95},
+	}
+
+	if err := store.WriteFederated(ctx, "viewer", "owner_key", "wid", samples); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.ReadFederated(ctx, "viewer", "owner_key", "wid")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].Cadence != 70 || got[0].DistanceM == nil || got[1].DistanceM != nil {
+		t.Fatalf("got %#v", got)
+	}
+
+	if err := store.DeleteFederated(ctx, "viewer", "owner_key", "wid"); err != nil {
+		t.Fatal(err)
+	}
+	got, err = store.ReadFederated(ctx, "viewer", "owner_key", "wid")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected deleted, got %#v", got)
+	}
+}
+
+func TestCadenceChartStoreRejectsBadMagic(t *testing.T) {
+	b := openTestBackend(t)
+	ctx := context.Background()
+	key := []byte(workouts.LocalCadenceChartKey("alice", "bad"))
+	if err := b.DB().Update(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte("cadence_charts")).Put(key, []byte("XXXX\x01\x00\x00\x00\x00\x00"))
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	store := storebbolt.NewCadenceChartStore(b.DB())
+	if _, err := store.ReadLocal(ctx, "alice", "bad"); err == nil {
+		t.Fatal("expected bad magic error")
+	}
+}
+
 func TestHeartRateChartStoreFederatedRoundTrip(t *testing.T) {
 	b := openTestBackend(t)
 	store := storebbolt.NewHeartRateChartStore(b.DB())
@@ -112,6 +197,7 @@ func TestWorkoutDeleteClearsLocalCharts(t *testing.T) {
 	ctx := context.Background()
 	speedStore := storebbolt.NewSpeedChartStore(b.DB())
 	hrStore := storebbolt.NewHeartRateChartStore(b.DB())
+	cadenceStore := storebbolt.NewCadenceChartStore(b.DB())
 	if err := speedStore.WriteLocal(ctx, "alice", dirName, []workouts.SpeedSample{
 		{Time: start, SpeedKmh: 10, DistanceM: 0},
 	}); err != nil {
@@ -119,6 +205,11 @@ func TestWorkoutDeleteClearsLocalCharts(t *testing.T) {
 	}
 	if err := hrStore.WriteLocal(ctx, "alice", dirName, []workouts.HeartRateSample{
 		{Time: start, BPM: 120},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := cadenceStore.WriteLocal(ctx, "alice", dirName, []workouts.CadenceSample{
+		{Time: start, Cadence: 80},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -133,5 +224,9 @@ func TestWorkoutDeleteClearsLocalCharts(t *testing.T) {
 	hr, err := hrStore.ReadLocal(ctx, "alice", dirName)
 	if err != nil || len(hr) != 0 {
 		t.Fatalf("hr after delete: %#v err=%v", hr, err)
+	}
+	cadence, err := cadenceStore.ReadLocal(ctx, "alice", dirName)
+	if err != nil || len(cadence) != 0 {
+		t.Fatalf("cadence after delete: %#v err=%v", cadence, err)
 	}
 }

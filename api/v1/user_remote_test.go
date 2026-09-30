@@ -645,6 +645,106 @@ func TestRemoteUserWorkoutLiveTrackAndSpeed(t *testing.T) {
 	expectStatus(t, w, http.StatusNotFound)
 }
 
+func TestRemoteUserWorkoutLiveCadence(t *testing.T) {
+	ta := setupFederationTestApp(t)
+	ta.register(t, "alice", "alice@example.com", "password12")
+	aliceToken, _ := ta.login(t, "alice@example.com", "password12")
+
+	workoutID := "livecadence"
+	objectURL := ""
+	fit := readTestdata(t, "tracks/1-ride.fit")
+	var remote *httptest.Server
+	remote = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		base := "https://" + r.Host
+		switch {
+		case strings.Contains(r.URL.Path, "/.well-known/webfinger"):
+			w.Header().Set("Content-Type", "application/jrd+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"subject": r.URL.Query().Get("resource"),
+				"links": []map[string]any{{
+					"rel":  "self",
+					"type": "application/activity+json",
+					"href": base + "/users/bob",
+				}},
+			})
+		case r.URL.Path == "/users/bob":
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":          "https://www.w3.org/ns/activitystreams",
+				"id":                base + "/users/bob",
+				"type":              "Person",
+				"preferredUsername": "bob",
+				"name":              "Bob Remote",
+				"inbox":             base + "/users/bob/inbox",
+				"outbox":            base + "/users/bob/outbox",
+			})
+		case r.URL.Path == "/users/bob/outbox":
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":   "https://www.w3.org/ns/activitystreams",
+				"id":         base + "/users/bob/outbox",
+				"type":       "OrderedCollection",
+				"totalItems": 1,
+				"orderedItems": []any{
+					map[string]any{
+						"id":    objectURL + "/activity",
+						"type":  "Create",
+						"actor": base + "/users/bob",
+						"object": map[string]any{
+							"id":              objectURL,
+							"type":            "Workout",
+							"name":            "Remote FIT ride",
+							"sportType":       "Ride",
+							"startDate":       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC).Format(time.RFC3339),
+							"durationSeconds": 2041,
+							"distance":        20000.0,
+							"track":           "track.fit",
+						},
+					},
+				},
+			})
+		case r.URL.Path == "/users/bob/workouts/"+workoutID:
+			w.Header().Set("Content-Type", "application/activity+json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"@context":        "https://www.w3.org/ns/activitystreams",
+				"id":              objectURL,
+				"type":            "Workout",
+				"name":            "Remote FIT ride",
+				"sportType":       "Ride",
+				"startDate":       time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC).Format(time.RFC3339),
+				"durationSeconds": 2041,
+				"distance":        20000.0,
+				"track":           "track.fit",
+				"trackData":       base64.StdEncoding.EncodeToString(fit),
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer remote.Close()
+
+	host := remote.Listener.Addr().String()
+	objectURL = "https://" + host + "/users/bob/workouts/" + workoutID
+	ta.app.SetFederationHTTPClient(remote.Client())
+
+	escaped := url.PathEscape("bob@" + host)
+	w := ta.doJSON(t, http.MethodGet, "/api/v1/users/"+escaped+"/workouts", nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+
+	cadencePath := "/api/v1/workouts/" + workoutID + "/cadence?owner=bob&object_id=" + url.QueryEscape(objectURL)
+	w = ta.doJSON(t, http.MethodGet, cadencePath, nil, aliceToken)
+	expectStatus(t, w, http.StatusOK)
+	body := decodeObject(t, w)
+	samples, _ := body["samples"].([]any)
+	if len(samples) < 2 {
+		t.Fatalf("expected live cadence samples: %#v", body)
+	}
+	first, _ := samples[0].(map[string]any)
+	if _, ok := first["cadence"].(float64); !ok {
+		t.Fatalf("expected cadence in sample: %#v", first)
+	}
+}
+
 func TestLocalFollowersFollowingCollections(t *testing.T) {
 	ta := setupFederationTestAppDefaultAF(t)
 	ta.register(t, "alice", "alice@example.com", "password12")

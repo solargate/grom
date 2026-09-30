@@ -28,7 +28,7 @@ Ihr Home-Feed listet Aktivitäten mit Typ, Datum, Gerät, Distanz/Zeit (und Temp
 
 ![Workout-Liste auf Android](../screenshots/workout-list.jpg)
 
-Öffnen Sie ein Workout für die volle Karte: interaktive Karte (wenn ein Track vorhanden ist), Fotogalerie, dieselbe Social-Leiste wie in der Liste, ein Geschwindigkeits-über-Distanz-Diagramm mit Durchschnitt und Maximum (oder ein Tempo-Diagramm mit Durchschnitt und bestem Tempo für Sportarten der Kategorie Laufen und Gehen) sowie ein Herzfrequenz-Diagramm (Distanz bei GPS, sonst vergangene Minuten) mit Durchschnitt und Maximum. Tippen Sie auf ein Diagramm, um Werte an diesem Punkt zu sehen.
+Öffnen Sie ein Workout für die volle Karte: interaktive Karte (wenn ein Track vorhanden ist), Fotogalerie, dieselbe Social-Leiste wie in der Liste, ein Geschwindigkeits-über-Distanz-Diagramm mit Durchschnitt und Maximum (oder ein Tempo-Diagramm mit Durchschnitt und bestem Tempo für Sportarten der Kategorie Laufen und Gehen), ein Herzfrequenz-Diagramm (Distanz bei GPS, sonst vergangene Minuten) mit Durchschnitt und Maximum sowie ein Kadenz-Diagramm für Rad- und Fußsportarten (außer Rollstuhl), wenn der Track Kadenzdaten hat — U/min fürs Rad, Schritte/min für Laufen und Gehen (Anzeige wie bei Strava). Die Durchschnittskadenz erscheint auch im Statistikraster, wenn vorhanden. Tippen Sie auf ein Diagramm, um Werte an diesem Punkt zu sehen.
 
 Sie können Workouts manuell anlegen, GPX/FIT-Tracks importieren, Fotos anhängen und Ausrüstung verknüpfen. Beim Bearbeiten können Sie Fotos hinzufügen oder entfernen (bis 20). Beim Anlegen ist der Workout-Name standardmäßig der lokalisierte Sporttyp und folgt Sportwechseln, bis Sie ihn bearbeiten. Unter Android können Sie auch einen Live-GPS-Track aufzeichnen (siehe unten).
 

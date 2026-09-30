@@ -599,6 +599,34 @@ definitions:
         example: bob
         type: string
     type: object
+  v1.WorkoutCadenceResponse:
+    properties:
+      cadence_avg:
+        example: 84
+        type: number
+      cadence_max:
+        example: 110
+        type: number
+      has_gps:
+        example: true
+        type: boolean
+      samples:
+        items:
+          $ref: '#/definitions/v1.WorkoutCadenceSampleResponse'
+        type: array
+    type: object
+  v1.WorkoutCadenceSampleResponse:
+    properties:
+      cadence:
+        example: 84
+        type: number
+      distance_m:
+        example: 12.5
+        type: number
+      t:
+        example: "2026-07-05T14:30:01Z"
+        type: string
+    type: object
   v1.WorkoutCommentCreateResponse:
     properties:
       comment:
@@ -756,6 +784,12 @@ definitions:
     properties:
       author:
         $ref: '#/definitions/v1.WorkoutAuthorResponse'
+      cadence_avg:
+        example: 84
+        type: number
+      cadence_max:
+        example: 110
+        type: number
       calories:
         example: 415
         type: number
@@ -2209,6 +2243,47 @@ paths:
       security:
       - BearerAuth: []
       summary: Update workout
+      tags:
+      - workouts
+  /workouts/{id}/cadence:
+    get:
+      description: Return the precomputed cadence chart series (up to 500 points).
+        Use owner query for followed users' workouts (same as track/media). Empty
+        samples when no chart exists. Values are raw device/track units; clients may
+        scale for foot sports. distance_m is omitted when the track has no GPS; has_gps
+        indicates whether the X axis should use distance.
+      parameters:
+      - description: Workout ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workout owner nickname (required for followed users' workouts)
+        in: query
+        name: owner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.WorkoutCadenceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Workout not found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get workout cadence series
       tags:
       - workouts
   /workouts/{id}/comments:

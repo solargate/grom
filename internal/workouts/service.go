@@ -16,11 +16,12 @@ type Service struct {
 	blobs           blob.Store
 	speedCharts     SpeedChartStore
 	heartRateCharts HeartRateChartStore
+	cadenceCharts   CadenceChartStore
 	equipment       EquipmentCatalog
 }
 
-func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore, heartRateCharts HeartRateChartStore) *Service {
-	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts, heartRateCharts: heartRateCharts}
+func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore, heartRateCharts HeartRateChartStore, cadenceCharts CadenceChartStore) *Service {
+	return &Service{repo: repo, blobs: blobs, speedCharts: speedCharts, heartRateCharts: heartRateCharts, cadenceCharts: cadenceCharts}
 }
 
 // SetEquipmentCatalog enables read-time equipment name/type enrichment in List.
@@ -98,6 +99,23 @@ func (s *Service) GetHeartRateChart(nickname, workoutID string) (*Workout, []Hea
 	samples, err := s.heartRateCharts.ReadLocal(context.Background(), nickname, dirName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read heart rate chart: %w", err)
+	}
+	return workout, samples, nil
+}
+
+// GetCadenceChart returns workout metadata and precomputed chart samples for /cadence.
+func (s *Service) GetCadenceChart(nickname, workoutID string) (*Workout, []CadenceSample, error) {
+	workout, err := s.repo.Get(nickname, workoutID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if workout.Track == "" || s.cadenceCharts == nil {
+		return workout, nil, nil
+	}
+	dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
+	samples, err := s.cadenceCharts.ReadLocal(context.Background(), nickname, dirName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read cadence chart: %w", err)
 	}
 	return workout, samples, nil
 }
@@ -218,4 +236,12 @@ func (s *Service) writeHeartRateChart(nickname, dirName string, parsed *tracks.D
 	}
 	samples := BuildHeartRateChartSamples(parsed)
 	return s.heartRateCharts.WriteLocal(context.Background(), nickname, dirName, samples)
+}
+
+func (s *Service) writeCadenceChart(nickname, dirName string, parsed *tracks.Data) error {
+	if s.cadenceCharts == nil {
+		return fmt.Errorf("cadence chart store is nil")
+	}
+	samples := BuildCadenceChartSamples(parsed)
+	return s.cadenceCharts.WriteLocal(context.Background(), nickname, dirName, samples)
 }

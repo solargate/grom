@@ -11,10 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
+- Cadence chart on cycling and running workouts, with average cadence in stats
 - Running and walking workouts show a pace chart instead of speed (average and best pace)
 
 ### Added
 
+- **UI:** Cadence chart on workout detail for cycling and foot sports (except wheelchair) when track cadence exists — rpm for cycling, steps/min for foot (Strava-style ×2 display); average and max under the chart; average cadence in the stats grid
+- **Server:** Precomputed cadence chart sidecar and `GET /workouts/{id}/cadence`; workout list/detail responses include `cadence_avg` / `cadence_max`
+- **Docs:** User overview notes cadence charts and units by sport category
 - **UI:** Foot-category workouts (run, walk, hike, etc.) show a pace chart on the detail screen instead of speed, with average and best pace; other sports keep the speed chart
 - **Docs:** User overview notes pace vs speed charts by sport category
 

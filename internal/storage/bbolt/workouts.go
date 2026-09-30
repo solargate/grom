@@ -114,6 +114,9 @@ func (s *WorkoutsStore) deleteWorkoutMeta(tx *bolt.Tx, nickname string, w *worko
 	if err := DeleteLocalHeartRateChartInTx(tx, nickname, dirName); err != nil {
 		return err
 	}
+	if err := DeleteLocalCadenceChartInTx(tx, nickname, dirName); err != nil {
+		return err
+	}
 	_ = tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey))
 	_ = tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID))
 	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
@@ -277,6 +280,9 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 				return err
 			}
 			if err := MigrateLocalHeartRateChartInTx(tx, nickname, oldDirName, newDirName); err != nil {
+				return err
+			}
+			if err := MigrateLocalCadenceChartInTx(tx, nickname, oldDirName, newDirName); err != nil {
 				return err
 			}
 			if err := s.deleteWorkoutMeta(tx, nickname, old); err != nil {

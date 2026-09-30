@@ -253,6 +253,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutHeartRateChartTitle => 'Пульс';
 
   @override
+  String get workoutCadenceChartTitle => 'Каденс';
+
+  @override
   String get workoutTotalTime => 'Общее время';
 
   @override
@@ -260,6 +263,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get workoutHeartRateMax => 'Максимальный пульс';
+
+  @override
+  String get workoutCadenceAvg => 'Средний каденс';
+
+  @override
+  String get workoutCadenceMax => 'Максимальный каденс';
+
+  @override
+  String cadenceRpm(String value) {
+    return '$value об/мин';
+  }
+
+  @override
+  String cadenceStepsPerMin(String value) {
+    return '$value шаг/мин';
+  }
 
   @override
   String chartMinutes(String value) {

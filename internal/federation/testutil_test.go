@@ -9,5 +9,6 @@ func newTestInboxStore(dir string) *WorkoutInboxStore {
 	blobs := blobfs.NewStore(dir)
 	speedCharts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	return NewWorkoutInboxStore(dir, blobs, speedCharts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	return NewWorkoutInboxStore(dir, blobs, speedCharts, hrCharts, cadenceCharts)
 }

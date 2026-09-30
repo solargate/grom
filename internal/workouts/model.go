@@ -75,3 +75,12 @@ type HeartRateSample struct {
 	BPM       float64
 	DistanceM *float64
 }
+
+// CadenceSample is a per-point cadence value bound to an absolute UTC timestamp
+// and optional cumulative distance from the start of the track (meters; nil when no GPS).
+// Values are raw device/track units; clients may scale for foot sports.
+type CadenceSample struct {
+	Time      time.Time
+	Cadence   float64
+	DistanceM *float64
+}

@@ -10,6 +10,7 @@ import 'models/social.dart';
 import 'models/user_public_profile.dart';
 import 'models/workout.dart';
 import 'models/workout_heartrate.dart';
+import 'models/workout_cadence.dart';
 import 'models/workout_speed.dart';
 import 'server_storage.dart';
 
@@ -838,6 +839,36 @@ class ApiRequest {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutHeartRateSeries.fromJson(json);
+    }
+
+    throw _parseError(response);
+  }
+
+  Future<WorkoutCadenceSeries> getWorkoutCadence({
+    required String token,
+    required String workoutId,
+    String? owner,
+    String? objectId,
+  }) async {
+    var uri = _uri('/api/v1/workouts/$workoutId/cadence');
+    final params = <String, String>{};
+    if (owner != null && owner.isNotEmpty) {
+      params['owner'] = owner;
+    }
+    if (objectId != null && objectId.isNotEmpty) {
+      params['object_id'] = objectId;
+    }
+    if (params.isNotEmpty) {
+      uri = uri.replace(queryParameters: params);
+    }
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return WorkoutCadenceSeries.fromJson(json);
     }
 
     throw _parseError(response);

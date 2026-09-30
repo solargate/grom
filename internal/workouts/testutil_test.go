@@ -14,7 +14,8 @@ func newTestService(dir string) *workouts.Service {
 	blobs := blobfs.NewStore(dir)
 	speedCharts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	return workouts.NewService(file.NewWorkoutsStore(dir), blobs, speedCharts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	return workouts.NewService(file.NewWorkoutsStore(dir), blobs, speedCharts, hrCharts, cadenceCharts)
 }
 
 func newTestServiceWithEquipment(dir string) *workouts.Service {

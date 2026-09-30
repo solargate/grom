@@ -54,6 +54,12 @@ func TestParseFITSixRideCadenceFromRecords(t *testing.T) {
 	}
 	assertFloatClose(t, parsed.Stats.CadenceMax.Value, 109, 0)
 	assertFloatClose(t, parsed.Stats.CadenceAvg.Value, 70.5, 0)
+	if len(parsed.CadenceSeries) < 2 {
+		t.Fatalf("CadenceSeries len = %d, want >= 2", len(parsed.CadenceSeries))
+	}
+	if !parsed.CadenceSeries[0].HasDistance {
+		t.Fatal("expected distance on GPS cadence series")
+	}
 }
 
 func TestParseFITWalkingSteps(t *testing.T) {

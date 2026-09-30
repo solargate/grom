@@ -17,7 +17,8 @@ func TestStoreAttachTrackPreservesCSVMetrics(t *testing.T) {
 	blobs := blobfs.NewStore(dir)
 	charts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts, cadenceCharts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
@@ -82,7 +83,8 @@ func TestStoreCreateWithTrackPreservesClientMetrics(t *testing.T) {
 	blobs := blobfs.NewStore(dir)
 	charts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts, cadenceCharts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {
@@ -156,7 +158,8 @@ func TestStoreCreateWithTrack(t *testing.T) {
 	blobs := blobfs.NewStore(dir)
 	charts := workouts.NewBlobSpeedChartStore(blobs)
 	hrCharts := workouts.NewBlobHeartRateChartStore(blobs)
-	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts)
+	cadenceCharts := workouts.NewBlobCadenceChartStore(blobs)
+	svc := workouts.NewService(file.NewWorkoutsStore(dir), blobs, charts, hrCharts, cadenceCharts)
 
 	gpxData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "tracks", "1-sample.gpx"))
 	if err != nil {

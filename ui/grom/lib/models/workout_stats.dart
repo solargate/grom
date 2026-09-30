@@ -2,6 +2,7 @@ import 'package:grom/l10n/app_localizations.dart';
 import 'package:grom/l10n/sport_type_localizations.dart';
 import 'package:grom/models/sport_types.dart';
 import 'package:grom/models/workout.dart';
+import 'package:grom/models/workout_cadence.dart';
 import 'package:grom/models/workout_pace.dart';
 
 class WorkoutStatItem {
@@ -131,6 +132,18 @@ List<WorkoutStatItem> buildWorkoutStats(
       WorkoutStatItem(
         label: l10n.workoutCalories,
         value: formatCalories(l10n, workout.calories!),
+      ),
+    );
+  }
+
+  final displayAvgCadence = displayCadence(workout.cadenceAvg, workout.sportType);
+  if (supportsCadenceDisplay(workout.sportType) && displayAvgCadence != null) {
+    final footUnits =
+        sportTypeById(workout.sportType)?.category == SportCategory.foot;
+    stats.add(
+      WorkoutStatItem(
+        label: l10n.workoutCadenceAvg,
+        value: formatCadence(l10n, displayAvgCadence, footUnits: footUnits),
       ),
     );
   }

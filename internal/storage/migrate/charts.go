@@ -11,98 +11,134 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
-func chartStores(backend storage.Backend) (workouts.SpeedChartStore, workouts.HeartRateChartStore, error) {
+type chartStoreSet struct {
+	speed   workouts.SpeedChartStore
+	hr      workouts.HeartRateChartStore
+	cadence workouts.CadenceChartStore
+}
+
+func chartStores(backend storage.Backend) (chartStoreSet, error) {
 	switch b := backend.(type) {
 	case *file.Backend:
 		blobs := b.Blobs()
-		return workouts.NewBlobSpeedChartStore(blobs), workouts.NewBlobHeartRateChartStore(blobs), nil
+		return chartStoreSet{
+			speed:   workouts.NewBlobSpeedChartStore(blobs),
+			hr:      workouts.NewBlobHeartRateChartStore(blobs),
+			cadence: workouts.NewBlobCadenceChartStore(blobs),
+		}, nil
 	case *storebbolt.Backend:
-		return storebbolt.NewSpeedChartStore(b.DB()), storebbolt.NewHeartRateChartStore(b.DB()), nil
+		return chartStoreSet{
+			speed:   storebbolt.NewSpeedChartStore(b.DB()),
+			hr:      storebbolt.NewHeartRateChartStore(b.DB()),
+			cadence: storebbolt.NewCadenceChartStore(b.DB()),
+		}, nil
 	default:
-		return nil, nil, fmt.Errorf("unsupported backend type %T", backend)
+		return chartStoreSet{}, fmt.Errorf("unsupported backend type %T", backend)
 	}
 }
 
-func copyLocalCharts(src, dst storage.Backend, nickname string, w *workouts.Workout) (speedCopied, hrCopied int, err error) {
+func copyLocalCharts(src, dst storage.Backend, nickname string, w *workouts.Workout) (speedCopied, hrCopied, cadenceCopied int, err error) {
 	if w == nil || w.Track == "" {
-		return 0, 0, nil
+		return 0, 0, 0, nil
 	}
-	srcSpeed, srcHR, err := chartStores(src)
+	srcStores, err := chartStores(src)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
-	dstSpeed, dstHR, err := chartStores(dst)
+	dstStores, err := chartStores(dst)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	ctx := context.Background()
 	dirName := keys.WorkoutDirName(w.StartDate, w.ID)
 
-	speedSamples, err := srcSpeed.ReadLocal(ctx, nickname, dirName)
+	speedSamples, err := srcStores.speed.ReadLocal(ctx, nickname, dirName)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read local speed chart: %w", err)
+		return 0, 0, 0, fmt.Errorf("read local speed chart: %w", err)
 	}
 	if len(speedSamples) > 0 {
-		if err := dstSpeed.WriteLocal(ctx, nickname, dirName, speedSamples); err != nil {
-			return 0, 0, fmt.Errorf("write local speed chart: %w", err)
+		if err := dstStores.speed.WriteLocal(ctx, nickname, dirName, speedSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write local speed chart: %w", err)
 		}
 		speedCopied = 1
 	}
 
-	hrSamples, err := srcHR.ReadLocal(ctx, nickname, dirName)
+	hrSamples, err := srcStores.hr.ReadLocal(ctx, nickname, dirName)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read local heart rate chart: %w", err)
+		return 0, 0, 0, fmt.Errorf("read local heart rate chart: %w", err)
 	}
 	if len(hrSamples) > 0 {
-		if err := dstHR.WriteLocal(ctx, nickname, dirName, hrSamples); err != nil {
-			return 0, 0, fmt.Errorf("write local heart rate chart: %w", err)
+		if err := dstStores.hr.WriteLocal(ctx, nickname, dirName, hrSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write local heart rate chart: %w", err)
 		}
 		hrCopied = 1
 	}
-	return speedCopied, hrCopied, nil
+
+	cadenceSamples, err := srcStores.cadence.ReadLocal(ctx, nickname, dirName)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("read local cadence chart: %w", err)
+	}
+	if len(cadenceSamples) > 0 {
+		if err := dstStores.cadence.WriteLocal(ctx, nickname, dirName, cadenceSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write local cadence chart: %w", err)
+		}
+		cadenceCopied = 1
+	}
+	return speedCopied, hrCopied, cadenceCopied, nil
 }
 
-func copyFederatedCharts(src, dst storage.Backend, viewer, ownerKey string, w *workouts.Workout) (speedCopied, hrCopied int, err error) {
+func copyFederatedCharts(src, dst storage.Backend, viewer, ownerKey string, w *workouts.Workout) (speedCopied, hrCopied, cadenceCopied int, err error) {
 	if w == nil || w.Track == "" {
-		return 0, 0, nil
+		return 0, 0, 0, nil
 	}
-	srcSpeed, srcHR, err := chartStores(src)
+	srcStores, err := chartStores(src)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
-	dstSpeed, dstHR, err := chartStores(dst)
+	dstStores, err := chartStores(dst)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	ctx := context.Background()
 
-	speedSamples, err := srcSpeed.ReadFederated(ctx, viewer, ownerKey, w.ID)
+	speedSamples, err := srcStores.speed.ReadFederated(ctx, viewer, ownerKey, w.ID)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read federated speed chart: %w", err)
+		return 0, 0, 0, fmt.Errorf("read federated speed chart: %w", err)
 	}
 	if len(speedSamples) > 0 {
-		if err := dstSpeed.WriteFederated(ctx, viewer, ownerKey, w.ID, speedSamples); err != nil {
-			return 0, 0, fmt.Errorf("write federated speed chart: %w", err)
+		if err := dstStores.speed.WriteFederated(ctx, viewer, ownerKey, w.ID, speedSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write federated speed chart: %w", err)
 		}
 		speedCopied = 1
 	}
 
-	hrSamples, err := srcHR.ReadFederated(ctx, viewer, ownerKey, w.ID)
+	hrSamples, err := srcStores.hr.ReadFederated(ctx, viewer, ownerKey, w.ID)
 	if err != nil {
-		return 0, 0, fmt.Errorf("read federated heart rate chart: %w", err)
+		return 0, 0, 0, fmt.Errorf("read federated heart rate chart: %w", err)
 	}
 	if len(hrSamples) > 0 {
-		if err := dstHR.WriteFederated(ctx, viewer, ownerKey, w.ID, hrSamples); err != nil {
-			return 0, 0, fmt.Errorf("write federated heart rate chart: %w", err)
+		if err := dstStores.hr.WriteFederated(ctx, viewer, ownerKey, w.ID, hrSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write federated heart rate chart: %w", err)
 		}
 		hrCopied = 1
 	}
 
-	return speedCopied, hrCopied, nil
+	cadenceSamples, err := srcStores.cadence.ReadFederated(ctx, viewer, ownerKey, w.ID)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("read federated cadence chart: %w", err)
+	}
+	if len(cadenceSamples) > 0 {
+		if err := dstStores.cadence.WriteFederated(ctx, viewer, ownerKey, w.ID, cadenceSamples); err != nil {
+			return 0, 0, 0, fmt.Errorf("write federated cadence chart: %w", err)
+		}
+		cadenceCopied = 1
+	}
+
+	return speedCopied, hrCopied, cadenceCopied, nil
 }
 
 func countCharts(backend storage.Backend, location string, result *Result) error {
-	speedStore, hrStore, err := chartStores(backend)
+	stores, err := chartStores(backend)
 	if err != nil {
 		return err
 	}
@@ -123,19 +159,26 @@ func countCharts(backend storage.Backend, location string, result *Result) error
 				continue
 			}
 			dirName := keys.WorkoutDirName(w.StartDate, w.ID)
-			speedSamples, err := speedStore.ReadLocal(ctx, u.Nickname, dirName)
+			speedSamples, err := stores.speed.ReadLocal(ctx, u.Nickname, dirName)
 			if err != nil {
 				return err
 			}
 			if len(speedSamples) > 0 {
 				result.LocalSpeedCharts++
 			}
-			hrSamples, err := hrStore.ReadLocal(ctx, u.Nickname, dirName)
+			hrSamples, err := stores.hr.ReadLocal(ctx, u.Nickname, dirName)
 			if err != nil {
 				return err
 			}
 			if len(hrSamples) > 0 {
 				result.LocalHeartRateCharts++
+			}
+			cadenceSamples, err := stores.cadence.ReadLocal(ctx, u.Nickname, dirName)
+			if err != nil {
+				return err
+			}
+			if len(cadenceSamples) > 0 {
+				result.LocalCadenceCharts++
 			}
 		}
 	}
@@ -151,19 +194,26 @@ func countCharts(backend storage.Backend, location string, result *Result) error
 				if w.Track == "" {
 					continue
 				}
-				speedSamples, err := speedStore.ReadFederated(ctx, viewer, ownerKey, w.ID)
+				speedSamples, err := stores.speed.ReadFederated(ctx, viewer, ownerKey, w.ID)
 				if err != nil {
 					return err
 				}
 				if len(speedSamples) > 0 {
 					result.FedSpeedCharts++
 				}
-				hrSamples, err := hrStore.ReadFederated(ctx, viewer, ownerKey, w.ID)
+				hrSamples, err := stores.hr.ReadFederated(ctx, viewer, ownerKey, w.ID)
 				if err != nil {
 					return err
 				}
 				if len(hrSamples) > 0 {
 					result.FedHeartRateCharts++
+				}
+				cadenceSamples, err := stores.cadence.ReadFederated(ctx, viewer, ownerKey, w.ID)
+				if err != nil {
+					return err
+				}
+				if len(cadenceSamples) > 0 {
+					result.FedCadenceCharts++
 				}
 			}
 		}

@@ -49,14 +49,16 @@ type Result struct {
 	CommentActivities    int
 	LocalSpeedCharts     int
 	LocalHeartRateCharts int
+	LocalCadenceCharts   int
 	FedSpeedCharts       int
 	FedHeartRateCharts   int
+	FedCadenceCharts     int
 	PersonalAccessTokens int
 }
 
 // Run copies metadata from one storage driver to another. Track/media/avatar
-// blob files under storage.location are shared and not copied. Speed and
-// heart-rate charts are converted between file JSON blobs and bbolt binary
+// blob files under storage.location are shared and not copied. Speed, heart-rate,
+// and cadence charts are converted between file JSON blobs and bbolt binary
 // buckets. Workout likes and comments (local, federated cache, and outbound
 // activity ids) and personal access tokens are copied so they remain readable
 // after switching drivers. Password-reset tokens are not copied.
@@ -191,12 +193,13 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 			if err := importWorkout(dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("import workout %s: %w", w.ID, err)
 			}
-			speed, hr, err := copyLocalCharts(src, dst, u.Nickname, &w)
+			speed, hr, cadence, err := copyLocalCharts(src, dst, u.Nickname, &w)
 			if err != nil {
 				return result, fmt.Errorf("copy charts for workout %s: %w", w.ID, err)
 			}
 			result.LocalSpeedCharts += speed
 			result.LocalHeartRateCharts += hr
+			result.LocalCadenceCharts += cadence
 			if err := copyLocalLikes(src, dst, u.Nickname, &w); err != nil {
 				return result, fmt.Errorf("copy likes for workout %s: %w", w.ID, err)
 			}
@@ -262,12 +265,13 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 				if err := importInboxWorkout(dst, viewer, ownerKey, &w); err != nil {
 					return result, fmt.Errorf("import inbox workout: %w", err)
 				}
-				speed, hr, err := copyFederatedCharts(src, dst, viewer, ownerKey, &w)
+				speed, hr, cadence, err := copyFederatedCharts(src, dst, viewer, ownerKey, &w)
 				if err != nil {
 					return result, fmt.Errorf("copy federated charts for workout %s: %w", w.ID, err)
 				}
 				result.FedSpeedCharts += speed
 				result.FedHeartRateCharts += hr
+				result.FedCadenceCharts += cadence
 				result.FedInboxWorkouts++
 			}
 		}

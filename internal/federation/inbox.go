@@ -394,6 +394,12 @@ func parseFederatedWorkoutObject(object map[string]any) (*workouts.Workout, []by
 	if v, ok := optionalPositiveFloat(object, "heartRateAvg"); ok {
 		workout.HeartRateAvg = &v
 	}
+	if v, ok := optionalPositiveFloat(object, "cadenceAvg"); ok {
+		workout.CadenceAvg = &v
+	}
+	if v, ok := optionalPositiveFloat(object, "cadenceMax"); ok {
+		workout.CadenceMax = &v
+	}
 	if v, ok := optionalPositiveInt(object, "stepsTotal"); ok {
 		workout.StepsTotal = &v
 	}

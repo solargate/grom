@@ -151,6 +151,10 @@ func (svc *Service) writeTrackArtifacts(nickname, dirName string, trackData []by
 		slog.Error("heart rate series write failed", "workout_id", workout.ID, "err", err)
 	}
 
+	if err := svc.writeCadenceChart(nickname, dirName, parsed); err != nil {
+		slog.Error("cadence series write failed", "workout_id", workout.ID, "err", err)
+	}
+
 	if parsed != nil && parsed.HasGPS() {
 		if preview, err := maprender.RenderPreview(parsed.Points); err != nil {
 			slog.Error("map preview render failed", "workout_id", workout.ID, "err", err)

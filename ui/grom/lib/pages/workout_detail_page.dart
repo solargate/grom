@@ -6,11 +6,13 @@ import 'package:grom/l10n/app_localizations.dart';
 import '../api_request.dart';
 import '../models/workout.dart';
 import '../models/workout_heartrate.dart';
+import '../models/workout_cadence.dart';
 import '../models/workout_pace.dart';
 import '../models/workout_speed.dart';
 import '../services/track_parser.dart';
 import '../widgets/workout_header_section.dart';
 import '../widgets/workout_heartrate_chart.dart';
+import '../widgets/workout_cadence_chart.dart';
 import '../widgets/workout_like_bar.dart';
 import '../widgets/workout_map_expand_button.dart';
 import '../widgets/workout_map_preview.dart';
@@ -65,6 +67,12 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   double? _heartRateMax;
   bool _isLoadingHeartRate = false;
 
+  List<WorkoutCadenceSample>? _cadenceSamples;
+  bool _cadenceHasGps = false;
+  double? _cadenceAvg;
+  double? _cadenceMax;
+  bool _isLoadingCadence = false;
+
   bool get _hasGpsMap => widget.workout.hasMapPreview;
 
   List<WorkoutPaceSample> get _paceSamples =>
@@ -85,6 +93,11 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
   bool get _hasHeartRateChart =>
       _heartRateSamples != null && _heartRateSamples!.length >= 2;
 
+  bool get _hasCadenceChart => hasCadenceChart(
+        sportType: widget.workout.sportType,
+        samples: _cadenceSamples,
+      );
+
   bool get _hasInteractiveMap {
     final points = _trackPoints;
     return points != null &&
@@ -101,6 +114,9 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
     }
     _loadSpeed();
     _loadHeartRate();
+    if (supportsCadenceDisplay(widget.workout.sportType)) {
+      _loadCadence();
+    }
   }
 
   Future<void> _loadSpeed() async {
@@ -178,6 +194,46 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
       setState(() {
         _heartRateSamples = const [];
         _isLoadingHeartRate = false;
+      });
+    }
+  }
+
+  Future<void> _loadCadence() async {
+    setState(() {
+      _isLoadingCadence = true;
+    });
+
+    try {
+      final series = await _api.getWorkoutCadence(
+        token: widget.authToken,
+        workoutId: widget.workout.id,
+        owner: widget.workout.apiOwnerQuery,
+        objectId: widget.workout.objectId,
+      );
+      if (!mounted) {
+        return;
+      }
+      final samples = series.samples;
+      setState(() {
+        _cadenceSamples = samples;
+        _cadenceHasGps = series.hasGps;
+        _cadenceAvg = resolveCadenceAvg(
+          widget.workout.cadenceAvg ?? series.cadenceAvg,
+          samples,
+        );
+        _cadenceMax = resolveCadenceMax(
+          widget.workout.cadenceMax ?? series.cadenceMax,
+          samples,
+        );
+        _isLoadingCadence = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _cadenceSamples = const [];
+        _isLoadingCadence = false;
       });
     }
   }
@@ -456,6 +512,45 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
                             ),
                           )
                         else if (_isLoadingHeartRate)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: SizedBox(
+                              height: 40,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_hasCadenceChart)
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              (widget.workout.hasMedia ||
+                                      _hasGpsMap ||
+                                      _hasMotionChart ||
+                                      _hasHeartRateChart ||
+                                      _isLoadingSpeed ||
+                                      _isLoadingHeartRate)
+                                  ? 0
+                                  : 16,
+                              16,
+                              16,
+                            ),
+                            child: WorkoutCadenceChart(
+                              samples: _cadenceSamples!,
+                              hasGps: _cadenceHasGps,
+                              sportType: widget.workout.sportType,
+                              cadenceAvg: _cadenceAvg,
+                              cadenceMax: _cadenceMax,
+                            ),
+                          )
+                        else if (_isLoadingCadence)
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
                             child: SizedBox(
