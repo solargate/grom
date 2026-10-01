@@ -17,6 +17,8 @@ type SpeedPoint struct {
 // real motion data: a device DistanceM delta or a valid GPS segment between
 // consecutive timed points. Timed samples without GPS/distance/speed do not
 // invent a zero-speed series (e.g. heart-rate-only indoor tracks).
+// An all-zero series (explicit zeros or zero distance deltas) is discarded so
+// blank speed charts are not stored for strength/indoor activities.
 // Inclusion of zero speeds follows SpeedChartZeroPolicy (NaN/Inf always dropped).
 //
 // DistanceM is meters from the start of the sample list: FIT DistanceM is used
@@ -72,10 +74,21 @@ func speedSeriesKmh(points []SamplePoint, policy ChartZeroPolicy) []SpeedPoint {
 		}
 		prevTimed = cur
 	}
+	return meaningfulSpeedSeries(out)
+}
+
+// meaningfulSpeedSeries drops an all-zero series (no sample with Kmh > 0).
+// In-series zeros are kept when the activity has real motion elsewhere.
+func meaningfulSpeedSeries(out []SpeedPoint) []SpeedPoint {
 	if len(out) == 0 {
 		return nil
 	}
-	return out
+	for _, p := range out {
+		if p.Kmh > 0 {
+			return out
+		}
+	}
+	return nil
 }
 
 // derivedMotionSpeedMps returns speed from device distance delta or valid GPS

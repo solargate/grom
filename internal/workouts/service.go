@@ -83,7 +83,7 @@ func (s *Service) GetSpeedChart(nickname, workoutID string) (*Workout, []SpeedSa
 	if err != nil {
 		return nil, nil, fmt.Errorf("read speed chart: %w", err)
 	}
-	return workout, samples, nil
+	return workout, MeaningfulSpeedChartSamples(samples), nil
 }
 
 // GetHeartRateChart returns workout metadata and precomputed chart samples for /heartrate.

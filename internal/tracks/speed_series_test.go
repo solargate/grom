@@ -171,6 +171,31 @@ func TestSpeedSeriesKmhOmitsTimedSamplesWithoutMotionData(t *testing.T) {
 	}
 }
 
+func TestSpeedSeriesKmhOmitsAllZeroExplicitSpeed(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	points := []tracks.SamplePoint{
+		{Time: t0, HasTime: true, SpeedMps: floatPtr(0)},
+		{Time: t0.Add(time.Second), HasTime: true, SpeedMps: floatPtr(0)},
+		{Time: t0.Add(2 * time.Second), HasTime: true, SpeedMps: floatPtr(0)},
+	}
+	if got := tracks.SpeedSeriesKmh(points); got != nil {
+		t.Fatalf("got %v, want nil for all-zero explicit speed", got)
+	}
+}
+
+func TestSpeedSeriesKmhOmitsAllZeroDistanceWithoutGPS(t *testing.T) {
+	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
+	d0 := 0.0
+	points := []tracks.SamplePoint{
+		{Time: t0, HasTime: true, DistanceM: &d0},
+		{Time: t0.Add(10 * time.Second), HasTime: true, DistanceM: floatPtr(0)},
+		{Time: t0.Add(20 * time.Second), HasTime: true, DistanceM: floatPtr(0)},
+	}
+	if got := tracks.SpeedSeriesKmh(points); got != nil {
+		t.Fatalf("got %v, want nil for zero distance deltas without GPS", got)
+	}
+}
+
 func TestSpeedSeriesKmhDerivedFromDeviceDistanceWithoutGPS(t *testing.T) {
 	t0 := time.Date(2026, 7, 14, 8, 0, 0, 0, time.UTC)
 	d0 := 0.0

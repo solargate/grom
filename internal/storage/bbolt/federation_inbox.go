@@ -575,7 +575,7 @@ func (s *InboxStore) GetSpeedChart(viewerNickname, ownerNickname, workoutID stri
 	if err != nil {
 		return nil, nil, fmt.Errorf("read federated speed chart: %w", err)
 	}
-	return workout, samples, nil
+	return workout, workouts.MeaningfulSpeedChartSamples(samples), nil
 }
 
 func (s *InboxStore) GetHeartRateChart(viewerNickname, ownerNickname, workoutID string) (*workouts.Workout, []workouts.HeartRateSample, error) {

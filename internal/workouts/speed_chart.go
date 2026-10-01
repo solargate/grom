@@ -69,6 +69,8 @@ func SpeedSamplesFromParsed(parsed *tracks.Data) []SpeedSample {
 
 // BuildSpeedChartSamples builds the stored chart series (downsampled).
 // Zero-speed inclusion follows tracks.SpeedChartZeroPolicy.
+// An all-zero series (no sample with speed > 0) is treated as empty so
+// indoor/strength tracks without real motion do not produce a blank chart.
 func BuildSpeedChartSamples(parsed *tracks.Data) []SpeedSample {
 	full := SpeedSamplesFromParsed(parsed)
 	if len(full) == 0 {
@@ -81,7 +83,22 @@ func BuildSpeedChartSamples(parsed *tracks.Data) []SpeedSample {
 		}
 		filtered = append(filtered, s)
 	}
-	return DownsampleSpeedSamples(filtered, SpeedChartMaxPoints)
+	return MeaningfulSpeedChartSamples(DownsampleSpeedSamples(filtered, SpeedChartMaxPoints))
+}
+
+// MeaningfulSpeedChartSamples returns samples unchanged when at least one point
+// has speed > 0; otherwise nil. In-series zeros (pauses) are kept when the
+// activity has real motion. Used when building and when reading legacy charts.
+func MeaningfulSpeedChartSamples(samples []SpeedSample) []SpeedSample {
+	if len(samples) == 0 {
+		return nil
+	}
+	for _, s := range samples {
+		if s.SpeedKmh > 0 {
+			return samples
+		}
+	}
+	return nil
 }
 
 // MarshalSpeedChart encodes chart samples as compact JSON.

@@ -11,14 +11,23 @@ bool hasPaceChart({
   return isFootSport(sportType) && paceSamples.length >= 2;
 }
 
-/// Whether the detail screen should show a speed chart (non-foot + ≥2 samples).
+/// Whether the detail screen should show a speed chart (non-foot + ≥2 samples
+/// with at least one positive speed — all-zero series are treated as empty).
 bool hasSpeedChart({
   required String sportType,
   required List<WorkoutSpeedSample>? speedSamples,
 }) {
-  return !isFootSport(sportType) &&
-      speedSamples != null &&
-      speedSamples.length >= 2;
+  if (isFootSport(sportType) ||
+      speedSamples == null ||
+      speedSamples.length < 2) {
+    return false;
+  }
+  for (final s in speedSamples) {
+    if (s.speedKmh > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// One pace sample (seconds per km) derived from a speed chart point.

@@ -99,6 +99,29 @@ void main() {
         isFalse,
       );
     });
+
+    test('non-foot sport with all-zero speed series shows neither', () {
+      final zeros = [
+        WorkoutSpeedSample(
+          time: DateTime.utc(2026, 7, 8, 10),
+          speedKmh: 0,
+          distanceM: 0,
+        ),
+        WorkoutSpeedSample(
+          time: DateTime.utc(2026, 7, 8, 10, 0, 1),
+          speedKmh: 0,
+          distanceM: 0,
+        ),
+      ];
+      expect(
+        hasSpeedChart(sportType: 'WeightTraining', speedSamples: zeros),
+        isFalse,
+      );
+      expect(
+        hasSpeedChart(sportType: 'Pilates', speedSamples: zeros),
+        isFalse,
+      );
+    });
   });
 
   group('speedKmhToPaceSec / formatPaceMmSs', () {
