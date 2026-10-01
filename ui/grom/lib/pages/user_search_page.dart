@@ -76,6 +76,11 @@ class _UserSearchPageState extends State<UserSearchPage> {
         _followingByHandle = followingByHandle;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -110,6 +115,11 @@ class _UserSearchPageState extends State<UserSearchPage> {
       if (!mounted) return;
       setState(() {
         _results = catalog;
+        _isLoading = false;
+      });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
         _isLoading = false;
       });
     } on ApiException catch (e) {
@@ -154,6 +164,11 @@ class _UserSearchPageState extends State<UserSearchPage> {
         _results = results;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -191,6 +206,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
           _followingByHandle[user.handle] = follow;
         });
       }
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

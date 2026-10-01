@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Google Play
 
+- When your session expires, the app opens Sign in and remembers your email
 - Fix: strength and indoor workouts from a Strava ZIP no longer show an empty speed chart
 
 ### Fixed
 
+- **UI:** Expired session JWT signs you out and opens Sign in with a clear message (and remembers the last email); cold start with an expired token stays a quiet guest screen
 - **Server:** All-zero speed chart series (common on Strava ZIP strength/indoor FIT tracks) are treated as empty on build and read, so blank speed charts are not shown
 - **UI:** Speed chart is hidden when every sample is 0 km/h
 

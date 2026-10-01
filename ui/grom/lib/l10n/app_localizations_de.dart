@@ -73,6 +73,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get signedOut => 'Sie haben sich abgemeldet';
 
   @override
+  String get sessionExpired =>
+      'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+
+  @override
   String signedInAs(String nickname) {
     return 'Angemeldet als $nickname';
   }

@@ -46,6 +46,11 @@ class _EquipmentPageState extends State<EquipmentPage> {
         _items = items;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {

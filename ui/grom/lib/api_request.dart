@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -13,6 +14,7 @@ import 'models/workout_heartrate.dart';
 import 'models/workout_cadence.dart';
 import 'models/workout_speed.dart';
 import 'server_storage.dart';
+import 'session.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
@@ -22,6 +24,16 @@ class ApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Thrown when an authenticated API call receives HTTP 401.
+///
+/// [SessionCoordinator] has already cleared the JWT and (when enabled) emitted
+/// [SessionEndReason.expired]. UI catch sites should stop loading and skip
+/// showing a raw error snackbar.
+class SessionExpiredException implements Exception {
+  @override
+  String toString() => 'session expired';
 }
 
 class ServerInfo {
@@ -256,7 +268,10 @@ class ApiRequest {
     throw _parseError(response);
   }
 
-  Future<UserInfo> getMe(String token) async {
+  Future<UserInfo> getMe(
+    String token, {
+    bool notifyOnUnauthorized = true,
+  }) async {
     final response = await _client.get(
       _uri('/api/v1/auth/me'),
       headers: {'Authorization': 'Bearer $token'},
@@ -267,7 +282,10 @@ class ApiRequest {
       return UserInfo.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(
+      response,
+      authenticated: notifyOnUnauthorized,
+    );
   }
 
   Future<UserProfile> getProfile(String token) async {
@@ -281,7 +299,7 @@ class ApiRequest {
       return UserProfile.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<UserInfo> updateMe({
@@ -302,7 +320,7 @@ class ApiRequest {
       return UserInfo.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<UserInfo> uploadAvatar({
@@ -330,7 +348,7 @@ class ApiRequest {
       return UserInfo.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<UserInfo> deleteAvatar({
@@ -346,7 +364,7 @@ class ApiRequest {
       return UserInfo.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   static String resolveAvatarUrl({
@@ -393,7 +411,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Workout> updateWorkout({
@@ -415,7 +433,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Workout> addWorkoutMedia({
@@ -446,7 +464,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Workout> deleteWorkoutMedia({
@@ -465,7 +483,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Workout> getWorkout({
@@ -487,7 +505,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutLikesResponse> getWorkoutLikes({
@@ -507,7 +525,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutLikesResponse.fromJson(json);
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutLikeState> likeWorkout({
@@ -527,7 +545,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutLikeState.fromJson(json);
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutLikeState> unlikeWorkout({
@@ -547,7 +565,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutLikeState.fromJson(json);
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutCommentsResponse> getWorkoutComments({
@@ -567,7 +585,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutCommentsResponse.fromJson(json);
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutCommentCreateResponse> createWorkoutComment({
@@ -592,7 +610,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return WorkoutCommentCreateResponse.fromJson(json);
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<int> deleteWorkoutComment({
@@ -613,7 +631,7 @@ class ApiRequest {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return json['count'] as int? ?? 0;
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Workout> createWorkoutMultipart({
@@ -660,7 +678,7 @@ class ApiRequest {
       return Workout.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<bool> hasExternalID({
@@ -680,7 +698,7 @@ class ApiRequest {
       return json['exists'] as bool? ?? false;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<ParsedTrackMetadata> parseTrack({
@@ -709,7 +727,7 @@ class ApiRequest {
       return ParsedTrackMetadata.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   String mapPreviewUrl(String workoutId, {String? owner, String? objectId}) {
@@ -811,7 +829,7 @@ class ApiRequest {
       return WorkoutSpeedSeries.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutHeartRateSeries> getWorkoutHeartRate({
@@ -841,7 +859,7 @@ class ApiRequest {
       return WorkoutHeartRateSeries.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutCadenceSeries> getWorkoutCadence({
@@ -871,7 +889,7 @@ class ApiRequest {
       return WorkoutCadenceSeries.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<DownloadedTrack> downloadWorkoutTrack({
@@ -912,7 +930,7 @@ class ApiRequest {
       );
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   String? _filenameFromContentDisposition(String? header) {
@@ -960,7 +978,7 @@ class ApiRequest {
       return WorkoutListPage.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<UserSearchResult>> listLocalUsers(String token) async {
@@ -977,7 +995,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<UserSearchResult>> searchUsers({
@@ -997,7 +1015,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<FollowInfo> followUser({
@@ -1018,7 +1036,7 @@ class ApiRequest {
       return FollowInfo.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> unfollowUser({
@@ -1034,7 +1052,7 @@ class ApiRequest {
       return;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<FollowInfo>> listFollowing(String token) async {
@@ -1050,7 +1068,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<FollowerInfo>> listFollowers(String token) async {
@@ -1066,7 +1084,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Uri _userHandleUri(String handle, [String subPath = '']) {
@@ -1091,7 +1109,7 @@ class ApiRequest {
       return UserPublicProfile.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<FollowInfo>> listUserFollowing({
@@ -1110,7 +1128,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<FollowerInfo>> listUserFollowers({
@@ -1129,7 +1147,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<WorkoutListPage> listUserWorkouts(
@@ -1154,7 +1172,7 @@ class ApiRequest {
       return WorkoutListPage.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<Equipment>> listEquipment(String token) async {
@@ -1170,7 +1188,7 @@ class ApiRequest {
           .toList();
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Equipment> createEquipment({
@@ -1191,7 +1209,7 @@ class ApiRequest {
       return Equipment.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Equipment> updateEquipment({
@@ -1213,7 +1231,7 @@ class ApiRequest {
       return Equipment.fromJson(json);
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> deleteEquipment({
@@ -1229,7 +1247,7 @@ class ApiRequest {
       return;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> deleteWorkout({
@@ -1245,7 +1263,7 @@ class ApiRequest {
       return;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> deleteAccount({
@@ -1265,7 +1283,7 @@ class ApiRequest {
       return;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Map<String, dynamic>> uploadStravaArchiveRaw({
@@ -1359,7 +1377,7 @@ class ApiRequest {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<Map<String, dynamic>> getStravaImportStatus(String token) async {
@@ -1372,7 +1390,7 @@ class ApiRequest {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<List<PersonalAccessToken>> listPersonalAccessTokens(String token) async {
@@ -1387,7 +1405,7 @@ class ApiRequest {
               PersonalAccessToken.fromJson(item as Map<String, dynamic>))
           .toList();
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<CreatePersonalAccessTokenResult> createPersonalAccessToken({
@@ -1418,7 +1436,7 @@ class ApiRequest {
         jsonDecode(response.body) as Map<String, dynamic>,
       );
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> revokePersonalAccessToken({
@@ -1432,17 +1450,31 @@ class ApiRequest {
     if (response.statusCode == 204) {
       return;
     }
-    throw _parseError(response);
+    throw _parseError(response, authenticated: true);
   }
 
-  ApiException _parseError(http.Response response) {
+  Never _parseError(
+    http.Response response, {
+    bool authenticated = false,
+  }) {
+    if (authenticated && response.statusCode == 401) {
+      // Fire-and-forget clear; callers still receive SessionExpiredException.
+      unawaited(SessionCoordinator.instance.notifyUnauthorized());
+      throw SessionExpiredException();
+    }
     try {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final message = json['error'] as String? ?? 'Unknown error';
-      return ApiException(message, statusCode: response.statusCode);
+      throw ApiException(message, statusCode: response.statusCode);
+    } on ApiException {
+      rethrow;
+    } on SessionExpiredException {
+      rethrow;
     } catch (_) {
-      return ApiException('Request failed (${response.statusCode})',
-          statusCode: response.statusCode);
+      throw ApiException(
+        'Request failed (${response.statusCode})',
+        statusCode: response.statusCode,
+      );
     }
   }
 }

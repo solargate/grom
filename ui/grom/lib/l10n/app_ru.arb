@@ -26,6 +26,7 @@
   },
   "registrationSuccessful": "Регистрация успешна. Войдите в аккаунт.",
   "signedOut": "Вы вышли из аккаунта",
+  "sessionExpired": "Сессия истекла. Войдите снова.",
   "signedInAs": "Вы вошли как {nickname}",
   "@signedInAs": {
     "placeholders": {

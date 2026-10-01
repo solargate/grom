@@ -214,6 +214,12 @@ abstract class AppLocalizations {
   /// **'You have signed out'**
   String get signedOut;
 
+  /// No description provided for @sessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired. Please sign in again.'**
+  String get sessionExpired;
+
   /// No description provided for @signedInAs.
   ///
   /// In en, this message translates to:

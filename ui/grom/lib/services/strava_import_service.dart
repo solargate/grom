@@ -186,6 +186,9 @@ class StravaImportService extends ChangeNotifier {
       );
       notifyListeners();
       _startPolling(token);
+    } on SessionExpiredException {
+      _state = const StravaImportState();
+      notifyListeners();
     } on ApiException catch (e) {
       _state = StravaImportState(
         failed: true,

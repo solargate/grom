@@ -26,6 +26,7 @@
   },
   "registrationSuccessful": "Registration successful. Please sign in.",
   "signedOut": "You have signed out",
+  "sessionExpired": "Your session has expired. Please sign in again.",
   "signedInAs": "Signed in as {nickname}",
   "@signedInAs": {
     "placeholders": {

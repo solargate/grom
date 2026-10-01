@@ -72,6 +72,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signedOut => 'You have signed out';
 
   @override
+  String get sessionExpired =>
+      'Your session has expired. Please sign in again.';
+
+  @override
   String signedInAs(String nickname) {
     return 'Signed in as $nickname';
   }

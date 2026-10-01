@@ -73,6 +73,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get signedOut => 'Вы вышли из аккаунта';
 
   @override
+  String get sessionExpired => 'Сессия истекла. Войдите снова.';
+
+  @override
   String signedInAs(String nickname) {
     return 'Вы вошли как $nickname';
   }

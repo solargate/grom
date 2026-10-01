@@ -10,6 +10,8 @@ Unter **Android** (später auch iOS) fragen Anmeldung und Registrierung nach ein
 
 Wenn der Betreiber ausgehende E-Mail aktiviert (`mailer` in der Server-Konfiguration), zeigt der Anmeldebildschirm **Forgot password?** / „Passwort vergessen?“. Geben Sie die Konto-E-Mail ein; der Server antwortet immer gleich, ob die Adresse registriert ist oder nicht. Prüfen Sie den Posteingang und öffnen Sie den Reset-Link im **Browser** (Web-UI unter `/reset-password`). Nach dem Setzen eines neuen Passworts melden Sie sich erneut in der App oder im Web an. Passwort-Reset ist nicht verfügbar, wenn der Server `password_reset_enabled: false` meldet.
 
+Wenn Ihr Session-JWT abläuft, während die App geöffnet ist, meldet Grom Sie ab, öffnet **Sign in** / „Anmelden“ und zeigt eine kurze Meldung. Das E-Mail-Feld merkt sich die zuletzt verwendete Adresse. Wenn der Token beim App-Start bereits abgelaufen ist, landen Sie ohne diese Meldung auf dem Gast-Willkommensbildschirm.
+
 Wenn der Betreiber Captcha aktiviert (`auth.captcha.enabled`), zeigen Anmeldung, Registrierung und „Passwort vergessen“ eine Checkbox **I'm not a robot** / „Ich bin kein Roboter“. Aktivieren Sie sie und warten Sie, bis die lokale Proof-of-Work-Prüfung fertig ist, bevor Sie absenden (auf langsameren Geräten kann das einen Moment dauern). Das Setzen eines neuen Passworts über den E-Mail-Reset-Link erfordert kein Captcha.
 
 ## Profil und Kontolöschung

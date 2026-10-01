@@ -127,6 +127,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
         _followers = followers;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -183,6 +188,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _followBusy = false;
         });
       }
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _followBusy = false);

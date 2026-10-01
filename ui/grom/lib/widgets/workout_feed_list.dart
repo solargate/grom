@@ -178,6 +178,12 @@ class WorkoutFeedListState extends State<WorkoutFeedList> {
         _isLoadingMore = false;
       });
       widget.onAuthTokenLoaded?.call(token);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {

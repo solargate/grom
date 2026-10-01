@@ -55,6 +55,11 @@ class _GromApiTabState extends State<GromApiTab> {
         _tokens = items;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -237,6 +242,8 @@ class _GromApiTabState extends State<GromApiTab> {
                       if (context.mounted) {
                         Navigator.pop(context, result);
                       }
+                    } on SessionExpiredException {
+                      // Shell navigates to Sign in.
                     } on ApiException catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -347,6 +354,8 @@ class _GromApiTabState extends State<GromApiTab> {
       }
       await _api.revokePersonalAccessToken(token: token, id: item.id);
       await _load();
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

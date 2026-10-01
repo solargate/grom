@@ -26,6 +26,7 @@
   },
   "registrationSuccessful": "Registrierung erfolgreich. Bitte melden Sie sich an.",
   "signedOut": "Sie haben sich abgemeldet",
+  "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
   "signedInAs": "Angemeldet als {nickname}",
   "@signedInAs": {
     "placeholders": {

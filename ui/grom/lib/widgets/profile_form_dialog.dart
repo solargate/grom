@@ -170,6 +170,8 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.avatarUpdated)),
       );
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -208,6 +210,11 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
         SnackBar(content: Text(l10n.profileSaved)),
       );
       _close(saved: true);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

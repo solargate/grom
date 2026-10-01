@@ -131,6 +131,11 @@ class _EquipmentFormDialogState extends State<EquipmentFormDialog> {
         SnackBar(content: Text(l10n.equipmentSaved)),
       );
       Navigator.pop(context, true);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,6 +192,11 @@ class _EquipmentFormDialogState extends State<EquipmentFormDialog> {
         SnackBar(content: Text(l10n.equipmentDeleted)),
       );
       Navigator.pop(context, true);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -261,6 +261,11 @@ class _WorkoutDetailViewState extends State<WorkoutDetailView> {
         _trackPoints = points;
         _isLoadingTrack = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingTrack = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) {
         return;

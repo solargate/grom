@@ -656,6 +656,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.trackMetadataApplied)),
       );
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -791,6 +793,11 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
         SnackBar(content: Text(l10n.workoutSaved)),
       );
       Navigator.pop(context, saved);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

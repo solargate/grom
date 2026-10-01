@@ -96,6 +96,8 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
         _likedByMe = state.likedByMe;
         _isSaving = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -191,6 +193,8 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
           );
         },
       );
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -243,6 +247,8 @@ class _WorkoutLikeBarState extends State<WorkoutLikeBar> {
           );
         },
       );
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -426,6 +432,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         _controller.clear();
       });
       widget.onCountChanged(_count);
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -484,6 +492,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         _count = count;
       });
       widget.onCountChanged(_count);
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;

@@ -87,6 +87,8 @@ class _GromShellState extends State<GromShell> {
   bool _stravaApiEnabled = false;
   bool _stravaApiConnected = false;
 
+  StreamSubscription<SessionEndReason>? _sessionSub;
+
   bool get _isLoggedIn => _nickname != null;
   bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -137,6 +139,8 @@ class _GromShellState extends State<GromShell> {
     if (isMobileClient) {
       _sharedTrackSub = watchSharedTracks().listen(_handleSharedTrackResult);
     }
+    _sessionSub =
+        SessionCoordinator.instance.events.listen(_onSessionEndReason);
     _loadInitialData();
   }
 
@@ -144,6 +148,8 @@ class _GromShellState extends State<GromShell> {
   void dispose() {
     StravaApiSyncService.instance.removeListener(_onStravaApiChanged);
     _sharedTrackSub?.cancel();
+    _sessionSub?.cancel();
+    SessionCoordinator.instance.emitExpiredEvents = false;
     super.dispose();
   }
 
@@ -188,6 +194,10 @@ class _GromShellState extends State<GromShell> {
     final result = await StravaApiSyncService.instance.syncWorkouts();
 
     if (!mounted) {
+      return;
+    }
+    // Session expiry dismisses overlays via the coordinator; skip local dialog/snack.
+    if (result.kind == StravaApiSyncResultKind.cancelled && !_isLoggedIn) {
       return;
     }
     Navigator.of(context, rootNavigator: true).pop();
@@ -307,7 +317,7 @@ class _GromShellState extends State<GromShell> {
     String? nickname;
     if (token != null) {
       try {
-        final user = await _api.getMe(token);
+        final user = await _api.getMe(token, notifyOnUnauthorized: false);
         nickname = user.nickname;
       } on ApiException catch (e) {
         if (e.statusCode == 401) {
@@ -346,6 +356,9 @@ class _GromShellState extends State<GromShell> {
       _nickname = nickname;
       _isShellReady = true;
     });
+
+    // Enable mid-session expiry UI only after cold-start /me handling.
+    SessionCoordinator.instance.emitExpiredEvents = true;
 
     await _processPendingSharedTrack();
   }
@@ -710,6 +723,8 @@ class _GromShellState extends State<GromShell> {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.workoutDeleted)),
       );
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -772,6 +787,8 @@ class _GromShellState extends State<GromShell> {
         return;
       }
       messenger.hideCurrentSnackBar();
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -889,6 +906,8 @@ class _GromShellState extends State<GromShell> {
         return;
       }
       await _api.deleteAccount(token: token, password: password);
+    } on SessionExpiredException {
+      if (!mounted) return;
     } on ApiException catch (e) {
       if (!mounted) return;
       final message = e.statusCode == 403
@@ -938,6 +957,7 @@ class _GromShellState extends State<GromShell> {
   }
 
   Future<void> _onLoggedIn(UserInfo user) async {
+    SessionCoordinator.instance.resetUnauthorizedGuard();
     final serverInfo = await _fetchServerInfo();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
@@ -965,8 +985,44 @@ class _GromShellState extends State<GromShell> {
     );
   }
 
+  void _onSessionEndReason(SessionEndReason reason) {
+    if (reason != SessionEndReason.expired) {
+      return;
+    }
+    unawaited(_handleSessionExpired());
+  }
+
+  Future<void> _handleSessionExpired() async {
+    if (!mounted) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    // Dismiss dialogs/sheets above the shell so Sign In is visible.
+    Navigator.of(context, rootNavigator: true)
+        .popUntil((route) => route.isFirst);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _nickname = null;
+      _selectedDestination = GromDestination.login;
+      _viewingWorkout = null;
+      _isWorkoutMapExpanded = false;
+      _workoutPhotoViewerIndex = null;
+      _feedPhotoViewerWorkout = null;
+      _clearOtherUserView();
+      _sportFilterVisible = false;
+      _sportFilterExpanded = false;
+      _onToggleSportFilter = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.sessionExpired)),
+    );
+  }
+
   Future<void> _logout({bool showSignedOutSnack = true}) async {
     await clearLocalSession();
+    SessionCoordinator.instance.resetUnauthorizedGuard();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     setState(() {

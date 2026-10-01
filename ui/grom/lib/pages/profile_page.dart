@@ -69,6 +69,11 @@ class ProfilePageState extends State<ProfilePage> {
         _followers = followers;
         _isLoading = false;
       });
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {

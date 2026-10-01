@@ -248,6 +248,10 @@ class StravaApiSyncService extends ChangeNotifier {
         kind: StravaApiSyncResultKind.error,
         message: error.message,
       );
+    } on SessionExpiredException {
+      return const StravaApiSyncResult(
+        kind: StravaApiSyncResultKind.cancelled,
+      );
     } on ApiException catch (error) {
       return StravaApiSyncResult(
         kind: StravaApiSyncResultKind.error,

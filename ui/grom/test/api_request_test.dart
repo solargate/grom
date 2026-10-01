@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grom/api_request.dart';
+import 'package:grom/auth_storage.dart';
 import 'package:grom/server_storage.dart';
+import 'package:grom/session.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,11 +12,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    SessionCoordinator.instance.debugReset();
     await ServerStorage.clear();
   });
 
   tearDown(() async {
+    SessionCoordinator.instance.debugReset();
     await ServerStorage.clear();
+    await AuthStorage.clear();
   });
 
   test('ServerInfo.fromJson reads name and federation flag', () {
@@ -279,8 +284,13 @@ void main() {
     expect(users[1].avatarUrl, isNull);
   });
 
-  test('listLocalUsers throws ApiException on error', () async {
+  test('listLocalUsers throws SessionExpiredException on 401', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
+    await AuthStorage.saveToken('bad');
+    SessionCoordinator.instance.emitExpiredEvents = true;
+    final events = <SessionEndReason>[];
+    final sub = SessionCoordinator.instance.events.listen(events.add);
+
     final client = MockClient((request) async {
       return http.Response(
         jsonEncode({'error': 'unauthorized'}),
@@ -290,12 +300,43 @@ void main() {
     });
     expect(
       () => ApiRequest(client: client).listLocalUsers('bad'),
-      throwsA(
-        isA<ApiException>()
-            .having((e) => e.statusCode, 'statusCode', 401)
-            .having((e) => e.toString(), 'message', 'unauthorized'),
-      ),
+      throwsA(isA<SessionExpiredException>()),
     );
+    await Future<void>.delayed(Duration.zero);
+    expect(await AuthStorage.getToken(), isNull);
+    expect(events, [SessionEndReason.expired]);
+    await sub.cancel();
+  });
+
+  test('getMe with notifyOnUnauthorized false keeps ApiException on 401',
+      () async {
+    await ServerStorage.saveBaseUrl('https://grom.example');
+    await AuthStorage.saveToken('bad');
+    SessionCoordinator.instance.emitExpiredEvents = true;
+    final events = <SessionEndReason>[];
+    final sub = SessionCoordinator.instance.events.listen(events.add);
+
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode({'error': 'invalid or expired token'}),
+        401,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    try {
+      await ApiRequest(client: client).getMe(
+        'bad',
+        notifyOnUnauthorized: false,
+      );
+      fail('expected ApiException');
+    } on ApiException catch (e) {
+      expect(e.statusCode, 401);
+      expect(e.message, 'invalid or expired token');
+    }
+    await Future<void>.delayed(Duration.zero);
+    expect(await AuthStorage.getToken(), 'bad');
+    expect(events, isEmpty);
+    await sub.cancel();
   });
 
   test('getServerInfo parses JSON and falls back on errors', () async {

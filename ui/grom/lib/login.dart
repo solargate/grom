@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
@@ -45,10 +47,18 @@ class _LoginFormState extends State<LoginForm> {
   void initState() {
     super.initState();
     _api = widget.api ?? ApiRequest();
+    unawaited(_loadLastEmail());
     if (isMobileClient) {
       _loadSavedServerUrl();
     } else {
       _loadServerFlags();
+    }
+  }
+
+  Future<void> _loadLastEmail() async {
+    final email = await AuthStorage.getLastEmail();
+    if (email != null && email.isNotEmpty && mounted) {
+      _emailController.text = email;
     }
   }
 
@@ -120,6 +130,7 @@ class _LoginFormState extends State<LoginForm> {
       );
 
       await AuthStorage.saveToken(result.token);
+      await AuthStorage.saveLastEmail(_emailController.text.trim());
       if (isMobileClient) {
         await ServerHistory.remember(_serverUrlController.text);
       }
