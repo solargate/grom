@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-10-02
+
 ### Google Play
 
 - When your session expires, the app opens Sign in and remembers your email
@@ -462,7 +464,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.17.0...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.17.1...HEAD
+[0.17.1]: https://github.com/solargate/grom/releases/tag/0.17.1
 [0.17.0]: https://github.com/solargate/grom/releases/tag/0.17.0
 [0.16.0]: https://github.com/solargate/grom/releases/tag/0.16.0
 [0.15.0]: https://github.com/solargate/grom/releases/tag/0.15.0
