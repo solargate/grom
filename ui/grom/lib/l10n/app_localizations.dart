@@ -1552,6 +1552,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
   String pushWorkoutCommentedCount(int count);
 
+  /// No description provided for @pushNewFollowerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New follower: {name}'**
+  String pushNewFollowerTitle(String name);
+
   /// No description provided for @recordingInProgress.
   ///
   /// In en, this message translates to:

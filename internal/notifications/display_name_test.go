@@ -21,4 +21,7 @@ func TestSlots(t *testing.T) {
 	if got := SlotCommented("bob", "w1"); got != "commented:bob:w1" {
 		t.Fatalf("commented slot: %q", got)
 	}
+	if got := SlotFollowed("evt-1"); got != "followed:evt-1" {
+		t.Fatalf("followed slot: %q", got)
+	}
 }

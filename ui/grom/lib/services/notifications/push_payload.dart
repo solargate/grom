@@ -7,10 +7,12 @@ class PushNotificationPayload {
     required this.owner,
     required this.slot,
     this.eventId = '',
+    this.actorHandle = '',
   });
 
   final String type;
   final String actorDisplayName;
+  final String actorHandle;
   final String workoutId;
   final String workoutTitle;
   final String owner;
@@ -19,11 +21,25 @@ class PushNotificationPayload {
 
   bool get isLiked => type == 'workout.liked';
   bool get isCommented => type == 'workout.commented';
+  bool get isFollowed => type == 'user.followed';
+
+  String get actorNickname {
+    final handle = actorHandle.trim();
+    if (handle.isEmpty) {
+      return '';
+    }
+    final at = handle.indexOf('@');
+    if (at <= 0) {
+      return handle;
+    }
+    return handle.substring(0, at);
+  }
 
   factory PushNotificationPayload.fromJson(Map<String, dynamic> json) {
     return PushNotificationPayload(
       type: json['type'] as String? ?? '',
       actorDisplayName: json['actor_display_name'] as String? ?? '',
+      actorHandle: json['actor_handle'] as String? ?? '',
       workoutId: json['workout_id'] as String? ?? '',
       workoutTitle: json['workout_title'] as String? ?? '',
       owner: json['owner'] as String? ?? '',
@@ -35,6 +51,7 @@ class PushNotificationPayload {
   Map<String, dynamic> toJson() => {
         'type': type,
         'actor_display_name': actorDisplayName,
+        'actor_handle': actorHandle,
         'workout_id': workoutId,
         'workout_title': workoutTitle,
         'owner': owner,

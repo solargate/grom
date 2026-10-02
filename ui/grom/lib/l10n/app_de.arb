@@ -410,6 +410,14 @@
       }
     }
   },
+  "pushNewFollowerTitle": "Neuer Follower: {name}",
+  "@pushNewFollowerTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "recordingInProgress": "Aufzeichnung läuft",
   "restoreRecordingTitle": "Aufzeichnung fortsetzen?",
   "restoreRecordingMessage": "Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?",

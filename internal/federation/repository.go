@@ -14,7 +14,8 @@ type InboundFollower struct {
 }
 
 type FollowersRepository interface {
-	Add(nickname string, follower InboundFollower) error
+	// Add upserts a follower. created is true when the actor URI was not already present.
+	Add(nickname string, follower InboundFollower) (created bool, err error)
 	List(nickname string) ([]InboundFollower, error)
 	ListInboxes(nickname string) ([]string, error)
 	Remove(nickname, actorURI string) error

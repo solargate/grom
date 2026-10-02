@@ -367,6 +367,7 @@ class _GromShellState extends State<GromShell> {
       await _notifications.start(
         l10n: l10n,
         onOpenWorkout: _openWorkoutFromPush,
+        onOpenUserProfile: _openUserProfileInShell,
       );
       if (nickname != null) {
         unawaited(_notifications.enableForSession());
@@ -1020,6 +1021,7 @@ class _GromShellState extends State<GromShell> {
       await _notifications.start(
         l10n: l10n,
         onOpenWorkout: _openWorkoutFromPush,
+        onOpenUserProfile: _openUserProfileInShell,
       );
       unawaited(_notifications.enableForSession());
     }

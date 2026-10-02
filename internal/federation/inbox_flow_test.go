@@ -164,11 +164,17 @@ func newMemFollowers() *memFollowers {
 	return &memFollowers{by: map[string][]InboundFollower{}}
 }
 
-func (m *memFollowers) Add(nickname string, follower InboundFollower) error {
+func (m *memFollowers) Add(nickname string, follower InboundFollower) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	for i := range m.by[nickname] {
+		if m.by[nickname][i].ActorURI == follower.ActorURI {
+			m.by[nickname][i] = follower
+			return false, nil
+		}
+	}
 	m.by[nickname] = append(m.by[nickname], follower)
-	return nil
+	return true, nil
 }
 func (m *memFollowers) List(nickname string) ([]InboundFollower, error) {
 	m.mu.Lock()

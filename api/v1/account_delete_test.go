@@ -300,7 +300,7 @@ func TestDeleteAccountDeliversActorDeleteBestEffort(t *testing.T) {
 
 	actorURI := "https://remote.example/users/bob"
 	seedRemoteFollow(t, ta, "alice", "bob@remote.example", actorURI)
-	if err := ta.app.Federation.Followers().Add("alice", federation.InboundFollower{
+	if _, err := ta.app.Federation.Followers().Add("alice", federation.InboundFollower{
 		ActorURI: "https://remote.example/users/carol",
 		Inbox:    "https://remote.example/users/carol/inbox",
 		Handle:   "carol@remote.example",

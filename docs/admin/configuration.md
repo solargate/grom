@@ -117,17 +117,17 @@ There is **no** local MTA / `sendmail` dependency: the process speaks SMTP (via 
 
 Password-reset endpoints use an in-memory fixed-window rate limiter (15-minute window): forgot — 10 requests per client IP and 3 per email; confirm reset — 20 per client IP. Limits use Gin’s `ClientIP()` (honors `X-Forwarded-For` / `X-Real-IP` when present). Grom does not yet expose a trusted-proxies setting, so treat forwarded headers as untrusted unless your reverse proxy strips or overwrites them.
 
-## Push notifications (likes and comments)
+## Push notifications (likes, comments, and followers)
 
 Push is **always built in** (no config toggle). On first start the server creates a Web Push VAPID key pair under `{storage.location}/notifications/vapid.json` and exposes the public key on `GET /api/v1/server-info` as `vapid_public_key`.
 
 | Piece | Behavior |
 |-------|----------|
 | Delivery | Standard Web Push (RFC 8291) to each device subscription registered by the Android client |
-| Events | New like or comment on a **local** workout notifies the **owner** (including likes/comments from federated remotes). The owner is never notified about their own actions |
+| Events | New like or comment on a **local** workout notifies the **owner** (including likes/comments from federated remotes). A new **follower** (local follow or inbound ActivityPub `Follow`) notifies the target user. The owner is never notified about their own actions |
 | API | `POST /api/v1/notifications/push` and `DELETE /api/v1/notifications/push/{installationId}` (JWT only). Multiple devices per user are supported |
 | Storage | Subscriptions are stored with the chosen storage driver and copied by `grom migrate-storage`. Account deletion removes them. VAPID keys live on disk under `storage.location` and are shared across drivers |
-| Client | Android uses UnifiedPush (optional external distributor such as ntfy, or the embedded FCM distributor in Play builds). Text is localized on the device; likes and comments collapse per workout in the system notification shade |
+| Client | Android uses UnifiedPush (optional external distributor such as ntfy, or the embedded FCM distributor in Play builds). Text is localized on the device; likes and comments collapse per workout in the system notification shade; new-follower alerts do not collapse |
 
 Operators do **not** need a Firebase project or Google credentials for the server. Play Store builds of the official Android app may use Google Play Services only as a push transport on the device.
 

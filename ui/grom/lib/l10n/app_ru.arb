@@ -410,6 +410,14 @@
       }
     }
   },
+  "pushNewFollowerTitle": "Новый подписчик: {name}",
+  "@pushNewFollowerTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "recordingInProgress": "Идёт запись",
   "restoreRecordingTitle": "Восстановить запись?",
   "restoreRecordingMessage": "Найдена незавершённая запись тренировки. Восстановить её или удалить сохранённый трек?",

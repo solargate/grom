@@ -478,7 +478,7 @@ func importFollowers(dst storage.Backend, nickname string, followers []federatio
 	case *storebbolt.Backend:
 		store := b.Federation().Followers().(*storebbolt.FederationFollowersStore)
 		for _, f := range followers {
-			if err := store.Add(nickname, f); err != nil {
+			if _, err := store.Add(nickname, f); err != nil {
 				return err
 			}
 		}

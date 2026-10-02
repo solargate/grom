@@ -410,6 +410,14 @@
       }
     }
   },
+  "pushNewFollowerTitle": "New follower: {name}",
+  "@pushNewFollowerTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "recordingInProgress": "Recording in progress",
   "restoreRecordingTitle": "Resume recording?",
   "restoreRecordingMessage": "An unfinished workout recording was found. Resume it or discard the saved track.",

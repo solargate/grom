@@ -136,6 +136,7 @@ func NewApp() (*App, error) {
 	}
 
 	socialSvc.SetInboundFollowers(federation.NewInboundFollowersAdapter(app.Federation.Followers()))
+	socialSvc.SetFollowNotify(app.notifyNewFollower)
 
 	if config.Cfg.Federation.Enabled {
 		delivery, err := federation.NewDelivery(app.Users, socialSvc, app.Blobs)
@@ -159,6 +160,7 @@ func NewApp() (*App, error) {
 		app.federationInboxProc.SetComments(app.Comments, app.publishWorkoutCommentsUpdate)
 		app.federationInboxProc.SetLikeNotify(app.notifyWorkoutLiked)
 		app.federationInboxProc.SetCommentNotify(app.notifyWorkoutCommented)
+		app.federationInboxProc.SetFollowNotify(app.notifyNewFollower)
 		slog.Info("federation enabled",
 			"domain", config.Cfg.Federation.Domain,
 			"auto_accept_follows", config.Cfg.Federation.AutoAcceptFollows,

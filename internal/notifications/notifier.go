@@ -36,6 +36,49 @@ func (n *Notifier) NotifyWorkoutCommented(ownerNickname string, workoutID string
 	n.notify(ownerNickname, workoutID, actor, TypeWorkoutCommented, SlotCommented)
 }
 
+// NotifyNewFollower notifies a local user about a new follower.
+func (n *Notifier) NotifyNewFollower(targetNickname string, actor workouts.WorkoutLikeUser) {
+	if n == nil || n.sender == nil || n.users == nil {
+		return
+	}
+	targetNickname = strings.TrimSpace(targetNickname)
+	if targetNickname == "" {
+		return
+	}
+	if actor.Handle == "" && actor.Nickname == "" && actor.Name == "" {
+		return
+	}
+
+	// Never notify about following yourself (local actors only).
+	if actor.IsLocal && strings.EqualFold(strings.TrimSpace(actor.Nickname), targetNickname) {
+		return
+	}
+
+	target, err := n.users.FindByNickname(targetNickname)
+	if err != nil || target == nil {
+		slog.Debug("notifications skip missing follow target", "target", targetNickname, "err", err)
+		return
+	}
+
+	eventID := uuid.NewString()
+	handle := strings.TrimSpace(actor.Handle)
+	if handle == "" && actor.IsLocal && strings.TrimSpace(actor.Nickname) != "" {
+		// Best-effort local handle when callers omit it.
+		handle = strings.TrimSpace(actor.Nickname)
+	}
+	event := Event{
+		Type:             TypeUserFollowed,
+		ActorDisplayName: ActorDisplayName(actor.Name, actor.Nickname, actor.Handle),
+		ActorHandle:      handle,
+		Slot:             SlotFollowed(eventID),
+		EventID:          eventID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	n.sender.SendToUser(ctx, target.ID, event)
+}
+
 func (n *Notifier) notify(
 	ownerNickname string,
 	workoutID string,
@@ -79,6 +122,7 @@ func (n *Notifier) notify(
 	event := Event{
 		Type:             eventType,
 		ActorDisplayName: ActorDisplayName(actor.Name, actor.Nickname, actor.Handle),
+		ActorHandle:      strings.TrimSpace(actor.Handle),
 		WorkoutID:        workoutID,
 		WorkoutTitle:     title,
 		Owner:            ownerNickname,

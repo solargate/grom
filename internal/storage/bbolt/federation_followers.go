@@ -24,16 +24,19 @@ func fedFollowerPrefix(nickname string) []byte {
 	return []byte(nickname + "/")
 }
 
-func (s *FederationFollowersStore) Add(nickname string, follower federation.InboundFollower) error {
+func (s *FederationFollowersStore) Add(nickname string, follower federation.InboundFollower) (bool, error) {
 	raw, err := marshalJSON(follower)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return s.db.Update(func(tx *bolt.Tx) error {
+	var created bool
+	err = s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketFedFollowers)
 		key := fedFollowerKey(nickname, follower.ActorURI)
+		created = b.Get(key) == nil
 		return b.Put(key, raw)
 	})
+	return created, err
 }
 
 func (s *FederationFollowersStore) List(nickname string) ([]federation.InboundFollower, error) {

@@ -128,7 +128,7 @@ func TestHandleActorDeletePurgesInboxAndCaches(t *testing.T) {
 	if err := comments.PutFederated(viewer, ownerHandle, workoutID, &fedComments); err != nil {
 		t.Fatal(err)
 	}
-	if err := followers.Add(viewer, InboundFollower{
+	if _, err := followers.Add(viewer, InboundFollower{
 		ActorURI: actorURI, Inbox: actorURI + "/inbox", Handle: ownerHandle,
 	}); err != nil {
 		t.Fatal(err)

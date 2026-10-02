@@ -17,13 +17,21 @@ func TestFederationFollowersStoreIdempotentAndInboxes(t *testing.T) {
 		Inbox:    "https://remote.test/users/bob/inbox",
 		Handle:   "bob@remote.test",
 	}
-	if err := store.Add("alice", follower); err != nil {
+	created, err := store.Add("alice", follower)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Add("alice", follower); err != nil {
+	if !created {
+		t.Fatal("expected first Add to create")
+	}
+	created, err = store.Add("alice", follower)
+	if err != nil {
 		t.Fatalf("idempotent Add: %v", err)
 	}
-	if err := store.Add("alice", federation.InboundFollower{
+	if created {
+		t.Fatal("expected second Add not to create")
+	}
+	if _, err := store.Add("alice", federation.InboundFollower{
 		ActorURI: "https://remote.test/users/carol",
 		Inbox:    "",
 		Handle:   "carol@remote.test",

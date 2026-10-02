@@ -4,7 +4,7 @@ import "testing"
 
 func TestInboundFollowersAdapter(t *testing.T) {
 	store := newMemFollowers()
-	if err := store.Add("bob", InboundFollower{
+	if _, err := store.Add("bob", InboundFollower{
 		ActorURI: "https://remote.test/users/alice",
 		Inbox:    "https://remote.test/users/alice/inbox",
 		Handle:   "https://remote.test/users/alice",
@@ -30,7 +30,7 @@ func TestInboundFollowersAdapter(t *testing.T) {
 
 func TestInboundFollowersAdapterKeepsPlainHandle(t *testing.T) {
 	store := newMemFollowers()
-	if err := store.Add("bob", InboundFollower{
+	if _, err := store.Add("bob", InboundFollower{
 		ActorURI: "https://remote.test/users/alice",
 		Inbox:    "https://remote.test/users/alice/inbox",
 		Handle:   "alice@remote.test",

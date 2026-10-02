@@ -64,4 +64,21 @@ void main() {
       isNot(SlotAggregator.notificationIdForSlot('commented:bob:w1')),
     );
   });
+
+  test('ignores follower payloads in collapse aggregator', () {
+    final agg = SlotAggregator();
+    final state = agg.ingest(
+      const PushNotificationPayload(
+        type: 'user.followed',
+        actorDisplayName: 'Alice',
+        actorHandle: 'alice@grom.test',
+        workoutId: '',
+        workoutTitle: '',
+        owner: '',
+        slot: 'followed:evt-1',
+        eventId: 'evt-1',
+      ),
+    );
+    expect(state, isNull);
+  });
 }

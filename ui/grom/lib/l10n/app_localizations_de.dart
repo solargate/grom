@@ -826,6 +826,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String pushNewFollowerTitle(String name) {
+    return 'Neuer Follower: $name';
+  }
+
+  @override
   String get recordingInProgress => 'Aufzeichnung läuft';
 
   @override

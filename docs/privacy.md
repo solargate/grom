@@ -62,7 +62,7 @@ On Android, live workout recording may use:
 - Approximate and **precise** location
 - **Background location** and a foreground location service, so recording can continue when you switch apps
 - Notifications related to an active recording
-- System notifications about likes and comments on your workouts (Android; requires notification permission)
+- System notifications about likes and comments on your workouts, and when someone follows you (Android; requires notification permission)
 - An optional battery-optimization exemption request so recording is less likely to be stopped by the system
 
 Location is used **only** to record workout tracks and related map previews and stats. The App does not use location for advertising. Tracks you save are uploaded to **your configured Grom server**.
@@ -111,7 +111,7 @@ If the operator enables a mailer, password-reset messages are sent via that oper
 |---------|----------|
 | Provide core features | Sign-in, workouts, tracks, photos, equipment, feed, likes, comments |
 | Live recording | GPS track while you record on Android |
-| Push notifications | Alert you on Android when someone likes or comments on your workout (device push endpoint stored on your chosen server) |
+| Push notifications | Alert you on Android when someone likes or comments on your workout, or follows you (device push endpoint stored on your chosen server) |
 | Optional imports | Strava ZIP (on the server), Strava API sync on Android using credentials stored only on the device, multi-file GPX/FIT via the system file picker (on the device, then to the server) |
 | Security | Auth tokens, optional captcha, rate limiting (may use IP on the server) |
 | Federation | Optional delivery of activities to remote inboxes |

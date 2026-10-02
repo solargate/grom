@@ -8,6 +8,7 @@ import (
 const (
 	TypeWorkoutLiked     = "workout.liked"
 	TypeWorkoutCommented = "workout.commented"
+	TypeUserFollowed     = "user.followed"
 )
 
 // PushSubscription is a Web Push endpoint registered by a client installation.
@@ -26,6 +27,7 @@ type PushSubscription struct {
 type Event struct {
 	Type             string `json:"type"`
 	ActorDisplayName string `json:"actor_display_name"`
+	ActorHandle      string `json:"actor_handle,omitempty"`
 	WorkoutID        string `json:"workout_id"`
 	WorkoutTitle     string `json:"workout_title"`
 	Owner            string `json:"owner"`
@@ -62,4 +64,9 @@ func SlotLiked(owner, workoutID string) string {
 // SlotCommented returns the collapse slot key for comments on a workout.
 func SlotCommented(owner, workoutID string) string {
 	return "commented:" + owner + ":" + workoutID
+}
+
+// SlotFollowed returns a unique slot key so follower alerts do not collapse.
+func SlotFollowed(eventID string) string {
+	return "followed:" + eventID
 }

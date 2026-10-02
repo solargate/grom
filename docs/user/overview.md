@@ -54,7 +54,7 @@ When the operator enables ActivityPub federation, you can also follow athletes o
 
 ### Notifications (Android)
 
-On Android, when someone likes or comments on **your** workout (including from another federated instance), Grom can show a system notification. The title is the workout name; a single like or comment names the other user, and several in a row collapse to a count. Opening the workout from the app or tapping the notification clears that collapse. Grant notification permission when prompted. On devices without Google Play Services you can use a UnifiedPush distributor such as [ntfy](https://ntfy.sh/). Sign-out unregisters the device.
+On Android, when someone likes or comments on **your** workout (including from another federated instance), or when someone **follows** you, Grom can show a system notification. For likes and comments the title is the workout name; a single like or comment names the other user, and several in a row collapse to a count. Opening the workout from the app or tapping the notification clears that collapse. For a new follower the title is localized as “New follower: …”, with an empty body and no collapse; tapping opens that user’s profile. Grant notification permission when prompted. On devices without Google Play Services you can use a UnifiedPush distributor such as [ntfy](https://ntfy.sh/). Sign-out unregisters the device.
 
 ## Strava import
 

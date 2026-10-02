@@ -815,6 +815,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String pushNewFollowerTitle(String name) {
+    return 'Новый подписчик: $name';
+  }
+
+  @override
   String get recordingInProgress => 'Идёт запись';
 
   @override

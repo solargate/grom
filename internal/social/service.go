@@ -12,6 +12,7 @@ import (
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 var (
@@ -47,6 +48,7 @@ type Service struct {
 	enabled          bool
 	delivery         Delivery
 	inboundFollowers InboundFollowersSource
+	onFollowNotify   func(targetNickname string, actor workouts.WorkoutLikeUser)
 }
 
 func NewService(userStore users.Repository, followStore Repository, blobs blob.Store) *Service {
@@ -74,6 +76,11 @@ func (s *Service) SetInboundFollowers(src InboundFollowersSource) {
 	if src != nil {
 		s.inboundFollowers = src
 	}
+}
+
+// SetFollowNotify registers a callback invoked when a local user gains a new local follower.
+func (s *Service) SetFollowNotify(fn func(targetNickname string, actor workouts.WorkoutLikeUser)) {
+	s.onFollowNotify = fn
 }
 
 func (s *Service) LocalDomain() string {
@@ -271,7 +278,19 @@ func (s *Service) Follow(followerID, rawHandle string) (*Follow, error) {
 			Status:         StatusActive,
 			CreatedAt:      time.Now().UTC(),
 		}
-		return s.follows.Create(follow)
+		created, err := s.follows.Create(follow)
+		if err != nil {
+			return nil, err
+		}
+		if s.onFollowNotify != nil {
+			s.onFollowNotify(target.Nickname, workouts.WorkoutLikeUser{
+				Handle:   s.LocalHandle(follower.Nickname),
+				Nickname: follower.Nickname,
+				Name:     follower.Name,
+				IsLocal:  true,
+			})
+		}
+		return created, nil
 	}
 
 	if !s.enabled {

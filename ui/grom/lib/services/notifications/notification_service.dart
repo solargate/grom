@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../api_request.dart';
@@ -13,6 +15,11 @@ import 'slot_aggregator.dart';
 typedef OpenWorkoutFromPush = Future<void> Function({
   required String workoutId,
   required String owner,
+});
+
+typedef OpenUserProfileFromPush = void Function({
+  required String handle,
+  required String nickname,
 });
 
 /// Coordinates push registration, local display, collapse, and deeplinks.
@@ -36,6 +43,7 @@ class NotificationService {
   final SlotAggregator _aggregator;
 
   OpenWorkoutFromPush? onOpenWorkout;
+  OpenUserProfileFromPush? onOpenUserProfile;
   AppLocalizations? _l10n;
   bool _started = false;
   String? _vapidPublicKey;
@@ -43,9 +51,11 @@ class NotificationService {
   Future<void> start({
     required AppLocalizations l10n,
     OpenWorkoutFromPush? onOpenWorkout,
+    OpenUserProfileFromPush? onOpenUserProfile,
   }) async {
     _l10n = l10n;
     this.onOpenWorkout = onOpenWorkout;
+    this.onOpenUserProfile = onOpenUserProfile;
     if (_started) {
       return;
     }
@@ -125,6 +135,14 @@ class NotificationService {
   }
 
   void _handleMessage(PushNotificationPayload payload) {
+    if (payload.isFollowed) {
+      final title = _formatFollowTitle(payload);
+      if (title.isEmpty) {
+        return;
+      }
+      unawaited(_local.showFollow(title: title, payload: payload));
+      return;
+    }
     // If the OS notification was dismissed, restart the collapse counter.
     final existing = _aggregator.get(payload.slot);
     if (existing != null) {
@@ -172,6 +190,21 @@ class NotificationService {
   }
 
   void _handleTap(PushNotificationPayload payload) {
+    if (payload.isFollowed) {
+      final idKey =
+          payload.slot.isNotEmpty ? payload.slot : 'followed:${payload.eventId}';
+      _local.cancelSlot(idKey);
+      final openProfile = onOpenUserProfile;
+      final handle = payload.actorHandle.trim();
+      if (openProfile == null || handle.isEmpty) {
+        return;
+      }
+      openProfile(
+        handle: handle,
+        nickname: payload.actorNickname,
+      );
+      return;
+    }
     _aggregator.clearSlot(payload.slot);
     _local.cancelSlot(payload.slot);
     final open = onOpenWorkout;
@@ -179,6 +212,18 @@ class NotificationService {
       return;
     }
     open(workoutId: payload.workoutId, owner: payload.owner);
+  }
+
+  String _formatFollowTitle(PushNotificationPayload payload) {
+    final name = payload.actorDisplayName.trim();
+    if (name.isEmpty) {
+      return '';
+    }
+    final l10n = _l10n;
+    if (l10n == null) {
+      return name;
+    }
+    return l10n.pushNewFollowerTitle(name);
   }
 
   String _formatBody(NotificationSlotState state) {

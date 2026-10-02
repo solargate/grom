@@ -54,7 +54,7 @@ Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern
 
 ### Benachrichtigungen (Android)
 
-Unter Android kann Grom eine Systembenachrichtigung zeigen, wenn jemand Ihr Workout liked oder kommentiert (auch von einer anderen föderierten Instanz). Der Titel ist der Workout-Name; ein einzelner Like oder Kommentar nennt den anderen Nutzer, mehrere hintereinander werden zu einer Anzahl zusammengefasst. Öffnen des Workouts in der App oder Tippen auf die Benachrichtigung setzt die Zusammenfassung zurück. Erlauben Sie Benachrichtigungen, wenn das System danach fragt. Auf Geräten ohne Google Play Services können Sie einen UnifiedPush-Distributor wie [ntfy](https://ntfy.sh/) nutzen. Abmelden deregistriert das Gerät.
+Unter Android kann Grom eine Systembenachrichtigung zeigen, wenn jemand Ihr Workout liked oder kommentiert (auch von einer anderen föderierten Instanz), oder wenn Ihnen jemand **folgt**. Bei Likes und Kommentaren ist der Titel der Workout-Name; ein einzelner Like oder Kommentar nennt den anderen Nutzer, mehrere hintereinander werden zu einer Anzahl zusammengefasst. Öffnen des Workouts in der App oder Tippen auf die Benachrichtigung setzt die Zusammenfassung zurück. Bei einem neuen Follower lautet der Titel lokalisiert „Neuer Follower: …“, der Text ist leer und es gibt keine Zusammenfassung; Tippen öffnet das Profil dieses Nutzers. Erlauben Sie Benachrichtigungen, wenn das System danach fragt. Auf Geräten ohne Google Play Services können Sie einen UnifiedPush-Distributor wie [ntfy](https://ntfy.sh/) nutzen. Abmelden deregistriert das Gerät.
 
 ## Strava-Import
 

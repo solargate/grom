@@ -104,7 +104,9 @@ type stubFollowersRepo struct {
 }
 
 func (s stubFollowersRepo) List(string) ([]InboundFollower, error) { return s.items, nil }
-func (s stubFollowersRepo) Add(string, InboundFollower) error      { return nil }
+func (s stubFollowersRepo) Add(string, InboundFollower) (bool, error) {
+	return true, nil
+}
 func (s stubFollowersRepo) Remove(string, string) error            { return nil }
 func (s stubFollowersRepo) ListInboxes(string) ([]string, error) {
 	return nil, nil

@@ -17,3 +17,10 @@ func (a *App) notifyWorkoutCommented(ownerNickname, workoutID string, actor work
 	}
 	a.Notifier.NotifyWorkoutCommented(ownerNickname, workoutID, actor)
 }
+
+func (a *App) notifyNewFollower(targetNickname string, actor workouts.WorkoutLikeUser) {
+	if a == nil || a.Notifier == nil {
+		return
+	}
+	a.Notifier.NotifyNewFollower(targetNickname, actor)
+}

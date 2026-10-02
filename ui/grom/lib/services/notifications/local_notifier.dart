@@ -16,7 +16,8 @@ class LocalNotifier {
 
   static const channelId = 'grom_social';
   static const channelName = 'Social';
-  static const channelDescription = 'Likes and comments on your workouts';
+  static const channelDescription =
+      'Likes, comments, and new followers';
 
   final FlutterLocalNotificationsPlugin _plugin;
   NotificationTapCallback? onTap;
@@ -85,6 +86,32 @@ class LocalNotifier {
         ),
       ),
       payload: payload,
+    );
+  }
+
+  /// Shows a one-shot follower notification (no body, no collapse).
+  Future<void> showFollow({
+    required String title,
+    required PushNotificationPayload payload,
+  }) async {
+    await initialize();
+    final idKey =
+        payload.slot.isNotEmpty ? payload.slot : 'followed:${payload.eventId}';
+    await _plugin.show(
+      SlotAggregator.notificationIdForSlot(idKey),
+      title,
+      null,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: channelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.social,
+        ),
+      ),
+      payload: jsonEncode(payload.toJson()),
     );
   }
 
