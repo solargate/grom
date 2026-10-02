@@ -70,6 +70,9 @@ func (b *Backend) PurgeUser(userID, nickname, localHandle string) error {
 	if err := b.patStore.DeleteAllForUser(userID); err != nil {
 		return fmt.Errorf("delete personal access tokens: %w", err)
 	}
+	if err := b.pushSubscriptions.DeleteAllForUser(userID); err != nil {
+		return fmt.Errorf("delete push subscriptions: %w", err)
+	}
 	if err := b.resetTokens.DeleteAllForUser(userID); err != nil {
 		return fmt.Errorf("delete reset tokens: %w", err)
 	}

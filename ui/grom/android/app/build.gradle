@@ -86,4 +86,7 @@ flutter {
 
 dependencies {
     testImplementation 'junit:junit:4.13.2'
+    // UnifiedPush embedded FCM fallback when no external distributor is installed.
+    // Requires a Play-build google-services.json from the app publisher for FCM.
+    implementation 'org.unifiedpush.android:embedded-fcm-distributor:3.1.0'
 }

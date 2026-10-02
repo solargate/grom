@@ -28,17 +28,20 @@ void main() {
       'federation_enabled': true,
       'password_reset_enabled': true,
       'captcha_enabled': true,
+      'vapid_public_key': 'vapid-pub',
     });
     expect(info.name, 'Home Lab');
     expect(info.federationEnabled, isTrue);
     expect(info.passwordResetEnabled, isTrue);
     expect(info.captchaEnabled, isTrue);
+    expect(info.vapidPublicKey, 'vapid-pub');
 
     final defaults = ServerInfo.fromJson({});
     expect(defaults.name, 'Grom Home');
     expect(defaults.federationEnabled, isFalse);
     expect(defaults.passwordResetEnabled, isFalse);
     expect(defaults.captchaEnabled, isFalse);
+    expect(defaults.vapidPublicKey, '');
   });
 
   test('UserInfo.fromJson reads optional avatar fields', () {

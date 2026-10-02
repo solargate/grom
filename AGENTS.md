@@ -190,6 +190,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 18. **Equipment mileage:** cached `distance` is recalculated by `internal/equipment/distance` from the owner's workouts (including after Strava import). Do not set mileage only from the handler.
 19. **Sport and equipment type catalogs** must stay in sync: Go `internal/workouts/sport_types.go` ↔ Flutter `lib/models/sport_types.dart` (plus ARB keys and `sport_type_localizations.dart`); equipment types `internal/equipment` ↔ `lib/models/equipment_types.dart` (plus `equipment_type_localizations.dart`).
 20. **Approved servers:** `server-catalog.yaml` at the repo root is the source of truth; `scripts/server_catalog.py` validates it (https only, no ports, path allowed) and writes `ui/grom/lib/generated/server_catalog.g.dart`. Commit the generated file; `make catalog` / `make web` / `make android-*` regenerate it. CI diffs the Dart file. Do not parse the YAML in Flutter at runtime. Manual server URLs stay allowed; successful login/register remembers custom URLs locally. Docs: `docs/user/approved-servers.md`.
+21. **Push notifications:** always on. VAPID keys auto-created at `{storage.location}/notifications/vapid.json`; public key on `/server-info`. Device Web Push subscriptions via `POST/DELETE /api/v1/notifications/push` (JWT only; multi-device by `installation_id`). Notify workout **owner** on local like/comment (including federated inbox); never notify for own actions. Android client: UnifiedPush + `flutter_local_notifications`, client-side collapse per workout/type, l10n bodies. Subscriptions copied by `grom migrate-storage` and removed by `PurgeUser`.
 
 ## Agent do / don't
 
@@ -235,6 +236,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Password reset / mailer | `internal/auth/reset/`, `internal/mailer/`, `api/v1/auth_password.go`; docs in `docs/admin/configuration.md` |
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
+| Push notifications | `internal/notifications/`, `api/v1/notifications_*.go`; Flutter `services/notifications/`; docs in `docs/admin/configuration.md` and `docs/user/overview.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
 | Human docs | `docs/README.md` (index + Pages homepage), `docs/about.md`, `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |
 | Approved server catalog | `server-catalog.yaml`; `scripts/server_catalog.py`; Flutter `lib/server_catalog.dart` + `widgets/server_url_field.dart`; docs in `docs/user/approved-servers.md` |

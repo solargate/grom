@@ -962,6 +962,112 @@
                 }
             }
         },
+        "/notifications/push": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upsert a Web Push subscription for the authenticated user's device (JWT only).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Register push subscription",
+                "parameters": [
+                    {
+                        "description": "Subscription",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.RegisterPushSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.PushSubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid subscription",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/push/{installationId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove a Web Push subscription for the authenticated user's device (JWT only).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Unregister push subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Installation ID",
+                        "name": "installationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Subscription not found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [
@@ -3469,6 +3575,73 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "v1.PushSubscriptionKeys": {
+            "type": "object",
+            "required": [
+                "auth",
+                "p256dh"
+            ],
+            "properties": {
+                "auth": {
+                    "type": "string",
+                    "example": "tBHItJI5svbpez7..."
+                },
+                "p256dh": {
+                    "type": "string",
+                    "example": "BNcRdba..."
+                }
+            }
+        },
+        "v1.PushSubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "device_name": {
+                    "type": "string",
+                    "example": "Pixel 8"
+                },
+                "installation_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "platform": {
+                    "type": "string",
+                    "example": "android"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-10-02T12:00:00Z"
+                }
+            }
+        },
+        "v1.RegisterPushSubscriptionRequest": {
+            "type": "object",
+            "required": [
+                "endpoint",
+                "installation_id",
+                "keys"
+            ],
+            "properties": {
+                "device_name": {
+                    "type": "string",
+                    "example": "Pixel 8"
+                },
+                "endpoint": {
+                    "type": "string",
+                    "example": "https://fcm.googleapis.com/fcm/send/..."
+                },
+                "installation_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "keys": {
+                    "$ref": "#/definitions/v1.PushSubscriptionKeys"
+                },
+                "platform": {
+                    "type": "string",
+                    "example": "android"
                 }
             }
         },

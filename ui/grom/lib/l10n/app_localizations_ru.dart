@@ -776,6 +776,45 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не убирайте уведомление во время записи';
 
   @override
+  String get pushSocialChannelName => 'Социальные';
+
+  @override
+  String pushWorkoutLikedBody(String name) {
+    return 'Пользователь $name поставил лайк';
+  }
+
+  @override
+  String pushWorkoutLikedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count лайка',
+      many: '$count лайков',
+      few: '$count лайка',
+      one: '$count лайк',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pushWorkoutCommentedBody(String name) {
+    return 'Пользователь $name оставил комментарий';
+  }
+
+  @override
+  String pushWorkoutCommentedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count комментария',
+      many: '$count комментариев',
+      few: '$count комментария',
+      one: '$count комментарий',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get recordingInProgress => 'Идёт запись';
 
   @override

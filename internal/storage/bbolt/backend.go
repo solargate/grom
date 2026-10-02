@@ -12,6 +12,7 @@ import (
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage/blob"
 	blobfs "github.com/solargate/grom/internal/storage/blob/fs"
@@ -20,19 +21,20 @@ import (
 )
 
 type Backend struct {
-	db          *bolt.DB
-	location    string
-	users       *UsersStore
-	workoutRepo *WorkoutsStore
-	workouts    *workouts.Service
-	likes       workouts.LikesRepository
-	comments    workouts.CommentsRepository
-	equipment   *EquipmentStore
-	social      *SocialStore
-	fed         federation.Storage
-	blobs       blob.Store
-	resetTokens reset.TokenStore
-	patStore    *PATStore
+	db                *bolt.DB
+	location          string
+	users             *UsersStore
+	workoutRepo       *WorkoutsStore
+	workouts          *workouts.Service
+	likes             workouts.LikesRepository
+	comments          workouts.CommentsRepository
+	equipment         *EquipmentStore
+	social            *SocialStore
+	fed               federation.Storage
+	blobs             blob.Store
+	resetTokens       reset.TokenStore
+	patStore          *PATStore
+	pushSubscriptions *PushSubscriptionStore
 }
 
 // Open opens a bbolt metadata database and filesystem blob store under location.
@@ -76,19 +78,20 @@ func Open(dbPath, location string) (*Backend, error) {
 	inboxStore := NewInboxStore(db, blobStore, speedCharts, heartRateCharts, cadenceCharts)
 
 	return &Backend{
-		db:          db,
-		location:    location,
-		users:       userStore,
-		workoutRepo: workoutRepo,
-		workouts:    workoutSvc,
-		likes:       likesStore,
-		comments:    commentsStore,
-		equipment:   equipmentStore,
-		social:      socialStore,
-		fed:         federation.NewStorage(followersStore, inboxStore),
-		blobs:       blobStore,
-		resetTokens: NewResetTokenStore(db),
-		patStore:    NewPATStore(db),
+		db:                db,
+		location:          location,
+		users:             userStore,
+		workoutRepo:       workoutRepo,
+		workouts:          workoutSvc,
+		likes:             likesStore,
+		comments:          commentsStore,
+		equipment:         equipmentStore,
+		social:            socialStore,
+		fed:               federation.NewStorage(followersStore, inboxStore),
+		blobs:             blobStore,
+		resetTokens:       NewResetTokenStore(db),
+		patStore:          NewPATStore(db),
+		pushSubscriptions: NewPushSubscriptionStore(db),
 	}, nil
 }
 
@@ -120,8 +123,11 @@ func (b *Backend) Federation() federation.Storage        { return b.fed }
 func (b *Backend) Blobs() blob.Store                     { return b.blobs }
 func (b *Backend) ResetTokens() reset.TokenStore         { return b.resetTokens }
 func (b *Backend) PAT() pat.Repository                   { return b.patStore }
-func (b *Backend) DB() *bolt.DB                          { return b.db }
-func (b *Backend) Location() string                      { return b.location }
+func (b *Backend) PushSubscriptions() notifications.Repository {
+	return b.pushSubscriptions
+}
+func (b *Backend) DB() *bolt.DB     { return b.db }
+func (b *Backend) Location() string { return b.location }
 
 func (b *Backend) Close() error {
 	if b.db == nil {

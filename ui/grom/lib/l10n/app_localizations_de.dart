@@ -791,6 +791,41 @@ class AppLocalizationsDe extends AppLocalizations {
       'Benachrichtigung während der Aufzeichnung nicht entfernen';
 
   @override
+  String get pushSocialChannelName => 'Sozial';
+
+  @override
+  String pushWorkoutLikedBody(String name) {
+    return 'Benutzer $name hat ein Like gegeben';
+  }
+
+  @override
+  String pushWorkoutLikedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Likes',
+      one: '$count Like',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pushWorkoutCommentedBody(String name) {
+    return 'Benutzer $name hat kommentiert';
+  }
+
+  @override
+  String pushWorkoutCommentedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Kommentare',
+      one: '$count Kommentar',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get recordingInProgress => 'Aufzeichnung läuft';
 
   @override

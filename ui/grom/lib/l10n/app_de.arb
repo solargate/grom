@@ -377,6 +377,39 @@
   "autoPauseDisabled": "Autopause aus",
   "backgroundLocationRationale": "Hintergrundstandort ermöglicht die Aufzeichnung, wenn Sie die App wechseln.",
   "doNotDismissNotification": "Benachrichtigung während der Aufzeichnung nicht entfernen",
+  "pushSocialChannelName": "Sozial",
+  "pushWorkoutLikedBody": "Benutzer {name} hat ein Like gegeben",
+  "@pushWorkoutLikedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pushWorkoutLikedCount": "{count, plural, one{{count} Like} other{{count} Likes}}",
+  "@pushWorkoutLikedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pushWorkoutCommentedBody": "Benutzer {name} hat kommentiert",
+  "@pushWorkoutCommentedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pushWorkoutCommentedCount": "{count, plural, one{{count} Kommentar} other{{count} Kommentare}}",
+  "@pushWorkoutCommentedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "recordingInProgress": "Aufzeichnung läuft",
   "restoreRecordingTitle": "Aufzeichnung fortsetzen?",
   "restoreRecordingMessage": "Eine unvollständige Trainingsaufzeichnung wurde gefunden. Fortsetzen oder verwerfen?",

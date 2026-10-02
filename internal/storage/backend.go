@@ -3,10 +3,11 @@ package storage
 import (
 	"context"
 
-	"github.com/solargate/grom/internal/equipment"
-	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/auth/reset"
+	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/users"
@@ -24,6 +25,7 @@ type Backend interface {
 	Blobs() blob.Store
 	ResetTokens() reset.TokenStore
 	PAT() pat.Repository
+	PushSubscriptions() notifications.Repository
 
 	// PurgeUser permanently removes the account and all related data for both
 	// this user and cross-user references (follows, likes/comments, inbox caches).

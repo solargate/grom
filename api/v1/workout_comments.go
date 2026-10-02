@@ -160,11 +160,18 @@ func (a *App) createWorkoutComment(ctx *gin.Context) {
 	updated := workouts.AddWorkoutComment(comments, comment)
 
 	if isLocal {
+		beforeCount := 0
+		if comments != nil {
+			beforeCount = comments.CommentsNum
+		}
 		if err := a.Comments.PutLocal(ownerNickname, workoutID, &updated); err != nil {
 			respondInternal(ctx, "failed to store workout comments", err)
 			return
 		}
 		a.publishWorkoutCommentsUpdate(ownerNickname, workoutID)
+		if updated.CommentsNum > beforeCount && ownerNickname != viewerNickname {
+			a.notifyWorkoutCommented(ownerNickname, workoutID, actor)
+		}
 	} else {
 		ownerHandle := item.Author.Handle
 		objectID := remoteWorkoutObjectID(ownerHandle, item.Author.Nickname, workoutID)

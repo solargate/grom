@@ -377,6 +377,39 @@
   "autoPauseDisabled": "Автопауза выключена",
   "backgroundLocationRationale": "Фоновая геолокация позволяет продолжать запись, когда вы переключаетесь на другие приложения.",
   "doNotDismissNotification": "Не убирайте уведомление во время записи",
+  "pushSocialChannelName": "Социальные",
+  "pushWorkoutLikedBody": "Пользователь {name} поставил лайк",
+  "@pushWorkoutLikedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pushWorkoutLikedCount": "{count, plural, one{{count} лайк} few{{count} лайка} many{{count} лайков} other{{count} лайка}}",
+  "@pushWorkoutLikedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pushWorkoutCommentedBody": "Пользователь {name} оставил комментарий",
+  "@pushWorkoutCommentedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pushWorkoutCommentedCount": "{count, plural, one{{count} комментарий} few{{count} комментария} many{{count} комментариев} other{{count} комментария}}",
+  "@pushWorkoutCommentedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "recordingInProgress": "Идёт запись",
   "restoreRecordingTitle": "Восстановить запись?",
   "restoreRecordingMessage": "Найдена незавершённая запись тренировки. Восстановить её или удалить сохранённый трек?",

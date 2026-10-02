@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Android system notifications when someone likes or comments on your workout
+- Like and comment alerts collapse into a count when several arrive for the same workout
+
+### Added
+
+- **Server:** Web Push notifications for likes and comments on owned local workouts (including federated remotes); VAPID keys auto-created under `storage.location/notifications/`; `POST/DELETE /api/v1/notifications/push`; `vapid_public_key` on `/server-info`
+- **Android:** UnifiedPush + system notifications for likes/comments with per-workout collapse, localized copy, and deep link to the workout
+- **Docs:** Admin and user notes for push notifications; privacy policy covers device push subscriptions
+
 ## [0.17.1] - 2026-10-02
 
 ### Google Play

@@ -38,6 +38,10 @@ func TestServerInfoAndStatus(t *testing.T) {
 	if info["registration"] != "open" {
 		t.Fatalf("expected registration=open, got %#v", info)
 	}
+	vapid, _ := info["vapid_public_key"].(string)
+	if vapid == "" {
+		t.Fatalf("expected non-empty vapid_public_key, got %#v", info)
+	}
 }
 
 func TestRegisterClosedMode(t *testing.T) {

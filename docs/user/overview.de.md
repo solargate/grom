@@ -52,6 +52,10 @@ Folgen Sie anderen Nutzern derselben Instanz und browsen Sie einen gemeinsamen F
 
 Wenn der Betreiber ActivityPub-Föderation aktiviert, können Sie auch Sportlern auf anderen Grom-Instanzen folgen (HTTPS auf dem Server erforderlich). Remote-Grom-Profile können öffentliche Outbox-Workouts zeigen; Likes auf Remote-Workouts werden als ActivityPub-`Like` gesendet; Entfernen eines Likes sendet `Undo`. Kommentare zu Remote-Workouts gehen als `Create` Note mit `inReplyTo`; Löschen eines Kommentars sendet `Delete`. Eingehende Likes und Kommentare von anderen Instanzen aktualisieren das lokale Workout genauso. Kontolöschung und föderiertes Actor-`Delete` sind in [Grom-Konto löschen](delete-account.md) beschrieben.
 
+### Benachrichtigungen (Android)
+
+Unter Android kann Grom eine Systembenachrichtigung zeigen, wenn jemand Ihr Workout liked oder kommentiert (auch von einer anderen föderierten Instanz). Der Titel ist der Workout-Name; ein einzelner Like oder Kommentar nennt den anderen Nutzer, mehrere hintereinander werden zu einer Anzahl zusammengefasst. Öffnen des Workouts in der App oder Tippen auf die Benachrichtigung setzt die Zusammenfassung zurück. Erlauben Sie Benachrichtigungen, wenn das System danach fragt. Auf Geräten ohne Google Play Services können Sie einen UnifiedPush-Distributor wie [ntfy](https://ntfy.sh/) nutzen. Abmelden deregistriert das Gerät.
+
 ## Strava-Import
 
 Unter **Integration → Strava** laden Sie ein ZIP des [Strava-Massenexports](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) hoch. Grom importiert Aktivitäten, Tracks, Fotos und Ausrüstung. Spaltenzuordnung und serverseitiges Verhalten: [Strava-Massenimport](../integrations/strava-bulk-import.md).

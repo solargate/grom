@@ -20,16 +20,18 @@ import (
 )
 
 type InboxProcessor struct {
-	users             users.Repository
-	social            *social.Service
-	delivery          *Delivery
-	inboxStore        InboxRepository
-	likes             workouts.LikesRepository
-	comments          workouts.CommentsRepository
-	followersStore    FollowersRepository
-	onWorkoutLike     func(ownerNickname, workoutID string)
-	onWorkoutComment  func(ownerNickname, workoutID string)
-	autoAccept        bool
+	users                  users.Repository
+	social                 *social.Service
+	delivery               *Delivery
+	inboxStore             InboxRepository
+	likes                  workouts.LikesRepository
+	comments               workouts.CommentsRepository
+	followersStore         FollowersRepository
+	onWorkoutLike          func(ownerNickname, workoutID string)
+	onWorkoutComment       func(ownerNickname, workoutID string)
+	onWorkoutLikeNotify    func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser)
+	onWorkoutCommentNotify func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser)
+	autoAccept             bool
 }
 
 func NewInboxProcessor(userStore users.Repository, socialSvc *social.Service, delivery *Delivery, inboxStore InboxRepository, followersStore FollowersRepository) *InboxProcessor {
@@ -51,6 +53,14 @@ func (p *InboxProcessor) SetLikes(likes workouts.LikesRepository, onWorkoutLike 
 func (p *InboxProcessor) SetComments(comments workouts.CommentsRepository, onWorkoutComment func(ownerNickname, workoutID string)) {
 	p.comments = comments
 	p.onWorkoutComment = onWorkoutComment
+}
+
+func (p *InboxProcessor) SetLikeNotify(fn func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser)) {
+	p.onWorkoutLikeNotify = fn
+}
+
+func (p *InboxProcessor) SetCommentNotify(fn func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser)) {
+	p.onWorkoutCommentNotify = fn
 }
 
 func (p *InboxProcessor) Handle(nickname string, body io.Reader) error {
@@ -549,6 +559,11 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 	if p.onWorkoutLike != nil {
 		p.onWorkoutLike(targetNickname, workoutID)
 	}
+	if likes == nil || updated.Likes > likes.Likes {
+		if p.onWorkoutLikeNotify != nil {
+			p.onWorkoutLikeNotify(targetNickname, workoutID, actorUser)
+		}
+	}
 	return nil
 }
 
@@ -634,6 +649,13 @@ func (p *InboxProcessor) handleCommentCreate(targetNickname string, activity, ob
 	}
 	if p.onWorkoutComment != nil {
 		p.onWorkoutComment(targetNickname, workoutID)
+	}
+	beforeCount := 0
+	if comments != nil {
+		beforeCount = comments.CommentsNum
+	}
+	if updated.CommentsNum > beforeCount && p.onWorkoutCommentNotify != nil {
+		p.onWorkoutCommentNotify(targetNickname, workoutID, actorUser)
 	}
 	return nil
 }

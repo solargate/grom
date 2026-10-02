@@ -28,11 +28,16 @@ func (a *App) checkStatus(ctx *gin.Context) {
 // @Success      200
 // @Router       /server-info [get]
 func (a *App) getServerInfo(ctx *gin.Context) {
+	vapidPublic := ""
+	if a.VAPID != nil {
+		vapidPublic = a.VAPID.PublicKey()
+	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"name":                   config.Cfg.Server.Name,
 		"federation_enabled":     config.Cfg.Federation.Enabled,
 		"password_reset_enabled": config.Cfg.PasswordResetEnabled(),
 		"captcha_enabled":        config.Cfg.CaptchaEnabled(),
 		"registration":           config.Cfg.Server.Registration,
+		"vapid_public_key":       vapidPublic,
 	})
 }

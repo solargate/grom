@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 2026-09-04
+**Last updated:** 2026-10-02
 
 This Privacy Policy describes how the **Grom** Android application and web client (“App”) and the open-source Grom software handle information.
 
@@ -51,6 +51,7 @@ Depending on what you create, import, or record:
 - Photos you attach to workouts
 - Avatar image
 - Social data: follows, likes, and comments
+- Push notification subscriptions (Web Push endpoint and encryption keys for each device installation), when you use the Android app signed in to that server
 - Personal access tokens (PAT) you create for API access
 - Integration-related identifiers stored for imports (for example external workout IDs)
 
@@ -61,6 +62,7 @@ On Android, live workout recording may use:
 - Approximate and **precise** location
 - **Background location** and a foreground location service, so recording can continue when you switch apps
 - Notifications related to an active recording
+- System notifications about likes and comments on your workouts (Android; requires notification permission)
 - An optional battery-optimization exemption request so recording is less likely to be stopped by the system
 
 Location is used **only** to record workout tracks and related map previews and stats. The App does not use location for advertising. Tracks you save are uploaded to **your configured Grom server**.
@@ -109,6 +111,7 @@ If the operator enables a mailer, password-reset messages are sent via that oper
 |---------|----------|
 | Provide core features | Sign-in, workouts, tracks, photos, equipment, feed, likes, comments |
 | Live recording | GPS track while you record on Android |
+| Push notifications | Alert you on Android when someone likes or comments on your workout (device push endpoint stored on your chosen server) |
 | Optional imports | Strava ZIP (on the server), Strava API sync on Android using credentials stored only on the device, multi-file GPX/FIT via the system file picker (on the device, then to the server) |
 | Security | Auth tokens, optional captcha, rate limiting (may use IP on the server) |
 | Federation | Optional delivery of activities to remote inboxes |

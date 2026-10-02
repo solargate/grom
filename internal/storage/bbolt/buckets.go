@@ -31,6 +31,7 @@ var (
 	bucketFedCadenceCharts     = []byte("fed_cadence_charts")
 	bucketResetTokens          = []byte("reset_tokens")
 	bucketPersonalAccessTokens = []byte("personal_access_tokens")
+	bucketPushSubscriptions    = []byte("push_subscriptions")
 )
 
 var allBuckets = [][]byte{
@@ -64,6 +65,7 @@ var allBuckets = [][]byte{
 	bucketFedCadenceCharts,
 	bucketResetTokens,
 	bucketPersonalAccessTokens,
+	bucketPushSubscriptions,
 }
 
 const schemaVersion = "1"

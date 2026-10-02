@@ -776,6 +776,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Do not dismiss the notification while recording';
 
   @override
+  String get pushSocialChannelName => 'Social';
+
+  @override
+  String pushWorkoutLikedBody(String name) {
+    return 'User $name liked your workout';
+  }
+
+  @override
+  String pushWorkoutLikedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count likes',
+      one: '$count like',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pushWorkoutCommentedBody(String name) {
+    return 'User $name commented on your workout';
+  }
+
+  @override
+  String pushWorkoutCommentedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '$count comment',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get recordingInProgress => 'Recording in progress';
 
   @override

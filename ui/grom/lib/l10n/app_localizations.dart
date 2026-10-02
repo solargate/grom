@@ -1522,6 +1522,36 @@ abstract class AppLocalizations {
   /// **'Do not dismiss the notification while recording'**
   String get doNotDismissNotification;
 
+  /// No description provided for @pushSocialChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get pushSocialChannelName;
+
+  /// No description provided for @pushWorkoutLikedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'User {name} liked your workout'**
+  String pushWorkoutLikedBody(String name);
+
+  /// No description provided for @pushWorkoutLikedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} like} other{{count} likes}}'**
+  String pushWorkoutLikedCount(int count);
+
+  /// No description provided for @pushWorkoutCommentedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'User {name} commented on your workout'**
+  String pushWorkoutCommentedBody(String name);
+
+  /// No description provided for @pushWorkoutCommentedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
+  String pushWorkoutCommentedCount(int count);
+
   /// No description provided for @recordingInProgress.
   ///
   /// In en, this message translates to:
