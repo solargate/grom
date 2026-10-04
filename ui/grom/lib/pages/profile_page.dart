@@ -162,7 +162,12 @@ class ProfilePageState extends State<ProfilePage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          profilePageInset,
+          profilePageInset,
+          profilePageInset,
+          16,
+        ),
         children: [
           ProfileIdentityCard(
             nickname: widget.nickname,
@@ -176,7 +181,7 @@ class ProfilePageState extends State<ProfilePage> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: profileCardGap),
           ProfileFollowCountCards(
             followingCount: activeFollowingCount(_following),
             followersCount: _followers.length,

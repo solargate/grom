@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:grom/l10n/app_localizations.dart';
 
 import '../models/social.dart';
+import '../platform/is_mobile_client.dart';
 import '../widgets/user_avatar.dart';
+
+/// Gap between profile identity and follow-count cards (and between the two
+/// count cards). Tighter on mobile; unchanged on web.
+double get profileCardGap => isMobileClient ? 4.0 : 12.0;
+
+/// Left / top / right inset around the profile header cards.
+double get profilePageInset => isMobileClient ? 6.0 : 16.0;
 
 class ProfileIdentityCard extends StatelessWidget {
   const ProfileIdentityCard({
@@ -101,7 +109,7 @@ class ProfileFollowCountCards extends StatelessWidget {
             onTap: onFollowingTap,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: profileCardGap),
         Expanded(
           child: ProfileCountCard(
             label: l10n.followersCount(followersCount),

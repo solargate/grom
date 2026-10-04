@@ -297,7 +297,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: EdgeInsets.fromLTRB(
+            profilePageInset,
+            profilePageInset,
+            profilePageInset,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -321,7 +326,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         tooltip: _isFollowing ? l10n.unfollow : l10n.follow,
                       ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: profileCardGap),
               ProfileFollowCountCards(
                 followingCount: activeFollowingCount(_following),
                 followersCount: _followers.length,

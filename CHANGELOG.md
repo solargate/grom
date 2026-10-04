@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Tighter spacing around profile info and follow/follower cards on Android
+
+### Changed
+
+- **Android:** Smaller gap between profile identity and follow-count cards (and between the two count cards); tighter left/top/right page inset; web unchanged
+
 ## [0.18.0] - 2026-10-04
 
 ### Google Play
