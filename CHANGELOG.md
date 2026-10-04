@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Android:** System notification for new followers (title only, no collapse); tap opens the follower’s profile
 - **Docs:** Admin and user notes for push notifications; privacy policy covers device push subscriptions
 
+### Fixed
+
+- **Android:** Social notifications (likes, comments, followers) use a monochrome Grom bolt small icon instead of the opaque launcher (empty circle next to the app name)
+
 ## [0.17.1] - 2026-10-02
 
 ### Google Play

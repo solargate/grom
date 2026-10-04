@@ -19,6 +19,9 @@ class LocalNotifier {
   static const channelDescription =
       'Likes, comments, and new followers';
 
+  /// Android small-icon drawable (`res/drawable/ic_stat_grom.xml`).
+  static const androidSmallIcon = 'ic_stat_grom';
+
   final FlutterLocalNotificationsPlugin _plugin;
   NotificationTapCallback? onTap;
   NotificationDismissCallback? onDismiss;
@@ -29,7 +32,7 @@ class LocalNotifier {
     if (_initialized) {
       return;
     }
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings(androidSmallIcon);
     const initSettings = InitializationSettings(android: android);
     await _plugin.initialize(
       initSettings,
@@ -80,6 +83,7 @@ class LocalNotifier {
           channelId,
           channelName,
           channelDescription: channelDescription,
+          icon: androidSmallIcon,
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.social,
@@ -106,6 +110,7 @@ class LocalNotifier {
           channelId,
           channelName,
           channelDescription: channelDescription,
+          icon: androidSmallIcon,
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.social,
