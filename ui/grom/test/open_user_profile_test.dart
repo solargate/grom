@@ -78,14 +78,16 @@ void main() {
     expect(openedNickname, 'bob');
   });
 
-  testWidgets('openUserProfile no-ops for self', (tester) async {
-    var called = false;
+  testWidgets('openUserProfile opens self via GromShellScope', (tester) async {
+    String? openedHandle;
+    String? openedNickname;
 
     await tester.pumpWidget(
       MaterialApp(
         home: GromShellScope(
           openUserProfile: ({required handle, required nickname}) {
-            called = true;
+            openedHandle = handle;
+            openedNickname = nickname;
           },
           openWorkout: (_) {},
           child: Builder(
@@ -108,7 +110,8 @@ void main() {
     );
 
     await tester.tap(find.text('open'));
-    expect(called, isFalse);
+    expect(openedHandle, 'alice');
+    expect(openedNickname, 'alice');
   });
 
   testWidgets('openWorkoutFromProfile uses GromShellScope', (tester) async {

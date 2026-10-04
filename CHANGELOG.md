@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Google Play
 
 - Tighter spacing around profile info and follow/follower cards on Android
+- Tap your own name or avatar to open your Profile; Back returns where you were
+
+### Added
+
+- **UI:** Tapping yourself (feed, search, likes, comments, follow lists) opens your Profile with the usual Back stack (no-op only when already on side-menu Profile)
 
 ### Changed
 

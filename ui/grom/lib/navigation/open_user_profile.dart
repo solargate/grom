@@ -14,7 +14,9 @@ bool isSelfProfile({
   return nickname == selfNickname || handle == selfNickname;
 }
 
-/// Opens another user's profile inside [GromShell] (side nav stays).
+/// Opens a user profile inside [GromShell] (side nav stays).
+///
+/// Self vs other and "already on own Profile" no-ops are handled by the shell.
 void openUserProfile(
   BuildContext context, {
   required String handle,
@@ -22,13 +24,6 @@ void openUserProfile(
   String? selfNickname,
   bool federationEnabled = false,
 }) {
-  if (isSelfProfile(
-    handle: handle,
-    nickname: nickname,
-    selfNickname: selfNickname,
-  )) {
-    return;
-  }
   final scope = GromShellScope.maybeOf(context);
   if (scope == null) {
     return;

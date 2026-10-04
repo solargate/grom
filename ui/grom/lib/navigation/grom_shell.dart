@@ -116,10 +116,22 @@ class _GromShellState extends State<GromShell> {
       _isLoggedIn;
   bool get _isViewingOtherUser => _viewingUserStack.isNotEmpty;
   bool get _isViewingWorkout => _viewingWorkout != null;
+  bool get _isViewingSelfOnStack {
+    if (_viewingUserStack.isEmpty) {
+      return false;
+    }
+    final top = _viewingUserStack.last;
+    return isSelfProfile(
+      handle: top.handle,
+      nickname: top.nickname,
+      selfNickname: _nickname,
+    );
+  }
+
   bool get _isViewingOwnProfile =>
       _selectedDestination == GromDestination.profile &&
-      !_isViewingOtherUser &&
-      !_isViewingWorkout;
+      !_isViewingWorkout &&
+      (!_isViewingOtherUser || _isViewingSelfOnStack);
   bool get _isViewingFeedPhoto =>
       _selectedDestination == GromDestination.home &&
       _viewingWorkout == null &&
@@ -542,17 +554,23 @@ class _GromShellState extends State<GromShell> {
     required String handle,
     required String nickname,
   }) {
-    if (isSelfProfile(
+    final self = isSelfProfile(
       handle: handle,
       nickname: nickname,
       selfNickname: _nickname,
-    )) {
+    );
+    // Already on the side-menu own Profile (no stack entry).
+    if (self &&
+        !_isViewingOtherUser &&
+        _selectedDestination == GromDestination.profile) {
       return;
     }
-    if (_isViewingOtherUser &&
-        _viewingUserStack.isNotEmpty &&
-        _viewingUserStack.last.handle == handle &&
-        _viewingWorkout == null) {
+    // Already showing this profile (or own Profile via stack).
+    if (_viewingWorkout == null &&
+        ((self && _isViewingSelfOnStack) ||
+            (_isViewingOtherUser &&
+                _viewingUserStack.isNotEmpty &&
+                _viewingUserStack.last.handle == handle))) {
       return;
     }
     setState(() {
@@ -988,7 +1006,7 @@ class _GromShellState extends State<GromShell> {
     if (_isViewingWorkout) {
       return _viewingWorkout!.name;
     }
-    if (_isViewingOtherUser) {
+    if (_isViewingOtherUser && !_isViewingSelfOnStack) {
       return _viewingUserStack.last.nickname;
     }
     return _sectionTitle(l10n);
@@ -1188,7 +1206,7 @@ class _GromShellState extends State<GromShell> {
           federationEnabled: _federationEnabled,
         );
       case GromDestination.profile:
-        if (_isViewingOtherUser) {
+        if (_isViewingOtherUser && !_isViewingSelfOnStack) {
           final viewing = _viewingUserStack.last;
           return UserProfilePage(
             key: ValueKey(viewing.handle),

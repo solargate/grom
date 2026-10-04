@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/workout.dart';
 
-/// Entry on the in-shell other-user profile stack.
+/// Entry on the in-shell user profile stack (other athletes or self).
 class ViewingUser {
   const ViewingUser({
     required this.handle,
