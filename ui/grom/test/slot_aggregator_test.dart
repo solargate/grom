@@ -81,4 +81,52 @@ void main() {
     );
     expect(state, isNull);
   });
+
+  test('updates title, preserves actor on empty name, clearSlot and clearAll', () {
+    final agg = SlotAggregator();
+    agg.ingest(
+      const PushNotificationPayload(
+        type: 'workout.liked',
+        actorDisplayName: 'Alice',
+        workoutId: 'w1',
+        workoutTitle: 'Run',
+        owner: 'bob',
+        slot: 'liked:bob:w1',
+      ),
+    );
+    final updated = agg.ingest(
+      const PushNotificationPayload(
+        type: 'workout.liked',
+        actorDisplayName: '',
+        workoutId: 'w1',
+        workoutTitle: 'Evening run',
+        owner: 'bob',
+        slot: 'liked:bob:w1',
+      ),
+    );
+    expect(updated!.count, 2);
+    expect(updated.lastActorDisplayName, 'Alice');
+    expect(updated.workoutTitle, 'Evening run');
+
+    agg.clearSlot('liked:bob:w1');
+    expect(agg.get('liked:bob:w1'), isNull);
+
+    agg.ingest(
+      const PushNotificationPayload(
+        type: 'workout.commented',
+        actorDisplayName: 'Bob',
+        workoutId: 'w2',
+        workoutTitle: 'Ride',
+        owner: 'alice',
+        slot: 'commented:alice:w2',
+      ),
+    );
+    agg.clearAll();
+    expect(agg.get('commented:alice:w2'), isNull);
+  });
+
+  test('notificationIdForSlot avoids zero', () {
+    expect(SlotAggregator.notificationIdForSlot(''), 1);
+    expect(SlotAggregator.notificationIdForSlot('liked:bob:w1'), isNonZero);
+  });
 }

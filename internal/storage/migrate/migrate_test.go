@@ -11,6 +11,7 @@ import (
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/storage/keys"
@@ -844,6 +845,85 @@ func TestMigratePreservesPersonalAccessTokens(t *testing.T) {
 	got, err = fileBackend2.PAT().GetByHash("hash-pat-1")
 	if err != nil || got.Name != "CI" {
 		t.Fatalf("round-trip pat: %#v err=%v", got, err)
+	}
+}
+
+func TestMigratePreservesPushSubscriptions(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.StorageConfig{
+		Driver:            config.StorageDriverFile,
+		ResolvedLocation:  dir,
+		ResolvedBBoltPath: filepath.Join(dir, "grom.db"),
+	}
+
+	fileBackend, err := storage.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub := notifications.PushSubscription{
+		UserID:         user.ID,
+		InstallationID: "inst-migrate",
+		Endpoint:       "https://push.example/migrate",
+		P256dh:         "p256-migrate",
+		Auth:           "auth-migrate",
+		Platform:       "android",
+		DeviceName:     "Pixel",
+		UpdatedAt:      time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC),
+	}
+	if err := fileBackend.PushSubscriptions().Upsert(sub); err != nil {
+		t.Fatal(err)
+	}
+	_ = fileBackend.Close()
+
+	result, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverFile, To: config.StorageDriverBBolt, Config: cfg, Verify: true, Force: true,
+	})
+	if err != nil {
+		t.Fatalf("file→bbolt: %v", err)
+	}
+	if result.PushSubscriptions != 1 {
+		t.Fatalf("push subs result: %+v", result)
+	}
+
+	bboltCfg := cfg
+	bboltCfg.Driver = config.StorageDriverBBolt
+	boltBackend, err := storage.Open(bboltCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := boltBackend.PushSubscriptions().ListByUser(user.ID)
+	if err != nil || len(got) != 1 {
+		t.Fatalf("bbolt push: %#v err=%v", got, err)
+	}
+	if got[0].Endpoint != sub.Endpoint || got[0].InstallationID != sub.InstallationID || got[0].Platform != "android" {
+		t.Fatalf("unexpected push sub: %#v", got[0])
+	}
+	_ = boltBackend.Close()
+
+	result2, err := migrate.Run(migrate.Options{
+		From: config.StorageDriverBBolt, To: config.StorageDriverFile, Config: cfg, Verify: true,
+	})
+	if err != nil {
+		t.Fatalf("bbolt→file: %v", err)
+	}
+	if result2.PushSubscriptions != 1 {
+		t.Fatalf("round-trip push: %+v", result2)
+	}
+
+	fileCfg := cfg
+	fileCfg.Driver = config.StorageDriverFile
+	fileBackend2, err := storage.Open(fileCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fileBackend2.Close()
+	got, err = fileBackend2.PushSubscriptions().ListByUser(user.ID)
+	if err != nil || len(got) != 1 || got[0].Auth != "auth-migrate" {
+		t.Fatalf("round-trip push: %#v err=%v", got, err)
 	}
 }
 

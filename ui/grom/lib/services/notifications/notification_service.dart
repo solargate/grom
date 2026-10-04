@@ -7,6 +7,7 @@ import '../../auth_storage.dart';
 import '../../l10n/app_localizations.dart';
 import 'installation_id_store.dart';
 import 'local_notifier.dart';
+import 'notification_format.dart';
 import 'push_payload.dart';
 import 'push_transport.dart';
 import 'push_transport_factory.dart';
@@ -60,7 +61,7 @@ class NotificationService {
       return;
     }
     _local.onTap = _handleTap;
-    _local.bodyBuilder = _formatBody;
+    _local.bodyBuilder = (state) => formatPushBody(_l10n, state);
     await _local.initialize();
     await _transport.initialize(
       onEndpoint: _registerEndpoint,
@@ -136,7 +137,7 @@ class NotificationService {
 
   void _handleMessage(PushNotificationPayload payload) {
     if (payload.isFollowed) {
-      final title = _formatFollowTitle(payload);
+      final title = formatFollowTitle(_l10n, payload);
       if (title.isEmpty) {
         return;
       }
@@ -148,7 +149,10 @@ class NotificationService {
     if (existing != null) {
       final id = SlotAggregator.notificationIdForSlot(payload.slot);
       _local.activeNotificationIds().then((active) {
-        if (!active.contains(id)) {
+        if (shouldResetSlotCounter(
+          hadExistingSlot: true,
+          notificationStillActive: active.contains(id),
+        )) {
           _aggregator.clearSlot(payload.slot);
         }
         final state = _aggregator.ingest(payload);
@@ -190,59 +194,28 @@ class NotificationService {
   }
 
   void _handleTap(PushNotificationPayload payload) {
-    if (payload.isFollowed) {
-      final idKey =
-          payload.slot.isNotEmpty ? payload.slot : 'followed:${payload.eventId}';
-      _local.cancelSlot(idKey);
-      final openProfile = onOpenUserProfile;
-      final handle = payload.actorHandle.trim();
-      if (openProfile == null || handle.isEmpty) {
+    final action = resolvePushTap(payload);
+    if (action.cancelSlot.isNotEmpty) {
+      if (action.target == PushTapTarget.workout) {
+        _aggregator.clearSlot(action.cancelSlot);
+      }
+      _local.cancelSlot(action.cancelSlot);
+    }
+    switch (action.target) {
+      case PushTapTarget.userProfile:
+        final openProfile = onOpenUserProfile;
+        if (openProfile == null || action.handle.isEmpty) {
+          return;
+        }
+        openProfile(handle: action.handle, nickname: action.nickname);
+      case PushTapTarget.workout:
+        final open = onOpenWorkout;
+        if (open == null) {
+          return;
+        }
+        open(workoutId: action.workoutId, owner: action.owner);
+      case PushTapTarget.none:
         return;
-      }
-      openProfile(
-        handle: handle,
-        nickname: payload.actorNickname,
-      );
-      return;
     }
-    _aggregator.clearSlot(payload.slot);
-    _local.cancelSlot(payload.slot);
-    final open = onOpenWorkout;
-    if (open == null) {
-      return;
-    }
-    open(workoutId: payload.workoutId, owner: payload.owner);
-  }
-
-  String _formatFollowTitle(PushNotificationPayload payload) {
-    final name = payload.actorDisplayName.trim();
-    if (name.isEmpty) {
-      return '';
-    }
-    final l10n = _l10n;
-    if (l10n == null) {
-      return name;
-    }
-    return l10n.pushNewFollowerTitle(name);
-  }
-
-  String _formatBody(NotificationSlotState state) {
-    final l10n = _l10n;
-    if (l10n == null) {
-      return state.lastActorDisplayName;
-    }
-    if (state.type == 'workout.liked') {
-      if (state.count <= 1) {
-        return l10n.pushWorkoutLikedBody(state.lastActorDisplayName);
-      }
-      return l10n.pushWorkoutLikedCount(state.count);
-    }
-    if (state.type == 'workout.commented') {
-      if (state.count <= 1) {
-        return l10n.pushWorkoutCommentedBody(state.lastActorDisplayName);
-      }
-      return l10n.pushWorkoutCommentedCount(state.count);
-    }
-    return state.lastActorDisplayName;
   }
 }

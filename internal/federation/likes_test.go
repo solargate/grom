@@ -144,9 +144,16 @@ func TestInboxProcessorHandleLikeAndUndo(t *testing.T) {
 
 	likes := newMemLikes()
 	var callbacks [][2]string
+	var notifyCalls []workouts.WorkoutLikeUser
 	processor := NewInboxProcessor(nil, nil, nil, newTestInboxStore(t.TempDir()), nil)
 	processor.SetLikes(likes, func(ownerNickname, workoutID string) {
 		callbacks = append(callbacks, [2]string{ownerNickname, workoutID})
+	})
+	processor.SetLikeNotify(func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser) {
+		if ownerNickname != "alice" || workoutID != "38472901" {
+			t.Fatalf("like notify target = %s/%s", ownerNickname, workoutID)
+		}
+		notifyCalls = append(notifyCalls, actor)
 	})
 
 	workoutID := "38472901"
@@ -165,6 +172,9 @@ func TestInboxProcessorHandleLikeAndUndo(t *testing.T) {
 	if len(callbacks) != 1 || callbacks[0] != [2]string{"alice", workoutID} {
 		t.Fatalf("callbacks = %#v", callbacks)
 	}
+	if len(notifyCalls) != 1 || notifyCalls[0].Handle != "bob@remote.test" || notifyCalls[0].IsLocal {
+		t.Fatalf("like notify = %#v", notifyCalls)
+	}
 
 	if err := processor.Handle("alice", strings.NewReader(likeBody)); err != nil {
 		t.Fatalf("idempotent Like: %v", err)
@@ -172,6 +182,9 @@ func TestInboxProcessorHandleLikeAndUndo(t *testing.T) {
 	got, err = likes.GetLocal("alice", workoutID)
 	if err != nil || got.Likes != 1 {
 		t.Fatalf("idempotent likes: %#v err=%v", got, err)
+	}
+	if len(notifyCalls) != 1 {
+		t.Fatalf("idempotent like must not notify again: %#v", notifyCalls)
 	}
 
 	undoBody := map[string]any{
@@ -193,6 +206,9 @@ func TestInboxProcessorHandleLikeAndUndo(t *testing.T) {
 	}
 	if len(callbacks) != 3 {
 		t.Fatalf("expected 3 callbacks (like, like, undo), got %d", len(callbacks))
+	}
+	if len(notifyCalls) != 1 {
+		t.Fatalf("undo must not notify like: %#v", notifyCalls)
 	}
 }
 

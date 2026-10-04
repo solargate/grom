@@ -113,9 +113,16 @@ func TestInboxProcessorHandleCommentCreateAndDelete(t *testing.T) {
 
 	comments := newMemComments()
 	var callbacks [][2]string
+	var notifyCalls []workouts.WorkoutLikeUser
 	processor := NewInboxProcessor(nil, nil, nil, newTestInboxStore(t.TempDir()), nil)
 	processor.SetComments(comments, func(ownerNickname, workoutID string) {
 		callbacks = append(callbacks, [2]string{ownerNickname, workoutID})
+	})
+	processor.SetCommentNotify(func(ownerNickname, workoutID string, actor workouts.WorkoutLikeUser) {
+		if ownerNickname != "alice" || workoutID != "38472901" {
+			t.Fatalf("comment notify target = %s/%s", ownerNickname, workoutID)
+		}
+		notifyCalls = append(notifyCalls, actor)
 	})
 
 	workoutID := "38472901"
@@ -153,6 +160,9 @@ func TestInboxProcessorHandleCommentCreateAndDelete(t *testing.T) {
 	if len(callbacks) != 1 || callbacks[0] != [2]string{"alice", workoutID} {
 		t.Fatalf("callbacks = %#v", callbacks)
 	}
+	if len(notifyCalls) != 1 || notifyCalls[0].Handle != "bob@remote.test" {
+		t.Fatalf("comment notify = %#v", notifyCalls)
+	}
 
 	if err := processor.Handle("alice", strings.NewReader(string(createJSON))); err != nil {
 		t.Fatalf("idempotent Create: %v", err)
@@ -160,6 +170,9 @@ func TestInboxProcessorHandleCommentCreateAndDelete(t *testing.T) {
 	got, err = comments.GetLocal("alice", workoutID)
 	if err != nil || got.CommentsNum != 1 {
 		t.Fatalf("idempotent comments: %#v err=%v", got, err)
+	}
+	if len(notifyCalls) != 1 {
+		t.Fatalf("idempotent comment must not notify again: %#v", notifyCalls)
 	}
 
 	deleteBody := map[string]any{

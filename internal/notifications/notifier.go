@@ -11,14 +11,24 @@ import (
 	"github.com/solargate/grom/internal/workouts"
 )
 
+// Deliverer sends notification events to a user's registered devices.
+type Deliverer interface {
+	SendToUser(ctx context.Context, userID string, event Event)
+}
+
+// WorkoutLookup loads a workout for notification metadata (title).
+type WorkoutLookup interface {
+	Get(nickname, workoutID string) (*workouts.Workout, error)
+}
+
 // Notifier builds events and delivers them to a recipient's devices.
 type Notifier struct {
 	users    users.Repository
-	workouts *workouts.Service
-	sender   *Sender
+	workouts WorkoutLookup
+	sender   Deliverer
 }
 
-func NewNotifier(userStore users.Repository, workoutSvc *workouts.Service, sender *Sender) *Notifier {
+func NewNotifier(userStore users.Repository, workoutSvc WorkoutLookup, sender Deliverer) *Notifier {
 	return &Notifier{
 		users:    userStore,
 		workouts: workoutSvc,
