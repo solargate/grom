@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-04
+
 ### Google Play
 
 - Android system notifications when someone likes or comments on your workout, or follows you
@@ -481,7 +483,8 @@ First public release.
 
 - Strava import: convert speed from mph to km/h where applicable
 
-[Unreleased]: https://github.com/solargate/grom/compare/0.17.1...HEAD
+[Unreleased]: https://github.com/solargate/grom/compare/0.18.0...HEAD
+[0.18.0]: https://github.com/solargate/grom/releases/tag/0.18.0
 [0.17.1]: https://github.com/solargate/grom/releases/tag/0.17.1
 [0.17.0]: https://github.com/solargate/grom/releases/tag/0.17.0
 [0.16.0]: https://github.com/solargate/grom/releases/tag/0.16.0
