@@ -40,6 +40,7 @@ android {
     ndkVersion flutter.ndkVersion
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -85,5 +86,9 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     testImplementation 'junit:junit:4.13.2'
+    // UnifiedPush embedded FCM fallback when no external distributor is installed.
+    // Requires a Play-build google-services.json from the app publisher for FCM.
+    implementation 'org.unifiedpush.android:embedded-fcm-distributor:3.1.0'
 }

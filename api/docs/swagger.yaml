@@ -401,6 +401,54 @@ definitions:
           type: string
         type: array
     type: object
+  v1.PushSubscriptionKeys:
+    properties:
+      auth:
+        example: tBHItJI5svbpez7...
+        type: string
+      p256dh:
+        example: BNcRdba...
+        type: string
+    required:
+    - auth
+    - p256dh
+    type: object
+  v1.PushSubscriptionResponse:
+    properties:
+      device_name:
+        example: Pixel 8
+        type: string
+      installation_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      platform:
+        example: android
+        type: string
+      updated_at:
+        example: "2026-10-02T12:00:00Z"
+        type: string
+    type: object
+  v1.RegisterPushSubscriptionRequest:
+    properties:
+      device_name:
+        example: Pixel 8
+        type: string
+      endpoint:
+        example: https://fcm.googleapis.com/fcm/send/...
+        type: string
+      installation_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      keys:
+        $ref: '#/definitions/v1.PushSubscriptionKeys'
+      platform:
+        example: android
+        type: string
+    required:
+    - endpoint
+    - installation_id
+    - keys
+    type: object
   v1.RegisterRequest:
     properties:
       altcha:
@@ -1559,6 +1607,75 @@ paths:
       summary: Get Strava import status
       tags:
       - integrations
+  /notifications/push:
+    post:
+      consumes:
+      - application/json
+      description: Upsert a Web Push subscription for the authenticated user's device
+        (JWT only).
+      parameters:
+      - description: Subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.RegisterPushSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.PushSubscriptionResponse'
+        "400":
+          description: Invalid subscription
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register push subscription
+      tags:
+      - notifications
+  /notifications/push/{installationId}:
+    delete:
+      description: Remove a Web Push subscription for the authenticated user's device
+        (JWT only).
+      parameters:
+      - description: Installation ID
+        in: path
+        name: installationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "404":
+          description: Subscription not found
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unregister push subscription
+      tags:
+      - notifications
   /profile:
     get:
       description: Returns UI/service preferences (last sport type, last equipment

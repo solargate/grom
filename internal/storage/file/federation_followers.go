@@ -28,7 +28,7 @@ func (s *FederationFollowersStore) path(nickname string) string {
 	return filepath.Join(data.UserDir(s.dataDir, nickname), "federation", "followers.yaml")
 }
 
-func (s *FederationFollowersStore) Add(nickname string, follower federation.InboundFollower) error {
+func (s *FederationFollowersStore) Add(nickname string, follower federation.InboundFollower) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -38,17 +38,17 @@ func (s *FederationFollowersStore) Add(nickname string, follower federation.Inbo
 	if err == nil {
 		_ = yaml.Unmarshal(data, &file)
 	} else if !os.IsNotExist(err) {
-		return err
+		return false, err
 	}
 
 	for i := range file.Followers {
 		if file.Followers[i].ActorURI == follower.ActorURI {
 			file.Followers[i] = follower
-			return s.save(path, file)
+			return false, s.save(path, file)
 		}
 	}
 	file.Followers = append(file.Followers, follower)
-	return s.save(path, file)
+	return true, s.save(path, file)
 }
 
 func (s *FederationFollowersStore) List(nickname string) ([]federation.InboundFollower, error) {

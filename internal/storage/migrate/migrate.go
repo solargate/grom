@@ -54,14 +54,16 @@ type Result struct {
 	FedHeartRateCharts   int
 	FedCadenceCharts     int
 	PersonalAccessTokens int
+	PushSubscriptions    int
 }
 
 // Run copies metadata from one storage driver to another. Track/media/avatar
 // blob files under storage.location are shared and not copied. Speed, heart-rate,
 // and cadence charts are converted between file JSON blobs and bbolt binary
 // buckets. Workout likes and comments (local, federated cache, and outbound
-// activity ids) and personal access tokens are copied so they remain readable
-// after switching drivers. Password-reset tokens are not copied.
+// activity ids), personal access tokens, and push subscriptions are copied so
+// they remain readable after switching drivers. Password-reset tokens are not
+// copied.
 func Run(opts Options) (*Result, error) {
 	if opts.From == opts.To {
 		return nil, fmt.Errorf("from and to drivers must differ")
@@ -307,6 +309,12 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 	}
 	result.PersonalAccessTokens = pats
 
+	pushSubs, err := copyPushSubscriptions(src, dst)
+	if err != nil {
+		return result, fmt.Errorf("copy push subscriptions: %w", err)
+	}
+	result.PushSubscriptions = pushSubs
+
 	return result, nil
 }
 
@@ -396,6 +404,11 @@ func countAll(backend storage.Backend, location, federationDomain string) (*Resu
 		return nil, err
 	}
 	result.PersonalAccessTokens = pats
+	pushSubs, err := countPushSubscriptions(backend)
+	if err != nil {
+		return nil, err
+	}
+	result.PushSubscriptions = pushSubs
 	return result, nil
 }
 
@@ -465,7 +478,7 @@ func importFollowers(dst storage.Backend, nickname string, followers []federatio
 	case *storebbolt.Backend:
 		store := b.Federation().Followers().(*storebbolt.FederationFollowersStore)
 		for _, f := range followers {
-			if err := store.Add(nickname, f); err != nil {
+			if _, err := store.Add(nickname, f); err != nil {
 				return err
 			}
 		}

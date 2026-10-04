@@ -3,6 +3,7 @@ package v1
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/solargate/grom/internal/federation"
 	"github.com/solargate/grom/internal/integrations/strava"
 	"github.com/solargate/grom/internal/mailer"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/storage/blob"
@@ -39,6 +41,9 @@ type App struct {
 	PasswordReset     *reset.Service
 	Captcha           *captcha.Service
 	PAT               *pat.Service
+	PushSubscriptions notifications.Repository
+	VAPID             *notifications.VAPIDStore
+	Notifier          *notifications.Notifier
 	Location          string
 	TempDir           string
 
@@ -94,6 +99,20 @@ func NewApp() (*App, error) {
 		Expires:    time.Duration(config.Cfg.Auth.Captcha.ExpiresSeconds) * time.Second,
 	})
 
+	vapidKeys, err := notifications.LoadOrCreateVAPID(config.Cfg.Storage.ResolvedLocation)
+	if err != nil {
+		_ = backend.Close()
+		return nil, err
+	}
+	vapidStore := notifications.NewVAPIDStore(vapidKeys)
+	pushRepo := backend.PushSubscriptions()
+	subscriber := "mailto:noreply@localhost"
+	if domain := strings.TrimSpace(config.Cfg.Federation.Domain); domain != "" {
+		subscriber = "mailto:noreply@" + domain
+	}
+	pushSender := notifications.NewSender(vapidStore, pushRepo, subscriber)
+	notifier := notifications.NewNotifier(backend.Users(), workoutSvc, pushSender)
+
 	app := &App{
 		Backend:           backend,
 		Users:             backend.Users(),
@@ -109,11 +128,15 @@ func NewApp() (*App, error) {
 		PasswordReset:     passwordReset,
 		Captcha:           captchaSvc,
 		PAT:               pat.NewService(backend.PAT()),
+		PushSubscriptions: pushRepo,
+		VAPID:             vapidStore,
+		Notifier:          notifier,
 		Location:          config.Cfg.Storage.ResolvedLocation,
 		TempDir:           config.Cfg.Storage.ResolvedTempDir,
 	}
 
 	socialSvc.SetInboundFollowers(federation.NewInboundFollowersAdapter(app.Federation.Followers()))
+	socialSvc.SetFollowNotify(app.notifyNewFollower)
 
 	if config.Cfg.Federation.Enabled {
 		delivery, err := federation.NewDelivery(app.Users, socialSvc, app.Blobs)
@@ -135,6 +158,9 @@ func NewApp() (*App, error) {
 		)
 		app.federationInboxProc.SetLikes(app.Likes, app.publishWorkoutLikesUpdate)
 		app.federationInboxProc.SetComments(app.Comments, app.publishWorkoutCommentsUpdate)
+		app.federationInboxProc.SetLikeNotify(app.notifyWorkoutLiked)
+		app.federationInboxProc.SetCommentNotify(app.notifyWorkoutCommented)
+		app.federationInboxProc.SetFollowNotify(app.notifyNewFollower)
 		slog.Info("federation enabled",
 			"domain", config.Cfg.Federation.Domain,
 			"auto_accept_follows", config.Cfg.Federation.AutoAcceptFollows,
@@ -234,6 +260,9 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		authGroup.DELETE("/pat/:id", auth.AuthRequired(), a.revokePAT)
 
 		apiV1.GET("/profile", auth.AuthRequired(), a.getProfile)
+
+		apiV1.POST("/notifications/push", auth.AuthRequired(), a.registerPushSubscription)
+		apiV1.DELETE("/notifications/push/:installationId", auth.AuthRequired(), a.deletePushSubscription)
 
 		apiV1.GET("/users", auth.AuthRequired(), a.listUsers)
 		apiV1.GET("/users/search", auth.AuthRequired(), a.searchUsers)

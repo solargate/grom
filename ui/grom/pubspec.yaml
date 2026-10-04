@@ -67,6 +67,9 @@ dependencies:
   altcha_widget: ^2.0.4
   flutter_svg: ^2.3.0
   flutter_web_auth_2: ^5.1.0
+  unifiedpush: ^6.2.0
+  flutter_local_notifications: ^19.4.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

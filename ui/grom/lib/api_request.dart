@@ -42,12 +42,14 @@ class ServerInfo {
     this.federationEnabled = false,
     this.passwordResetEnabled = false,
     this.captchaEnabled = false,
+    this.vapidPublicKey = '',
   });
 
   final String name;
   final bool federationEnabled;
   final bool passwordResetEnabled;
   final bool captchaEnabled;
+  final String vapidPublicKey;
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) {
     return ServerInfo(
@@ -55,6 +57,7 @@ class ServerInfo {
       federationEnabled: json['federation_enabled'] as bool? ?? false,
       passwordResetEnabled: json['password_reset_enabled'] as bool? ?? false,
       captchaEnabled: json['captcha_enabled'] as bool? ?? false,
+      vapidPublicKey: json['vapid_public_key'] as String? ?? '',
     );
   }
 }
@@ -165,6 +168,55 @@ class ApiRequest {
       return ServerInfo.fromJson(json);
     }
     return ServerInfo(name: 'Grom Home');
+  }
+
+  Future<void> registerPushSubscription({
+    required String token,
+    required String installationId,
+    required String endpoint,
+    required String p256dh,
+    required String auth,
+    String platform = 'android',
+    String? deviceName,
+  }) async {
+    final body = <String, dynamic>{
+      'installation_id': installationId,
+      'endpoint': endpoint,
+      'keys': {
+        'p256dh': p256dh,
+        'auth': auth,
+      },
+      'platform': platform,
+    };
+    if (deviceName != null && deviceName.isNotEmpty) {
+      body['device_name'] = deviceName;
+    }
+    final response = await _client.post(
+      _uri('/api/v1/notifications/push'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200) {
+      return;
+    }
+    throw _parseError(response, authenticated: true);
+  }
+
+  Future<void> deletePushSubscription({
+    required String token,
+    required String installationId,
+  }) async {
+    final response = await _client.delete(
+      _uri('/api/v1/notifications/push/$installationId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 204 || response.statusCode == 404) {
+      return;
+    }
+    throw _parseError(response, authenticated: true);
   }
 
   Future<void> forgotPassword({

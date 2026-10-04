@@ -8,6 +8,7 @@ import (
 	"github.com/solargate/grom/internal/social"
 	blobfs "github.com/solargate/grom/internal/storage/blob/fs"
 	"github.com/solargate/grom/internal/storage/file"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func withSocialConfig(t *testing.T, enabled bool, domain string) {
@@ -90,6 +91,11 @@ func TestFollowLocalAndSelf(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var notified []string
+	svc.SetFollowNotify(func(targetNickname string, actor workouts.WorkoutLikeUser) {
+		notified = append(notified, targetNickname+"|"+actor.Nickname+"|"+actor.Name+"|"+actor.Handle)
+	})
+
 	if _, err := svc.Follow(alice.ID, "alice"); !errors.Is(err, social.ErrCannotFollowSelf) {
 		t.Fatalf("self follow err = %v", err)
 	}
@@ -104,6 +110,9 @@ func TestFollowLocalAndSelf(t *testing.T) {
 	if follow.TargetNickname != bob.Nickname {
 		t.Fatalf("target = %q", follow.TargetNickname)
 	}
+	if len(notified) != 1 || notified[0] != "bob|alice|Alice|alice@localhost" {
+		t.Fatalf("notify after create: %#v", notified)
+	}
 
 	again, err := svc.Follow(alice.ID, "bob@localhost")
 	if err != nil {
@@ -111,6 +120,9 @@ func TestFollowLocalAndSelf(t *testing.T) {
 	}
 	if again.ID != follow.ID {
 		t.Fatalf("expected same follow id, got %q vs %q", again.ID, follow.ID)
+	}
+	if len(notified) != 1 {
+		t.Fatalf("idempotent follow must not notify again: %#v", notified)
 	}
 
 	if _, err := svc.Follow(alice.ID, "missing"); !errors.Is(err, social.ErrUserNotFound) {

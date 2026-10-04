@@ -9,6 +9,7 @@ import (
 	"github.com/solargate/grom/internal/auth/reset"
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/federation"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage/blob"
 	"github.com/solargate/grom/internal/users"
@@ -16,18 +17,19 @@ import (
 )
 
 type Backend struct {
-	location    string
-	users       users.Repository
-	workoutRepo *WorkoutsStore
-	workouts    *workouts.Service
-	likes       workouts.LikesRepository
-	comments    workouts.CommentsRepository
-	equipment   equipment.Repository
-	social      social.Repository
-	fed         federation.Storage
-	blobs       blob.Store
-	resetTokens reset.TokenStore
-	patStore    *PATStore
+	location          string
+	users             users.Repository
+	workoutRepo       *WorkoutsStore
+	workouts          *workouts.Service
+	likes             workouts.LikesRepository
+	comments          workouts.CommentsRepository
+	equipment         equipment.Repository
+	social            social.Repository
+	fed               federation.Storage
+	blobs             blob.Store
+	resetTokens       reset.TokenStore
+	patStore          *PATStore
+	pushSubscriptions *PushSubscriptionStore
 }
 
 func Open(location string) (*Backend, error) {
@@ -61,18 +63,19 @@ func Open(location string) (*Backend, error) {
 	workoutSvc.SetEquipmentCatalog(equipmentStore)
 
 	return &Backend{
-		location:    location,
-		users:       userStore,
-		workoutRepo: workoutRepo,
-		workouts:    workoutSvc,
-		likes:       likesStore,
-		comments:    commentsStore,
-		equipment:   equipmentStore,
-		social:      socialStore,
-		fed:         federation.NewStorage(followersStore, inboxStore),
-		blobs:       blobStore,
-		resetTokens: NewResetTokenStore(location),
-		patStore:    NewPATStore(location),
+		location:          location,
+		users:             userStore,
+		workoutRepo:       workoutRepo,
+		workouts:          workoutSvc,
+		likes:             likesStore,
+		comments:          commentsStore,
+		equipment:         equipmentStore,
+		social:            socialStore,
+		fed:               federation.NewStorage(followersStore, inboxStore),
+		blobs:             blobStore,
+		resetTokens:       NewResetTokenStore(location),
+		patStore:          NewPATStore(location),
+		pushSubscriptions: NewPushSubscriptionStore(location),
 	}, nil
 }
 
@@ -87,6 +90,9 @@ func (b *Backend) Federation() federation.Storage        { return b.fed }
 func (b *Backend) Blobs() blob.Store                     { return b.blobs }
 func (b *Backend) ResetTokens() reset.TokenStore         { return b.resetTokens }
 func (b *Backend) PAT() pat.Repository                   { return b.patStore }
+func (b *Backend) PushSubscriptions() notifications.Repository {
+	return b.pushSubscriptions
+}
 
 func (b *Backend) Close() error { return nil }
 

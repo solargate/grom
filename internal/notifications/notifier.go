@@ -1,0 +1,146 @@
+package notifications
+
+import (
+	"context"
+	"log/slog"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
+)
+
+// Deliverer sends notification events to a user's registered devices.
+type Deliverer interface {
+	SendToUser(ctx context.Context, userID string, event Event)
+}
+
+// WorkoutLookup loads a workout for notification metadata (title).
+type WorkoutLookup interface {
+	Get(nickname, workoutID string) (*workouts.Workout, error)
+}
+
+// Notifier builds events and delivers them to a recipient's devices.
+type Notifier struct {
+	users    users.Repository
+	workouts WorkoutLookup
+	sender   Deliverer
+}
+
+func NewNotifier(userStore users.Repository, workoutSvc WorkoutLookup, sender Deliverer) *Notifier {
+	return &Notifier{
+		users:    userStore,
+		workouts: workoutSvc,
+		sender:   sender,
+	}
+}
+
+// NotifyWorkoutLiked notifies the workout owner about a new like.
+func (n *Notifier) NotifyWorkoutLiked(ownerNickname string, workoutID string, actor workouts.WorkoutLikeUser) {
+	n.notify(ownerNickname, workoutID, actor, TypeWorkoutLiked, SlotLiked)
+}
+
+// NotifyWorkoutCommented notifies the workout owner about a new comment.
+func (n *Notifier) NotifyWorkoutCommented(ownerNickname string, workoutID string, actor workouts.WorkoutLikeUser) {
+	n.notify(ownerNickname, workoutID, actor, TypeWorkoutCommented, SlotCommented)
+}
+
+// NotifyNewFollower notifies a local user about a new follower.
+func (n *Notifier) NotifyNewFollower(targetNickname string, actor workouts.WorkoutLikeUser) {
+	if n == nil || n.sender == nil || n.users == nil {
+		return
+	}
+	targetNickname = strings.TrimSpace(targetNickname)
+	if targetNickname == "" {
+		return
+	}
+	if actor.Handle == "" && actor.Nickname == "" && actor.Name == "" {
+		return
+	}
+
+	// Never notify about following yourself (local actors only).
+	if actor.IsLocal && strings.EqualFold(strings.TrimSpace(actor.Nickname), targetNickname) {
+		return
+	}
+
+	target, err := n.users.FindByNickname(targetNickname)
+	if err != nil || target == nil {
+		slog.Debug("notifications skip missing follow target", "target", targetNickname, "err", err)
+		return
+	}
+
+	eventID := uuid.NewString()
+	handle := strings.TrimSpace(actor.Handle)
+	if handle == "" && actor.IsLocal && strings.TrimSpace(actor.Nickname) != "" {
+		// Best-effort local handle when callers omit it.
+		handle = strings.TrimSpace(actor.Nickname)
+	}
+	event := Event{
+		Type:             TypeUserFollowed,
+		ActorDisplayName: ActorDisplayName(actor.Name, actor.Nickname, actor.Handle),
+		ActorHandle:      handle,
+		Slot:             SlotFollowed(eventID),
+		EventID:          eventID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	n.sender.SendToUser(ctx, target.ID, event)
+}
+
+func (n *Notifier) notify(
+	ownerNickname string,
+	workoutID string,
+	actor workouts.WorkoutLikeUser,
+	eventType string,
+	slotFn func(owner, workoutID string) string,
+) {
+	if n == nil || n.sender == nil || n.users == nil || n.workouts == nil {
+		return
+	}
+	ownerNickname = strings.TrimSpace(ownerNickname)
+	workoutID = strings.TrimSpace(workoutID)
+	if ownerNickname == "" || workoutID == "" {
+		return
+	}
+	if actor.Handle == "" && actor.Nickname == "" && actor.Name == "" {
+		return
+	}
+
+	// Never notify the owner about their own like/comment (local actors only).
+	if actor.IsLocal && strings.EqualFold(strings.TrimSpace(actor.Nickname), ownerNickname) {
+		return
+	}
+
+	owner, err := n.users.FindByNickname(ownerNickname)
+	if err != nil || owner == nil {
+		slog.Debug("notifications skip missing owner", "owner", ownerNickname, "err", err)
+		return
+	}
+
+	workout, err := n.workouts.Get(ownerNickname, workoutID)
+	if err != nil || workout == nil {
+		slog.Debug("notifications skip missing workout", "owner", ownerNickname, "workout_id", workoutID, "err", err)
+		return
+	}
+	title := strings.TrimSpace(workout.Name)
+	if title == "" {
+		title = workoutID
+	}
+
+	event := Event{
+		Type:             eventType,
+		ActorDisplayName: ActorDisplayName(actor.Name, actor.Nickname, actor.Handle),
+		ActorHandle:      strings.TrimSpace(actor.Handle),
+		WorkoutID:        workoutID,
+		WorkoutTitle:     title,
+		Owner:            ownerNickname,
+		Slot:             slotFn(ownerNickname, workoutID),
+		EventID:          uuid.NewString(),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	n.sender.SendToUser(ctx, owner.ID, event)
+}

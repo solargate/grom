@@ -330,7 +330,7 @@ func TestWorkoutsBeginCreateWriteMetadata(t *testing.T) {
 func TestFederationFollowersAndInboxMeta(t *testing.T) {
 	b := openTestBackend(t)
 	followers := b.Federation().Followers()
-	if err := followers.Add("alice", federation.InboundFollower{
+	if _, err := followers.Add("alice", federation.InboundFollower{
 		ActorURI: "https://remote/users/bob",
 		Inbox:    "https://remote/inbox",
 		Handle:   "bob@remote",

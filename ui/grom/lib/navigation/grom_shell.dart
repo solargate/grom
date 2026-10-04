@@ -25,6 +25,7 @@ import '../platform/shared_track_intent.dart';
 import '../registration.dart';
 import '../server_storage.dart';
 import '../session.dart';
+import '../services/notifications/notification_service.dart';
 import '../services/strava_api_sync_service.dart';
 import '../services/track_recording_service.dart';
 import '../widgets/add_workout_sheet.dart';
@@ -57,6 +58,7 @@ class _GromShellState extends State<GromShell> {
   final _homePageKey = GlobalKey<HomePageState>();
   final _profilePageKey = GlobalKey<ProfilePageState>();
   final ApiRequest _api = ApiRequest();
+  final NotificationService _notifications = NotificationService();
 
   String _title = 'Grom Home';
   bool _federationEnabled = false;
@@ -360,6 +362,18 @@ class _GromShellState extends State<GromShell> {
     // Enable mid-session expiry UI only after cold-start /me handling.
     SessionCoordinator.instance.emitExpiredEvents = true;
 
+    if (isMobileClient && mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      await _notifications.start(
+        l10n: l10n,
+        onOpenWorkout: _openWorkoutFromPush,
+        onOpenUserProfile: _openUserProfileInShell,
+      );
+      if (nickname != null) {
+        unawaited(_notifications.enableForSession());
+      }
+    }
+
     await _processPendingSharedTrack();
   }
 
@@ -556,12 +570,41 @@ class _GromShellState extends State<GromShell> {
   }
 
   void _openWorkoutInShell(Workout workout) {
+    final owner = workout.ownerNickname.isNotEmpty
+        ? workout.ownerNickname
+        : (_nickname ?? '');
+    if (owner.isNotEmpty) {
+      _notifications.clearWorkoutSlots(owner: owner, workoutId: workout.id);
+    }
     setState(() {
       _viewingWorkout = workout;
       _isWorkoutMapExpanded = false;
       _workoutPhotoViewerIndex = null;
       _feedPhotoViewerWorkout = null;
     });
+  }
+
+  Future<void> _openWorkoutFromPush({
+    required String workoutId,
+    required String owner,
+  }) async {
+    final token = await AuthStorage.getToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+    try {
+      final workout = await _api.getWorkout(
+        token: token,
+        workoutId: workoutId,
+        owner: owner,
+      );
+      if (!mounted) {
+        return;
+      }
+      _openWorkoutInShell(workout);
+    } catch (_) {
+      // Ignore: user can open the workout from the feed.
+    }
   }
 
   void _closeWorkoutDetail() {
@@ -973,6 +1016,15 @@ class _GromShellState extends State<GromShell> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.welcomeUser(user.nickname))),
     );
+    if (isMobileClient) {
+      _notifications.updateLocalizations(l10n);
+      await _notifications.start(
+        l10n: l10n,
+        onOpenWorkout: _openWorkoutFromPush,
+        onOpenUserProfile: _openUserProfileInShell,
+      );
+      unawaited(_notifications.enableForSession());
+    }
     await _processPendingSharedTrack();
   }
 
@@ -993,6 +1045,9 @@ class _GromShellState extends State<GromShell> {
   }
 
   Future<void> _handleSessionExpired() async {
+    if (isMobileClient) {
+      await _notifications.disableForSession();
+    }
     if (!mounted) {
       return;
     }
@@ -1021,6 +1076,9 @@ class _GromShellState extends State<GromShell> {
   }
 
   Future<void> _logout({bool showSignedOutSnack = true}) async {
+    if (isMobileClient) {
+      await _notifications.disableForSession();
+    }
     await clearLocalSession();
     SessionCoordinator.instance.resetUnauthorizedGuard();
     if (!mounted) return;

@@ -52,6 +52,10 @@ Follow other users on the same instance and browse a shared feed. On **User sear
 
 When the operator enables ActivityPub federation, you can also follow athletes on other Grom instances (HTTPS required on the server). Remote Grom profiles can show public outbox workouts; likes on remote workouts are sent as ActivityPub `Like` activities; removing a like sends `Undo`. Comments on remote workouts are sent as `Create` Note with `inReplyTo`; deleting a comment sends `Delete`. Incoming likes and comments from other instances update the local workout the same way. Account deletion and federated actor `Delete` behavior are described in [Delete your Grom account](delete-account.md).
 
+### Notifications (Android)
+
+On Android, when someone likes or comments on **your** workout (including from another federated instance), or when someone **follows** you, Grom can show a system notification. For likes and comments the title is the workout name; a single like or comment names the other user, and several in a row collapse to a count. Opening the workout from the app or tapping the notification clears that collapse. For a new follower the title is localized as “New follower: …”, with an empty body and no collapse; tapping opens that user’s profile. Grant notification permission when prompted. On devices without Google Play Services you can use a UnifiedPush distributor such as [ntfy](https://ntfy.sh/). Sign-out unregisters the device.
+
 ## Strava import
 
 From **Integration → Strava**, upload a [Strava bulk data export](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export) ZIP. Grom imports activities, tracks, photos, and equipment. Column mapping and server-side behavior are documented in [Strava bulk import](../integrations/strava-bulk-import.md).

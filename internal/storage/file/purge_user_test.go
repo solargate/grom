@@ -9,6 +9,7 @@ import (
 	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/data"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/storage/file"
 	"github.com/solargate/grom/internal/workouts"
@@ -144,6 +145,18 @@ func TestPurgeUserScrubsCommentsFollowsEquipmentAndPAT(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := backend.PushSubscriptions().Upsert(notifications.PushSubscription{
+		UserID: bob.ID, InstallationID: "bob-phone", Endpoint: "https://push.example/bob",
+		P256dh: "p", Auth: "a", UpdatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := backend.PushSubscriptions().Upsert(notifications.PushSubscription{
+		UserID: alice.ID, InstallationID: "alice-phone", Endpoint: "https://push.example/alice",
+		P256dh: "p", Auth: "a", UpdatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := backend.PurgeUser(bob.ID, bob.Nickname, handle); err != nil {
 		t.Fatalf("PurgeUser: %v", err)
@@ -185,6 +198,14 @@ func TestPurgeUserScrubsCommentsFollowsEquipmentAndPAT(t *testing.T) {
 	}
 	if len(pats) != 0 {
 		t.Fatalf("expected bob PATs gone: %#v", pats)
+	}
+	bobPush, err := backend.PushSubscriptions().ListByUser(bob.ID)
+	if err != nil || len(bobPush) != 0 {
+		t.Fatalf("expected bob push subs gone: %#v err=%v", bobPush, err)
+	}
+	alicePush, err := backend.PushSubscriptions().ListByUser(alice.ID)
+	if err != nil || len(alicePush) != 1 {
+		t.Fatalf("alice push subs must remain: %#v err=%v", alicePush, err)
 	}
 }
 

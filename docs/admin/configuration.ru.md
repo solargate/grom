@@ -19,6 +19,7 @@ Grom настраивается YAML-файлом. По умолчанию ищ�
 | `federation.authorized_fetch` | Требовать HTTP Signatures на ActivityPub GET (по умолчанию **true**); `GET /actor` остаётся публичным |
 | `auth.reset` / `mailer` | Email для сброса пароля (`public_base_url`, SMTP или log-драйвер) |
 | `auth.captcha` | Опциональный ALTCHA PoW на регистрацию/вход/«забыли» (`enabled`, опционально `hmac_secret` / `cost` / `expires_seconds`) |
+| Push (встроен) | Ключи VAPID создаются автоматически в `{storage.location}/notifications/`; переключателя в config нет |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (dev) или `json` (prod). По умолчанию: `info` + `json`. Отладочный вывод Gin (`[GIN-debug]`) включается только при `logging.level: debug`; иначе Gin в release mode |
 
 Относительные пути в `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir` и `federation.ca_cert_file` резолвятся относительно каталога бинарника `grom` (абсолютные пути используются как есть).
@@ -115,6 +116,20 @@ grom migrate-storage --config config.yaml --from bbolt --to file --verify
 **Нет** зависимости от локального MTA / `sendmail`: процесс говорит SMTP (через [go-mail](https://github.com/wneessen/go-mail)) с внешним провайдером (пароль приложения Gmail, SES, Mailgun и т.д.) или пишет сообщение в лог при `driver: log`.
 
 Эндпоинты сброса пароля используют in-memory rate limiter с фиксированным окном (15 минут): forgot — 10 запросов на IP клиента и 3 на email; confirm reset — 20 на IP. Лимиты через Gin `ClientIP()` (учитывает `X-Forwarded-For` / `X-Real-IP`, если есть). Grom пока не раскрывает настройку trusted proxies, поэтому считайте forwarded-заголовки недоверенными, пока reverse proxy их не перезаписывает или не снимает.
+
+## Push-уведомления (лайки, комментарии и подписчики)
+
+Push **всегда встроен** (отдельного переключателя в config нет). При первом запуске сервер создаёт пару ключей Web Push VAPID в `{storage.location}/notifications/vapid.json` и отдаёт публичный ключ в `GET /api/v1/server-info` как `vapid_public_key`.
+
+| Часть | Поведение |
+|-------|-----------|
+| Доставка | Стандартный Web Push (RFC 8291) на каждую подписку устройства, зарегистрированную Android-клиентом |
+| События | Новый лайк или комментарий к **локальной** тренировке уведомляет **владельца** (в том числе с федеративных инстансов). Новый **подписчик** (локальный follow или входящий ActivityPub `Follow`) уведомляет целевого пользователя. Владелец не получает уведомления о своих действиях |
+| API | `POST /api/v1/notifications/push` и `DELETE /api/v1/notifications/push/{installationId}` (только JWT). Несколько устройств на пользователя поддерживаются |
+| Хранение | Подписки хранятся в выбранном драйвере storage и копируются `grom migrate-storage`. Удаление аккаунта их снимает. Ключи VAPID лежат на диске в `storage.location` и общие для драйверов |
+| Клиент | Android использует UnifiedPush (внешний distributor вроде ntfy или embedded FCM в Play-сборках). Текст локализуется на устройстве; лайки и комментарии схлопываются по тренировке в системной шторке; уведомления о новом подписчике не схлопываются |
+
+Оператору **не** нужен проект Firebase и учётные данные Google на сервере. Play-сборки официального Android-приложения могут использовать Google Play Services только как транспорт push на устройстве.
 
 Пример (production SMTP на порту 587):
 

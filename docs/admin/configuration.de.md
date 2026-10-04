@@ -19,6 +19,7 @@ Grom wird über eine YAML-Datei konfiguriert. Standardmäßig sucht er `config.y
 | `federation.authorized_fetch` | HTTP-Signaturen für ActivityPub-GETs verlangen (Standard **true**); `GET /actor` bleibt öffentlich |
 | `auth.reset` / `mailer` | Passwort-Reset per E-Mail (`public_base_url`, SMTP oder Log-Treiber) |
 | `auth.captcha` | Optionales ALTCHA-PoW bei Registrierung/Login/„vergessen“ (`enabled`, optional `hmac_secret` / `cost` / `expires_seconds`) |
+| Push (eingebaut) | VAPID-Schlüssel werden unter `{storage.location}/notifications/` erzeugt; kein Config-Schalter |
 | `logging.level` / `logging.format` | `debug`/`info`/`warn`/`error`; `text` (Dev) oder `json` (Prod). Standard: `info` + `json`. Gin-Framework-Debug (`[GIN-debug]`) nur bei `logging.level: debug`; sonst Gin im Release-Modus |
 
 Relative Pfade in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir` und `federation.ca_cert_file` werden relativ zum Verzeichnis der `grom`-Binary aufgelöst (absolute Pfade bleiben unverändert).
@@ -115,6 +116,20 @@ Ausgehende E-Mail ist optional. Bei `mailer.driver: off` (Standard) ist Passwort
 Es gibt **keine** Abhängigkeit von lokalem MTA / `sendmail`: der Prozess spricht SMTP (über [go-mail](https://github.com/wneessen/go-mail)) mit einem externen Anbieter (Gmail-App-Passwort, SES, Mailgun usw.) oder loggt die Nachricht bei `driver: log`.
 
 Passwort-Reset-Endpunkte nutzen einen In-Memory-Rate-Limiter mit festem Fenster (15 Minuten): forgot — 10 Anfragen pro Client-IP und 3 pro E-Mail; Confirm-Reset — 20 pro Client-IP. Limits nutzen Gins `ClientIP()` (berücksichtigt `X-Forwarded-For` / `X-Real-IP`, falls vorhanden). Grom exponiert noch keine Trusted-Proxies-Einstellung; behandeln Sie Forwarded-Header als untrusted, solange Ihr Reverse Proxy sie nicht überschreibt oder entfernt.
+
+## Push-Benachrichtigungen (Likes, Kommentare und Follower)
+
+Push ist **immer eingebaut** (kein Config-Schalter). Beim ersten Start erzeugt der Server ein Web-Push-VAPID-Schlüsselpaar unter `{storage.location}/notifications/vapid.json` und liefert den öffentlichen Schlüssel über `GET /api/v1/server-info` als `vapid_public_key`.
+
+| Teil | Verhalten |
+|------|-----------|
+| Zustellung | Standard-Web-Push (RFC 8291) an jede Geräte-Subscription, die der Android-Client registriert |
+| Ereignisse | Neuer Like oder Kommentar zu einem **lokalen** Workout benachrichtigt den **Eigentümer** (auch von föderierten Remotes). Ein neuer **Follower** (lokales Follow oder eingehendes ActivityPub-`Follow`) benachrichtigt den Zielnutzer. Der Eigentümer wird nie über eigene Aktionen benachrichtigt |
+| API | `POST /api/v1/notifications/push` und `DELETE /api/v1/notifications/push/{installationId}` (nur JWT). Mehrere Geräte pro Benutzer werden unterstützt |
+| Speicher | Subscriptions liegen im gewählten Storage-Treiber und werden von `grom migrate-storage` kopiert. Kontolöschung entfernt sie. VAPID-Schlüssel liegen unter `storage.location` und sind treiberübergreifend |
+| Client | Android nutzt UnifiedPush (externer Distributor wie ntfy oder Embedded-FCM in Play-Builds). Text wird auf dem Gerät lokalisiert; Likes und Kommentare werden pro Workout in der Systemleiste zusammengefasst; neue Follower-Hinweise werden nicht zusammengefasst |
+
+Betreiber brauchen **kein** Firebase-Projekt und keine Google-Credentials auf dem Server. Play-Store-Builds der offiziellen Android-App können Google Play Services nur als Push-Transport auf dem Gerät nutzen.
 
 Beispiel (Production-SMTP auf Port 587):
 

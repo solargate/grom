@@ -8,6 +8,7 @@ import (
 	"github.com/solargate/grom/internal/auth/pat"
 	"github.com/solargate/grom/internal/data"
 	"github.com/solargate/grom/internal/equipment"
+	"github.com/solargate/grom/internal/notifications"
 	"github.com/solargate/grom/internal/social"
 	"github.com/solargate/grom/internal/workouts"
 )
@@ -107,6 +108,18 @@ func TestPurgeUserScrubsLikesCommentsFollowsEquipmentAndPAT(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := backend.PushSubscriptions().Upsert(notifications.PushSubscription{
+		UserID: bob.ID, InstallationID: "bob-phone", Endpoint: "https://push.example/bob",
+		P256dh: "p", Auth: "a", UpdatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := backend.PushSubscriptions().Upsert(notifications.PushSubscription{
+		UserID: alice.ID, InstallationID: "alice-phone", Endpoint: "https://push.example/alice",
+		P256dh: "p", Auth: "a", UpdatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := backend.PurgeUser(bob.ID, bob.Nickname, handle); err != nil {
 		t.Fatalf("PurgeUser: %v", err)
@@ -140,6 +153,12 @@ func TestPurgeUserScrubsLikesCommentsFollowsEquipmentAndPAT(t *testing.T) {
 	}
 	if pats, err := backend.PAT().ListByUser(bob.ID); err != nil || len(pats) != 0 {
 		t.Fatalf("bob pats: %#v err=%v", pats, err)
+	}
+	if push, err := backend.PushSubscriptions().ListByUser(bob.ID); err != nil || len(push) != 0 {
+		t.Fatalf("bob push: %#v err=%v", push, err)
+	}
+	if push, err := backend.PushSubscriptions().ListByUser(alice.ID); err != nil || len(push) != 1 {
+		t.Fatalf("alice push: %#v err=%v", push, err)
 	}
 	if _, err := os.Stat(data.UserDir(backend.Location(), "bob")); !os.IsNotExist(err) {
 		t.Fatalf("expected bob dir removed, err=%v", err)

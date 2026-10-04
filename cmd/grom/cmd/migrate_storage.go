@@ -24,12 +24,14 @@ var migrateStorageCmd = &cobra.Command{
 
 Copied: users, profiles, equipment, workouts, follows, federation followers and
 inbox, workout likes and comments (local, federated cache, outbound activity ids),
-personal access tokens, and speed/heart-rate charts (converted between file JSON
-blobs and bbolt binary buckets).
+personal access tokens, push subscriptions, and speed/heart-rate charts (converted
+between file JSON blobs and bbolt binary buckets).
 
 Not copied: password-reset tokens (short-lived; in-flight reset links become
 invalid). Blob files (tracks, photos, avatars, keys) under storage.location are
 shared and not duplicated.
+VAPID push keys under storage.location/notifications/ are shared on disk and
+not duplicated.
 
 Legacy plain-text Like activity ids (without object_id) are reconstructed via
 federated inbox and, when federation.domain is set, local workout object URLs.
@@ -55,14 +57,14 @@ Stop the server before running this command.`,
 		if err != nil {
 			return fmt.Errorf("migrate-storage failed: %w", err)
 		}
-		fmt.Printf("Migrated metadata: users=%d profiles=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d local_likes=%d fed_likes=%d like_activities=%d local_comments=%d fed_comments=%d comment_activities=%d local_speed_charts=%d local_hr_charts=%d local_cadence_charts=%d fed_speed_charts=%d fed_hr_charts=%d fed_cadence_charts=%d pats=%d\n",
+		fmt.Printf("Migrated metadata: users=%d profiles=%d equipment=%d follows=%d workouts=%d fed_followers=%d fed_authors=%d fed_inbox=%d local_likes=%d fed_likes=%d like_activities=%d local_comments=%d fed_comments=%d comment_activities=%d local_speed_charts=%d local_hr_charts=%d local_cadence_charts=%d fed_speed_charts=%d fed_hr_charts=%d fed_cadence_charts=%d pats=%d push_subs=%d\n",
 			result.Users, result.Profiles, result.Equipment, result.Follows, result.Workouts,
 			result.FedFollowers, result.FedAuthors, result.FedInboxWorkouts,
 			result.LocalLikes, result.FedLikes, result.LikeActivities,
 			result.LocalComments, result.FedComments, result.CommentActivities,
 			result.LocalSpeedCharts, result.LocalHeartRateCharts, result.LocalCadenceCharts,
 			result.FedSpeedCharts, result.FedHeartRateCharts, result.FedCadenceCharts,
-			result.PersonalAccessTokens)
+			result.PersonalAccessTokens, result.PushSubscriptions)
 		fmt.Println("Note: password-reset tokens are not copied; in-flight reset links become invalid.")
 		if migrateDryRun {
 			fmt.Println("(dry-run: no changes written)")
