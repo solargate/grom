@@ -40,7 +40,7 @@ void main() {
   });
 
   test('formatFollowTitle', () {
-    final payload = PushNotificationPayload(
+    const payload = PushNotificationPayload(
       type: 'user.followed',
       actorDisplayName: 'Alice',
       actorHandle: 'alice@grom.test',
