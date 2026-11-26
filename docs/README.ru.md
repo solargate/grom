@@ -23,11 +23,10 @@ Grom — self-hosted трекер тренировок с опциональны
 - **Клиенты** — один Flutter UI в браузере (отдаётся сервером) и как Android APK
 - **Локали** — английский, русский и немецкий в Flutter UI
 
-<p align="center">
-  <img src="screenshots/workout-list.jpg" width="250" alt="Список тренировок" />
-  <img src="screenshots/workout-record.jpg" width="250" alt="Запись тренировки" />
-  <img src="screenshots/equipment.jpg" width="250" alt="Снаряжение" />
-</p>
+![Список тренировок](screenshots/workout-list.jpg){ width="250" }
+![Запись тренировки](screenshots/workout-record.jpg){ width="250" }
+![Снаряжение](screenshots/equipment.jpg){ width="250" }
+{: align="center" }
 
 Обзор экранов: [Обзор для пользователя](user/overview.md). Сборка и запуск: [Установка и запуск](admin/install.md). Исходники и быстрый старт: [README репозитория](https://github.com/solargate/grom#readme).
 

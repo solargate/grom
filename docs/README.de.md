@@ -23,11 +23,10 @@ Der Server ist eine einzelne Go-Binary; der Flutter-Client erscheint als eingebe
 - **Clients** — dieselbe Flutter-UI im Browser (vom Server ausgeliefert) und als Android-APK
 - **Sprachen** — Englisch, Russisch und Deutsch in der Flutter-UI
 
-<p align="center">
-  <img src="screenshots/workout-list.jpg" width="250" alt="Workout-Liste" />
-  <img src="screenshots/workout-record.jpg" width="250" alt="Live-Aufzeichnung" />
-  <img src="screenshots/equipment.jpg" width="250" alt="Ausrüstung" />
-</p>
+![Workout-Liste](screenshots/workout-list.jpg){ width="250" }
+![Live-Aufzeichnung](screenshots/workout-record.jpg){ width="250" }
+![Ausrüstung](screenshots/equipment.jpg){ width="250" }
+{: align="center" }
 
 Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und starten: [Installation und Start](admin/install.md). Quellcode und Quick Start: [Repository-README](https://github.com/solargate/grom#readme).
 

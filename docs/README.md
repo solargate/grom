@@ -23,11 +23,10 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 - **Clients** — same Flutter UI in the browser (served by the server) and as an Android APK
 - **Locales** — English, Russian, and German in the Flutter UI
 
-<p align="center">
-  <img src="screenshots/workout-list.jpg" width="250" alt="Workout list" />
-  <img src="screenshots/workout-record.jpg" width="250" alt="Live recording" />
-  <img src="screenshots/equipment.jpg" width="250" alt="Equipment" />
-</p>
+![Workout list](screenshots/workout-list.jpg){ width="250" }
+![Live recording](screenshots/workout-record.jpg){ width="250" }
+![Equipment](screenshots/equipment.jpg){ width="250" }
+{: align="center" }
 
 Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Install and run](admin/install.md). Source and quick start: [repository README](https://github.com/solargate/grom#readme).
 

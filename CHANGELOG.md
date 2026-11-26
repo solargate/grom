@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Docs:** Fix missing screenshots on the Russian and German documentation homepages.
+
 ## [0.18.1] - 2026-10-28
 
 ### Google Play
