@@ -39,8 +39,8 @@ type WorkoutCommentsResponse struct {
 }
 
 type WorkoutCommentCreateResponse struct {
-	Count   int                     `json:"count" example:"2"`
-	Comment WorkoutCommentResponse  `json:"comment"`
+	Count   int                    `json:"count" example:"2"`
+	Comment WorkoutCommentResponse `json:"comment"`
 }
 
 type WorkoutCommentDeleteResponse struct {
@@ -161,10 +161,13 @@ func (a *App) createWorkoutComment(ctx *gin.Context) {
 
 	if isLocal {
 		beforeCount := 0
-		if comments != nil {
-			beforeCount = comments.CommentsNum
-		}
-		if err := a.Comments.PutLocal(ownerNickname, workoutID, &updated); err != nil {
+		if err := a.Comments.UpdateLocal(ownerNickname, workoutID, func(current *workouts.WorkoutComments) *workouts.WorkoutComments {
+			if current != nil {
+				beforeCount = current.CommentsNum
+			}
+			updated = workouts.AddWorkoutComment(current, comment)
+			return &updated
+		}); err != nil {
 			respondInternal(ctx, "failed to store workout comments", err)
 			return
 		}
@@ -266,7 +269,10 @@ func (a *App) deleteWorkoutComment(ctx *gin.Context) {
 	updated := workouts.RemoveWorkoutCommentByID(comments, commentID)
 
 	if isLocal {
-		if err := a.Comments.PutLocal(ownerNickname, workoutID, &updated); err != nil {
+		if err := a.Comments.UpdateLocal(ownerNickname, workoutID, func(current *workouts.WorkoutComments) *workouts.WorkoutComments {
+			updated = workouts.RemoveWorkoutCommentByID(current, commentID)
+			return &updated
+		}); err != nil {
 			respondInternal(ctx, "failed to store workout comments", err)
 			return
 		}

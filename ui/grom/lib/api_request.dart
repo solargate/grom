@@ -16,6 +16,11 @@ import 'models/workout_speed.dart';
 import 'server_storage.dart';
 import 'session.dart';
 
+part 'api_request_account.dart';
+part 'api_request_workouts.dart';
+part 'api_request_social.dart';
+part 'api_request_integrations.dart';
+
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
 
@@ -145,10 +150,65 @@ class LoginResult {
   final UserInfo user;
 }
 
-class ApiRequest {
-  ApiRequest({http.Client? client}) : _client = client ?? http.Client();
+abstract class _ApiTransport {
+  _ApiTransport({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
+
+  final _requestTimeout = const Duration(seconds: 30);
+  final _uploadTimeout = const Duration(minutes: 2);
+  final _archiveTimeout = const Duration(minutes: 30);
+
+  Map<String, String> _bearerHeaders(String token, {String? contentType}) => {
+        'Authorization': 'Bearer $token',
+        if (contentType != null) 'Content-Type': contentType,
+      };
+
+  T _decode<T>(http.Response response) => jsonDecode(response.body) as T;
+
+  ({http.MultipartRequest request, void Function() abort}) _multipart(
+    String method,
+    Uri uri,
+  ) {
+    final abort = Completer<void>();
+    return (
+      request: http.AbortableMultipartRequest(method, uri,
+          abortTrigger: abort.future),
+      abort: abort.complete,
+    );
+  }
+
+  Future<http.Response> _request(
+    String method,
+    Uri uri, {
+    Map<String, String>? headers,
+    String? body,
+  }) {
+    final abort = Completer<void>();
+    final request =
+        http.AbortableRequest(method, uri, abortTrigger: abort.future);
+    if (headers != null) request.headers.addAll(headers);
+    if (body != null) request.body = body;
+    return _send(request, timeout: _requestTimeout, onTimeout: abort.complete);
+  }
+
+  Future<http.Response> _send(
+    http.BaseRequest request, {
+    required Duration timeout,
+    void Function()? onHeaders,
+    void Function()? onTimeout,
+  }) {
+    Future<http.Response> readResponse() async {
+      final streamed = await _client.send(request);
+      onHeaders?.call();
+      return http.Response.fromStream(streamed);
+    }
+
+    return readResponse().timeout(timeout, onTimeout: () {
+      onTimeout?.call();
+      throw TimeoutException('Grom request timed out', timeout);
+    });
+  }
 
   Uri resolveUri(String path) {
     final base = ServerStorage.cachedBaseUrl;
@@ -161,10 +221,40 @@ class ApiRequest {
 
   Uri _uri(String path) => resolveUri(path);
 
+  Never _parseError(
+    http.Response response, {
+    bool authenticated = false,
+  }) {
+    if (authenticated && response.statusCode == 401) {
+      // Fire-and-forget clear; callers still receive SessionExpiredException.
+      unawaited(SessionCoordinator.instance.notifyUnauthorized());
+      throw SessionExpiredException();
+    }
+    try {
+      final json = _decode<Map<String, dynamic>>(response);
+      final message = json['error'] as String? ?? 'Unknown error';
+      throw ApiException(message, statusCode: response.statusCode);
+    } on ApiException {
+      rethrow;
+    } on SessionExpiredException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        'Request failed (${response.statusCode})',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+}
+
+class ApiRequest extends _ApiTransport
+    with _AccountApi, _WorkoutsApi, _SocialApi, _IntegrationsApi {
+  ApiRequest({super.client});
+
   Future<ServerInfo> getServerInfo() async {
-    final response = await _client.get(_uri('/api/v1/server-info'));
+    final response = await _request('GET', _uri('/api/v1/server-info'));
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = _decode<Map<String, dynamic>>(response);
       return ServerInfo.fromJson(json);
     }
     return ServerInfo(name: 'Grom Home');
@@ -191,12 +281,10 @@ class ApiRequest {
     if (deviceName != null && deviceName.isNotEmpty) {
       body['device_name'] = deviceName;
     }
-    final response = await _client.post(
+    final response = await _request(
+      'POST',
       _uri('/api/v1/notifications/push'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
+      headers: _bearerHeaders(token, contentType: 'application/json'),
       body: jsonEncode(body),
     );
     if (response.statusCode == 200) {
@@ -209,213 +297,14 @@ class ApiRequest {
     required String token,
     required String installationId,
   }) async {
-    final response = await _client.delete(
+    final response = await _request(
+      'DELETE',
       _uri('/api/v1/notifications/push/$installationId'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: _bearerHeaders(token),
     );
     if (response.statusCode == 204 || response.statusCode == 404) {
       return;
     }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<void> forgotPassword({
-    required String email,
-    String? altcha,
-  }) async {
-    final body = <String, dynamic>{'email': email};
-    if (altcha != null && altcha.isNotEmpty) {
-      body['altcha'] = altcha;
-    }
-    final response = await _client.post(
-      _uri('/api/v1/auth/password/forgot'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response);
-  }
-
-  Future<void> resetPassword({
-    required String token,
-    required String password,
-  }) async {
-    final response = await _client.post(
-      _uri('/api/v1/auth/password/reset'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'token': token,
-        'password': password,
-      }),
-    );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response);
-  }
-
-  Future<UserInfo> register({
-    required String nickname,
-    required String name,
-    required String email,
-    required String password,
-    String? altcha,
-  }) async {
-    final body = <String, dynamic>{
-      'nickname': nickname,
-      'name': name,
-      'email': email,
-      'password': password,
-    };
-    if (altcha != null && altcha.isNotEmpty) {
-      body['altcha'] = altcha;
-    }
-    final response = await _client.post(
-      _uri('/api/v1/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserInfo.fromJson(json);
-    }
-
-    throw _parseError(response);
-  }
-
-  Future<LoginResult> login({
-    required String email,
-    required String password,
-    String? altcha,
-  }) async {
-    final body = <String, dynamic>{
-      'email': email,
-      'password': password,
-    };
-    if (altcha != null && altcha.isNotEmpty) {
-      body['altcha'] = altcha;
-    }
-    final response = await _client.post(
-      _uri('/api/v1/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return LoginResult(
-        token: json['token'] as String,
-        expiresAt: json['expires_at'] as String,
-        user: UserInfo.fromJson(json['user'] as Map<String, dynamic>),
-      );
-    }
-
-    throw _parseError(response);
-  }
-
-  Future<UserInfo> getMe(
-    String token, {
-    bool notifyOnUnauthorized = true,
-  }) async {
-    final response = await _client.get(
-      _uri('/api/v1/auth/me'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserInfo.fromJson(json);
-    }
-
-    throw _parseError(
-      response,
-      authenticated: notifyOnUnauthorized,
-    );
-  }
-
-  Future<UserProfile> getProfile(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/profile'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserProfile.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<UserInfo> updateMe({
-    required String token,
-    required String name,
-  }) async {
-    final response = await _client.patch(
-      _uri('/api/v1/auth/me'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'name': name}),
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserInfo.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<UserInfo> uploadAvatar({
-    required String token,
-    required List<int> bytes,
-  }) async {
-    final request = http.MultipartRequest(
-      'PUT',
-      _uri('/api/v1/auth/me/avatar'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(
-      http.MultipartFile.fromBytes(
-        'avatar',
-        bytes,
-        filename: 'avatar.png',
-      ),
-    );
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserInfo.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<UserInfo> deleteAvatar({
-    required String token,
-  }) async {
-    final response = await _client.delete(
-      _uri('/api/v1/auth/me/avatar'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserInfo.fromJson(json);
-    }
-
     throw _parseError(response, authenticated: true);
   }
 
@@ -445,796 +334,15 @@ class ApiRequest {
     return api._uri('/api/v1/users/$nickname/avatar').toString();
   }
 
-  Future<Workout> createWorkout({
-    required String token,
-    required Map<String, dynamic> body,
-  }) async {
-    final response = await _client.post(
-      _uri('/api/v1/workouts'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Workout> updateWorkout({
-    required String token,
-    required String workoutId,
-    required Map<String, dynamic> body,
-  }) async {
-    final response = await _client.put(
-      _uri('/api/v1/workouts/$workoutId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Workout> addWorkoutMedia({
-    required String token,
-    required String workoutId,
-    required List<({String filename, List<int> bytes})> photos,
-  }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      _uri('/api/v1/workouts/$workoutId/media'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    for (final photo in photos) {
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'photos',
-          photo.bytes,
-          filename: photo.filename,
-        ),
-      );
-    }
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Workout> deleteWorkoutMedia({
-    required String token,
-    required String workoutId,
-    required String filename,
-  }) async {
-    final encoded = Uri.encodeComponent(filename);
-    final response = await _client.delete(
-      _uri('/api/v1/workouts/$workoutId/media/$encoded'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Workout> getWorkout({
-    required String token,
-    required String workoutId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutLikesResponse> getWorkoutLikes({
-    required String token,
-    required String workoutId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/likes');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutLikesResponse.fromJson(json);
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutLikeState> likeWorkout({
-    required String token,
-    required String workoutId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/likes');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.post(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutLikeState.fromJson(json);
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutLikeState> unlikeWorkout({
-    required String token,
-    required String workoutId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/likes');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.delete(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutLikeState.fromJson(json);
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutCommentsResponse> getWorkoutComments({
-    required String token,
-    required String workoutId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/comments');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutCommentsResponse.fromJson(json);
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutCommentCreateResponse> createWorkoutComment({
-    required String token,
-    required String workoutId,
-    required String text,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/comments');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.post(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'text': text}),
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutCommentCreateResponse.fromJson(json);
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<int> deleteWorkoutComment({
-    required String token,
-    required String workoutId,
-    required String commentId,
-    String? owner,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/comments/$commentId');
-    if (owner != null && owner.isNotEmpty) {
-      uri = uri.replace(queryParameters: {'owner': owner});
-    }
-    final response = await _client.delete(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return json['count'] as int? ?? 0;
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Workout> createWorkoutMultipart({
-    required String token,
-    required Map<String, String> fields,
-    List<int>? trackBytes,
-    String? trackFilename,
-    List<({String filename, List<int> bytes})>? photos,
-  }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      _uri('/api/v1/workouts'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    for (final entry in fields.entries) {
-      request.fields[entry.key] = entry.value;
-    }
-    if (trackBytes != null && trackFilename != null) {
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'track',
-          trackBytes,
-          filename: trackFilename,
-        ),
-      );
-    }
-    if (photos != null) {
-      for (final photo in photos) {
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'photos',
-            photo.bytes,
-            filename: photo.filename,
-          ),
-        );
-      }
-    }
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return Workout.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<bool> hasExternalID({
-    required String token,
-    required String name,
-    required String id,
-  }) async {
-    final response = await _client.get(
-      _uri('/api/v1/workouts/external').replace(
-        queryParameters: {'name': name, 'id': id},
-      ),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return json['exists'] as bool? ?? false;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<ParsedTrackMetadata> parseTrack({
-    required String token,
-    required List<int> trackBytes,
-    required String trackFilename,
-  }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      _uri('/api/v1/workouts/parse-track'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(
-      http.MultipartFile.fromBytes(
-        'track',
-        trackBytes,
-        filename: trackFilename,
-      ),
-    );
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return ParsedTrackMetadata.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  String mapPreviewUrl(String workoutId, {String? owner, String? objectId}) {
-    var uri = _uri('/api/v1/workouts/$workoutId/map-preview');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    return uri.toString();
-  }
-
-  String mediaPreviewUrl(
-    String workoutId,
-    String filename, {
-    String? owner,
-    String? objectId,
-  }) {
-    final encoded = Uri.encodeComponent(filename);
-    var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded/preview');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    return uri.toString();
-  }
-
-  String mediaOriginalUrl(
-    String workoutId,
-    String filename, {
-    String? owner,
-    String? objectId,
-  }) {
-    final encoded = Uri.encodeComponent(filename);
-    var uri = _uri('/api/v1/workouts/$workoutId/media/$encoded');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    return uri.toString();
-  }
-
-  String workoutTrackUrl(String workoutId, {String? owner, String? objectId}) {
-    var uri = _uri('/api/v1/workouts/$workoutId/track');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    return uri.toString();
-  }
-
-  Future<WorkoutSpeedSeries> getWorkoutSpeed({
-    required String token,
-    required String workoutId,
-    String? owner,
-    String? objectId,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/speed');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutSpeedSeries.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutHeartRateSeries> getWorkoutHeartRate({
-    required String token,
-    required String workoutId,
-    String? owner,
-    String? objectId,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/heartrate');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutHeartRateSeries.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutCadenceSeries> getWorkoutCadence({
-    required String token,
-    required String workoutId,
-    String? owner,
-    String? objectId,
-  }) async {
-    var uri = _uri('/api/v1/workouts/$workoutId/cadence');
-    final params = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      params['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      params['object_id'] = objectId;
-    }
-    if (params.isNotEmpty) {
-      uri = uri.replace(queryParameters: params);
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutCadenceSeries.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<DownloadedTrack> downloadWorkoutTrack({
-    required String token,
-    required String workoutId,
-    required String fallbackFilename,
-    String? owner,
-    String? objectId,
-    String? format,
-  }) async {
-    final query = <String, String>{};
-    if (owner != null && owner.isNotEmpty) {
-      query['owner'] = owner;
-    }
-    if (objectId != null && objectId.isNotEmpty) {
-      query['object_id'] = objectId;
-    }
-    if (format == 'gpx') {
-      query['format'] = 'gpx';
-    }
-    var uri = _uri('/api/v1/workouts/$workoutId/track');
-    if (query.isNotEmpty) {
-      uri = uri.replace(queryParameters: query);
-    }
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final filename = _filenameFromContentDisposition(
-            response.headers['content-disposition'],
-          ) ??
-          fallbackFilename;
-      return DownloadedTrack(
-        bytes: response.bodyBytes,
-        filename: filename,
-      );
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  String? _filenameFromContentDisposition(String? header) {
-    if (header == null || header.isEmpty) {
-      return null;
-    }
-    final utf8Match = RegExp(
-      r"filename\*=UTF-8''([^;]+)",
-      caseSensitive: false,
-    ).firstMatch(header);
-    if (utf8Match != null) {
-      return Uri.decodeComponent(utf8Match.group(1)!);
-    }
-    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(header);
-    return match?.group(1);
-  }
-
-  Future<WorkoutListPage> listWorkouts(
-    String token, {
-    String scope = 'feed',
-    int limit = 20,
-    String? cursor,
-    List<String>? sportTypes,
-  }) async {
-    final params = <String, String>{
-      'limit': '$limit',
-    };
-    if (scope != 'feed') {
-      params['scope'] = scope;
-    }
-    if (cursor != null && cursor.isNotEmpty) {
-      params['cursor'] = cursor;
-    }
-    if (sportTypes != null) {
-      params['sport_types'] = sportTypes.join(',');
-    }
-    final uri = _uri('/api/v1/workouts').replace(queryParameters: params);
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutListPage.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<UserSearchResult>> listLocalUsers(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/users'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map(
-              (item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<UserSearchResult>> searchUsers({
-    required String token,
-    required String query,
-  }) async {
-    final response = await _client.get(
-      _uri('/api/v1/users/search?q=${Uri.encodeQueryComponent(query)}'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map(
-              (item) => UserSearchResult.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<FollowInfo> followUser({
-    required String token,
-    required String handle,
-  }) async {
-    final response = await _client.post(
-      _uri('/api/v1/social/follow'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'handle': handle}),
-    );
-
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return FollowInfo.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<void> unfollowUser({
-    required String token,
-    required String followId,
-  }) async {
-    final response = await _client.delete(
-      _uri('/api/v1/social/follow/$followId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<FollowInfo>> listFollowing(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/social/following'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) => FollowInfo.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<FollowerInfo>> listFollowers(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/social/followers'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Uri _userHandleUri(String handle, [String subPath = '']) {
-    final encoded = Uri.encodeComponent(handle);
-    final path = subPath.isEmpty
-        ? '/api/v1/users/$encoded'
-        : '/api/v1/users/$encoded/$subPath';
-    return _uri(path);
-  }
-
-  Future<UserPublicProfile> getUserProfile({
-    required String token,
-    required String handle,
-  }) async {
-    final response = await _client.get(
-      _userHandleUri(handle),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return UserPublicProfile.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<FollowInfo>> listUserFollowing({
-    required String token,
-    required String handle,
-  }) async {
-    final response = await _client.get(
-      _userHandleUri(handle, 'following'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) => FollowInfo.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<FollowerInfo>> listUserFollowers({
-    required String token,
-    required String handle,
-  }) async {
-    final response = await _client.get(
-      _userHandleUri(handle, 'followers'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) => FollowerInfo.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<WorkoutListPage> listUserWorkouts(
-    String token, {
-    required String handle,
-    int limit = 20,
-    String? cursor,
-  }) async {
-    final params = <String, String>{'limit': '$limit'};
-    if (cursor != null && cursor.isNotEmpty) {
-      params['cursor'] = cursor;
-    }
-    final uri = _userHandleUri(handle, 'workouts')
-        .replace(queryParameters: params);
-    final response = await _client.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return WorkoutListPage.fromJson(json);
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
   Future<List<Equipment>> listEquipment(String token) async {
-    final response = await _client.get(
+    final response = await _request(
+      'GET',
       _uri('/api/v1/equipment'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: _bearerHeaders(token),
     );
 
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
+      final json = _decode<List<dynamic>>(response);
       return json
           .map((item) => Equipment.fromJson(item as Map<String, dynamic>))
           .toList();
@@ -1247,7 +355,8 @@ class ApiRequest {
     required String token,
     required EquipmentDraft body,
   }) async {
-    final response = await _client.post(
+    final response = await _request(
+      'POST',
       _uri('/api/v1/equipment'),
       headers: {
         'Content-Type': 'application/json',
@@ -1257,7 +366,7 @@ class ApiRequest {
     );
 
     if (response.statusCode == 201) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = _decode<Map<String, dynamic>>(response);
       return Equipment.fromJson(json);
     }
 
@@ -1269,7 +378,8 @@ class ApiRequest {
     required String id,
     required EquipmentDraft body,
   }) async {
-    final response = await _client.put(
+    final response = await _request(
+      'PUT',
       _uri('/api/v1/equipment/$id'),
       headers: {
         'Content-Type': 'application/json',
@@ -1279,7 +389,7 @@ class ApiRequest {
     );
 
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = _decode<Map<String, dynamic>>(response);
       return Equipment.fromJson(json);
     }
 
@@ -1290,9 +400,10 @@ class ApiRequest {
     required String token,
     required String id,
   }) async {
-    final response = await _client.delete(
+    final response = await _request(
+      'DELETE',
       _uri('/api/v1/equipment/$id'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: _bearerHeaders(token),
     );
 
     if (response.statusCode == 204) {
@@ -1300,233 +411,5 @@ class ApiRequest {
     }
 
     throw _parseError(response, authenticated: true);
-  }
-
-  Future<void> deleteWorkout({
-    required String token,
-    required String workoutId,
-  }) async {
-    final response = await _client.delete(
-      _uri('/api/v1/workouts/$workoutId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<void> deleteAccount({
-    required String token,
-    required String password,
-  }) async {
-    final response = await _client.delete(
-      _uri('/api/v1/auth/me'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'password': password}),
-    );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Map<String, dynamic>> uploadStravaArchiveRaw({
-    required String token,
-    required List<int> bytes,
-    void Function(double progress)? onProgress,
-  }) async {
-    final request = http.StreamedRequest(
-      'POST',
-      _uri('/api/v1/integrations/strava/import'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.headers['Content-Type'] = 'application/zip';
-    request.contentLength = bytes.length;
-    request.sink.add(bytes);
-    await request.sink.close();
-    return _sendStravaStreamedRequest(request, onProgress);
-  }
-
-  Future<Map<String, dynamic>> uploadStravaArchiveRawStream({
-    required String token,
-    required Stream<List<int>> stream,
-    required int length,
-    void Function(double progress)? onProgress,
-  }) async {
-    final request = http.StreamedRequest(
-      'POST',
-      _uri('/api/v1/integrations/strava/import'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.headers['Content-Type'] = 'application/zip';
-    request.contentLength = length;
-
-    var sent = 0;
-    await for (final chunk in stream) {
-      request.sink.add(chunk);
-      sent += chunk.length;
-      if (onProgress != null && length > 0) {
-        onProgress(sent / length);
-      }
-    }
-    await request.sink.close();
-    return _sendStravaStreamedRequest(request, onProgress);
-  }
-
-  Future<Map<String, dynamic>> uploadStravaArchive({
-    required String token,
-    required List<int> bytes,
-    required String filename,
-    void Function(double progress)? onProgress,
-  }) async {
-    return uploadStravaArchiveRaw(
-      token: token,
-      bytes: bytes,
-      onProgress: onProgress,
-    );
-  }
-
-  Future<Map<String, dynamic>> uploadStravaArchiveFromStream({
-    required String token,
-    required Stream<List<int>> stream,
-    required int length,
-    required String filename,
-    void Function(double progress)? onProgress,
-  }) async {
-    return uploadStravaArchiveRawStream(
-      token: token,
-      stream: stream,
-      length: length,
-      onProgress: onProgress,
-    );
-  }
-
-  Future<Map<String, dynamic>> _sendStravaStreamedRequest(
-    http.StreamedRequest request,
-    void Function(double progress)? onProgress,
-  ) async {
-    if (onProgress != null) {
-      onProgress(0);
-    }
-
-    final streamed = await _client.send(request);
-
-    if (onProgress != null) {
-      onProgress(1);
-    }
-
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode == 202) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<Map<String, dynamic>> getStravaImportStatus(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/integrations/strava/import/status'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    }
-
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<List<PersonalAccessToken>> listPersonalAccessTokens(String token) async {
-    final response = await _client.get(
-      _uri('/api/v1/auth/pat'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as List<dynamic>;
-      return json
-          .map((item) =>
-              PersonalAccessToken.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<CreatePersonalAccessTokenResult> createPersonalAccessToken({
-    required String token,
-    required String name,
-    required List<String> scopes,
-    int? expiresInDays,
-    bool noExpiration = false,
-  }) async {
-    final body = <String, dynamic>{
-      'name': name,
-      'scopes': scopes,
-      'no_expiration': noExpiration,
-    };
-    if (!noExpiration && expiresInDays != null) {
-      body['expires_in_days'] = expiresInDays;
-    }
-    final response = await _client.post(
-      _uri('/api/v1/auth/pat'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(body),
-    );
-    if (response.statusCode == 201) {
-      return CreatePersonalAccessTokenResult.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Future<void> revokePersonalAccessToken({
-    required String token,
-    required String id,
-  }) async {
-    final response = await _client.delete(
-      _uri('/api/v1/auth/pat/$id'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 204) {
-      return;
-    }
-    throw _parseError(response, authenticated: true);
-  }
-
-  Never _parseError(
-    http.Response response, {
-    bool authenticated = false,
-  }) {
-    if (authenticated && response.statusCode == 401) {
-      // Fire-and-forget clear; callers still receive SessionExpiredException.
-      unawaited(SessionCoordinator.instance.notifyUnauthorized());
-      throw SessionExpiredException();
-    }
-    try {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final message = json['error'] as String? ?? 'Unknown error';
-      throw ApiException(message, statusCode: response.statusCode);
-    } on ApiException {
-      rethrow;
-    } on SessionExpiredException {
-      rethrow;
-    } catch (_) {
-      throw ApiException(
-        'Request failed (${response.statusCode})',
-        statusCode: response.statusCode,
-      );
-    }
   }
 }

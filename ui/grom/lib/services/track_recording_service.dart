@@ -53,7 +53,8 @@ class TrackRecordingService extends ChangeNotifier {
   Timer? _tickTimer;
   TrackRecordingNotificationStrings? _notificationStrings;
   String? _streamError;
-  bool _initialized = false;
+  Future<void>? _initialization;
+  bool _finishing = false;
   bool _autoPauseEnabled = true;
 
   bool get _useForegroundTask => TrackRecordingForeground.isSupported;
@@ -61,8 +62,9 @@ class TrackRecordingService extends ChangeNotifier {
   TrackRecordingState get state => _state;
   bool get autoPauseEnabled => _autoPauseEnabled;
   List<RecordedTrackPoint> get points => List.unmodifiable(_points);
-  List<LatLng> get polylinePoints =>
-      _points.map((p) => LatLng(p.latitude, p.longitude)).toList(growable: false);
+  List<LatLng> get polylinePoints => _points
+      .map((p) => LatLng(p.latitude, p.longitude))
+      .toList(growable: false);
   DateTime? get startTime => _startTime;
   String? get streamError => _streamError;
   int get durationSeconds {
@@ -72,6 +74,7 @@ class TrackRecordingService extends ChangeNotifier {
     }
     return total.inSeconds;
   }
+
   double get distanceMeters => pathDistanceMeters(polylinePoints);
   double get currentSpeedKmh => _currentSpeedKmh;
   bool get isActive =>
@@ -79,19 +82,20 @@ class TrackRecordingService extends ChangeNotifier {
       _state == TrackRecordingState.autoPaused ||
       _state == TrackRecordingState.paused;
 
-  Future<void> initialize() async {
-    if (_initialized) {
-      return;
-    }
-    _initialized = true;
+  Future<void> initialize() => _initialization ??= _initialize();
 
+  Future<void> _initialize() async {
     _autoPauseEnabled = await AutopauseStorage.getEnabled();
 
     await _store.init();
     await TrackRecordingForeground.initialize();
     TrackRecordingForeground.registerTaskDataCallback(_onTaskData);
 
-    final session = await _store.load();
+    final session = _store.cachedSession;
+    if (session?.finishedDurationTotalSeconds != null &&
+        await TrackRecordingForeground.isRunning()) {
+      await _stopRecordingInfrastructure();
+    }
     if (session == null || !session.isActive) {
       return;
     }
@@ -205,7 +209,9 @@ class TrackRecordingService extends ChangeNotifier {
   Future<void> startRecording({
     required TrackRecordingNotificationStrings notificationStrings,
   }) async {
-    if (_state == TrackRecordingState.recording) {
+    if (_state == TrackRecordingState.recording ||
+        _finishing ||
+        hasFinishedDraft) {
       return;
     }
 
@@ -385,46 +391,80 @@ class TrackRecordingService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<RecordedTrack?> finishRecording() async {
-    if (!isActive) {
+  bool get hasFinishedDraft =>
+      _store.cachedSession?.finishedDurationTotalSeconds != null;
+
+  Future<RecordedTrack?> loadFinishedDraft() async {
+    await initialize();
+    final session = _store.cachedSession;
+    if (session == null || session.finishedDurationTotalSeconds == null) {
       return null;
     }
+    return _buildRecordedTrack(session);
+  }
 
-    if (_state == TrackRecordingState.recording) {
-      _finalizeOpenSegment();
-    }
-
-    final startTime = _startTime;
-    final durationTotalSeconds = startTime == null
-        ? durationSeconds
-        : DateTime.now().difference(startTime).inSeconds;
-
-    await _stopRecordingInfrastructure();
-    _stopTickTimer();
-    _state = TrackRecordingState.idle;
-
-    if (_points.isEmpty || startTime == null) {
-      await _resetSession();
+  Future<void> clearFinishedDraft(DateTime startTime) async {
+    final session = _store.cachedSession;
+    if (session?.finishedDurationTotalSeconds != null &&
+        session!.startTime.isAtSameMomentAs(startTime)) {
+      await _store.clear();
       notifyListeners();
+    }
+  }
+
+  Future<RecordedTrack?> finishRecording() async {
+    if (!isActive || _finishing) {
       return null;
     }
 
-    final speedStats = _computeSpeedStats();
+    _finishing = true;
+    _stopTickTimer();
+    try {
+      final startTime = _startTime;
+      if (_points.isEmpty || startTime == null) {
+        await _stopRecordingInfrastructure();
+        _state = TrackRecordingState.idle;
+        await _resetSession();
+        return null;
+      }
 
-    final track = RecordedTrack(
-      points: List.unmodifiable(_points),
-      startTime: startTime,
-      durationSeconds: durationSeconds,
-      durationTotalSeconds: durationTotalSeconds,
-      distanceMeters: distanceMeters,
-      gpxBytes: _gpxEncoder.encode(points: _points),
+      final session = TrackRecordingSession(
+        state: TrackRecordingState.idle,
+        startTime: startTime,
+        accumulatedDurationMs: durationSeconds * 1000,
+        finishedDurationTotalSeconds:
+            DateTime.now().difference(startTime).inSeconds,
+        points: List.unmodifiable(_points),
+      );
+      await _store.save(session);
+      _state = TrackRecordingState.idle;
+      await _stopRecordingInfrastructure();
+      await _resetSession(clearStore: false);
+      return _buildRecordedTrack(session);
+    } finally {
+      _finishing = false;
+      if (_state == TrackRecordingState.recording ||
+          _state == TrackRecordingState.autoPaused) {
+        _startTickTimer();
+      }
+      notifyListeners();
+    }
+  }
+
+  RecordedTrack _buildRecordedTrack(TrackRecordingSession session) {
+    final speedStats = _computeSpeedStats(session.points);
+    return RecordedTrack(
+      points: List.unmodifiable(session.points),
+      startTime: session.startTime,
+      durationSeconds: session.accumulatedDurationMs ~/ 1000,
+      durationTotalSeconds: session.finishedDurationTotalSeconds!,
+      distanceMeters: pathDistanceMeters(session.points
+          .map((point) => LatLng(point.latitude, point.longitude))
+          .toList(growable: false)),
+      gpxBytes: _gpxEncoder.encode(points: session.points),
       speedMaxKmh: speedStats.maxKmh,
       speedAvgKmh: speedStats.avgKmh,
     );
-
-    await _resetSession();
-    notifyListeners();
-    return track;
   }
 
   Future<void> discardRecording() async {
@@ -464,7 +504,7 @@ class TrackRecordingService extends ChangeNotifier {
     }
   }
 
-  Future<void> _resetSession() async {
+  Future<void> _resetSession({bool clearStore = true}) async {
     _points.clear();
     _startTime = null;
     _segmentStartedAt = null;
@@ -473,7 +513,9 @@ class TrackRecordingService extends ChangeNotifier {
     _notificationStrings = null;
     _streamError = null;
     _movementDetector.reset();
-    await _store.clear();
+    if (clearStore) {
+      await _store.clear();
+    }
   }
 
   void _finalizeOpenSegment() {
@@ -504,7 +546,8 @@ class TrackRecordingService extends ChangeNotifier {
   void _applySession(TrackRecordingSession session) {
     _state = session.state;
     _startTime = session.startTime;
-    _accumulatedDuration = Duration(milliseconds: session.accumulatedDurationMs);
+    _accumulatedDuration =
+        Duration(milliseconds: session.accumulatedDurationMs);
     _segmentStartedAt = session.segmentStartedAt;
     _points
       ..clear()
@@ -625,6 +668,7 @@ class TrackRecordingService extends ChangeNotifier {
     RecordedTrackPoint point,
     Object? speedKmh,
   ) async {
+    if (_finishing) return;
     final position = LatLng(point.latitude, point.longitude);
     _movementDetector.onPosition(position, point.timestamp);
 
@@ -692,12 +736,13 @@ class TrackRecordingService extends ChangeNotifier {
     );
   }
 
-  ({double? maxKmh, double? avgKmh}) _computeSpeedStats() {
+  ({double? maxKmh, double? avgKmh}) _computeSpeedStats(
+      List<RecordedTrackPoint> points) {
     var maxKmh = 0.0;
     var sumKmh = 0.0;
     var count = 0;
 
-    for (final point in _points) {
+    for (final point in points) {
       final speedMps = point.speedMps;
       if (speedMps == null || speedMps < 0) {
         continue;

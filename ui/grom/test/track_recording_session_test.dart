@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grom/models/recorded_track_point.dart';
 import 'package:grom/services/track_recording_session.dart';
 import 'package:grom/services/track_recording_state.dart';
+import 'package:grom/services/track_recording_store_io.dart';
 
 void main() {
   test('TrackRecordingSession round-trips through JSON', () {
@@ -99,5 +102,37 @@ void main() {
     expect(restored.points.single.speedMps, isNull);
     expect(restored.points.single.heading, isNull);
     expect(restored.points.single.accuracy, isNull);
+  });
+
+  test('a finished track survives reopening the store and can be removed',
+      () async {
+    final directory = await Directory.systemTemp.createTemp('grom-recording-');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/session.json');
+    final start = DateTime.utc(2026, 3, 6, 12, 30);
+    final active = TrackRecordingSession(
+      state: TrackRecordingState.paused,
+      startTime: start,
+      accumulatedDurationMs: 60000,
+      points: const [],
+    );
+    final draft = TrackRecordingSession(
+      state: TrackRecordingState.idle,
+      startTime: start,
+      accumulatedDurationMs: 60000,
+      finishedDurationTotalSeconds: 90,
+      points: [
+        RecordedTrackPoint(latitude: 55.75, longitude: 37.62, timestamp: start),
+      ],
+    );
+    final store = TrackRecordingStoreIo(file: file);
+    await Future.wait([store.save(active), store.save(draft)]);
+    final reopened = TrackRecordingStoreIo(file: file);
+    await reopened.init();
+    expect(reopened.hasActiveSession, isFalse);
+    expect(reopened.cachedSession?.finishedDurationTotalSeconds, 90);
+    expect(reopened.cachedSession?.points, hasLength(1));
+    await reopened.clear();
+    expect(await store.load(), isNull);
   });
 }

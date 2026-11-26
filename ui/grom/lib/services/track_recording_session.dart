@@ -7,6 +7,7 @@ class TrackRecordingSession {
     required this.startTime,
     required this.accumulatedDurationMs,
     this.segmentStartedAt,
+    this.finishedDurationTotalSeconds,
     required this.points,
   });
 
@@ -14,6 +15,7 @@ class TrackRecordingSession {
   final DateTime startTime;
   final int accumulatedDurationMs;
   final DateTime? segmentStartedAt;
+  final int? finishedDurationTotalSeconds;
   final List<RecordedTrackPoint> points;
 
   bool get isActive =>
@@ -28,6 +30,8 @@ class TrackRecordingSession {
       'accumulatedDurationMs': accumulatedDurationMs,
       if (segmentStartedAt != null)
         'segmentStartedAt': segmentStartedAt!.toUtc().toIso8601String(),
+      if (finishedDurationTotalSeconds != null)
+        'finishedDurationTotalSeconds': finishedDurationTotalSeconds,
       'points': points.map((point) => point.toJson()).toList(),
     };
   }
@@ -40,6 +44,8 @@ class TrackRecordingSession {
       segmentStartedAt: json['segmentStartedAt'] == null
           ? null
           : DateTime.parse(json['segmentStartedAt'] as String).toLocal(),
+      finishedDurationTotalSeconds:
+          json['finishedDurationTotalSeconds'] as int?,
       points: (json['points'] as List<dynamic>)
           .map(
             (item) => RecordedTrackPoint.fromJson(

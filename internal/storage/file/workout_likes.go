@@ -54,15 +54,39 @@ func (s *WorkoutLikesStore) GetLocal(ownerNickname, workoutID string) (*workouts
 }
 
 func (s *WorkoutLikesStore) PutLocal(ownerNickname, workoutID string, likes *workouts.WorkoutLikes) error {
+	return s.writeLocal(ownerNickname, workoutID, func(path string) error {
+		return writeLikesYAML(path, likes)
+	})
+}
+
+func (s *WorkoutLikesStore) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutLikes) *workouts.WorkoutLikes) error {
+	return s.writeLocal(ownerNickname, workoutID, func(path string) error {
+		current, err := readLikesYAML(path)
+		if err != nil {
+			return err
+		}
+		next := update(current)
+		if next == current {
+			return nil
+		}
+		return writeLikesYAML(path, next)
+	})
+}
+
+func (s *WorkoutLikesStore) writeLocal(ownerNickname, workoutID string, write func(string) error) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	store := NewWorkoutsStore(s.dataDir)
 	dir, err := store.findWorkoutDir(ownerNickname, workoutID)
 	if err != nil {
 		return err
 	}
-	return writeLikesYAML(filepath.Join(dir, likesFileName), likes)
+	return write(filepath.Join(dir, likesFileName))
 }
 
 func (s *WorkoutLikesStore) DeleteLocal(ownerNickname, workoutID string) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	store := NewWorkoutsStore(s.dataDir)
 	dir, err := store.findWorkoutDir(ownerNickname, workoutID)
 	if err != nil {

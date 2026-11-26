@@ -7,29 +7,88 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 
-/**
- * Normalizes incoming track intents before [receive_sharing_intent] reads them.
- *
- * Google Drive "Open with" uses DocumentsContract content URIs. The sharing plugin
- * only copies known document providers (external / downloads / media) and otherwise
- * returns [Uri.getPath], which is not a readable file — so VIEW from Drive never
- * reaches Flutter. We copy those URIs into cache and retarget to a file:// VIEW.
- *
- * ACTION_SEND / SEND_MULTIPLE (file-manager share) are left unchanged.
- */
+/** Bridges Android Open with content URIs to Flutter after copying them off the UI thread. */
 class MainActivity : FlutterActivity() {
+    private val trackReader = Executors.newSingleThreadExecutor()
+    private val pendingTracks = ArrayDeque<Map<String, Any>>()
+    private var trackChannel: MethodChannel? = null
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        trackChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "grom/shared_tracks")
+        trackChannel?.setMethodCallHandler { call, result ->
+            if (call.method == "takePendingTrack") {
+                result.success(pendingTracks.removeFirstOrNull())
+            } else {
+                result.notImplemented()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        intent?.let { setIntent(normalizeIncomingIntent(Intent(it))) }
+        val incoming = intent?.let(::Intent)
+        val contentUri = incoming?.let(::viewContentUri)
+        if (incoming != null) {
+            setIntent(if (contentUri == null) normalizeIncomingIntent(incoming) else Intent(Intent.ACTION_MAIN))
+        }
         super.onCreate(savedInstanceState)
+        if (contentUri != null) {
+            readSharedTrack(contentUri, incoming.type)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
-        val normalized = normalizeIncomingIntent(Intent(intent))
+        val incoming = Intent(intent)
+        val contentUri = viewContentUri(incoming)
+        if (contentUri != null) {
+            readSharedTrack(contentUri, incoming.type)
+            return
+        }
+        val normalized = normalizeIncomingIntent(incoming)
         super.onNewIntent(normalized)
         setIntent(normalized)
+    }
+
+    override fun onDestroy() {
+        trackChannel?.setMethodCallHandler(null)
+        trackReader.shutdownNow()
+        for (pending in pendingTracks) {
+            (pending["path"] as? String)?.let { File(it).delete() }
+        }
+        super.onDestroy()
+    }
+
+    private fun viewContentUri(intent: Intent): Uri? {
+        val uri = intent.data ?: intent.parcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return null
+        return uri.takeIf { TrackIntentNormalize.shouldMaterializeContentUri(intent.action, it.scheme) }
+    }
+
+    private fun readSharedTrack(uri: Uri, intentType: String?) {
+        trackReader.execute {
+            val displayName = queryDisplayName(uri)
+            val mime = TrackIntentNormalize.mimeFromFileName(displayName)
+                ?: intentType?.takeUnless(TrackIntentNormalize::isGenericMime)
+                ?: runCatching { contentResolver.getType(uri) }.getOrNull()
+                ?: "application/octet-stream"
+            val file = copyUriToCache(uri, displayName)
+            runOnUiThread {
+                if (isDestroyed) {
+                    file?.delete()
+                } else {
+                    pendingTracks.addLast(
+                        if (file == null) mapOf("failed" to true)
+                        else mapOf("path" to file.path, "mimeType" to mime),
+                    )
+                    trackChannel?.invokeMethod("pending", null)
+                }
+            }
+        }
     }
 
     private fun normalizeIncomingIntent(intent: Intent): Intent {
@@ -61,45 +120,14 @@ class MainActivity : FlutterActivity() {
         return intent
     }
 
-    /**
-     * Drive / Open with: copy content:// document URIs to cache so the Flutter
-     * plugin can read a real file path.
-     */
     private fun materializeViewTrackIntent(intent: Intent): Intent {
-        val uri = intent.data
-            ?: intent.parcelableExtra<Uri>(Intent.EXTRA_STREAM)
-            ?: return intent
-
-        val displayName = queryDisplayName(uri)
-        val mime = TrackIntentNormalize.mimeFromFileName(displayName)
-            ?: intent.type?.takeIf { it.isNotBlank() && it != "*/*" }
-            ?: contentResolver.getType(uri)?.takeIf { it.isNotBlank() }
-            ?: "application/octet-stream"
-
+        val uri = intent.data ?: intent.parcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return intent
         if (uri.scheme.equals("file", ignoreCase = true)) {
+            val mime = TrackIntentNormalize.mimeFromFileName(uri.lastPathSegment)
+                ?: intent.type ?: "application/octet-stream"
             intent.action = Intent.ACTION_VIEW
             intent.setDataAndType(uri, mime)
-            return intent
         }
-
-        if (!TrackIntentNormalize.shouldMaterializeContentUri(intent.action, uri.scheme)) {
-            intent.type = mime
-            return intent
-        }
-
-        // Always copy content:// for VIEW/EDIT. receive_sharing_intent cannot read
-        // Google Drive DocumentsContract URIs (returns Uri.path). SEND is untouched.
-        val cached = copyUriToCache(uri, displayName) ?: run {
-            Log.w(TAG, "Failed to materialize shared track URI: $uri")
-            intent.type = mime
-            return intent
-        }
-
-        intent.action = Intent.ACTION_VIEW
-        @Suppress("DEPRECATION")
-        intent.setDataAndType(Uri.fromFile(cached), mime)
-        intent.removeExtra(Intent.EXTRA_STREAM)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         return intent
     }
 
@@ -107,22 +135,24 @@ class MainActivity : FlutterActivity() {
         val safeName = TrackIntentNormalize.sanitizeFileName(
             displayName ?: uri.lastPathSegment ?: "shared_track",
         )
-        val target = File(cacheDir, "shared_tracks").apply { mkdirs() }.let { dir ->
-            File(dir, "${System.currentTimeMillis()}_$safeName")
-        }
+        var target: File? = null
+        var complete = false
         return try {
+            val dir = File(cacheDir, "shared_tracks").apply { mkdirs() }
+            val file = File.createTempFile("track-", "-${safeName.takeLast(160)}", dir)
+            target = file
             contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(target).use { output -> input.copyTo(output) }
+                FileOutputStream(file).use { output ->
+                    TrackIntentNormalize.copyTrack(input, output, MAX_TRACK_BYTES)
+                }
             } ?: return null
-            if (!target.exists() || target.length() == 0L) {
-                target.delete()
-                return null
-            }
-            target
+            complete = true
+            file
         } catch (e: Exception) {
-            Log.w(TAG, "copyUriToCache failed", e)
-            target.delete()
+            Log.w(TAG, "Unable to read shared track", e)
             null
+        } finally {
+            if (!complete) target?.delete()
         }
     }
 
@@ -169,6 +199,8 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
+        // Matches MaxTrackSizeBytes in internal/tracks.
+        private const val MAX_TRACK_BYTES = 20L * 1024 * 1024
         private const val TAG = "GromMainActivity"
     }
 }

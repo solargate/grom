@@ -66,6 +66,13 @@ func (a *App) importStravaArchive(ctx *gin.Context) {
 		return
 	}
 
+	started := false
+	defer func() {
+		if !started {
+			jobs.CancelUpload(job)
+		}
+	}()
+
 	reader, expectedSize, err := stravaArchiveReader(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -82,6 +89,7 @@ func (a *App) importStravaArchive(ctx *gin.Context) {
 	}
 
 	jobs.StartImport(userID)
+	started = true
 	ctx.JSON(http.StatusAccepted, toStravaImportStatus(jobs.Status(userID)))
 }
 

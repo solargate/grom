@@ -99,7 +99,8 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
       if (!proceed || !mounted) {
         return;
       }
-      final notificationsGranted = await _recorder.ensureNotificationPermission();
+      final notificationsGranted =
+          await _recorder.ensureNotificationPermission();
       if (!notificationsGranted) {
         if (!mounted) return;
         _showNotificationError();
@@ -132,9 +133,17 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
   }
 
   Future<void> _onFinish() async {
-    final track = await _recorder.finishRecording();
-    if (track != null && mounted) {
-      widget.onFinished(track);
+    try {
+      final track = await _recorder.finishRecording();
+      if (track != null && mounted) {
+        widget.onFinished(track);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToSaveWorkout)),
+      );
     }
   }
 
@@ -239,7 +248,7 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
         WorkoutRecordControls(
           state: _recorder.state,
           pauseVariant: _pauseVariant(),
-          onPlay: _onPlay,
+          onPlay: _recorder.hasFinishedDraft ? null : _onPlay,
           onPause: _onPause,
           onFinish: _onFinish,
           playLabel: l10n.recordStart,
@@ -292,9 +301,7 @@ class _RecordWorkoutTabState extends State<RecordWorkoutTab> {
         Center(
           child: FilterChip(
             label: Text(
-              autoPauseEnabled
-                  ? l10n.autoPauseEnabled
-                  : l10n.autoPauseDisabled,
+              autoPauseEnabled ? l10n.autoPauseEnabled : l10n.autoPauseDisabled,
             ),
             selected: autoPauseEnabled,
             onSelected: (selected) {

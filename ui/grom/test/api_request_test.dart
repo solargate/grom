@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,40 @@ void main() {
     SessionCoordinator.instance.debugReset();
     await ServerStorage.clear();
     await AuthStorage.clear();
+  });
+
+  testWidgets('an ordinary API request times out', (tester) async {
+    final response = Completer<http.Response>();
+    final api = ApiRequest(client: MockClient((_) => response.future));
+    final request = api.getServerInfo();
+    final expectation = expectLater(request, throwsA(isA<TimeoutException>()));
+    await tester.pump(const Duration(seconds: 31));
+    await expectation;
+    response.complete(http.Response('{}', 200));
+    await tester.pump();
+  });
+
+  test('archive upload sends its stream and reports progress', () async {
+    final progress = <double>[];
+    final api = ApiRequest(client: MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/v1/integrations/strava/import');
+      expect(request.headers['authorization'], 'Bearer token');
+      expect(request.headers['content-type'], 'application/zip');
+      expect(request.bodyBytes, [1, 2, 3, 4]);
+      return http.Response('{"active":true}', 202);
+    }));
+    final status = await api.uploadStravaArchiveRawStream(
+      token: 'token',
+      stream: Stream.fromIterable([
+        [1, 2],
+        [3, 4]
+      ]),
+      length: 4,
+      onProgress: progress.add,
+    );
+    expect(status['active'], isTrue);
+    expect(progress, containsAllInOrder([0, .5, 1]));
   });
 
   test('ServerInfo.fromJson reads name and federation flag', () {
@@ -135,7 +170,7 @@ void main() {
     );
   });
 
-	test('getWorkout requests owner query and parses body', () async {
+  test('getWorkout requests owner query and parses body', () async {
     await ServerStorage.saveBaseUrl('https://grom.example');
     final client = MockClient((request) async {
       expect(request.method, 'GET');
@@ -480,7 +515,8 @@ void main() {
       );
     });
     try {
-      await ApiRequest(client: limited).forgotPassword(email: 'alice@example.com');
+      await ApiRequest(client: limited)
+          .forgotPassword(email: 'alice@example.com');
       fail('expected ApiException');
     } on ApiException catch (e) {
       expect(e.message, 'too many requests, try again later');
@@ -495,7 +531,8 @@ void main() {
       );
     });
     try {
-      await ApiRequest(client: disabled).forgotPassword(email: 'alice@example.com');
+      await ApiRequest(client: disabled)
+          .forgotPassword(email: 'alice@example.com');
       fail('expected ApiException');
     } on ApiException catch (e) {
       expect(e.message, 'password reset is not configured');
@@ -554,7 +591,8 @@ void main() {
         headers: {'content-type': 'application/json'},
       );
     });
-    final status = await ApiRequest(client: client).getStravaImportStatus('tok');
+    final status =
+        await ApiRequest(client: client).getStravaImportStatus('tok');
     expect(status['phase'], 'importing');
     expect(status['import_progress'], 0.5);
   });
@@ -780,7 +818,7 @@ void main() {
       expect(request.url.path, '/api/v1/profile');
       expect(request.headers['Authorization'], 'Bearer tok');
       return http.Response(
-		jsonEncode({
+        jsonEncode({
           'last_sport_type': 'Ride',
           'last_equipment_by_sport': {
             'Ride': ['bike-1'],
@@ -806,16 +844,21 @@ void main() {
       expect(request.url.queryParameters['owner'], 'bob');
       expect(request.headers['Authorization'], 'Bearer tok');
       return http.Response(
-        jsonEncode({'count': methods.length == 1 ? 1 : 0, 'liked_by_me': methods.length == 1}),
+        jsonEncode({
+          'count': methods.length == 1 ? 1 : 0,
+          'liked_by_me': methods.length == 1
+        }),
         200,
         headers: {'content-type': 'application/json'},
       );
     });
     final api = ApiRequest(client: client);
-    final liked = await api.likeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
+    final liked =
+        await api.likeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
     expect(liked.count, 1);
     expect(liked.likedByMe, isTrue);
-    final unliked = await api.unlikeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
+    final unliked =
+        await api.unlikeWorkout(token: 'tok', workoutId: 'wid', owner: 'bob');
     expect(unliked.count, 0);
     expect(unliked.likedByMe, isFalse);
     expect(methods, ['POST', 'DELETE']);
@@ -899,7 +942,8 @@ void main() {
       );
     });
     final api = ApiRequest(client: client);
-    final listed = await api.getWorkoutComments(token: 'tok', workoutId: 'wid', owner: 'bob');
+    final listed = await api.getWorkoutComments(
+        token: 'tok', workoutId: 'wid', owner: 'bob');
     expect(listed.count, 0);
     final created = await api.createWorkoutComment(
       token: 'tok',

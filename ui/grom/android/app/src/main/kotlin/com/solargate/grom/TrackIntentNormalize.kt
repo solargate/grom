@@ -1,5 +1,9 @@
 package com.solargate.grom
 
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+
 /**
  * Pure helpers for normalizing shared / open-with track intents.
  * Kept free of Android framework types so JVM unit tests can cover them.
@@ -40,5 +44,19 @@ object TrackIntentNormalize {
     fun shouldAnnotateSendMime(action: String?): Boolean {
         return action == "android.intent.action.SEND" ||
             action == "android.intent.action.SEND_MULTIPLE"
+    }
+
+    fun copyTrack(input: InputStream, output: OutputStream, maxBytes: Long) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        while (true) {
+            if (Thread.currentThread().isInterrupted) throw IOException("Track read interrupted")
+            val length = input.read(buffer)
+            if (length < 0) break
+            total += length
+            if (total > maxBytes) throw IOException("Track exceeds size limit")
+            output.write(buffer, 0, length)
+        }
+        if (total == 0L) throw IOException("Track is empty")
     }
 }

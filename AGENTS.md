@@ -156,7 +156,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 
 - Structure: `pages/`, `widgets/`, `services/`, `models/`, `navigation/`, `platform/`
 - Platform splits use stub/io/web files — recording, file download, Strava archive picker, track file picker, share intent, server scheme probe. Preserve that pattern. Do not expand iOS beyond existing scaffolding.
-- API access: `lib/api_request.dart` + auth/server storage helpers.
+- API access: import `lib/api_request.dart` for the public `ApiRequest` client. The main file owns the shared HTTP transport, timeouts, and error handling. Account, workout, social, and Strava ZIP methods live in the corresponding `lib/api_request_*.dart` parts of the same Dart library.
 - User-facing strings: update ARB files under `lib/l10n/` (en/ru/de); do not hardcode UI copy when localization exists. Generated `app_localizations*.dart` are committed (`flutter: generate: true`). When adding sport/equipment types, also update the hand-written `sport_type_localizations.dart` / `equipment_type_localizations.dart` switches.
 - After Flutter UI changes that ship in the server binary, regenerate web embed: `make web` (or full `make grom`).
 - Tests: `ui/grom/test/`; run `make test-ui`. Android JVM unit tests: `make test-android-unit`. CI also runs `flutter analyze` in `ui/grom` and `:app:testDebugUnitTest`.
@@ -198,6 +198,8 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 
 - Read nearby packages before changing interfaces (`Repository`, `Backend`, `blob.Store`).
 - Preserve error-sentinel patterns and HTTP mapping in `api/v1`.
+- Use repository `UpdateLocal` for changes to existing local likes and comments from REST or ActivityPub. It applies the change atomically to the latest stored state.
+- Enforce workout import uniqueness at metadata commit for each owner and `external_id` pair. Keep the lookup endpoint for import prechecks.
 - Pick `AuthRequired` vs `AuthAPI` explicitly for new `/api/v1` routes (see coding conventions).
 - Update config examples and `docs/admin/` when TLS/federation/storage/install behavior changes; keep root `README.md` short (link out, update quick start only if needed). Sync `*.ru.md` / `*.de.md` with English docs edits.
 - Update `docs/user/` when client-facing flows or screens change in a way operators/users need to know (EN + RU + DE).
@@ -228,7 +230,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Public user profiles | `api/v1/user_public.go`, `api/v1/user_remote.go`, `internal/federation/remote_profile.go`; Flutter `pages/user_profile_page.dart`, `navigation/open_user_profile.dart`, `widgets/user_profile_view.dart`; docs in `docs/user/overview.md` |
 | Track parsing/stats | `internal/tracks/` |
 | Equipment mileage | `internal/equipment/distance/` |
-| Flutter screen/API | `ui/grom/lib/pages/`, `api_request.dart` |
+| Flutter screen/API | `ui/grom/lib/pages/`, `ui/grom/lib/api_request.dart` and its `api_request_*.dart` parts |
 | Import tracks | `ui/grom/lib/services/device_track_import_service.dart`, `platform/track_file_picker*.dart`; docs in `docs/integrations/import-tracks.md` |
 | Strava API sync (Android) | `ui/grom/lib/services/strava_api_sync_service.dart`, `strava_api_fit.dart`, `strava_api_streams.dart`, `strava_api_client.dart`; docs in `docs/integrations/strava-api-import.md` |
 | Sport / equipment types | `internal/workouts/sport_types.go`, `ui/grom/lib/models/sport_types.dart`; `internal/equipment`, `ui/grom/lib/models/equipment_types.dart` |

@@ -95,6 +95,8 @@ grom migrate-storage --config config.yaml --from file --to bbolt --verify
 grom migrate-storage --config config.yaml --from bbolt --to file --verify
 ```
 
+`--verify` сверяет ключи и содержимое записей, включая данные графиков с точностью формата bbolt. При миграции в bbolt новая база создаётся рядом с целевой и заменяет её после успешного копирования и проверки, если она запрошена.
+
 `--dry-run` считает записи без записи; `--force` перезаписывает существующую базу bbolt.
 
 Токены сброса пароля (`reset_tokens.yaml` / bbolt `reset_tokens`) короткоживущие и **не** копируются migrate-storage; незавершённые ссылки сброса после миграции недействительны. Устаревшие plain-text Like activity id (без `object_id`) восстанавливаются через федеративный inbox и, если задан `federation.domain`, через URL объектов локальных тренировок.

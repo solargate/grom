@@ -324,7 +324,7 @@ func (s *WorkoutInboxStore) DeleteAllForOwner(viewerNickname, ownerHandle string
 	return nil
 }
 
-func (s *WorkoutInboxStore) readWorkout(viewerNickname, ownerDir, ownerKey, workoutID string) (*workouts.Workout, error) {
+func readInboxWorkoutMetadata(ownerDir, workoutID string) (*workouts.Workout, error) {
 	path := filepath.Join(ownerDir, workoutID+".yaml")
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -337,12 +337,24 @@ func (s *WorkoutInboxStore) readWorkout(viewerNickname, ownerDir, ownerKey, work
 	if err := yaml.Unmarshal(data, &workout); err != nil {
 		return nil, fmt.Errorf("parse federated workout: %w", err)
 	}
+	return &workout, nil
+}
+
+func (s *WorkoutInboxStore) readWorkout(viewerNickname, ownerDir, ownerKey, workoutID string) (*workouts.Workout, error) {
+	workout, err := readInboxWorkoutMetadata(ownerDir, workoutID)
+	if err != nil {
+		return nil, err
+	}
+	s.enrichInboxWorkout(viewerNickname, ownerKey, workoutID, workout)
+	return workout, nil
+}
+
+func (s *WorkoutInboxStore) enrichInboxWorkout(viewerNickname, ownerKey, workoutID string, workout *workouts.Workout) {
 	ctx := context.Background()
 	if exists, err := s.blobs.Exists(ctx, keys.FederatedInboxMapPreview(viewerNickname, ownerKey, workoutID)); err == nil && exists {
 		workout.HasMapPreview = true
 	}
 	workout.HasMedia = len(workout.MediaFiles) > 0
-	return &workout, nil
 }
 
 func (s *WorkoutInboxStore) TrackFile(viewerNickname, ownerNickname, workoutID string) ([]byte, string, string, error) {
@@ -580,13 +592,25 @@ func (s *WorkoutInboxStore) GetCadenceChart(viewerNickname, ownerNickname, worko
 }
 
 func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error) {
+	items, _, err := s.listPage(viewerNickname, nil, 0)
+	return items, err
+}
+
+func (s *WorkoutInboxStore) ListPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error) {
+	if limit <= 0 {
+		limit = workouts.DefaultPageLimit
+	}
+	return s.listPage(viewerNickname, cursor, limit)
+}
+
+func (s *WorkoutInboxStore) listPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error) {
 	root := s.inboxDir(viewerNickname)
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
 
 	items := make([]workouts.FeedWorkout, 0)
@@ -594,81 +618,60 @@ func (s *WorkoutInboxStore) List(viewerNickname string) ([]workouts.FeedWorkout,
 		if !ownerEntry.IsDir() {
 			continue
 		}
-		ownerDir := filepath.Join(root, ownerEntry.Name())
 		ownerKey := ownerEntry.Name()
-		handle := ownerHandleFromDir(ownerKey)
-		nickname := ownerNicknameFromDir(ownerKey)
-		meta, err := readAuthorMeta(ownerDir)
-		if err != nil {
-			return nil, err
-		}
-		if meta.Handle != "" {
-			handle = meta.Handle
-		}
-		if meta.Nickname != "" {
-			nickname = meta.Nickname
-		}
-		authorName := meta.Name
-		authorHasAvatar, authorAvatarURL := authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
+		ownerDir := filepath.Join(root, ownerKey)
 		files, err := os.ReadDir(ownerDir)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		for _, fileEntry := range files {
 			name := fileEntry.Name()
-			if fileEntry.IsDir() || !strings.HasSuffix(name, ".yaml") {
-				continue
-			}
-			if name == authorMetaFileName {
+			if fileEntry.IsDir() || !strings.HasSuffix(name, ".yaml") || name == authorMetaFileName {
 				continue
 			}
 			workoutID := strings.TrimSuffix(name, ".yaml")
-			workout, err := s.readWorkout(viewerNickname, ownerDir, ownerKey, workoutID)
+			workout, err := readInboxWorkoutMetadata(ownerDir, workoutID)
 			if err != nil {
-				return nil, err
+				return nil, false, err
 			}
-			items = append(items, workouts.FeedWorkout{
-				Workout: *workout,
-				Owner:   nickname,
-				Author: workouts.FeedAuthor{
-					Nickname:  nickname,
-					Name:      authorName,
-					Handle:    handle,
-					IsLocal:   false,
-					HasAvatar: authorHasAvatar,
-					AvatarURL: authorAvatarURL,
-				},
-			})
+			if workouts.AfterFeedCursor(workout.StartDate, workout.ID, ownerKey, cursor) {
+				items = append(items, workouts.FeedWorkout{Workout: *workout, SortOwner: ownerKey})
+			}
 		}
 	}
 
-	sort.Slice(items, func(i, j int) bool {
-		return workouts.FeedNewer(items[i].StartDate, items[i].ID, items[j].StartDate, items[j].ID)
-	})
-	return items, nil
-}
-
-func (s *WorkoutInboxStore) ListPage(viewerNickname string, cursor *workouts.Cursor, limit int) ([]workouts.FeedWorkout, bool, error) {
-	if limit <= 0 {
-		limit = workouts.DefaultPageLimit
-	}
-	all, err := s.List(viewerNickname)
-	if err != nil {
-		return nil, false, err
-	}
-	filtered := make([]workouts.FeedWorkout, 0, limit)
-	for i := range all {
-		if !workouts.AfterCursor(all[i].StartDate, all[i].ID, cursor) {
-			continue
-		}
-		filtered = append(filtered, all[i])
-		if len(filtered) > limit {
-			break
-		}
-	}
-	hasMore := len(filtered) > limit
+	sort.Slice(items, func(i, j int) bool { return workouts.FeedItemNewer(items[i], items[j]) })
+	hasMore := limit > 0 && len(items) > limit
 	if hasMore {
-		filtered = filtered[:limit]
+		items = items[:limit]
 	}
-	return filtered, hasMore, nil
+	authors := make(map[string]workouts.FeedAuthor)
+	for i := range items {
+		item := &items[i]
+		ownerKey := item.SortOwner
+		author, ok := authors[ownerKey]
+		if !ok {
+			meta, err := readAuthorMeta(filepath.Join(root, ownerKey))
+			if err != nil {
+				return nil, false, err
+			}
+			handle, nickname := meta.Handle, meta.Nickname
+			if handle == "" {
+				handle = ownerHandleFromDir(ownerKey)
+			}
+			if nickname == "" {
+				nickname = ownerNicknameFromDir(ownerKey)
+			}
+			hasAvatar, avatarURL := authorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
+			author = workouts.FeedAuthor{
+				Nickname: nickname, Name: meta.Name, Handle: handle,
+				HasAvatar: hasAvatar, AvatarURL: avatarURL,
+			}
+			authors[ownerKey] = author
+		}
+		item.Author = author
+		item.Owner = author.Nickname
+		s.enrichInboxWorkout(viewerNickname, ownerKey, item.ID, &item.Workout)
+	}
+	return items, hasMore, nil
 }

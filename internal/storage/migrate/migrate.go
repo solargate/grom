@@ -93,13 +93,26 @@ func Run(opts Options) (*Result, error) {
 		return countAll(src, cfg.ResolvedLocation, opts.FederationDomain)
 	}
 
+	targetCfg := cfg
 	if opts.To == config.StorageDriverBBolt {
-		if !opts.Force {
-			if info, err := os.Stat(dbPath); err == nil && info.Size() > 0 {
-				return nil, fmt.Errorf("bbolt database %q already exists (use --force to overwrite)", dbPath)
-			}
-		} else {
-			_ = os.Remove(dbPath)
+		info, err := os.Stat(dbPath)
+		if err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("inspect target: %w", err)
+		}
+		if err == nil && info.Size() > 0 && !opts.Force {
+			return nil, fmt.Errorf("bbolt database %q already exists (use --force to overwrite)", dbPath)
+		}
+		if err := os.MkdirAll(filepath.Dir(dbPath), 0700); err != nil {
+			return nil, err
+		}
+		stage, err := os.CreateTemp(filepath.Dir(dbPath), ".grom-migrate-*.db")
+		if err != nil {
+			return nil, fmt.Errorf("create staged database: %w", err)
+		}
+		targetCfg.ResolvedBBoltPath = stage.Name()
+		defer os.Remove(stage.Name())
+		if err := stage.Close(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -109,7 +122,7 @@ func Run(opts Options) (*Result, error) {
 	}
 	defer src.Close()
 
-	dst, err := openDriver(opts.To, cfg)
+	dst, err := openDriver(opts.To, targetCfg)
 	if err != nil {
 		return nil, fmt.Errorf("open target: %w", err)
 	}
@@ -124,24 +137,30 @@ func Run(opts Options) (*Result, error) {
 	}
 
 	if opts.Verify {
-		srcCount, err := countAll(src, cfg.ResolvedLocation, opts.FederationDomain)
-		if err != nil {
-			return result, fmt.Errorf("verify source count: %w", err)
-		}
-		dst2, err := openDriver(opts.To, cfg)
+		dst2, err := openDriver(opts.To, targetCfg)
 		if err != nil {
 			return result, fmt.Errorf("reopen target for verify: %w", err)
 		}
-		defer dst2.Close()
-		dstCount, err := countAll(dst2, cfg.ResolvedLocation, opts.FederationDomain)
-		if err != nil {
-			return result, fmt.Errorf("verify target count: %w", err)
+		defer func() {
+			if dst2 != nil {
+				_ = dst2.Close()
+			}
+		}()
+		if err := verifyContent(src, dst2, cfg.ResolvedLocation, opts.FederationDomain); err != nil {
+			return result, err
 		}
-		if *srcCount != *dstCount {
-			return result, fmt.Errorf("verify failed: source=%+v target=%+v", *srcCount, *dstCount)
+		err = dst2.Close()
+		dst2 = nil
+		if err != nil {
+			return result, err
 		}
 	}
 
+	if opts.To == config.StorageDriverBBolt {
+		if err := os.Rename(targetCfg.ResolvedBBoltPath, dbPath); err != nil {
+			return result, fmt.Errorf("publish migrated database: %w", err)
+		}
+	}
 	return result, nil
 }
 
@@ -630,4 +649,3 @@ func loadFileFederationInbox(location string) (
 	}
 	return authors, inbox, nil
 }
-

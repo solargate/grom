@@ -20,7 +20,7 @@ class WorkoutRecordControls extends StatelessWidget {
 
   final TrackRecordingState state;
   final PauseButtonVariant pauseVariant;
-  final VoidCallback onPlay;
+  final VoidCallback? onPlay;
   final VoidCallback onPause;
   final VoidCallback onFinish;
   final String playLabel;

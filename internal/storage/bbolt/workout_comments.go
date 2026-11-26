@@ -92,6 +92,26 @@ func (s *WorkoutCommentsStore) GetLocal(ownerNickname, workoutID string) (*worko
 }
 
 func (s *WorkoutCommentsStore) PutLocal(ownerNickname, workoutID string, comments *workouts.WorkoutComments) error {
+	return s.writeLocal(ownerNickname, workoutID, func(tx *bolt.Tx, key []byte) error {
+		return putCommentsToBucket(tx, bucketWorkoutComments, key, comments)
+	})
+}
+
+func (s *WorkoutCommentsStore) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutComments) *workouts.WorkoutComments) error {
+	return s.writeLocal(ownerNickname, workoutID, func(tx *bolt.Tx, key []byte) error {
+		current, err := getCommentsFromBucket(tx, bucketWorkoutComments, key)
+		if err != nil {
+			return err
+		}
+		next := update(current)
+		if next == current {
+			return nil
+		}
+		return putCommentsToBucket(tx, bucketWorkoutComments, key, next)
+	})
+}
+
+func (s *WorkoutCommentsStore) writeLocal(ownerNickname, workoutID string, write func(*bolt.Tx, []byte) error) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		owner, key, err := s.workouts.lookupPrimaryKey(tx, workoutID)
 		if err != nil {
@@ -105,7 +125,7 @@ func (s *WorkoutCommentsStore) PutLocal(ownerNickname, workoutID string, comment
 			return err
 		}
 		dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
-		return putCommentsToBucket(tx, bucketWorkoutComments, workoutCommentsKey(ownerNickname, dirName), comments)
+		return write(tx, workoutCommentsKey(ownerNickname, dirName))
 	})
 }
 

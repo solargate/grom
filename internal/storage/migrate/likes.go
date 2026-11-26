@@ -62,13 +62,18 @@ func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]
 		return nil
 	}
 
+	err := visitLikeActivities(src, authors, inbox, federationDomain, put)
+	return copied, err
+}
+
+func visitLikeActivities(src storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout, federationDomain string, put func(actor, objectID, activityID string) error) error {
 	entries, err := listLikeActivities(src)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	for _, e := range entries {
 		if err := put(e.ActorNickname, e.ObjectID, e.ActivityID); err != nil {
-			return copied, fmt.Errorf("write like activity: %w", err)
+			return fmt.Errorf("write like activity: %w", err)
 		}
 	}
 
@@ -93,10 +98,10 @@ func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]
 				}
 				activityID, err := src.Likes().GetLikeActivityID(viewer, objectID)
 				if err != nil {
-					return copied, fmt.Errorf("read like activity for %s: %w", objectID, err)
+					return fmt.Errorf("read like activity for %s: %w", objectID, err)
 				}
 				if err := put(viewer, objectID, activityID); err != nil {
-					return copied, fmt.Errorf("write reconstructed like activity: %w", err)
+					return fmt.Errorf("write reconstructed like activity: %w", err)
 				}
 			}
 		}
@@ -106,13 +111,13 @@ func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]
 	if federationDomain != "" {
 		usersList, err := src.Users().ListAll()
 		if err != nil {
-			return copied, err
+			return err
 		}
 		for _, actor := range usersList {
 			for _, owner := range usersList {
 				ws, err := src.Workouts().List(owner.Nickname)
 				if err != nil {
-					return copied, err
+					return err
 				}
 				for i := range ws {
 					objectID := localWorkoutObjectID(federationDomain, owner.Nickname, ws[i].ID)
@@ -121,16 +126,16 @@ func copyLikeActivities(src, dst storage.Backend, authors map[string]map[string]
 					}
 					activityID, err := src.Likes().GetLikeActivityID(actor.Nickname, objectID)
 					if err != nil {
-						return copied, fmt.Errorf("read local like activity for %s: %w", objectID, err)
+						return fmt.Errorf("read local like activity for %s: %w", objectID, err)
 					}
 					if err := put(actor.Nickname, objectID, activityID); err != nil {
-						return copied, fmt.Errorf("write reconstructed local like activity: %w", err)
+						return fmt.Errorf("write reconstructed local like activity: %w", err)
 					}
 				}
 			}
 		}
 	}
-	return copied, nil
+	return nil
 }
 
 func countLocalLikes(backend storage.Backend) (int, error) {
@@ -166,78 +171,14 @@ func countFederatedLikes(backend storage.Backend) (int, error) {
 }
 
 func countLikeActivities(backend storage.Backend, authors map[string]map[string]federation.AuthorMeta, inbox map[string]map[string][]workouts.Workout, federationDomain string) (int, error) {
-	seen := make(map[string]struct{})
-	add := func(actor, objectID string) {
-		if actor == "" || objectID == "" {
-			return
+	seen := make(map[[2]string]struct{})
+	err := visitLikeActivities(backend, authors, inbox, federationDomain, func(actor, objectID, activityID string) error {
+		if actor != "" && objectID != "" && activityID != "" {
+			seen[[2]string{actor, objectID}] = struct{}{}
 		}
-		seen[actor+"|"+objectID] = struct{}{}
-	}
-
-	entries, err := listLikeActivities(backend)
-	if err != nil {
-		return 0, err
-	}
-	for _, e := range entries {
-		add(e.ActorNickname, e.ObjectID)
-	}
-
-	for viewer, byOwner := range inbox {
-		for ownerKey, list := range byOwner {
-			handle := federation.OwnerHandleFromKey(ownerKey)
-			nickname := federation.OwnerNicknameFromKey(ownerKey)
-			if meta, ok := authors[viewer][ownerKey]; ok {
-				if meta.Handle != "" {
-					handle = meta.Handle
-				}
-				if meta.Nickname != "" {
-					nickname = meta.Nickname
-				}
-			}
-			for i := range list {
-				objectID := remoteWorkoutObjectID(handle, nickname, list[i].ID)
-				if objectID == "" {
-					continue
-				}
-				activityID, err := backend.Likes().GetLikeActivityID(viewer, objectID)
-				if err != nil {
-					return 0, err
-				}
-				if activityID != "" {
-					add(viewer, objectID)
-				}
-			}
-		}
-	}
-
-	if federationDomain != "" {
-		usersList, err := backend.Users().ListAll()
-		if err != nil {
-			return 0, err
-		}
-		for _, actor := range usersList {
-			for _, owner := range usersList {
-				ws, err := backend.Workouts().List(owner.Nickname)
-				if err != nil {
-					return 0, err
-				}
-				for i := range ws {
-					objectID := localWorkoutObjectID(federationDomain, owner.Nickname, ws[i].ID)
-					if objectID == "" {
-						continue
-					}
-					activityID, err := backend.Likes().GetLikeActivityID(actor.Nickname, objectID)
-					if err != nil {
-						return 0, err
-					}
-					if activityID != "" {
-						add(actor.Nickname, objectID)
-					}
-				}
-			}
-		}
-	}
-	return len(seen), nil
+		return nil
+	})
+	return len(seen), err
 }
 
 type federatedLikeEntry struct {

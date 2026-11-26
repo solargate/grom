@@ -1,6 +1,7 @@
 package bbolt
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	bolt "go.etcd.io/bbolt"
 
@@ -87,12 +89,46 @@ func (s *InboxStore) getWorkout(tx *bolt.Tx, viewer, ownerKey, workoutID string)
 	return &w, nil
 }
 
+func inboxOrderKey(viewer string, date time.Time, id, owner string) []byte {
+	return []byte(viewer + "/" + date.UTC().Format("2006-01-02T15:04:05.000000000Z") + "\x00" + id + "\x00" + owner)
+}
+
+func backfillInboxOrder(tx *bolt.Tx) error {
+	index := tx.Bucket(bucketFedInboxOrder)
+	return tx.Bucket(bucketFedInbox).ForEach(func(k, v []byte) error {
+		parts := strings.SplitN(string(k), "/", 3)
+		if len(parts) != 3 {
+			return fmt.Errorf("invalid inbox key")
+		}
+		var w workouts.Workout
+		if err := unmarshalJSON(v, &w); err != nil {
+			return err
+		}
+		return index.Put(inboxOrderKey(parts[0], w.StartDate, w.ID, parts[1]), k)
+	})
+}
+
 func (s *InboxStore) putWorkout(tx *bolt.Tx, viewer, ownerKey string, w *workouts.Workout) error {
+	primary := fedInboxKey(viewer, ownerKey, w.ID)
+	inbox := tx.Bucket(bucketFedInbox)
+	index := tx.Bucket(bucketFedInboxOrder)
+	if previous := inbox.Get(primary); previous != nil {
+		var old workouts.Workout
+		if err := unmarshalJSON(previous, &old); err != nil {
+			return err
+		}
+		if err := index.Delete(inboxOrderKey(viewer, old.StartDate, old.ID, ownerKey)); err != nil {
+			return err
+		}
+	}
 	raw, err := marshalJSON(w)
 	if err != nil {
 		return err
 	}
-	return tx.Bucket(bucketFedInbox).Put(fedInboxKey(viewer, ownerKey, w.ID), raw)
+	if err := index.Put(inboxOrderKey(viewer, w.StartDate, w.ID, ownerKey), primary); err != nil {
+		return err
+	}
+	return inbox.Put(primary, raw)
 }
 
 func (s *InboxStore) findOwnerKey(tx *bolt.Tx, viewer, ownerNickname string) (string, error) {
@@ -317,6 +353,9 @@ func (s *InboxStore) Delete(viewerNickname, ownerHandle, workoutID string) error
 			return err
 		}
 		if err := DeleteFederatedCadenceChartInTx(tx, viewerNickname, ownerKey, workoutID); err != nil {
+			return err
+		}
+		if err := tx.Bucket(bucketFedInboxOrder).Delete(inboxOrderKey(viewerNickname, w.StartDate, w.ID, ownerKey)); err != nil {
 			return err
 		}
 		return tx.Bucket(bucketFedInbox).Delete(fedInboxKey(viewerNickname, ownerKey, workoutID))
@@ -674,8 +713,9 @@ func (s *InboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error)
 			}
 			hasAvatar, avatarURL := federation.AuthorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
 			items = append(items, workouts.FeedWorkout{
-				Workout: workout,
-				Owner:   nickname,
+				Workout:   workout,
+				Owner:     nickname,
+				SortOwner: ownerKey,
 				Author: workouts.FeedAuthor{
 					Nickname:  nickname,
 					Name:      meta.Name,
@@ -692,7 +732,7 @@ func (s *InboxStore) List(viewerNickname string) ([]workouts.FeedWorkout, error)
 		return nil, err
 	}
 	sort.Slice(items, func(i, j int) bool {
-		return workouts.FeedNewer(items[i].StartDate, items[i].ID, items[j].StartDate, items[j].ID)
+		return workouts.FeedItemNewer(items[i], items[j])
 	})
 	return items, nil
 }
@@ -701,25 +741,63 @@ func (s *InboxStore) ListPage(viewerNickname string, cursor *workouts.Cursor, li
 	if limit <= 0 {
 		limit = workouts.DefaultPageLimit
 	}
-	all, err := s.List(viewerNickname)
-	if err != nil {
-		return nil, false, err
-	}
-	filtered := make([]workouts.FeedWorkout, 0, limit)
-	for i := range all {
-		if !workouts.AfterCursor(all[i].StartDate, all[i].ID, cursor) {
-			continue
+	items := make([]workouts.FeedWorkout, 0, limit)
+	hasMore := false
+	prefix := fedInboxViewerPrefix(viewerNickname)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket(bucketFedInboxOrder).Cursor()
+		var key, primary []byte
+		if cursor == nil {
+			key, primary = seekLastWithPrefix(c, prefix)
+		} else {
+			var owner string
+			if cursor.Owner != nil {
+				owner = *cursor.Owner
+			}
+			key, _ = c.Seek(inboxOrderKey(viewerNickname, cursor.StartDate, cursor.ID, owner))
+			if key == nil {
+				key, primary = c.Last()
+			} else {
+				key, primary = c.Prev()
+			}
 		}
-		filtered = append(filtered, all[i])
-		if len(filtered) > limit {
-			break
+
+		for ; bytes.HasPrefix(key, prefix); key, primary = c.Prev() {
+			if len(items) == limit {
+				hasMore = true
+				break
+			}
+			parts := strings.SplitN(string(primary), "/", 3)
+			ownerKey, workoutID := parts[1], parts[2]
+			workout, err := s.getWorkout(tx, viewerNickname, ownerKey, workoutID)
+			if err != nil {
+				return err
+			}
+			meta, err := s.getAuthor(tx, viewerNickname, ownerKey)
+			if err != nil {
+				return err
+			}
+			handle, nickname := meta.Handle, meta.Nickname
+			if handle == "" {
+				handle = federation.OwnerHandleFromKey(ownerKey)
+			}
+			if nickname == "" {
+				nickname = federation.OwnerNicknameFromKey(ownerKey)
+			}
+			hasAvatar, avatarURL := federation.AuthorAvatarFields(s.blobs, viewerNickname, ownerKey, handle, meta)
+			items = append(items, workouts.FeedWorkout{
+				Workout:   *workout,
+				Owner:     nickname,
+				SortOwner: ownerKey,
+				Author: workouts.FeedAuthor{
+					Nickname: nickname, Name: meta.Name, Handle: handle,
+					HasAvatar: hasAvatar, AvatarURL: avatarURL,
+				},
+			})
 		}
-	}
-	hasMore := len(filtered) > limit
-	if hasMore {
-		filtered = filtered[:limit]
-	}
-	return filtered, hasMore, nil
+		return nil
+	})
+	return items, hasMore, err
 }
 
 // PutExistingAuthor / PutExistingWorkout used by migration.

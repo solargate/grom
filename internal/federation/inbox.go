@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -254,12 +255,10 @@ func (p *InboxProcessor) handleUndoLike(targetNickname string, activity, object 
 	if workoutID == "" {
 		return nil
 	}
-	likes, err := p.likes.GetLocal(targetNickname, workoutID)
-	if err != nil {
-		return err
-	}
-	updated := workouts.RemoveWorkoutLikeUser(likes, handle)
-	if err := p.likes.PutLocal(targetNickname, workoutID, &updated); err != nil {
+	if err := p.likes.UpdateLocal(targetNickname, workoutID, func(current *workouts.WorkoutLikes) *workouts.WorkoutLikes {
+		updated := workouts.RemoveWorkoutLikeUser(current, handle)
+		return &updated
+	}); err != nil {
 		return err
 	}
 	if p.onWorkoutLike != nil {
@@ -571,18 +570,18 @@ func (p *InboxProcessor) handleLike(targetNickname string, activity map[string]a
 	if p.inboxStore != nil && actorUser.AvatarURL != "" {
 		_ = p.inboxStore.EnsureAuthor(targetNickname, handle, actorUser.Nickname, actorUser.Name, actorUser.AvatarURL, true)
 	}
-	likes, err := p.likes.GetLocal(targetNickname, workoutID)
-	if err != nil {
-		return err
-	}
-	updated := workouts.AddWorkoutLikeUser(likes, actorUser)
-	if err := p.likes.PutLocal(targetNickname, workoutID, &updated); err != nil {
+	added := false
+	if err := p.likes.UpdateLocal(targetNickname, workoutID, func(current *workouts.WorkoutLikes) *workouts.WorkoutLikes {
+		updated := workouts.AddWorkoutLikeUser(current, actorUser)
+		added = current == nil || updated.Likes > current.Likes
+		return &updated
+	}); err != nil {
 		return err
 	}
 	if p.onWorkoutLike != nil {
 		p.onWorkoutLike(targetNickname, workoutID)
 	}
-	if likes == nil || updated.Likes > likes.Likes {
+	if added {
 		if p.onWorkoutLikeNotify != nil {
 			p.onWorkoutLikeNotify(targetNickname, workoutID, actorUser)
 		}
@@ -656,28 +655,25 @@ func (p *InboxProcessor) handleCommentCreate(targetNickname string, activity, ob
 	if commentID == "" {
 		commentID = uuid.NewString()
 	}
-	comments, err := p.comments.GetLocal(targetNickname, workoutID)
-	if err != nil {
-		return err
-	}
-	updated := workouts.AddWorkoutComment(comments, workouts.WorkoutComment{
+	comment := workouts.WorkoutComment{
 		ID:       commentID,
 		User:     actorUser,
 		Datetime: dt,
 		Text:     text,
 		NoteID:   noteID,
-	})
-	if err := p.comments.PutLocal(targetNickname, workoutID, &updated); err != nil {
+	}
+	added := false
+	if err := p.comments.UpdateLocal(targetNickname, workoutID, func(current *workouts.WorkoutComments) *workouts.WorkoutComments {
+		updated := workouts.AddWorkoutComment(current, comment)
+		added = current == nil || updated.CommentsNum > current.CommentsNum
+		return &updated
+	}); err != nil {
 		return err
 	}
 	if p.onWorkoutComment != nil {
 		p.onWorkoutComment(targetNickname, workoutID)
 	}
-	beforeCount := 0
-	if comments != nil {
-		beforeCount = comments.CommentsNum
-	}
-	if updated.CommentsNum > beforeCount && p.onWorkoutCommentNotify != nil {
+	if added && p.onWorkoutCommentNotify != nil {
 		p.onWorkoutCommentNotify(targetNickname, workoutID, actorUser)
 	}
 	return nil
@@ -795,17 +791,23 @@ func (p *InboxProcessor) handleCommentDelete(viewerNickname string, activity map
 	}
 
 	// Prefer local workout comments (we are the workout owner).
-	if comments, err := p.comments.GetLocal(viewerNickname, workoutID); err == nil {
-		if workouts.FindCommentByNoteID(comments, noteID) != nil {
-			updated := workouts.RemoveWorkoutCommentByNoteID(comments, noteID)
-			if err := p.comments.PutLocal(viewerNickname, workoutID, &updated); err != nil {
-				return err
-			}
-			if p.onWorkoutComment != nil {
-				p.onWorkoutComment(viewerNickname, workoutID)
-			}
-			return nil
+	removed := false
+	err := p.comments.UpdateLocal(viewerNickname, workoutID, func(current *workouts.WorkoutComments) *workouts.WorkoutComments {
+		if workouts.FindCommentByNoteID(current, noteID) == nil {
+			return current
 		}
+		removed = true
+		updated := workouts.RemoveWorkoutCommentByNoteID(current, noteID)
+		return &updated
+	})
+	if err != nil && !errors.Is(err, workouts.ErrWorkoutNotFound) {
+		return err
+	}
+	if removed {
+		if p.onWorkoutComment != nil {
+			p.onWorkoutComment(viewerNickname, workoutID)
+		}
+		return nil
 	}
 
 	// Federated cache (viewer had commented / received Update snapshot).

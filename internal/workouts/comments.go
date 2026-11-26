@@ -9,11 +9,11 @@ import (
 const MaxCommentTextLength = 1000
 
 type WorkoutComment struct {
-	ID       string           `yaml:"id" json:"id"`
-	User     WorkoutLikeUser  `yaml:"user" json:"user"`
-	Datetime time.Time        `yaml:"datetime" json:"datetime"`
-	Text     string           `yaml:"text" json:"text"`
-	NoteID   string           `yaml:"note_id,omitempty" json:"note_id,omitempty"`
+	ID       string          `yaml:"id" json:"id"`
+	User     WorkoutLikeUser `yaml:"user" json:"user"`
+	Datetime time.Time       `yaml:"datetime" json:"datetime"`
+	Text     string          `yaml:"text" json:"text"`
+	NoteID   string          `yaml:"note_id,omitempty" json:"note_id,omitempty"`
 }
 
 type WorkoutComments struct {
@@ -23,6 +23,9 @@ type WorkoutComments struct {
 
 type CommentsRepository interface {
 	GetLocal(ownerNickname, workoutID string) (*WorkoutComments, error)
+	// UpdateLocal applies update to the latest snapshot under a write lock.
+	// Return the supplied snapshot to leave it in place.
+	UpdateLocal(ownerNickname, workoutID string, update func(*WorkoutComments) *WorkoutComments) error
 	PutLocal(ownerNickname, workoutID string, comments *WorkoutComments) error
 	DeleteLocal(ownerNickname, workoutID string) error
 

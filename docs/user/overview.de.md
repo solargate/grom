@@ -40,6 +40,8 @@ Sie können Workouts manuell anlegen, GPX/FIT-Tracks importieren, Fotos anhänge
 
 ![Workout-Aufzeichnung auf Android](../screenshots/workout-record.jpg)
 
+Nach dem Beenden der Aufzeichnung bleibt der Track auf dem Gerät, bis Sie das Workout speichern oder den Track entfernen. Öffnen Sie **Workout hinzufügen** erneut, um den Track nach einem Neustart wiederherzustellen oder das Speichern nach einem Fehler zu wiederholen.
+
 ## Ausrüstung
 
 Verwalten Sie Fahrräder, Schuhe und anderes Gear. Einträge sind nach Kategorie gruppiert; Distanzsummen wachsen, wenn Sie Gear in Workouts nutzen (auch nach Strava-Massenimport).

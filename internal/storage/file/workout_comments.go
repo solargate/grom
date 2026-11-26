@@ -54,15 +54,39 @@ func (s *WorkoutCommentsStore) GetLocal(ownerNickname, workoutID string) (*worko
 }
 
 func (s *WorkoutCommentsStore) PutLocal(ownerNickname, workoutID string, comments *workouts.WorkoutComments) error {
+	return s.writeLocal(ownerNickname, workoutID, func(path string) error {
+		return writeCommentsYAML(path, comments)
+	})
+}
+
+func (s *WorkoutCommentsStore) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutComments) *workouts.WorkoutComments) error {
+	return s.writeLocal(ownerNickname, workoutID, func(path string) error {
+		current, err := readCommentsYAML(path)
+		if err != nil {
+			return err
+		}
+		next := update(current)
+		if next == current {
+			return nil
+		}
+		return writeCommentsYAML(path, next)
+	})
+}
+
+func (s *WorkoutCommentsStore) writeLocal(ownerNickname, workoutID string, write func(string) error) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	store := NewWorkoutsStore(s.dataDir)
 	dir, err := store.findWorkoutDir(ownerNickname, workoutID)
 	if err != nil {
 		return err
 	}
-	return writeCommentsYAML(filepath.Join(dir, commentsFileName), comments)
+	return write(filepath.Join(dir, commentsFileName))
 }
 
 func (s *WorkoutCommentsStore) DeleteLocal(ownerNickname, workoutID string) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	store := NewWorkoutsStore(s.dataDir)
 	dir, err := store.findWorkoutDir(ownerNickname, workoutID)
 	if err != nil {

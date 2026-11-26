@@ -17,6 +17,9 @@ type WorkoutLikes struct {
 
 type LikesRepository interface {
 	GetLocal(ownerNickname, workoutID string) (*WorkoutLikes, error)
+	// UpdateLocal applies update to the latest snapshot under a write lock.
+	// Return the supplied snapshot to leave it in place.
+	UpdateLocal(ownerNickname, workoutID string, update func(*WorkoutLikes) *WorkoutLikes) error
 	PutLocal(ownerNickname, workoutID string, likes *WorkoutLikes) error
 	DeleteLocal(ownerNickname, workoutID string) error
 

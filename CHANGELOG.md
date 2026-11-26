@@ -9,8 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Finished GPS tracks can be recovered after a restart or a failed save.
+- Opening a GPX or FIT file from another app keeps Grom responsive.
+
 ### Fixed
 
+- **Server:** Preserve concurrent likes and comments and prevent duplicate or partial workouts during import.
+- **Server:** Recover interrupted Strava import jobs and isolate cleanup between consecutive uploads.
+- **Server:** Show all workouts in paginated feeds when timestamps or federated workout IDs overlap.
+- **Server:** Verify migrated record contents and keep the previous bbolt database in place until migration succeeds.
+- **UI:** Time out stalled server requests and file uploads.
+- **Android:** Keep finished GPS tracks on the device until the workout is saved or the track is removed.
+- **Android:** Read shared Open with tracks in the background and enforce the workout track size limit.
 - **Docs:** Fix missing screenshots on the Russian and German documentation homepages.
 
 ## [0.18.1] - 2026-10-28

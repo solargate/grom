@@ -12,7 +12,7 @@ VENV_STAMP := $(PYTHON_VENV)/.installed
 
 all: grom
 
-grom: apidoc web cli
+grom: apidoc web
 	cd cmd/grom && go build -ldflags "$(LDFLAGS)" -o grom
 
 cli:

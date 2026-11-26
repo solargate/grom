@@ -92,6 +92,26 @@ func (s *WorkoutLikesStore) GetLocal(ownerNickname, workoutID string) (*workouts
 }
 
 func (s *WorkoutLikesStore) PutLocal(ownerNickname, workoutID string, likes *workouts.WorkoutLikes) error {
+	return s.writeLocal(ownerNickname, workoutID, func(tx *bolt.Tx, key []byte) error {
+		return putLikesToBucket(tx, bucketWorkoutLikes, key, likes)
+	})
+}
+
+func (s *WorkoutLikesStore) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutLikes) *workouts.WorkoutLikes) error {
+	return s.writeLocal(ownerNickname, workoutID, func(tx *bolt.Tx, key []byte) error {
+		current, err := getLikesFromBucket(tx, bucketWorkoutLikes, key)
+		if err != nil {
+			return err
+		}
+		next := update(current)
+		if next == current {
+			return nil
+		}
+		return putLikesToBucket(tx, bucketWorkoutLikes, key, next)
+	})
+}
+
+func (s *WorkoutLikesStore) writeLocal(ownerNickname, workoutID string, write func(*bolt.Tx, []byte) error) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		owner, key, err := s.workouts.lookupPrimaryKey(tx, workoutID)
 		if err != nil {
@@ -105,7 +125,7 @@ func (s *WorkoutLikesStore) PutLocal(ownerNickname, workoutID string, likes *wor
 			return err
 		}
 		dirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
-		return putLikesToBucket(tx, bucketWorkoutLikes, workoutLikesKey(ownerNickname, dirName), likes)
+		return write(tx, workoutLikesKey(ownerNickname, dirName))
 	})
 }
 

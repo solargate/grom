@@ -26,14 +26,14 @@ const (
 )
 
 type JobStatus struct {
-	Active          bool         `json:"active"`
-	Phase           string       `json:"phase"`
-	UploadProgress  float64      `json:"upload_progress"`
-	ImportProgress  float64      `json:"import_progress"`
-	ImportCurrent   int          `json:"import_current"`
-	ImportTotal     int          `json:"import_total"`
-	Message         string       `json:"message,omitempty"`
-	Result          *ImportResult `json:"result,omitempty"`
+	Active         bool          `json:"active"`
+	Phase          string        `json:"phase"`
+	UploadProgress float64       `json:"upload_progress"`
+	ImportProgress float64       `json:"import_progress"`
+	ImportCurrent  int           `json:"import_current"`
+	ImportTotal    int           `json:"import_total"`
+	Message        string        `json:"message,omitempty"`
+	Result         *ImportResult `json:"result,omitempty"`
 }
 
 type JobManager struct {
@@ -86,7 +86,7 @@ func (m *JobManager) BeginUpload(userID, nickname string) (*userJob, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if existing, ok := m.jobs[userID]; ok && existing.Status.Active {
+	if _, ok := m.jobs[userID]; ok {
 		return nil, fmt.Errorf("import already in progress")
 	}
 
@@ -147,6 +147,8 @@ func (m *JobManager) SaveArchive(job *userJob, reader io.Reader, expectedSize in
 		return 0, err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	job.Status.UploadProgress = 1
 	job.Status.Phase = PhaseExtracting
 	m.persist(job)
@@ -155,11 +157,13 @@ func (m *JobManager) SaveArchive(job *userJob, reader io.Reader, expectedSize in
 
 func (m *JobManager) StartImport(userID string) {
 	m.mu.Lock()
-	job, ok := m.jobs[userID]
-	m.mu.Unlock()
-	if !ok {
+	defer m.mu.Unlock()
+	job := m.jobs[userID]
+	if job == nil || job.Status.Phase != PhaseExtracting {
 		return
 	}
+	job.Status.Phase = PhaseImporting
+	m.persist(job)
 
 	go m.runImport(job)
 }
@@ -173,14 +177,11 @@ func (m *JobManager) runImport(job *userJob) {
 		m.fail(job, fmt.Sprintf("open archive failed: %v", err))
 		return
 	}
-	defer archive.Close()
-
-	job.Status.Phase = PhaseImporting
-	job.Status.ImportProgress = 0
-	m.persist(job)
 
 	importer := NewImporter(m.workoutStore, m.equipmentStore, archive, m.onPublish, m.onImported, m.onComplete)
 	result, err := importer.ImportAll(job.UserID, job.Nickname, func(current, total int) {
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		job.Status.ImportCurrent = current
 		job.Status.ImportTotal = total
 		if total > 0 {
@@ -188,16 +189,12 @@ func (m *JobManager) runImport(job *userJob) {
 		}
 		m.persist(job)
 	})
+	_ = archive.Close()
 	if err != nil {
 		m.fail(job, fmt.Sprintf("import failed: %v", err))
 		return
 	}
 
-	job.Status.Active = false
-	job.Status.Phase = PhaseCompleted
-	job.Status.ImportProgress = 1
-	job.Status.Result = &result
-	m.persist(job)
 	if m.equipmentDistance != nil {
 		m.equipmentDistance.ScheduleRecalculateAll(job.Nickname)
 	}
@@ -217,29 +214,34 @@ func (m *JobManager) runImport(job *userJob) {
 			"parse_skipped", result.ParseSkipped,
 		)
 	}
-	m.cleanup(job)
-	m.remove(job.UserID)
+	m.finish(job, PhaseCompleted, "", &result)
+}
+
+func (m *JobManager) CancelUpload(job *userJob) {
+	m.fail(job, "archive upload failed")
 }
 
 func (m *JobManager) fail(job *userJob, message string) {
 	slog.Error("strava import failed", "user", job.Nickname, "job_id", job.JobID, "err", message)
-	job.Status.Active = false
-	job.Status.Phase = PhaseFailed
-	job.Status.Message = message
-	m.persist(job)
-	m.cleanup(job)
-	m.remove(job.UserID)
+	m.finish(job, PhaseFailed, message, nil)
 }
 
-func (m *JobManager) cleanup(job *userJob) {
-	userDir := filepath.Join(m.tempDir, job.Nickname)
-	_ = os.RemoveAll(userDir)
-}
+func (m *JobManager) finish(job *userJob, phase, message string, result *ImportResult) {
+	if err := os.RemoveAll(job.WorkDir); err != nil {
+		slog.Warn("strava import cleanup failed", "job_id", job.JobID, "err", err)
+	}
 
-func (m *JobManager) remove(userID string) {
 	m.mu.Lock()
-	delete(m.jobs, userID)
-	m.mu.Unlock()
+	defer m.mu.Unlock()
+	job.Status.Active = false
+	job.Status.Phase = phase
+	job.Status.Message = message
+	job.Status.Result = result
+	if phase == PhaseCompleted {
+		job.Status.ImportProgress = 1
+	}
+	m.persist(job)
+	delete(m.jobs, job.UserID)
 }
 
 func (m *JobManager) Status(userID string) JobStatus {
@@ -259,6 +261,11 @@ func (m *JobManager) Status(userID string) JobStatus {
 	var status JobStatus
 	if err := json.Unmarshal(data, &status); err != nil {
 		return JobStatus{Active: false, Phase: PhaseIdle}
+	}
+	if status.Active {
+		status.Active = false
+		status.Phase = PhaseFailed
+		status.Message = "import interrupted by server restart"
 	}
 	if status.Phase == PhaseCompleted || status.Phase == PhaseFailed {
 		_ = os.Remove(path)

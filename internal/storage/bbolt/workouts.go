@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,7 +55,40 @@ func externalIDIndexKey(nickname string, ext *workouts.ExternalID) (string, bool
 	if name == "" || id == "" {
 		return "", false
 	}
-	return nickname + "/" + name + "/" + id, true
+	return nickname + "/" + strconv.Itoa(len(name)) + ":" + name + strconv.Itoa(len(id)) + ":" + id + "/", true
+}
+
+func hasExternalID(tx *bolt.Tx, nickname string, ext *workouts.ExternalID) bool {
+	prefix, ok := externalIDIndexKey(nickname, ext)
+	if !ok {
+		return false
+	}
+	key, _ := tx.Bucket(bucketIdxWorkoutsExternal).Cursor().Seek([]byte(prefix))
+	return bytes.HasPrefix(key, []byte(prefix))
+}
+
+func rebuildExternalIDIndex(tx *bolt.Tx) error {
+	if err := tx.DeleteBucket(bucketIdxWorkoutsExternal); err != nil {
+		return err
+	}
+	index, err := tx.CreateBucket(bucketIdxWorkoutsExternal)
+	if err != nil {
+		return err
+	}
+	return tx.Bucket(bucketWorkouts).ForEach(func(key, value []byte) error {
+		owner, _, ok := strings.Cut(string(key), "/")
+		if !ok {
+			return fmt.Errorf("invalid workout key")
+		}
+		var workout workouts.Workout
+		if err := unmarshalJSON(value, &workout); err != nil {
+			return err
+		}
+		if prefix, ok := externalIDIndexKey(owner, workout.ExternalID); ok {
+			return index.Put([]byte(prefix+workout.ID), []byte{})
+		}
+		return nil
+	})
 }
 
 func (s *WorkoutsStore) getByPrimaryKey(tx *bolt.Tx, primaryKey string) (*workouts.Workout, error) {
@@ -98,7 +132,8 @@ func (s *WorkoutsStore) putWorkout(tx *bolt.Tx, nickname string, w *workouts.Wor
 		return err
 	}
 	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
-		if err := tx.Bucket(bucketIdxWorkoutsExternal).Put([]byte(key), []byte(w.ID)); err != nil {
+		index := tx.Bucket(bucketIdxWorkoutsExternal)
+		if err := index.Put([]byte(key+w.ID), []byte{}); err != nil {
 			return err
 		}
 	}
@@ -120,7 +155,7 @@ func (s *WorkoutsStore) deleteWorkoutMeta(tx *bolt.Tx, nickname string, w *worko
 	_ = tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey))
 	_ = tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID))
 	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
-		_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(key))
+		_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(key + w.ID))
 	}
 	return nil
 }
@@ -161,11 +196,15 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
 	workout.Device = workouts.NormalizeDevice(workout.Device)
 
-	if err := os.MkdirAll(data.UserDir(s.dataDir, nickname), 0700); err != nil {
-		return nil, fmt.Errorf("create user dir: %w", err)
+	if err := os.MkdirAll(filepath.Join(data.UserDir(s.dataDir, nickname), "workouts"), 0700); err != nil {
+		return nil, fmt.Errorf("create workouts dir: %w", err)
 	}
 
+	var dir string
 	err := s.db.Update(func(tx *bolt.Tx) error {
+		if hasExternalID(tx, nickname, workout.ExternalID) {
+			return workouts.ErrExternalIDExists
+		}
 		id, err := s.allocateWorkoutID(tx)
 		if err != nil {
 			return err
@@ -175,14 +214,24 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 		if tx.Bucket(bucketWorkouts).Get([]byte(primaryKey)) != nil {
 			return workouts.ErrWorkoutExists
 		}
-		return s.putWorkout(tx, nickname, workout)
+		if err := s.putWorkout(tx, nickname, workout); err != nil {
+			return err
+		}
+		path := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
+		if err := os.Mkdir(path, 0700); err != nil {
+			if os.IsExist(err) {
+				return workouts.ErrWorkoutExists
+			}
+			return fmt.Errorf("create workout dir: %w", err)
+		}
+		dir = path
+		return nil
 	})
 	if err != nil {
+		if dir != "" {
+			_ = os.Remove(dir)
+		}
 		return nil, err
-	}
-	dir := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return nil, fmt.Errorf("create workout dir: %w", err)
 	}
 	result := *workout
 	return &result, nil
@@ -214,7 +263,13 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 	if _, err := os.Stat(dirPath); err == nil {
 		return nil, "", nil, workouts.ErrWorkoutExists
 	}
-	if err := os.MkdirAll(dirPath, 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dirPath), 0700); err != nil {
+		return nil, "", nil, fmt.Errorf("create workouts dir: %w", err)
+	}
+	if err := os.Mkdir(dirPath, 0700); err != nil {
+		if os.IsExist(err) {
+			return nil, "", nil, workouts.ErrWorkoutExists
+		}
 		return nil, "", nil, fmt.Errorf("create workout dir: %w", err)
 	}
 
@@ -239,6 +294,8 @@ func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout
 			if key != want {
 				return workouts.ErrWorkoutExists
 			}
+		} else if hasExternalID(tx, nickname, workout.ExternalID) {
+			return workouts.ErrExternalIDExists
 		}
 		return s.putWorkout(tx, nickname, workout)
 	})
@@ -264,6 +321,11 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 			return err
 		}
 
+		oldExternal, _ := externalIDIndexKey(nickname, old.ExternalID)
+		newExternal, _ := externalIDIndexKey(nickname, workout.ExternalID)
+		if oldExternal != newExternal && hasExternalID(tx, nickname, workout.ExternalID) {
+			return workouts.ErrExternalIDExists
+		}
 		newKey := workoutPrimaryKey(nickname, workout.StartDate, workout.ID)
 		if oldKey != newKey {
 			if tx.Bucket(bucketWorkouts).Get([]byte(newKey)) != nil {
@@ -291,7 +353,7 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 		} else if oldKey, ok := externalIDIndexKey(nickname, old.ExternalID); ok {
 			newKey, newOK := externalIDIndexKey(nickname, workout.ExternalID)
 			if !newOK || oldKey != newKey {
-				_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(oldKey))
+				_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(oldKey + workout.ID))
 			}
 		}
 		return s.putWorkout(tx, nickname, workout)
@@ -361,7 +423,7 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 	prefix := []byte(nickname + "/")
 	var cursorKey string
 	if cursor != nil {
-		cursorKey = workoutPrimaryKey(nickname, cursor.StartDate, cursor.ID)
+		cursorKey = workoutPrimaryKey(nickname, cursor.StartDate, "") + "\xff"
 	}
 
 	result := make([]workouts.Workout, 0, limit)
@@ -372,9 +434,7 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 		var k, v []byte
 		if cursorKey != "" {
 			k, v = c.Seek([]byte(cursorKey))
-			if k != nil && string(k) == cursorKey {
-				k, v = c.Prev()
-			} else if k == nil {
+			if k == nil {
 				k, v = c.Last()
 			} else {
 				k, v = c.Prev()
@@ -386,26 +446,25 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 			}
 		}
 
-		for k != nil && strings.HasPrefix(string(k), string(prefix)) {
+		var group []workouts.Workout
+		var currentSecond time.Time
+		for ; k != nil && bytes.HasPrefix(k, prefix); k, v = c.Prev() {
 			var w workouts.Workout
 			if err := unmarshalJSON(v, &w); err != nil {
 				return err
 			}
-			if cursor != nil && !workouts.AfterCursor(w.StartDate, w.ID, cursor) {
-				k, v = c.Prev()
-				continue
+			second := w.StartDate.Truncate(time.Second)
+			if !second.Equal(currentSecond) {
+				if workouts.AppendPageSecond(&result, group, cursor, limit, sportTypes) {
+					hasMore = true
+					return nil
+				}
+				group = group[:0]
+				currentSecond = second
 			}
-			if !workouts.MatchSportType(w.SportType, sportTypes) {
-				k, v = c.Prev()
-				continue
-			}
-			if len(result) >= limit {
-				hasMore = true
-				break
-			}
-			result = append(result, w)
-			k, v = c.Prev()
+			group = append(group, w)
 		}
+		hasMore = workouts.AppendPageSecond(&result, group, cursor, limit, sportTypes)
 		return nil
 	})
 	return result, hasMore, err
@@ -501,13 +560,9 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 }
 
 func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
-	key, ok := externalIDIndexKey(nickname, &workouts.ExternalID{Name: name, ID: id})
-	if !ok {
-		return false, nil
-	}
 	var found bool
 	err := s.db.View(func(tx *bolt.Tx) error {
-		found = tx.Bucket(bucketIdxWorkoutsExternal).Get([]byte(key)) != nil
+		found = hasExternalID(tx, nickname, &workouts.ExternalID{Name: name, ID: id})
 		return nil
 	})
 	return found, err
@@ -516,6 +571,15 @@ func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
 // PutExisting writes workout metadata without allocating a new ID (migration).
 func (s *WorkoutsStore) PutExisting(nickname string, workout *workouts.Workout) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
+		if s.workoutIDExists(tx, workout.ID) {
+			owner, key, err := s.lookupPrimaryKey(tx, workout.ID)
+			if err != nil {
+				return err
+			}
+			if owner != nickname || key != workoutPrimaryKey(nickname, workout.StartDate, workout.ID) {
+				return workouts.ErrWorkoutExists
+			}
+		}
 		return s.putWorkout(tx, nickname, workout)
 	})
 }

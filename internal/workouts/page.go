@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -16,6 +17,7 @@ const (
 type Cursor struct {
 	StartDate time.Time `json:"t"`
 	ID        string    `json:"id"`
+	Owner     *string   `json:"owner,omitempty"`
 }
 
 // Page is a cursor-paginated list of feed workouts.
@@ -44,8 +46,9 @@ func CursorFromWorkout(w Workout) Cursor {
 // Encode serializes the cursor as a URL-safe opaque token.
 func (c Cursor) Encode() string {
 	payload, err := json.Marshal(cursorJSON{
-		T:  c.StartDate.UTC().Format(time.RFC3339Nano),
-		ID: c.ID,
+		T:     c.StartDate.UTC().Format(time.RFC3339Nano),
+		ID:    c.ID,
+		Owner: c.Owner,
 	})
 	if err != nil {
 		return ""
@@ -76,12 +79,13 @@ func DecodeCursor(raw string) (*Cursor, error) {
 			return nil, fmt.Errorf("invalid cursor time")
 		}
 	}
-	return &Cursor{StartDate: t.UTC(), ID: payload.ID}, nil
+	return &Cursor{StartDate: t.UTC(), ID: payload.ID, Owner: payload.Owner}, nil
 }
 
 type cursorJSON struct {
-	T  string `json:"t"`
-	ID string `json:"id"`
+	T     string  `json:"t"`
+	ID    string  `json:"id"`
+	Owner *string `json:"owner,omitempty"`
 }
 
 // FeedNewer reports whether a should appear before b in the feed
@@ -98,8 +102,40 @@ func FeedNewer(aStart time.Time, aID string, bStart time.Time, bID string) bool 
 // AfterCursor reports whether the workout is strictly older than the cursor
 // in feed order (i.e. should appear on a later page).
 func AfterCursor(start time.Time, id string, cursor *Cursor) bool {
+	return AfterFeedCursor(start, id, "", cursor)
+}
+
+func AfterFeedCursor(start time.Time, id, owner string, cursor *Cursor) bool {
 	if cursor == nil {
 		return true
 	}
+	if cursor.Owner != nil && start.Equal(cursor.StartDate) && id == cursor.ID {
+		return owner < *cursor.Owner
+	}
 	return FeedNewer(cursor.StartDate, cursor.ID, start, id)
+}
+
+func FeedItemNewer(a, b FeedWorkout) bool {
+	if a.StartDate.Equal(b.StartDate) && a.ID == b.ID {
+		return a.SortOwner > b.SortOwner
+	}
+	return FeedNewer(a.StartDate, a.ID, b.StartDate, b.ID)
+}
+
+// AppendPageSecond orders one second of workouts using the full stored timestamp.
+// The caller supplies seconds in newest-first order and stops when it returns true.
+func AppendPageSecond(result *[]Workout, group []Workout, cursor *Cursor, limit int, sportTypes map[string]struct{}) bool {
+	sort.Slice(group, func(i, j int) bool {
+		return FeedNewer(group[i].StartDate, group[i].ID, group[j].StartDate, group[j].ID)
+	})
+	for _, workout := range group {
+		if !AfterCursor(workout.StartDate, workout.ID, cursor) || !MatchSportType(workout.SportType, sportTypes) {
+			continue
+		}
+		if len(*result) == limit {
+			return true
+		}
+		*result = append(*result, workout)
+	}
+	return false
 }

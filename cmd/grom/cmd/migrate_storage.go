@@ -80,7 +80,7 @@ func init() {
 	migrateStorageCmd.Flags().StringVar(&migrateFrom, "from", "", "Source driver: file | bbolt")
 	migrateStorageCmd.Flags().StringVar(&migrateTo, "to", "", "Target driver: file | bbolt")
 	migrateStorageCmd.Flags().BoolVar(&migrateDryRun, "dry-run", false, "Count source records without writing")
-	migrateStorageCmd.Flags().BoolVar(&migrateVerify, "verify", false, "Compare source and target counts after migration")
+	migrateStorageCmd.Flags().BoolVar(&migrateVerify, "verify", false, "Compare source and target records after migration")
 	migrateStorageCmd.Flags().BoolVar(&migrateForce, "force", false, "Overwrite existing bbolt database when targeting bbolt")
 	_ = migrateStorageCmd.MarkFlagRequired("from")
 	_ = migrateStorageCmd.MarkFlagRequired("to")

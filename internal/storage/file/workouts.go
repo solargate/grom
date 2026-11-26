@@ -2,12 +2,14 @@ package file
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/solargate/grom/internal/data"
@@ -21,6 +23,9 @@ const (
 	workoutIDLength   = workouts.WorkoutIDLength
 	workoutIDAlphabet = "0123456789"
 )
+
+// Serialize metadata commits across stores opened on the same filesystem.
+var workoutCommitMu sync.Mutex
 
 type WorkoutsStore struct {
 	dataDir string
@@ -55,6 +60,11 @@ func workoutFilePath(userDir string, startDate time.Time, id string) string {
 }
 
 func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*workouts.Workout, error) {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
+	if err := s.checkExternalID(nickname, workout); err != nil {
+		return nil, err
+	}
 	userDir := s.userDir(nickname)
 	if err := os.MkdirAll(userDir, 0700); err != nil {
 		return nil, fmt.Errorf("create user dir: %w", err)
@@ -98,7 +108,10 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 	if _, err := os.Stat(workoutDirPath); err == nil {
 		return nil, "", nil, workouts.ErrWorkoutExists
 	}
-	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
+	if err := os.Mkdir(workoutDirPath, 0700); err != nil {
+		if os.IsExist(err) {
+			return nil, "", nil, workouts.ErrWorkoutExists
+		}
 		return nil, "", nil, fmt.Errorf("create workout dir: %w", err)
 	}
 
@@ -112,12 +125,21 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 }
 
 func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	userDir := s.userDir(nickname)
 	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if err := s.checkExternalID(nickname, workout); err != nil {
+			return err
+		}
+	}
 	return writeWorkoutYAML(filePath, workout)
 }
 
 func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*workouts.Workout, error) {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	if workout == nil || workout.ID == "" {
 		return nil, workouts.ErrInvalidWorkout
 	}
@@ -198,12 +220,16 @@ func (s *WorkoutsStore) saveNewWorkout(nickname string, workout *workouts.Workou
 		return nil, workouts.ErrWorkoutExists
 	}
 
-	if err := os.MkdirAll(workoutDirPath, 0700); err != nil {
+	if err := os.Mkdir(workoutDirPath, 0700); err != nil {
+		if os.IsExist(err) {
+			return nil, workouts.ErrWorkoutExists
+		}
 		return nil, fmt.Errorf("create workout dir: %w", err)
 	}
 
 	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
 	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		_ = os.RemoveAll(workoutDirPath)
 		return nil, err
 	}
 
@@ -270,6 +296,9 @@ func (s *WorkoutsStore) listAll(nickname string) ([]workouts.Workout, error) {
 			continue
 		}
 		workout, err := readWorkoutFromDir(filepath.Join(wd, entry.Name()))
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			continue
+		}
 		if err != nil {
 			return nil, fmt.Errorf("read workout %q: %w", entry.Name(), err)
 		}
@@ -308,31 +337,34 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 
 	var cursorKey string
 	if cursor != nil {
-		cursorKey = keys.WorkoutDirName(cursor.StartDate, cursor.ID)
+		cursorKey = keys.WorkoutDirName(cursor.StartDate, "") + "\xff"
 	}
 
 	result := make([]workouts.Workout, 0, limit)
-	hasMore := false
+	var group []workouts.Workout
+	var currentSecond time.Time
 	for _, dirName := range dirNames {
 		if cursorKey != "" && dirName >= cursorKey {
 			continue
 		}
 		workout, err := readWorkoutFromDir(filepath.Join(wd, dirName))
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			continue
+		}
 		if err != nil {
 			return nil, false, fmt.Errorf("read workout %q: %w", dirName, err)
 		}
-		if cursor != nil && !workouts.AfterCursor(workout.StartDate, workout.ID, cursor) {
-			continue
+		second := workout.StartDate.Truncate(time.Second)
+		if !second.Equal(currentSecond) {
+			if workouts.AppendPageSecond(&result, group, cursor, limit, sportTypes) {
+				return result, true, nil
+			}
+			group = group[:0]
+			currentSecond = second
 		}
-		if !workouts.MatchSportType(workout.SportType, sportTypes) {
-			continue
-		}
-		if len(result) >= limit {
-			hasMore = true
-			break
-		}
-		result = append(result, *workout)
+		group = append(group, *workout)
 	}
+	hasMore := workouts.AppendPageSecond(&result, group, cursor, limit, sportTypes)
 	return result, hasMore, nil
 }
 
@@ -387,6 +419,8 @@ func (s *WorkoutsStore) RemoveEquipmentFromAll(nickname, equipmentID string) err
 }
 
 func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
 	dir, err := s.findWorkoutDir(nickname, workoutID)
 	if err != nil {
 		return err
@@ -419,6 +453,17 @@ func (s *WorkoutsStore) findWorkoutDir(nickname, workoutID string) (string, erro
 	return "", workouts.ErrWorkoutNotFound
 }
 
+func (s *WorkoutsStore) checkExternalID(nickname string, workout *workouts.Workout) error {
+	if workout.ExternalID == nil {
+		return nil
+	}
+	found, err := s.HasExternalID(nickname, workout.ExternalID.Name, workout.ExternalID.ID)
+	if found {
+		return workouts.ErrExternalIDExists
+	}
+	return err
+}
+
 func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
 	name = strings.TrimSpace(name)
 	id = strings.TrimSpace(id)
@@ -440,8 +485,11 @@ func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {
 			continue
 		}
 		workout, err := readWorkoutFromDir(filepath.Join(wd, entry.Name()))
-		if err != nil {
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
 			continue
+		}
+		if err != nil {
+			return false, err
 		}
 		if workout.ExternalID == nil {
 			continue

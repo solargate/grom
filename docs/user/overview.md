@@ -40,6 +40,8 @@ Open **Add workout → Record** to track a route on the map with live duration, 
 
 ![Recording a workout on Android](../screenshots/workout-record.jpg)
 
+After you finish recording, Grom keeps the track on the device until the workout is saved or you remove the track. Reopen **Add workout** to recover it after restarting the app or to retry after a failed save.
+
 ## Equipment
 
 Manage bikes, shoes, and other gear. Items are grouped by category; distance totals accumulate as you use gear on workouts (including after Strava bulk import).

@@ -21,10 +21,22 @@ type TrackInput struct {
 }
 
 func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
-	if track == nil {
+	return svc.CreateWithAttachments(nickname, workout, track, nil)
+}
+
+func (svc *Service) CreateWithAttachments(nickname string, workout *Workout, track *TrackInput, photos []MediaFileInput) (*Workout, error) {
+	return svc.createWithAttachments(nickname, workout, track, photos, false)
+}
+
+// ImportWithAttachments preserves the activity summary supplied by the importer.
+func (svc *Service) ImportWithAttachments(nickname string, workout *Workout, track *TrackInput, photos []MediaFileInput) (*Workout, error) {
+	return svc.createWithAttachments(nickname, workout, track, photos, true)
+}
+
+func (svc *Service) createWithAttachments(nickname string, workout *Workout, track *TrackInput, photos []MediaFileInput, preserveSummary bool) (*Workout, error) {
+	if track == nil && len(photos) == 0 {
 		return svc.Create(nickname, workout)
 	}
-
 	if err := validateWorkout(workout); err != nil {
 		return nil, err
 	}
@@ -32,30 +44,26 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 		return nil, err
 	}
 
-	trackName, parsed, err := prepareTrackInput(track)
-	if err != nil {
-		return nil, err
+	var parsed *tracks.Data
+	workout.Device = NormalizeDevice(workout.Device)
+	if track != nil {
+		trackName, data, err := prepareTrackInput(track)
+		if err != nil {
+			return nil, err
+		}
+		parsed = data
+		workout.Track = trackName
+		if device := deviceForTrack(trackName, parsed); device != DeviceGrom {
+			workout.Device = device
+		}
+		if preserveSummary {
+			MergeTrackStats(workout, parsed, MergeModeTrackAttach)
+		} else {
+			parsed.ApplyToWorkout(&workout.StartDate, &workout.DurationSeconds, &workout.Distance)
+			parsed.ApplyDurationTotal(&workout.DurationTotalSeconds)
+			MergeTrackStats(workout, parsed, MergeModeTrackCreate)
+		}
 	}
-
-	startDate := workout.StartDate
-	durationSeconds := workout.DurationSeconds
-	durationTotalSeconds := workout.DurationTotalSeconds
-	distanceMeters := workout.Distance
-	parsed.ApplyToWorkout(&startDate, &durationSeconds, &distanceMeters)
-	parsed.ApplyDurationTotal(&durationTotalSeconds)
-
-	workout.StartDate = startDate
-	workout.DurationSeconds = durationSeconds
-	workout.DurationTotalSeconds = durationTotalSeconds
-	workout.Distance = distanceMeters
-	workout.Track = trackName
-	if trackDevice := deviceForTrack(trackName, parsed); trackDevice != DeviceGrom {
-		workout.Device = trackDevice
-	} else {
-		workout.Device = NormalizeDevice(workout.Device)
-	}
-
-	MergeTrackStats(workout, parsed, MergeModeTrackCreate)
 
 	if err := validateWorkout(workout); err != nil {
 		return nil, err
@@ -66,18 +74,47 @@ func (svc *Service) CreateWithTrack(nickname string, workout *Workout, track *Tr
 		return nil, err
 	}
 
-	if err := svc.writeTrackArtifacts(nickname, dirName, track.Data, parsed, workout); err != nil {
-		cleanup()
-		return nil, err
-	}
+	committed := false
+	defer func() {
+		if !committed {
+			if track != nil {
+				svc.deleteStagedCharts(nickname, dirName)
+			}
+			cleanup()
+		}
+	}()
 
-	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
-		cleanup()
+	if track != nil {
+		if err := svc.writeTrackArtifacts(nickname, dirName, track.Data, parsed, workout); err != nil {
+			return nil, err
+		}
+	}
+	saved, err := svc.saveWorkoutMedia(nickname, dirName, photos)
+	if err != nil {
 		return nil, err
 	}
+	workout.MediaFiles = saved
+	workout.HasMedia = len(saved) > 0
+	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
+		return nil, err
+	}
+	committed = true
 
 	result := *workout
 	return &result, nil
+}
+
+func (svc *Service) deleteStagedCharts(nickname, dirName string) {
+	ctx := context.Background()
+	for _, store := range []interface {
+		DeleteLocal(context.Context, string, string) error
+	}{svc.speedCharts, svc.heartRateCharts, svc.cadenceCharts} {
+		if store != nil {
+			if err := store.DeleteLocal(ctx, nickname, dirName); err != nil {
+				slog.Warn("staged workout chart cleanup failed", "dir", dirName, "err", err)
+			}
+		}
+	}
 }
 
 // AttachTrack saves a track file and map preview for an existing workout without

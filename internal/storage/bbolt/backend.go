@@ -97,12 +97,27 @@ func Open(dbPath, location string) (*Backend, error) {
 
 func ensureBuckets(db *bolt.DB) error {
 	return db.Update(func(tx *bolt.Tx) error {
+		buildInboxOrder := tx.Bucket(bucketFedInboxOrder) == nil
 		for _, name := range allBuckets {
 			if _, err := tx.CreateBucketIfNotExists(name); err != nil {
 				return fmt.Errorf("create bucket %q: %w", name, err)
 			}
 		}
+		if buildInboxOrder {
+			if err := backfillInboxOrder(tx); err != nil {
+				return fmt.Errorf("build inbox order index: %w", err)
+			}
+		}
 		meta := tx.Bucket(bucketMeta)
+		externalIndexVersion := []byte("workout_external_index_v2")
+		if meta.Get(externalIndexVersion) == nil {
+			if err := rebuildExternalIDIndex(tx); err != nil {
+				return fmt.Errorf("rebuild workout external ID index: %w", err)
+			}
+			if err := meta.Put(externalIndexVersion, []byte("1")); err != nil {
+				return err
+			}
+		}
 		if meta.Get([]byte("schema_version")) == nil {
 			if err := meta.Put([]byte("schema_version"), []byte(schemaVersion)); err != nil {
 				return err

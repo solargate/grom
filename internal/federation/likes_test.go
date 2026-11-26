@@ -47,6 +47,18 @@ func (m *memLikes) GetLocal(ownerNickname, workoutID string) (*workouts.WorkoutL
 	return &empty, nil
 }
 
+func (m *memLikes) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutLikes) *workouts.WorkoutLikes) error {
+	current, err := m.GetLocal(ownerNickname, workoutID)
+	if err != nil {
+		return err
+	}
+	next := update(current)
+	if next == current {
+		return nil
+	}
+	return m.PutLocal(ownerNickname, workoutID, next)
+}
+
 func (m *memLikes) PutLocal(ownerNickname, workoutID string, likes *workouts.WorkoutLikes) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -227,14 +239,14 @@ func TestInboxProcessorCreateCachesFederatedLikes(t *testing.T) {
 		"type":  "Create",
 		"actor": "https://remote.test/users/bob",
 		"object": map[string]any{
-			"id":          "https://remote.test/users/bob/workouts/11111111",
-			"type":        "Note",
-			"name":        "Remote run",
-			"sportType":   "Run",
-			"startDate":   "2026-07-08T10:00:00Z",
+			"id":              "https://remote.test/users/bob/workouts/11111111",
+			"type":            "Note",
+			"name":            "Remote run",
+			"sportType":       "Run",
+			"startDate":       "2026-07-08T10:00:00Z",
 			"durationSeconds": 1200,
-			"distance":    3000.0,
-			"likesCount":  2,
+			"distance":        3000.0,
+			"likesCount":      2,
 			"likedUsers": []any{
 				map[string]any{
 					"handle": "carol@other.test", "nickname": "carol", "name": "Carol", "is_local": false,

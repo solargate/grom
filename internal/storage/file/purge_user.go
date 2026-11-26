@@ -1,6 +1,7 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -66,28 +67,26 @@ func scrubLocalInteractions(b *Backend, ownerNickname, handle string) error {
 		return err
 	}
 	for _, w := range items {
-		likes, err := b.likes.GetLocal(ownerNickname, w.ID)
-		if err != nil {
+		if err := b.likes.UpdateLocal(ownerNickname, w.ID, func(current *workouts.WorkoutLikes) *workouts.WorkoutLikes {
+			if !workouts.LikesContainUser(current, handle) {
+				return current
+			}
+			updated := workouts.RemoveWorkoutLikeUser(current, handle)
+			return &updated
+		}); err != nil && !errors.Is(err, workouts.ErrWorkoutNotFound) {
 			return err
 		}
-		if workouts.LikesContainUser(likes, handle) {
-			updated := workouts.RemoveWorkoutLikeUser(likes, handle)
-			if err := b.likes.PutLocal(ownerNickname, w.ID, &updated); err != nil {
-				return err
+		if err := b.comments.UpdateLocal(ownerNickname, w.ID, func(current *workouts.WorkoutComments) *workouts.WorkoutComments {
+			if current == nil {
+				return nil
 			}
-		}
-		comments, err := b.comments.GetLocal(ownerNickname, w.ID)
-		if err != nil {
+			updated := workouts.RemoveWorkoutCommentsByHandle(current, handle)
+			if updated.CommentsNum == current.CommentsNum {
+				return current
+			}
+			return &updated
+		}); err != nil && !errors.Is(err, workouts.ErrWorkoutNotFound) {
 			return err
-		}
-		if comments == nil {
-			continue
-		}
-		updatedComments := workouts.RemoveWorkoutCommentsByHandle(comments, handle)
-		if updatedComments.CommentsNum != comments.CommentsNum {
-			if err := b.comments.PutLocal(ownerNickname, w.ID, &updatedComments); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

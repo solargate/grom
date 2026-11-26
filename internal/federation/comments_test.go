@@ -45,6 +45,18 @@ func (m *memComments) GetLocal(ownerNickname, workoutID string) (*workouts.Worko
 	return &empty, nil
 }
 
+func (m *memComments) UpdateLocal(ownerNickname, workoutID string, update func(*workouts.WorkoutComments) *workouts.WorkoutComments) error {
+	current, err := m.GetLocal(ownerNickname, workoutID)
+	if err != nil {
+		return err
+	}
+	next := update(current)
+	if next == current {
+		return nil
+	}
+	return m.PutLocal(ownerNickname, workoutID, next)
+}
+
 func (m *memComments) PutLocal(ownerNickname, workoutID string, comments *workouts.WorkoutComments) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

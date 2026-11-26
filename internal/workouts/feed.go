@@ -22,6 +22,8 @@ type FeedWorkout struct {
 	Workout
 	Author FeedAuthor `json:"author"`
 	Owner  string     `json:"owner"`
+	// SortOwner breaks ties between author-scoped federated workout IDs.
+	SortOwner string `json:"-"`
 }
 
 type FeedService struct {
@@ -182,7 +184,10 @@ func (f *FeedService) ListFeedPage(viewerNickname, viewerName string, followedLo
 func buildPage(items []FeedWorkout, hasMore bool) Page {
 	page := Page{Items: items, HasMore: hasMore}
 	if hasMore && len(items) > 0 {
-		page.NextCursor = CursorFromWorkout(items[len(items)-1].Workout).Encode()
+		last := items[len(items)-1]
+		cursor := CursorFromWorkout(last.Workout)
+		cursor.Owner = &last.SortOwner
+		page.NextCursor = cursor.Encode()
 	}
 	return page
 }
@@ -202,7 +207,7 @@ type feedHeap []feedHeapItem
 
 func (h feedHeap) Len() int { return len(h) }
 func (h feedHeap) Less(i, j int) bool {
-	return FeedNewer(h[i].workout.StartDate, h[i].workout.ID, h[j].workout.StartDate, h[j].workout.ID)
+	return FeedItemNewer(h[i].workout, h[j].workout)
 }
 func (h feedHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 func (h *feedHeap) Push(x any)   { *h = append(*h, x.(feedHeapItem)) }

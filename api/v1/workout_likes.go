@@ -144,19 +144,22 @@ func (a *App) mutateWorkoutLike(ctx *gin.Context, add bool) {
 	}
 
 	isLocal := item == nil || item.Author.IsLocal
-	var updated workouts.WorkoutLikes
-	if add {
-		updated = workouts.AddWorkoutLikeUser(likes, actor)
-	} else {
-		updated = workouts.RemoveWorkoutLikeUser(likes, actor.Handle)
+	mutate := func(current *workouts.WorkoutLikes) workouts.WorkoutLikes {
+		if add {
+			return workouts.AddWorkoutLikeUser(current, actor)
+		}
+		return workouts.RemoveWorkoutLikeUser(current, actor.Handle)
 	}
-
+	var updated workouts.WorkoutLikes
 	if isLocal {
 		beforeCount := 0
-		if likes != nil {
-			beforeCount = likes.Likes
-		}
-		if err := a.Likes.PutLocal(ownerNickname, workoutID, &updated); err != nil {
+		if err := a.Likes.UpdateLocal(ownerNickname, workoutID, func(current *workouts.WorkoutLikes) *workouts.WorkoutLikes {
+			if current != nil {
+				beforeCount = current.Likes
+			}
+			updated = mutate(current)
+			return &updated
+		}); err != nil {
 			respondInternal(ctx, "failed to store workout likes", err)
 			return
 		}
@@ -165,6 +168,7 @@ func (a *App) mutateWorkoutLike(ctx *gin.Context, add bool) {
 			a.notifyWorkoutLiked(ownerNickname, workoutID, actor)
 		}
 	} else {
+		updated = mutate(likes)
 		ownerHandle := item.Author.Handle
 		objectID := remoteWorkoutObjectID(ownerHandle, item.Author.Nickname, workoutID)
 		if add {

@@ -95,6 +95,8 @@ grom migrate-storage --config config.yaml --from file --to bbolt --verify
 grom migrate-storage --config config.yaml --from bbolt --to file --verify
 ```
 
+`--verify` checks record keys and content, including chart data at the precision of the bbolt format. A migration to bbolt builds the database beside the destination and replaces it after copying and any requested verification succeed.
+
 Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
 
 Password-reset tokens (`reset_tokens.yaml` / bbolt `reset_tokens`) are short-lived and are **not** copied by migrate-storage; in-flight reset links become invalid after a migrate. Legacy plain-text Like activity ids (without `object_id`) are reconstructed via federated inbox and, when `federation.domain` is set, local workout object URLs.

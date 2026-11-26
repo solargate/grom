@@ -3,6 +3,7 @@ package strava
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -92,6 +93,10 @@ func (imp *Importer) ImportAll(userID, nickname string, progress func(current, t
 
 		created, missing, err := imp.importOne(nickname, row, hint, equipmentResolver)
 		result.MediaMissing += missing
+		if errors.Is(err, workouts.ErrExternalIDExists) {
+			result.Skipped++
+			continue
+		}
 		if err != nil {
 			result.Errors++
 			continue
@@ -121,35 +126,24 @@ func (imp *Importer) importOne(nickname string, row ActivityRow, hint localeHint
 		workout.Equipment = toWorkoutEquipment(items)
 	}
 
-	created, err := imp.workoutStore.Create(nickname, workout)
-	if err != nil {
-		return nil, 0, err
-	}
-
+	var trackInput *workouts.TrackInput
 	if row.TrackFile != "" {
-		trackInput, err := imp.loadTrack(row.TrackFile)
-		if err == nil && trackInput != nil {
-			created, err = imp.workoutStore.AttachTrack(nickname, created, trackInput)
-			if err != nil {
-				return nil, 0, err
-			}
-		}
+		trackInput, _ = imp.loadTrack(row.TrackFile)
 	}
 
+	var mediaFiles []workouts.MediaFileInput
 	mediaMissing := 0
 	photos := parseMediaPaths(row.MediaFiles)
 	if len(photos) > 0 {
-		mediaFiles, missing, err := imp.loadPhotos(photos)
-		mediaMissing = missing
+		mediaFiles, mediaMissing, err = imp.loadPhotos(photos)
 		if err != nil {
 			return nil, mediaMissing, err
 		}
-		if len(mediaFiles) > 0 {
-			created, err = imp.workoutStore.AddMedia(nickname, created, mediaFiles)
-			if err != nil {
-				return nil, mediaMissing, err
-			}
-		}
+	}
+
+	created, err := imp.workoutStore.ImportWithAttachments(nickname, workout, trackInput, mediaFiles)
+	if err != nil {
+		return nil, mediaMissing, err
 	}
 
 	if imp.onPublish != nil {

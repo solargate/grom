@@ -700,13 +700,6 @@ func readWorkoutPhotos(ctx *gin.Context) ([]workouts.MediaFileInput, error) {
 	return files, nil
 }
 
-func (a *App) attachWorkoutPhotos(nickname string, workout *workouts.Workout, photos []workouts.MediaFileInput) (*workouts.Workout, error) {
-	if len(photos) == 0 {
-		return workout, nil
-	}
-	return a.Workouts.AddMedia(nickname, workout, photos)
-}
-
 func (a *App) publishCreatedWorkout(nickname string, workout *workouts.Workout) {
 	a.publishWorkoutActivity(nickname, workout, false)
 }
@@ -911,18 +904,12 @@ func (a *App) createWorkoutMultipart(ctx *gin.Context, nickname, userID string) 
 		}
 	}
 
-	created, err := a.Workouts.CreateWithTrack(nickname, workout, trackInput)
-	if err != nil {
-		handleCreateWorkoutError(ctx, err)
-		return
-	}
-
 	photos, err := readWorkoutPhotos(ctx)
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return
 	}
-	created, err = a.attachWorkoutPhotos(nickname, created, photos)
+	created, err := a.Workouts.CreateWithAttachments(nickname, workout, trackInput, photos)
 	if err != nil {
 		handleCreateWorkoutError(ctx, err)
 		return

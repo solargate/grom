@@ -97,6 +97,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
   bool _isPickingFile = false;
   String? _trackFilename;
   List<int>? _trackBytes;
+  DateTime? _recordedDraftStart;
   bool _isParsingTrack = false;
   List<Equipment> _userEquipment = [];
   List<String> _selectedEquipmentIds = [];
@@ -116,8 +117,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
           if (!_pendingRemovePhotos.contains(name)) name,
       ];
 
-  int get _photoCount =>
-      _keptExistingPhotos.length + _selectedPhotos.length;
+  int get _photoCount => _keptExistingPhotos.length + _selectedPhotos.length;
 
   @override
   void initState() {
@@ -152,6 +152,14 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     _loadAuthToken();
 
     final initialTrack = widget.initialTrack;
+    if (initialTrack == null && _showRecordTab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final draft = await _recorder.loadFinishedDraft();
+        if (mounted && draft != null && _trackBytes == null) {
+          _applyRecordedTrack(draft, showMessage: false);
+        }
+      });
+    }
     if (initialTrack != null && !_isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -462,7 +470,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       setState(() {
         _sportTypeId = selected;
         _applyLastEquipmentForSport(selected);
-        final autoName = _nameSync.nameForSportChange(sportTypeLabel(l10n, selected));
+        final autoName =
+            _nameSync.nameForSportChange(sportTypeLabel(l10n, selected));
         if (autoName != null) {
           _setNameProgrammatically(autoName);
         }
@@ -556,7 +565,8 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       for (final sportType in items)
         ListTile(
           leading: CircleAvatar(
-            backgroundColor: sportTypeColor(sportType.id).withValues(alpha: 0.15),
+            backgroundColor:
+                sportTypeColor(sportType.id).withValues(alpha: 0.15),
             child: Icon(
               sportType.icon,
               color: sportTypeColor(sportType.id),
@@ -606,6 +616,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     setState(() {
       _trackFilename = filename;
       _trackBytes = bytes;
+      _recordedDraftStart = null;
       _isParsingTrack = true;
     });
 
@@ -676,17 +687,24 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
     }
   }
 
-  void _removeTrack() {
+  Future<void> _removeTrack() async {
+    final draftStart = _recordedDraftStart;
+    if (draftStart != null) {
+      await _recorder.clearFinishedDraft(draftStart);
+    }
+    if (!mounted) return;
     setState(() {
+      _recordedDraftStart = null;
       _trackFilename = null;
       _trackBytes = null;
     });
   }
 
-  void _applyRecordedTrack(RecordedTrack track) {
+  void _applyRecordedTrack(RecordedTrack track, {bool showMessage = true}) {
     setState(() {
       _trackFilename = 'track.gpx';
       _trackBytes = track.gpxBytes;
+      _recordedDraftStart = track.startTime;
       _applyStartDateTime(track.startTime.toLocal());
       _durationSeconds = track.durationSeconds;
       _durationTotalSeconds = track.durationTotalSeconds;
@@ -695,6 +713,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
       _speedAvgKmh = track.speedAvgKmh;
     });
     _tabController?.animateTo(0);
+    if (!showMessage) return;
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.trackMetadataApplied)),
@@ -771,6 +790,7 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
           'equipment_ids': jsonEncode(draft.equipmentIds),
         };
 
+        final draftStart = _recordedDraftStart;
         final hasTrack = _trackBytes != null && _trackFilename != null;
         final hasPhotos = _selectedPhotos.isNotEmpty;
 
@@ -784,6 +804,13 @@ class _AddWorkoutSheetState extends State<AddWorkoutSheet>
           );
         } else {
           saved = await _api.createWorkout(token: token, body: draft.toJson());
+        }
+        if (draftStart != null) {
+          try {
+            await _recorder.clearFinishedDraft(draftStart);
+          } catch (error) {
+            debugPrint('Unable to remove saved recording draft: $error');
+          }
         }
       }
 
