@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/solargate/grom/internal/config"
+	"github.com/solargate/grom/internal/storage"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -46,6 +48,11 @@ func TestVerifyDetectsDifferentRecordsWithEqualCounts(t *testing.T) {
 	if err := importWorkout(bolt, "alice", &item); err != nil {
 		t.Fatal(err)
 	}
+	for _, backend := range []storage.Backend{file, bolt} {
+		if _, err := backend.GetProfileWithWorkoutTotal(user.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, err := range []error{
 		verifyContent(file, bolt, fileCfg.ResolvedLocation, ""),
 		verifyContent(bolt, file, fileCfg.ResolvedLocation, ""),
@@ -53,6 +60,14 @@ func TestVerifyDetectsDifferentRecordsWithEqualCounts(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "different workout record") {
 			t.Fatalf("expected workout verification mismatch; got %v", err)
 		}
+	}
+	wrongTotal := 0
+	if err := bolt.Users().PutProfile(user.ID, users.Profile{TotalWorkouts: &wrongTotal}); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyContent(file, bolt, fileCfg.ResolvedLocation, ""); err == nil ||
+		!strings.Contains(err.Error(), "workout total differs") {
+		t.Fatalf("expected workout total verification mismatch; got %v", err)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 )
 
 type profileRecord struct {
+	TotalWorkouts        *int                `json:"total_workouts,omitempty"`
 	LastSportType        string              `json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
 	UsedSportTypes       []string            `json:"used_sport_types,omitempty"`
@@ -16,6 +17,7 @@ type profileRecord struct {
 
 func profileToRecord(p users.Profile) profileRecord {
 	return profileRecord{
+		TotalWorkouts:        p.TotalWorkouts,
 		LastSportType:        p.LastSportType,
 		LastEquipmentBySport: p.LastEquipmentBySport,
 		UsedSportTypes:       p.UsedSportTypes,
@@ -24,6 +26,7 @@ func profileToRecord(p users.Profile) profileRecord {
 
 func recordToProfile(r profileRecord) users.Profile {
 	return users.Profile{
+		TotalWorkouts:        r.TotalWorkouts,
 		LastSportType:        r.LastSportType,
 		LastEquipmentBySport: r.LastEquipmentBySport,
 		UsedSportTypes:       r.UsedSportTypes,
@@ -193,6 +196,10 @@ func cloneProfile(p users.Profile) users.Profile {
 	out := users.Profile{
 		LastSportType:  p.LastSportType,
 		UsedSportTypes: cloneStrings(p.UsedSportTypes),
+	}
+	if p.TotalWorkouts != nil {
+		total := *p.TotalWorkouts
+		out.TotalWorkouts = &total
 	}
 	if len(p.LastEquipmentBySport) == 0 {
 		return out

@@ -29,6 +29,7 @@ var workoutCommitMu sync.Mutex
 
 type WorkoutsStore struct {
 	dataDir string
+	users   *UsersStore
 }
 
 func NewWorkoutsStore(dataDir string) *WorkoutsStore {
@@ -83,7 +84,12 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
 	workout.Device = workouts.NormalizeDevice(workout.Device)
 
-	return s.saveNewWorkout(nickname, workout)
+	var created *workouts.Workout
+	err = s.withWorkoutTotal(nickname, 1, func() error {
+		created, err = s.saveNewWorkout(nickname, workout)
+		return err
+	})
+	return created, err
 }
 
 func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) (*workouts.Workout, string, func(), error) {
@@ -125,14 +131,30 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 }
 
 func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout) error {
+	return s.writeMetadata(nickname, workout, true)
+}
+
+func (s *WorkoutsStore) UpdateMetadata(nickname string, workout *workouts.Workout) error {
+	return s.writeMetadata(nickname, workout, false)
+}
+
+func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout, allowCreate bool) error {
 	workoutCommitMu.Lock()
 	defer workoutCommitMu.Unlock()
 	userDir := s.userDir(nickname)
 	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if !allowCreate {
+			return workouts.ErrWorkoutNotFound
+		}
 		if err := s.checkExternalID(nickname, workout); err != nil {
 			return err
 		}
+		return s.withWorkoutTotal(nickname, 1, func() error {
+			return writeWorkoutYAML(filePath, workout)
+		})
+	} else if err != nil {
+		return err
 	}
 	return writeWorkoutYAML(filePath, workout)
 }
@@ -425,10 +447,18 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.RemoveAll(dir); err != nil {
-		return fmt.Errorf("delete workout dir: %w", err)
+	delta := 0
+	if _, err := os.Stat(filepath.Join(dir, filepath.Base(dir)+".yaml")); err == nil {
+		delta = -1
+	} else if !os.IsNotExist(err) {
+		return err
 	}
-	return nil
+	return s.withWorkoutTotal(nickname, delta, func() error {
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("delete workout dir: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *WorkoutsStore) findWorkoutDir(nickname, workoutID string) (string, error) {

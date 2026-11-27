@@ -452,6 +452,14 @@
       }
     }
   },
+  "totalWorkouts": "Total workouts: {count}",
+  "@totalWorkouts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "followingCount": "Following: {count}",
   "@followingCount": {
     "placeholders": {

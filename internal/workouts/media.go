@@ -208,7 +208,7 @@ func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFil
 	workout.MediaFiles = append(existing, saved...)
 	workout.HasMedia = len(workout.MediaFiles) > 0
 
-	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
+	if err := svc.repo.UpdateMetadata(nickname, workout); err != nil {
 		return nil, err
 	}
 
@@ -252,7 +252,7 @@ func (svc *Service) RemoveMedia(nickname, workoutID, filename string) (*Workout,
 	workout.MediaFiles = append(workout.MediaFiles[:idx], workout.MediaFiles[idx+1:]...)
 	workout.HasMedia = len(workout.MediaFiles) > 0
 
-	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
+	if err := svc.repo.UpdateMetadata(nickname, workout); err != nil {
 		return nil, err
 	}
 

@@ -1082,14 +1082,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns UI/service preferences (last sport type, last equipment by sport, used sport types ordered by most recent create/update). Not part of public user identity.",
+                "description": "Returns the total number of saved local workouts, last sport type, last equipment by sport, and used sport types ordered by most recent create/update.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "profile"
                 ],
-                "summary": "Get current user profile preferences",
+                "summary": "Get current user's workout total and profile preferences",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3576,6 +3576,9 @@ const docTemplate = `{
                 },
                 "last_sport_type": {
                     "type": "string"
+                },
+                "total_workouts": {
+                    "type": "integer"
                 },
                 "used_sport_types": {
                     "type": "array",

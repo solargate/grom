@@ -12,10 +12,12 @@ class ProfilePage extends StatefulWidget {
   const ProfilePage({
     super.key,
     required this.nickname,
+    this.workoutRefreshToken = 0,
     this.api,
   });
 
   final String nickname;
+  final int workoutRefreshToken;
 
   /// Optional API client override (tests).
   final ApiRequest? api;
@@ -33,6 +35,8 @@ class ProfilePageState extends State<ProfilePage> {
   String? _authToken;
   List<FollowInfo> _following = [];
   List<FollowerInfo> _followers = [];
+  int? _totalWorkouts;
+  int _loadGeneration = 0;
   bool _isLoading = true;
   String? _error;
 
@@ -42,7 +46,16 @@ class ProfilePageState extends State<ProfilePage> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant ProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workoutRefreshToken != widget.workoutRefreshToken) {
+      _load();
+    }
+  }
+
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -57,7 +70,8 @@ class ProfilePageState extends State<ProfilePage> {
       final me = await _api.getMe(token);
       final following = await _api.listFollowing(token);
       final followers = await _api.listFollowers(token);
-      if (!mounted) return;
+      final profile = await _api.getProfile(token);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _authToken = token;
         _name = me.name;
@@ -67,21 +81,22 @@ class ProfilePageState extends State<ProfilePage> {
             .where((f) => f.status == 'active' || f.status == 'pending')
             .toList();
         _followers = followers;
+        _totalWorkouts = profile.totalWorkouts;
         _isLoading = false;
       });
     } on SessionExpiredException {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _isLoading = false;
       });
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = e.message;
         _isLoading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() {
         _error = l10n.failedToLoadProfile;
@@ -162,6 +177,7 @@ class ProfilePageState extends State<ProfilePage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
           profilePageInset,
           profilePageInset,
@@ -188,6 +204,10 @@ class ProfilePageState extends State<ProfilePage> {
             onFollowingTap: _openFollowing,
             onFollowersTap: _openFollowers,
           ),
+          if (_totalWorkouts case final total?) ...[
+            SizedBox(height: profileCardGap),
+            ProfileCountCard(label: l10n.totalWorkouts(total)),
+          ],
         ],
       ),
     );

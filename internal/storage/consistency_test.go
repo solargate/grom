@@ -12,6 +12,7 @@ import (
 	"github.com/solargate/grom/internal/config"
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/tracks"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 )
 
@@ -34,6 +35,13 @@ func forEachDriver(t *testing.T, run func(*testing.T, storage.Backend)) {
 
 func TestConcurrentExternalIDCommitAndAttachmentRetry(t *testing.T) {
 	forEachDriver(t, func(t *testing.T, backend storage.Backend) {
+		user, err := backend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := backend.GetProfileWithWorkoutTotal(user.ID); err != nil {
+			t.Fatal(err)
+		}
 		draft := workouts.Workout{
 			Name: "Run", SportType: "Run", StartDate: time.Now().UTC(),
 			ExternalID: &workouts.ExternalID{Name: "strava", ID: "activity"},
@@ -45,6 +53,7 @@ func TestConcurrentExternalIDCommitAndAttachmentRetry(t *testing.T) {
 		if items, err := backend.Workouts().List("alice"); err != nil || len(items) != 0 {
 			t.Fatalf("partial workout visible: %v, %v", items, err)
 		}
+		assertStoredWorkoutTotal(t, backend, user.ID, 0)
 
 		var created atomic.Int32
 		var wg sync.WaitGroup
@@ -78,6 +87,91 @@ func TestConcurrentExternalIDCommitAndAttachmentRetry(t *testing.T) {
 		if err != nil || created.Load() != 1 || len(items) != 1 {
 			t.Fatalf("got %d successful writes and %d workouts, err=%v", created.Load(), len(items), err)
 		}
+		assertStoredWorkoutTotal(t, backend, user.ID, 1)
+	})
+}
+
+func assertStoredWorkoutTotal(t *testing.T, backend storage.Backend, userID string, want int) {
+	t.Helper()
+	profile, err := backend.Users().GetProfile(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if profile.TotalWorkouts == nil {
+		t.Fatal("workout total was not stored")
+	}
+	if got := *profile.TotalWorkouts; got != want {
+		t.Fatalf("total_workouts = %d, want %d", got, want)
+	}
+}
+
+func TestWorkoutTotalBackfillAndConcurrentChanges(t *testing.T) {
+	forEachDriver(t, func(t *testing.T, backend storage.Backend) {
+		user, err := backend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+		if err != nil {
+			t.Fatal(err)
+		}
+		svc := backend.Workouts()
+		workout, err := svc.Create(user.Nickname, &workouts.Workout{
+			Name: "Ride", SportType: "Ride", StartDate: time.Now().UTC(),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := backend.Users().PutProfile(user.ID, users.Profile{LastSportType: "Ride"}); err != nil {
+			t.Fatal(err)
+		}
+		profile, err := backend.GetProfileWithWorkoutTotal(user.ID)
+		if err != nil || profile.LastSportType != "Ride" {
+			t.Fatalf("backfilled profile = %+v, err = %v", profile, err)
+		}
+		assertStoredWorkoutTotal(t, backend, user.ID, 1)
+
+		var wg sync.WaitGroup
+		const adds = 8
+		for i := range adds {
+			wg.Go(func() {
+				item := workouts.Workout{
+					Name: fmt.Sprintf("Run %d", i), SportType: "Run", StartDate: time.Now().UTC(),
+				}
+				var err error
+				if i%2 == 0 {
+					item.ExternalID = &workouts.ExternalID{Name: "strava", ID: fmt.Sprint(i)}
+					_, err = svc.ImportWithAttachments(user.Nickname, &item, &workouts.TrackInput{
+						Filename: "track.gpx", Data: []byte("<gpx/>"), Parsed: &tracks.Data{},
+					}, nil)
+				} else {
+					_, err = svc.Create(user.Nickname, &item)
+				}
+				if err != nil {
+					t.Errorf("creating workout: %v", err)
+				}
+			})
+		}
+		wg.Go(func() {
+			if err := svc.Delete(user.Nickname, workout.ID); err != nil {
+				t.Errorf("deleting workout: %v", err)
+			}
+			if err := svc.Delete(user.Nickname, workout.ID); !errors.Is(err, workouts.ErrWorkoutNotFound) {
+				t.Errorf("repeated deletion: %v", err)
+			}
+		})
+		wg.Wait()
+		assertStoredWorkoutTotal(t, backend, user.ID, adds)
+
+		items, err := svc.List(user.Nickname)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, item := range items {
+			wg.Go(func() {
+				if err := svc.Delete(user.Nickname, item.ID); err != nil {
+					t.Errorf("deleting workout: %v", err)
+				}
+			})
+		}
+		wg.Wait()
+		assertStoredWorkoutTotal(t, backend, user.ID, 0)
 	})
 }
 

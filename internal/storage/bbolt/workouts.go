@@ -217,6 +217,9 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 		if err := s.putWorkout(tx, nickname, workout); err != nil {
 			return err
 		}
+		if err := s.updateWorkoutTotal(tx, nickname, 1); err != nil {
+			return err
+		}
 		path := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
 		if err := os.Mkdir(path, 0700); err != nil {
 			if os.IsExist(err) {
@@ -283,8 +286,17 @@ func (s *WorkoutsStore) BeginCreate(nickname string, workout *workouts.Workout) 
 }
 
 func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout) error {
+	return s.writeMetadata(nickname, workout, true)
+}
+
+func (s *WorkoutsStore) UpdateMetadata(nickname string, workout *workouts.Workout) error {
+	return s.writeMetadata(nickname, workout, false)
+}
+
+func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout, allowCreate bool) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		if s.workoutIDExists(tx, workout.ID) {
+		exists := s.workoutIDExists(tx, workout.ID)
+		if exists {
 			// Allow overwrite of same id only if same primary key (idempotent retry).
 			_, key, err := s.lookupPrimaryKey(tx, workout.ID)
 			if err != nil {
@@ -292,12 +304,26 @@ func (s *WorkoutsStore) WriteMetadata(nickname string, workout *workouts.Workout
 			}
 			want := workoutPrimaryKey(nickname, workout.StartDate, workout.ID)
 			if key != want {
+				if !allowCreate {
+					return workouts.ErrWorkoutNotFound
+				}
 				return workouts.ErrWorkoutExists
 			}
-		} else if hasExternalID(tx, nickname, workout.ExternalID) {
-			return workouts.ErrExternalIDExists
+		} else {
+			if !allowCreate {
+				return workouts.ErrWorkoutNotFound
+			}
+			if hasExternalID(tx, nickname, workout.ExternalID) {
+				return workouts.ErrExternalIDExists
+			}
 		}
-		return s.putWorkout(tx, nickname, workout)
+		if err := s.putWorkout(tx, nickname, workout); err != nil {
+			return err
+		}
+		if !exists {
+			return s.updateWorkoutTotal(tx, nickname, 1)
+		}
+		return nil
 	})
 }
 
@@ -548,7 +574,10 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 			return err
 		}
 		dir = workoutDirPath(s.dataDir, nickname, w.StartDate, w.ID)
-		return s.deleteWorkoutMeta(tx, nickname, w)
+		if err := s.deleteWorkoutMeta(tx, nickname, w); err != nil {
+			return err
+		}
+		return s.updateWorkoutTotal(tx, nickname, -1)
 	})
 	if err != nil {
 		return err

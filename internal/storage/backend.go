@@ -16,6 +16,8 @@ import (
 
 type Backend interface {
 	Users() users.Repository
+	// GetProfileWithWorkoutTotal fills a missing workout total from local metadata.
+	GetProfileWithWorkoutTotal(userID string) (*users.Profile, error)
 	Workouts() *workouts.Service
 	Likes() workouts.LikesRepository
 	Comments() workouts.CommentsRepository

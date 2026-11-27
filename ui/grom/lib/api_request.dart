@@ -98,11 +98,13 @@ class UserInfo {
 
 class UserProfile {
   UserProfile({
+    this.totalWorkouts,
     this.lastSportType,
     this.lastEquipmentBySport = const {},
     this.usedSportTypes = const [],
   });
 
+  final int? totalWorkouts;
   final String? lastSportType;
   final Map<String, List<String>> lastEquipmentBySport;
   final List<String> usedSportTypes;
@@ -131,6 +133,7 @@ class UserProfile {
     }
     final sport = json['last_sport_type'] as String?;
     return UserProfile(
+      totalWorkouts: json['total_workouts'] as int?,
       lastSportType: (sport == null || sport.isEmpty) ? null : sport,
       lastEquipmentBySport: lastEquipment,
       usedSportTypes: usedSports,

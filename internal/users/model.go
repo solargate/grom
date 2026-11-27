@@ -11,8 +11,10 @@ type User struct {
 	CreatedAt    time.Time `yaml:"created_at" json:"created_at"`
 }
 
-// Profile holds per-user UI/service preferences (not identity fields).
+// Profile holds private workout statistics and UI/service preferences.
 type Profile struct {
+	// A nil total indicates that it needs to be computed from workout metadata.
+	TotalWorkouts        *int                `yaml:"total_workouts,omitempty" json:"total_workouts,omitempty"`
 	LastSportType        string              `yaml:"last_sport_type,omitempty" json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `yaml:"last_equipment_by_sport,omitempty" json:"last_equipment_by_sport,omitempty"`
 	// UsedSportTypes are unique sport types from create/update, most recently used first.

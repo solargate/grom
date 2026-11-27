@@ -67,6 +67,9 @@ func TestAuthRegisterLoginMe(t *testing.T) {
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
 	expectStatus(t, w, http.StatusOK)
 	profile := decodeObject(t, w)
+	if profile["total_workouts"] != float64(0) {
+		t.Fatalf("empty profile total_workouts: %#v", profile)
+	}
 	if profile["last_sport_type"] != nil && profile["last_sport_type"] != "" {
 		t.Fatalf("empty profile last_sport_type: %#v", profile)
 	}
@@ -79,6 +82,14 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 	ta := setupTestApp(t)
 	ta.register(t, "alice", "alice@example.com", "password12")
 	token, _ := ta.login(t, "alice@example.com", "password12")
+	checkTotal := func(want float64) {
+		t.Helper()
+		w := ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
+		expectStatus(t, w, http.StatusOK)
+		if got := decodeObject(t, w)["total_workouts"]; got != want {
+			t.Fatalf("total_workouts = %v, want %v", got, want)
+		}
+	}
 
 	w := ta.doJSON(t, http.MethodPost, "/api/v1/workouts", map[string]any{
 		"name":             "Morning run",
@@ -88,6 +99,7 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 		"distance":         5200,
 	}, token)
 	expectStatus(t, w, http.StatusCreated)
+	checkTotal(1)
 	created := decodeObject(t, w)
 	id, _ := created["id"].(string)
 	if id == "" {
@@ -139,6 +151,7 @@ func TestWorkoutCRUDAndList(t *testing.T) {
 
 	w = ta.doJSON(t, http.MethodDelete, "/api/v1/workouts/"+id, nil, token)
 	expectStatus(t, w, http.StatusNoContent)
+	checkTotal(0)
 
 	w = ta.doJSON(t, http.MethodGet, "/api/v1/workouts?scope=own", nil, token)
 	expectStatus(t, w, http.StatusOK)

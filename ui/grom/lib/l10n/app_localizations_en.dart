@@ -901,6 +901,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String totalWorkouts(int count) {
+    return 'Total workouts: $count';
+  }
+
+  @override
   String followingCount(int count) {
     return 'Following: $count';
   }

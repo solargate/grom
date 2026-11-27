@@ -819,6 +819,7 @@ void main() {
       expect(request.headers['Authorization'], 'Bearer tok');
       return http.Response(
         jsonEncode({
+          'total_workouts': 15,
           'last_sport_type': 'Ride',
           'last_equipment_by_sport': {
             'Ride': ['bike-1'],
@@ -830,6 +831,7 @@ void main() {
       );
     });
     final profile = await ApiRequest(client: client).getProfile('tok');
+    expect(profile.totalWorkouts, 15);
     expect(profile.lastSportType, 'Ride');
     expect(profile.lastEquipmentBySport['Ride'], ['bike-1']);
     expect(profile.usedSportTypes, ['Ride', 'Run']);

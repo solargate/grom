@@ -10,6 +10,7 @@ import (
 )
 
 type ProfileResponse struct {
+	TotalWorkouts        int                 `json:"total_workouts"`
 	LastSportType        string              `json:"last_sport_type,omitempty"`
 	LastEquipmentBySport map[string][]string `json:"last_equipment_by_sport,omitempty"`
 	UsedSportTypes       []string            `json:"used_sport_types,omitempty"`
@@ -19,16 +20,20 @@ func toProfileResponse(profile *users.Profile) ProfileResponse {
 	if profile == nil {
 		return ProfileResponse{}
 	}
-	return ProfileResponse{
+	response := ProfileResponse{
 		LastSportType:        profile.LastSportType,
 		LastEquipmentBySport: profile.LastEquipmentBySport,
 		UsedSportTypes:       profile.UsedSportTypes,
 	}
+	if profile.TotalWorkouts != nil {
+		response.TotalWorkouts = *profile.TotalWorkouts
+	}
+	return response
 }
 
 // getProfile godoc
-// @Summary      Get current user profile preferences
-// @Description  Returns UI/service preferences (last sport type, last equipment by sport, used sport types ordered by most recent create/update). Not part of public user identity.
+// @Summary      Get current user's workout total and profile preferences
+// @Description  Returns the total number of saved local workouts, last sport type, last equipment by sport, and used sport types ordered by most recent create/update.
 // @Tags         profile
 // @Produce      json
 // @Security     BearerAuth
@@ -43,7 +48,7 @@ func (a *App) getProfile(ctx *gin.Context) {
 		return
 	}
 
-	profile, err := a.Users.GetProfile(userID)
+	profile, err := a.Backend.GetProfileWithWorkoutTotal(userID)
 	if err != nil {
 		respondInternal(ctx, "failed to load profile", err)
 		return

@@ -1234,6 +1234,7 @@ class _GromShellState extends State<GromShell> {
         return ProfilePage(
           key: _profilePageKey,
           nickname: _nickname!,
+          workoutRefreshToken: _workoutRefreshToken,
         );
       case GromDestination.equipment:
         return const EquipmentPage();
