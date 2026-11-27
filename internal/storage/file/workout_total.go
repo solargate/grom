@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
 )
 
 func (b *Backend) GetProfileWithWorkoutTotal(userID string) (*users.Profile, error) {
@@ -20,21 +21,27 @@ func (b *Backend) GetProfileWithWorkoutTotal(userID string) (*users.Profile, err
 	if err != nil {
 		return nil, err
 	}
-	if profile.TotalWorkouts == nil {
-		if err := b.workoutRepo.recountWorkouts(nickname, &profile); err != nil {
+	if !profile.HasWorkoutStats() {
+		if err := b.workoutRepo.rebuildWorkoutStats(nickname, &profile); err != nil {
 			return nil, err
 		}
 		if err := b.users.saveProfile(nickname, profile); err != nil {
-			slog.Warn("failed to save workout total", "user", nickname, "err", err)
+			slog.Warn("failed to save workout statistics", "user", nickname, "err", err)
 		}
 	}
 	return &profile, nil
 }
 
-// withWorkoutTotal runs under workoutCommitMu. A missing total on disk makes
-// an interrupted update recoverable from the committed workout metadata.
-func (s *WorkoutsStore) withWorkoutTotal(nickname string, delta int, mutate func() error) error {
-	if s.users == nil || delta == 0 {
+func (s *WorkoutsStore) withWorkoutChange(nickname string, before, after *workouts.Workout, mutate func() error) error {
+	return s.withWorkoutStats(nickname, users.SameWorkoutSummary(before, after), func(profile *users.Profile) bool {
+		return profile.ApplyWorkoutChange(before, after)
+	}, mutate)
+}
+
+// withWorkoutStats runs under workoutCommitMu. Invalidation keeps interrupted
+// changes recoverable from the committed workout metadata.
+func (s *WorkoutsStore) withWorkoutStats(nickname string, unchanged bool, apply func(*users.Profile) bool, mutate func() error) error {
+	if s.users == nil {
 		return mutate()
 	}
 	s.users.mu.Lock()
@@ -44,34 +51,36 @@ func (s *WorkoutsStore) withWorkoutTotal(nickname string, delta int, mutate func
 	if err != nil {
 		return err
 	}
-	previous := profile.TotalWorkouts
-	if previous != nil {
-		profile.TotalWorkouts = nil
-		if err := s.users.saveProfile(nickname, profile); err != nil {
+	if unchanged && profile.HasWorkoutStats() {
+		return mutate()
+	}
+	if profile.TotalWorkouts != nil || profile.Workouts != nil {
+		invalidated := profile
+		invalidated.TotalWorkouts = nil
+		invalidated.Workouts = nil
+		if err := s.users.saveProfile(nickname, invalidated); err != nil {
 			return err
 		}
 	}
 
 	mutationErr := mutate()
-	if mutationErr == nil && previous != nil && *previous+delta >= 0 {
-		total := *previous + delta
-		profile.TotalWorkouts = &total
-	} else if err := s.recountWorkouts(nickname, &profile); err != nil {
-		slog.Warn("failed to count workouts", "user", nickname, "err", err)
-		return mutationErr
+	if mutationErr != nil || !apply(&profile) {
+		if err := s.rebuildWorkoutStats(nickname, &profile); err != nil {
+			slog.Warn("failed to rebuild workout statistics", "user", nickname, "err", err)
+			return mutationErr
+		}
 	}
 	if err := s.users.saveProfile(nickname, profile); err != nil {
-		slog.Warn("failed to save workout total", "user", nickname, "err", err)
+		slog.Warn("failed to save workout statistics", "user", nickname, "err", err)
 	}
 	return mutationErr
 }
 
-func (s *WorkoutsStore) recountWorkouts(nickname string, profile *users.Profile) error {
+func (s *WorkoutsStore) rebuildWorkoutStats(nickname string, profile *users.Profile) error {
 	items, err := s.listAll(nickname)
 	if err != nil {
 		return err
 	}
-	total := len(items)
-	profile.TotalWorkouts = &total
+	profile.RebuildWorkoutStats(items)
 	return nil
 }

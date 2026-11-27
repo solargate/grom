@@ -1,16 +1,16 @@
 package bbolt
 
 import (
-	"bytes"
 	"strings"
 
 	"github.com/solargate/grom/internal/users"
+	"github.com/solargate/grom/internal/workouts"
 	bolt "go.etcd.io/bbolt"
 )
 
 func (b *Backend) GetProfileWithWorkoutTotal(userID string) (*users.Profile, error) {
 	profile, err := b.users.GetProfile(userID)
-	if err != nil || profile.TotalWorkouts != nil {
+	if err != nil || profile.HasWorkoutStats() {
 		return profile, err
 	}
 	err = b.db.Update(func(tx *bolt.Tx) error {
@@ -23,18 +23,19 @@ func (b *Backend) GetProfileWithWorkoutTotal(userID string) (*users.Profile, err
 			return err
 		}
 		profile = &current
-		if profile.TotalWorkouts != nil {
+		if profile.HasWorkoutStats() {
 			return nil
 		}
-		total := countWorkouts(tx, user.Nickname)
-		profile.TotalWorkouts = &total
+		if err := rebuildWorkoutStats(tx, user.Nickname, profile); err != nil {
+			return err
+		}
 		return b.users.putProfile(tx, userID, *profile)
 	})
 	return profile, err
 }
 
-// updateWorkoutTotal runs after the metadata change in the same transaction.
-func (s *WorkoutsStore) updateWorkoutTotal(tx *bolt.Tx, nickname string, delta int) error {
+// updateWorkoutStats runs after the metadata change in the same transaction.
+func (s *WorkoutsStore) updateWorkoutStats(tx *bolt.Tx, nickname string, before, after *workouts.Workout) error {
 	userID := tx.Bucket(bucketIdxUsersNick).Get([]byte(strings.ToLower(nickname)))
 	if userID == nil {
 		return nil
@@ -44,22 +45,22 @@ func (s *WorkoutsStore) updateWorkoutTotal(tx *bolt.Tx, nickname string, delta i
 	if err != nil {
 		return err
 	}
-	var total int
-	if profile.TotalWorkouts != nil && *profile.TotalWorkouts+delta >= 0 {
-		total = *profile.TotalWorkouts + delta
-	} else {
-		total = countWorkouts(tx, nickname)
+	if profile.HasWorkoutStats() && users.SameWorkoutSummary(before, after) {
+		return nil
 	}
-	profile.TotalWorkouts = &total
+	if !profile.ApplyWorkoutChange(before, after) {
+		if err := rebuildWorkoutStats(tx, nickname, &profile); err != nil {
+			return err
+		}
+	}
 	return store.putProfile(tx, string(userID), profile)
 }
 
-func countWorkouts(tx *bolt.Tx, nickname string) int {
-	prefix := []byte(nickname + "/")
-	cursor := tx.Bucket(bucketWorkouts).Cursor()
-	total := 0
-	for key, _ := cursor.Seek(prefix); bytes.HasPrefix(key, prefix); key, _ = cursor.Next() {
-		total++
+func rebuildWorkoutStats(tx *bolt.Tx, nickname string, profile *users.Profile) error {
+	items, err := listWorkouts(tx, nickname)
+	if err != nil {
+		return err
 	}
-	return total
+	profile.RebuildWorkoutStats(items)
+	return nil
 }

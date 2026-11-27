@@ -79,6 +79,8 @@ Der aktuelle Modus wird über `GET /api/v1/server-info` im Feld `registration` b
 
 `postgres` ist in der Config reserviert, aber nicht implementiert.
 
+Das private Profil speichert die Anzahl der Workouts und einen Abschnitt `workouts`, gruppiert nach dem UTC-Startdatum. Jeder Eintrag enthält die Sportart, die Dauer in Sekunden und, sofern vorhanden, die Distanz in Metern. Grom aktualisiert die Statistik beim Speichern, Bearbeiten oder Löschen eines Workouts. Fehlt der Abschnitt, baut Grom ihn beim nächsten Lesen des Profils oder bei der nächsten Workout-Änderung aus den gespeicherten Metadaten neu auf. Bei der Migration berechnet Grom die Statistik für den Zielspeicher neu. `--verify` prüft das gespeicherte Ergebnis.
+
 Metadaten zwischen Treibern migrieren (Server zuerst stoppen; Track-/Medien-/Avatar-Blobs sind gemeinsam und werden nicht kopiert). Geschwindigkeits- und Herzfrequenz-Diagramme werden zwischen Datei-JSON-Blobs und bbolt-Binärbuckets konvertiert. Workout-Likes und -Kommentare (lokal, föderierter Cache und ausgehende Activity-IDs) sowie persönliche Zugriffstoken werden kopiert, damit sie nach dem Treiberwechsel lesbar bleiben:
 
 | Kopiert von `migrate-storage` | Nicht kopiert |

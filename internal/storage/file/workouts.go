@@ -14,6 +14,7 @@ import (
 
 	"github.com/solargate/grom/internal/data"
 	"github.com/solargate/grom/internal/storage/keys"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 	"gopkg.in/yaml.v3"
 )
@@ -85,7 +86,7 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 	workout.Device = workouts.NormalizeDevice(workout.Device)
 
 	var created *workouts.Workout
-	err = s.withWorkoutTotal(nickname, 1, func() error {
+	err = s.withWorkoutChange(nickname, nil, workout, func() error {
 		created, err = s.saveNewWorkout(nickname, workout)
 		return err
 	})
@@ -143,20 +144,20 @@ func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout
 	defer workoutCommitMu.Unlock()
 	userDir := s.userDir(nickname)
 	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	old, err := readWorkoutFromDir(filepath.Dir(filePath))
+	if errors.Is(err, workouts.ErrWorkoutNotFound) {
 		if !allowCreate {
 			return workouts.ErrWorkoutNotFound
 		}
 		if err := s.checkExternalID(nickname, workout); err != nil {
 			return err
 		}
-		return s.withWorkoutTotal(nickname, 1, func() error {
-			return writeWorkoutYAML(filePath, workout)
-		})
 	} else if err != nil {
 		return err
 	}
-	return writeWorkoutYAML(filePath, workout)
+	return s.withWorkoutChange(nickname, old, workout, func() error {
+		return writeWorkoutYAML(filePath, workout)
+	})
 }
 
 func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*workouts.Workout, error) {
@@ -170,6 +171,10 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 	if err != nil {
 		return nil, err
 	}
+	old, err := readWorkoutFromDir(oldDir)
+	if err != nil {
+		return nil, err
+	}
 
 	workout.Name = workouts.TrimWorkoutName(workout.Name)
 	workout.Description = workouts.TrimWorkoutDescription(workout.Description)
@@ -179,24 +184,26 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 	oldBase := filepath.Base(oldDir)
 	newBase := filepath.Base(newDir)
 
-	if oldBase != newBase {
+	err = s.withWorkoutChange(nickname, old, workout, func() error {
+		if oldBase == newBase {
+			return writeWorkoutYAML(filepath.Join(oldDir, oldBase+".yaml"), workout)
+		}
 		if _, err := os.Stat(newDir); err == nil {
-			return nil, workouts.ErrWorkoutExists
+			return workouts.ErrWorkoutExists
 		}
 		if err := os.Rename(oldDir, newDir); err != nil {
-			return nil, fmt.Errorf("rename workout dir: %w", err)
+			return fmt.Errorf("rename workout dir: %w", err)
 		}
 		oldYAML := filepath.Join(newDir, oldBase+".yaml")
 		newYAML := filepath.Join(newDir, newBase+".yaml")
 		if err := os.Rename(oldYAML, newYAML); err != nil {
 			// Best-effort rollback of directory rename.
 			_ = os.Rename(newDir, oldDir)
-			return nil, fmt.Errorf("rename workout yaml: %w", err)
+			return fmt.Errorf("rename workout yaml: %w", err)
 		}
-	}
-
-	filePath := workoutFilePath(userDir, workout.StartDate, workout.ID)
-	if err := writeWorkoutYAML(filePath, workout); err != nil {
+		return writeWorkoutYAML(newYAML, workout)
+	})
+	if err != nil {
 		return nil, err
 	}
 	result := *workout
@@ -450,18 +457,21 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 	if err != nil {
 		return err
 	}
-	delta := 0
-	if _, err := os.Stat(filepath.Join(dir, filepath.Base(dir)+".yaml")); err == nil {
-		delta = -1
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	return s.withWorkoutTotal(nickname, delta, func() error {
+	remove := func() error {
 		if err := os.RemoveAll(dir); err != nil {
 			return fmt.Errorf("delete workout dir: %w", err)
 		}
 		return nil
-	})
+	}
+	old, err := readWorkoutFromDir(dir)
+	if errors.Is(err, workouts.ErrWorkoutNotFound) {
+		return remove()
+	}
+	if err != nil {
+		// A damaged workout can still be deleted. Rebuild from what remains.
+		return s.withWorkoutStats(nickname, false, func(*users.Profile) bool { return false }, remove)
+	}
+	return s.withWorkoutChange(nickname, old, nil, remove)
 }
 
 func (s *WorkoutsStore) DeleteAll(nickname string) ([]string, error) {
@@ -498,7 +508,13 @@ func (s *WorkoutsStore) DeleteAll(nickname string) ([]string, error) {
 	}
 
 	deleted := make([]string, 0, len(saved))
-	err = s.withWorkoutTotal(nickname, -len(saved), func() error {
+	if len(saved) == 0 {
+		return deleted, nil
+	}
+	err = s.withWorkoutStats(nickname, false, func(profile *users.Profile) bool {
+		profile.RebuildWorkoutStats(nil)
+		return true
+	}, func() error {
 		for _, workout := range saved {
 			metadata := filepath.Base(workout.dir) + ".yaml"
 			files, err := os.ReadDir(workout.dir)

@@ -207,6 +207,7 @@ func cloneProfile(p users.Profile) users.Profile {
 	out := users.Profile{
 		LastSportType:  p.LastSportType,
 		UsedSportTypes: cloneStrings(p.UsedSportTypes),
+		Workouts:       p.Workouts.Clone(),
 	}
 	if p.TotalWorkouts != nil {
 		total := *p.TotalWorkouts

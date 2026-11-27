@@ -3,7 +3,9 @@ package storage_test
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -88,6 +90,9 @@ func TestConcurrentExternalIDCommitAndAttachmentRetry(t *testing.T) {
 			t.Fatalf("got %d successful writes and %d workouts, err=%v", created.Load(), len(items), err)
 		}
 		assertStoredWorkoutTotal(t, backend, user.ID, 1)
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{
+			items[0].StartDate.UTC().Format(time.DateOnly): {{SportType: "Run"}},
+		})
 	})
 }
 
@@ -118,7 +123,8 @@ func TestWorkoutTotalBackfillAndConcurrentChanges(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := backend.Users().PutProfile(user.ID, users.Profile{LastSportType: "Ride"}); err != nil {
+		legacyTotal := 1
+		if err := backend.Users().PutProfile(user.ID, users.Profile{LastSportType: "Ride", TotalWorkouts: &legacyTotal}); err != nil {
 			t.Fatal(err)
 		}
 		profile, err := backend.GetProfileWithWorkoutTotal(user.ID)
@@ -126,13 +132,17 @@ func TestWorkoutTotalBackfillAndConcurrentChanges(t *testing.T) {
 			t.Fatalf("backfilled profile = %+v, err = %v", profile, err)
 		}
 		assertStoredWorkoutTotal(t, backend, user.ID, 1)
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{
+			workout.StartDate.UTC().Format(time.DateOnly): {{SportType: "Ride"}},
+		})
 
 		var wg sync.WaitGroup
 		const adds = 8
+		startDate := workout.StartDate
 		for i := range adds {
 			wg.Go(func() {
 				item := workouts.Workout{
-					Name: fmt.Sprintf("Run %d", i), SportType: "Run", StartDate: time.Now().UTC(),
+					Name: fmt.Sprintf("Run %d", i), SportType: "Run", StartDate: startDate,
 				}
 				var err error
 				if i%2 == 0 {
@@ -158,6 +168,9 @@ func TestWorkoutTotalBackfillAndConcurrentChanges(t *testing.T) {
 		})
 		wg.Wait()
 		assertStoredWorkoutTotal(t, backend, user.ID, adds)
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{
+			startDate.UTC().Format(time.DateOnly): slices.Repeat([]users.WorkoutSummary{{SportType: "Run"}}, adds),
+		})
 
 		items, err := svc.List(user.Nickname)
 		if err != nil {
@@ -171,6 +184,71 @@ func TestWorkoutTotalBackfillAndConcurrentChanges(t *testing.T) {
 			})
 		}
 		wg.Wait()
+		assertStoredWorkoutTotal(t, backend, user.ID, 0)
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{})
+	})
+}
+
+func assertStoredWorkoutHistory(t *testing.T, backend storage.Backend, userID string, want users.WorkoutHistory) {
+	t.Helper()
+	profile, err := backend.Users().GetProfile(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !profile.HasWorkoutStats() || !maps.EqualFunc(*profile.Workouts, want, slices.Equal) {
+		t.Fatalf("profile history = %+v, want %v", profile.Workouts, want)
+	}
+}
+
+func TestWorkoutHistoryEditsAndDeletes(t *testing.T) {
+	forEachDriver(t, func(t *testing.T, backend storage.Backend) {
+		user, err := backend.Users().Create("alice", "Alice", "alice@example.com", "password123")
+		if err != nil {
+			t.Fatal(err)
+		}
+		service := backend.Workouts()
+		// Local November 27 is still November 26 in UTC.
+		start := time.Date(2026, 11, 27, 1, 0, 0, 0, time.FixedZone("UTC+3", 3*3600))
+		run := workouts.Workout{Name: "Run", SportType: "Run", StartDate: start, DurationSeconds: 600, Distance: 1750.25}
+		first, err := service.Create(user.Nickname, &run)
+		if err != nil {
+			t.Fatal(err)
+		}
+		run.ExternalID = &workouts.ExternalID{Name: "strava", ID: "other"}
+		second, err := service.ImportWithAttachments(user.Nickname, &run, &workouts.TrackInput{
+			Filename: "track.gpx", Data: []byte("<gpx/>"), Parsed: &tracks.Data{},
+		}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		runRow := users.WorkoutSummary{SportType: "Run", DurationSeconds: 600, DistanceM: 1750.25}
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{"2026-11-26": {runRow, runRow}})
+
+		strength := workouts.Workout{
+			Name: "Strength", SportType: "WeightTraining", StartDate: start.Add(3 * time.Hour), DurationSeconds: 900,
+		}
+		if _, err := service.Update(user.Nickname, first.ID, &strength); err != nil {
+			t.Fatal(err)
+		}
+		// Replaying the same edit must not duplicate the row.
+		if _, err := service.Update(user.Nickname, first.ID, &strength); err != nil {
+			t.Fatal(err)
+		}
+		strengthRow := users.WorkoutSummary{SportType: "WeightTraining", DurationSeconds: 900}
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{
+			"2026-11-26": {runRow},
+			"2026-11-27": {strengthRow},
+		})
+		assertStoredWorkoutTotal(t, backend, user.ID, 2)
+
+		if err := service.Delete(user.Nickname, second.ID); err != nil {
+			t.Fatal(err)
+		}
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{"2026-11-27": {strengthRow}})
+		if deleted, err := service.DeleteAll(user.Nickname); err != nil || len(deleted) != 1 {
+			t.Fatalf("delete all = %v, %v", deleted, err)
+		}
+		assertStoredWorkoutHistory(t, backend, user.ID, users.WorkoutHistory{})
 		assertStoredWorkoutTotal(t, backend, user.ID, 0)
 	})
 }

@@ -183,6 +183,23 @@ func TestDeleteAllWorkoutsCanRetryPartialFailure(t *testing.T) {
 			t.Cleanup(func() { _ = os.Chmod(blockedDir, 0700) })
 
 			expectStatus(t, ta.doJSON(t, http.MethodDelete, workoutCollection, password, token), http.StatusInternalServerError)
+			user, err := ta.app.Backend.Users().FindByNickname("alice")
+			if err != nil {
+				t.Fatal(err)
+			}
+			stored, err := ta.app.Backend.Users().GetProfile(user.ID)
+			if err != nil || !stored.HasWorkoutStats() || len(*stored.Workouts) != 2 {
+				t.Fatalf("expected two workout dates after partial deletion, got %+v, err = %v", stored, err)
+			}
+			remaining, err := ta.app.Workouts.List("alice")
+			if err != nil || len(remaining) != 2 {
+				t.Fatalf("expected two saved workouts, got %v, err = %v", remaining, err)
+			}
+			for _, item := range remaining {
+				if date := item.StartDate.UTC().Format(time.DateOnly); len((*stored.Workouts)[date]) != 1 {
+					t.Errorf("expected one summary for remaining workout on %s", date)
+				}
+			}
 			w := ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
 			expectStatus(t, w, http.StatusOK)
 			if profile := decodeObject(t, w); profile["total_workouts"] != float64(2) {
