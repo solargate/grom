@@ -1819,7 +1819,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteWorkoutData.
   ///
   /// In en, this message translates to:
-  /// **'Delete workout data'**
+  /// **'Delete workouts'**
   String get deleteWorkoutData;
 
   /// No description provided for @deleteWorkoutDataWarning.

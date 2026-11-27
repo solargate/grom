@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Edit profile'), findsOneWidget);
-    final deleteData = find.text('Delete workout data');
+    final deleteData = find.text('Delete workouts');
     final deleteAccount = find.text('Delete account');
     expect(tester.getTopLeft(find.text('Edit profile')).dy,
         lessThan(tester.getTopLeft(deleteData).dy));
@@ -122,7 +122,7 @@ void main() {
       Future<void> openConfirmation() async {
         await tester.tap(find.byType(ProfileMenu));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Delete workout data'));
+        await tester.tap(find.text('Delete workouts'));
         await tester.pumpAndSettle();
       }
 

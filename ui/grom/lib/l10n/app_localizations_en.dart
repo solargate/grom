@@ -956,7 +956,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileActions => 'Profile actions';
 
   @override
-  String get deleteWorkoutData => 'Delete workout data';
+  String get deleteWorkoutData => 'Delete workouts';
 
   @override
   String get deleteWorkoutDataWarning =>

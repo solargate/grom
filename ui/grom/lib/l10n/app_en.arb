@@ -489,7 +489,7 @@
   "noWorkoutsFromUser": "No workouts yet",
   "editProfile": "Edit profile",
   "profileActions": "Profile actions",
-  "deleteWorkoutData": "Delete workout data",
+  "deleteWorkoutData": "Delete workouts",
   "deleteWorkoutDataWarning": "All your saved workouts, including their tracks, photos, likes, and comments, will be permanently deleted from this server. You can continue using your account and equipment.",
   "deleteWorkoutDataSuccess": "Workout data deleted",
   "deleteWorkoutDataFailed": "Could not delete all workout data",

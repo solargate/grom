@@ -962,7 +962,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileActions => 'Действия с профилем';
 
   @override
-  String get deleteWorkoutData => 'Удалить данные о тренировках';
+  String get deleteWorkoutData => 'Удалить тренировки';
 
   @override
   String get deleteWorkoutDataWarning =>

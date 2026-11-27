@@ -18,7 +18,7 @@ Wenn der Betreiber Captcha aktiviert (`auth.captcha.enabled`), zeigen Anmeldung,
 
 Unter **Profile** / „Profil“ können Sie über das Overflow-Menü das Profil bearbeiten oder **Delete account** / „Konto löschen“ wählen. Vollständige Schritte, welche Daten entfernt werden und Föderationshinweise: [Grom-Konto löschen](delete-account.md).
 
-Um Ihren Trainingsverlauf zu löschen, wählen Sie **Profil → ⋮ → Trainingsdaten löschen**, geben Sie Ihr aktuelles Passwort ein und bestätigen Sie den Vorgang. Grom löscht Ihre gespeicherten Trainings samt Tracks, Fotos, Likes und Kommentaren dauerhaft. Sie bleiben angemeldet und behalten Ihre Ausrüstung. Deren Laufleistung wird anhand der verbleibenden Trainings neu berechnet. Ein Import oder eine Synchronisierung kann nach Beginn des Löschvorgangs weitere Trainings speichern. Bei aktivierter Föderation sendet Grom Löschmitteilungen für die einzelnen Trainings an externe Follower.
+Um Ihren Trainingsverlauf zu löschen, wählen Sie **Profil → ⋮ → Trainings löschen**, geben Sie Ihr aktuelles Passwort ein und bestätigen Sie den Vorgang. Grom löscht Ihre gespeicherten Trainings samt Tracks, Fotos, Likes und Kommentaren dauerhaft. Sie bleiben angemeldet und behalten Ihre Ausrüstung. Deren Laufleistung wird anhand der verbleibenden Trainings neu berechnet. Ein Import oder eine Synchronisierung kann nach Beginn des Löschvorgangs weitere Trainings speichern. Bei aktivierter Föderation sendet Grom Löschmitteilungen für die einzelnen Trainings an externe Follower.
 
 Im eigenen Profil steht unter den Abo- und Followerzahlen **Trainingseinheiten insgesamt**. Der Wert umfasst alle Ihre gespeicherten Trainingseinheiten einschließlich importierter Einheiten.
 
