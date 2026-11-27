@@ -240,12 +240,11 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 		if profile == nil {
 			profile = &users.Profile{}
 		}
-		total := len(ws)
-		profile.TotalWorkouts = &total
+		profile.RebuildWorkoutStats(ws)
 		if err := dst.Users().PutProfile(u.ID, *profile); err != nil {
 			return result, fmt.Errorf("import profile %s: %w", u.Nickname, err)
 		}
-		if profileNonEmpty(profile, total) {
+		if profileNonEmpty(profile, len(ws)) {
 			result.Profiles++
 		}
 

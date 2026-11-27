@@ -61,6 +61,18 @@ func TestVerifyDetectsDifferentRecordsWithEqualCounts(t *testing.T) {
 			t.Fatalf("expected workout verification mismatch; got %v", err)
 		}
 	}
+	profile, err := bolt.Users().GetProfile(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	(*profile.Workouts)[item.StartDate.Format(time.DateOnly)][0].DurationSeconds = 123
+	if err := bolt.Users().PutProfile(user.ID, *profile); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyContent(file, bolt, fileCfg.ResolvedLocation, ""); err == nil ||
+		!strings.Contains(err.Error(), "workout history differs") {
+		t.Fatalf("expected workout history verification mismatch; got %v", err)
+	}
 	wrongTotal := 0
 	if err := bolt.Users().PutProfile(user.ID, users.Profile{TotalWorkouts: &wrongTotal}); err != nil {
 		t.Fatal(err)

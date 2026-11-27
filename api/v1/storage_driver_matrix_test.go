@@ -67,6 +67,9 @@ func TestProfileBothStorageDrivers(t *testing.T) {
 			w = ta.doJSON(t, http.MethodGet, "/api/v1/profile", nil, token)
 			expectStatus(t, w, http.StatusOK)
 			profile := decodeObject(t, w)
+			if _, exists := profile["workouts"]; exists || profile["total_workouts"] != float64(1) {
+				t.Fatalf("unexpected profile response: %s", w.Body.String())
+			}
 			raw, _ := profile["used_sport_types"].([]any)
 			if len(raw) != 1 || raw[0] != "Ride" {
 				t.Fatalf("used_sport_types = %#v", profile["used_sport_types"])

@@ -222,7 +222,7 @@ func (s *WorkoutsStore) Create(nickname string, workout *workouts.Workout) (*wor
 		if err := s.putWorkout(tx, nickname, workout); err != nil {
 			return err
 		}
-		if err := s.updateWorkoutTotal(tx, nickname, 1); err != nil {
+		if err := s.updateWorkoutStats(tx, nickname, nil, workout); err != nil {
 			return err
 		}
 		path := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
@@ -300,8 +300,8 @@ func (s *WorkoutsStore) UpdateMetadata(nickname string, workout *workouts.Workou
 
 func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout, allowCreate bool) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		exists := s.workoutIDExists(tx, workout.ID)
-		if exists {
+		var old *workouts.Workout
+		if s.workoutIDExists(tx, workout.ID) {
 			// Allow overwrite of same id only if same primary key (idempotent retry).
 			_, key, err := s.lookupPrimaryKey(tx, workout.ID)
 			if err != nil {
@@ -314,6 +314,10 @@ func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout
 				}
 				return workouts.ErrWorkoutExists
 			}
+			old, err = s.getByPrimaryKey(tx, key)
+			if err != nil {
+				return err
+			}
 		} else {
 			if !allowCreate {
 				return workouts.ErrWorkoutNotFound
@@ -325,10 +329,7 @@ func (s *WorkoutsStore) writeMetadata(nickname string, workout *workouts.Workout
 		if err := s.putWorkout(tx, nickname, workout); err != nil {
 			return err
 		}
-		if !exists {
-			return s.updateWorkoutTotal(tx, nickname, 1)
-		}
-		return nil
+		return s.updateWorkoutStats(tx, nickname, old, workout)
 	})
 }
 
@@ -362,11 +363,6 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 			if tx.Bucket(bucketWorkouts).Get([]byte(newKey)) != nil {
 				return workouts.ErrWorkoutExists
 			}
-			oldDir := workoutDirPath(s.dataDir, nickname, old.StartDate, old.ID)
-			newDir := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
-			if err := os.Rename(oldDir, newDir); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("rename workout dir: %w", err)
-			}
 			oldDirName := keys.WorkoutDirName(old.StartDate, old.ID)
 			newDirName := keys.WorkoutDirName(workout.StartDate, workout.ID)
 			if err := MigrateLocalSpeedChartInTx(tx, nickname, oldDirName, newDirName); err != nil {
@@ -387,7 +383,20 @@ func (s *WorkoutsStore) Update(nickname string, workout *workouts.Workout) (*wor
 				_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(oldKey + workout.ID))
 			}
 		}
-		return s.putWorkout(tx, nickname, workout)
+		if err := s.putWorkout(tx, nickname, workout); err != nil {
+			return err
+		}
+		if err := s.updateWorkoutStats(tx, nickname, old, workout); err != nil {
+			return err
+		}
+		if oldKey != newKey {
+			oldDir := workoutDirPath(s.dataDir, nickname, old.StartDate, old.ID)
+			newDir := workoutDirPath(s.dataDir, nickname, workout.StartDate, workout.ID)
+			if err := os.Rename(oldDir, newDir); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("rename workout dir: %w", err)
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -425,18 +434,11 @@ func (s *WorkoutsStore) WorkoutDirName(nickname, workoutID string) (string, erro
 }
 
 func (s *WorkoutsStore) List(nickname string) ([]workouts.Workout, error) {
-	prefix := []byte(nickname + "/")
 	var result []workouts.Workout
 	err := s.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(bucketWorkouts).Cursor()
-		for k, v := c.Seek(prefix); k != nil && strings.HasPrefix(string(k), string(prefix)); k, v = c.Next() {
-			var w workouts.Workout
-			if err := unmarshalJSON(v, &w); err != nil {
-				return err
-			}
-			result = append(result, w)
-		}
-		return nil
+		var err error
+		result, err = listWorkouts(tx, nickname)
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -444,6 +446,20 @@ func (s *WorkoutsStore) List(nickname string) ([]workouts.Workout, error) {
 	sort.Slice(result, func(i, j int) bool {
 		return workouts.FeedNewer(result[i].StartDate, result[i].ID, result[j].StartDate, result[j].ID)
 	})
+	return result, nil
+}
+
+func listWorkouts(tx *bolt.Tx, nickname string) ([]workouts.Workout, error) {
+	prefix := []byte(nickname + "/")
+	var result []workouts.Workout
+	cursor := tx.Bucket(bucketWorkouts).Cursor()
+	for key, value := cursor.Seek(prefix); bytes.HasPrefix(key, prefix); key, value = cursor.Next() {
+		var workout workouts.Workout
+		if err := unmarshalJSON(value, &workout); err != nil {
+			return nil, err
+		}
+		result = append(result, workout)
+	}
 	return result, nil
 }
 
@@ -587,7 +603,7 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 		if err := s.deleteWorkoutMeta(tx, nickname, w); err != nil {
 			return err
 		}
-		if err := s.updateWorkoutTotal(tx, nickname, -1); err != nil {
+		if err := s.updateWorkoutStats(tx, nickname, w, nil); err != nil {
 			return err
 		}
 		// Roll back the metadata transaction on a blob error, leaving the

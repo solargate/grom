@@ -79,6 +79,8 @@ The current mode is exposed via `GET /api/v1/server-info` in the `registration` 
 
 `postgres` is reserved in config but not implemented.
 
+The private profile stores the workout count and a `workouts` section grouped by UTC start date. Each entry records the sport, duration in seconds, and distance in meters when available. Grom updates these statistics when a workout is saved, edited, or deleted. A missing section is rebuilt from saved workout metadata on the next profile read or workout change. Storage migration rebuilds these statistics for the destination, and `--verify` checks the stored result.
+
 Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes and comments (local, federated cache, and outbound activity ids) and personal access tokens are copied so they remain readable after switching drivers:
 
 | Copied by `migrate-storage` | Not copied |

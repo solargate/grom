@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **UI:** Show the total number of saved workouts in your profile on web and Android.
 - **UI:** Use **Delete workouts** in your profile to clear your saved workouts after confirming your password. Your account and equipment stay available.
+- **Server:** Store private daily workout history with sport, duration, and distance in both storage drivers.
 
 ## [0.18.2] - 2026-11-27
 

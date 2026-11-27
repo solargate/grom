@@ -46,7 +46,7 @@ func verifyContent(src, dst storage.Backend, location, domain string) error {
 	return nil
 }
 
-func collectRecords(backend storage.Backend, location, domain string, verifyStoredTotal bool) (migrationRecords, error) {
+func collectRecords(backend storage.Backend, location, domain string, verifyStoredStats bool) (migrationRecords, error) {
 	records := make(migrationRecords)
 	usersList, err := backend.Users().ListAll()
 	if err != nil {
@@ -87,15 +87,18 @@ func collectRecords(backend storage.Backend, location, domain string, verifyStor
 		if err != nil {
 			return nil, err
 		}
-		total := len(items)
-		if verifyStoredTotal && (profile == nil || profile.TotalWorkouts == nil || *profile.TotalWorkouts != total) {
-			return nil, fmt.Errorf("workout total differs from saved workouts for user %q", user.Nickname)
-		}
 		if profile == nil {
 			profile = &users.Profile{}
 		}
-		profile.TotalWorkouts = &total
-		if err := records.add([4]string{"profile", user.ID}, profile); err != nil {
+		expected := *profile
+		expected.RebuildWorkoutStats(items)
+		if verifyStoredStats && (profile.TotalWorkouts == nil || *profile.TotalWorkouts != *expected.TotalWorkouts) {
+			return nil, fmt.Errorf("workout total differs from saved workouts for user %q", user.Nickname)
+		}
+		if verifyStoredStats && (!profile.HasWorkoutStats() || !maps.EqualFunc(*profile.Workouts, *expected.Workouts, slices.Equal)) {
+			return nil, fmt.Errorf("workout history differs from saved workouts for user %q", user.Nickname)
+		}
+		if err := records.add([4]string{"profile", user.ID}, expected); err != nil {
 			return nil, err
 		}
 		for _, item := range items {
