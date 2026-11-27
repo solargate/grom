@@ -28,7 +28,7 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 ![Equipment](screenshots/equipment.jpg){ width="250" }
 {: align="center" }
 
-Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Install and run](admin/install.md). Source and quick start: [repository README](https://github.com/solargate/grom#readme).
+Screen-by-screen tour: [User overview](user/overview.md). Install and run: [Install and run](admin/install.md). Source and quick start: [repository README](https://github.com/solargate/grom#readme).
 
 ## I want to…
 
@@ -57,8 +57,9 @@ Screen-by-screen tour: [User overview](user/overview.md). Build and run: [Instal
 
 | Goal | Page |
 |------|------|
-| Build and run the server | [Install and run](admin/install.md) |
+| Install and run the server | [Install and run](admin/install.md) |
 | Configure TLS, storage, federation, logging, mailer / password reset, captcha | [Configuration](admin/configuration.md) |
+| Back up and restore server data | [Backup and restore](admin/backup-restore.md) |
 
 ### Reference
 

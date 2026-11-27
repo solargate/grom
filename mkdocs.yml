@@ -43,6 +43,7 @@ nav:
   - Admin:
       - Install and run: admin/install.md
       - Configuration: admin/configuration.md
+      - Backup and restore: admin/backup-restore.md
   - Integrations:
       - Strava bulk import: integrations/strava-bulk-import.md
       - Strava API import: integrations/strava-api-import.md
@@ -75,6 +76,7 @@ plugins:
             Admin: Администрирование
             Install and run: Установка и запуск
             Configuration: Конфигурация
+            Backup and restore: Резервное копирование и восстановление
             Integrations: Интеграции
             Strava bulk import: Массовый импорт Strava
             Strava API import: Импорт через Strava API
@@ -95,6 +97,7 @@ plugins:
             Admin: Administration
             Install and run: Installation und Start
             Configuration: Konfiguration
+            Backup and restore: Sicherung und Wiederherstellung
             Integrations: Integrationen
             Strava bulk import: Strava-Massenimport
             Strava API import: Strava-API-Import

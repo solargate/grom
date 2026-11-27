@@ -18,7 +18,7 @@ When the operator enables captcha (`auth.captcha.enabled`), sign-in, registratio
 
 From **Profile**, use the overflow menu to edit your profile or **Delete account**. Full steps, what data is removed, and federation notes: [Delete your Grom account](delete-account.md).
 
-To clear your workout history, choose **Profile → ⋮ → Delete workouts**, enter your current password, and confirm. Grom permanently deletes your saved workouts and their tracks, photos, likes, and comments. You stay signed in and keep your equipment. Equipment mileage is recalculated from the remaining workouts. An import or sync can still save new workouts after deletion starts. On federated servers, Grom sends deletion notices for individual workouts to remote followers.
+To clear your workout history, choose **Profile → ⋮ → Delete workouts**, enter your current password, and confirm. Grom permanently deletes your saved workouts and their tracks, photos, likes, and comments. You stay signed in and keep your equipment. Equipment mileage is recalculated from the remaining workouts. An import or sync can still save new workouts after deletion starts. On federated servers, Grom attempts to send deletion notices for individual workouts to remote followers. Remote copies may remain if delivery fails. If Grom reports an error, some workouts may already have been deleted. Repeat the action to remove the remaining workouts.
 
 Your own profile shows **Total workouts** below the following and follower counts. It includes all your saved workouts, including imports.
 

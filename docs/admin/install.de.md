@@ -1,8 +1,10 @@
 # Installation und Start
 
-Installieren Sie Grom aus einem GitHub-Release oder bauen Sie aus dem Quellcode. Konfigurationsdetails (TLS, Speicher, Föderation, Mailer / Passwort-Reset, Captcha) siehe [Konfiguration](configuration.md).
+Installieren Sie Grom für einen schnellen Einstieg aus einem GitHub-Release. Die Weboberfläche ist in der Server-Binärdatei enthalten. Einstellungen für öffentlich erreichbare Server finden Sie unter [Konfiguration](configuration.md).
 
-## Download von GitHub Releases
+<a id="download-von-github-releases"></a>
+
+## Download von GitHub Releases {#download-from-github-releases}
 
 Vorgefertigte Pakete erscheinen mit jedem [GitHub-Release](https://github.com/solargate/grom/releases):
 
@@ -12,11 +14,52 @@ Vorgefertigte Pakete erscheinen mit jedem [GitHub-Release](https://github.com/so
 | `grom-<version>-darwin-arm64.zip` | Server-Binary + `config-examples/` (Apple Silicon) |
 | `grom-<version>-darwin-amd64.zip` | Server-Binary + `config-examples/` (Intel Mac) |
 | `grom-<version>-windows-amd64.zip` | Server-Binary + `config-examples/` |
-| `grom-<version>.apk` | Android-Client |
 
-Entpacken Sie das Archiv für Ihr OS, kopieren Sie eine Konfiguration aus `config-examples/` (setzen Sie `auth.jwt_secret`) und starten Sie die `grom`-Binary — siehe [Start](#start) unten.
+Dasselbe Release enthält auch den Android-Client als `grom-<version>.apk`.
 
-## Aus dem Quellcode bauen
+<a id="start"></a>
+
+## Starten {#run}
+
+1. Laden Sie das Serverarchiv für Ihr Betriebssystem und Ihre Prozessorarchitektur herunter und entpacken Sie es. Öffnen Sie ein Terminal im entpackten Verzeichnis mit der Binärdatei und `config-examples/`.
+2. Kopieren Sie die Vorlage für lokales HTTP nach `config.yaml` und setzen Sie einen langen, zufälligen Wert für `auth.jwt_secret`.
+3. Starten Sie den Server mit dieser Datei.
+
+**Linux und macOS**
+
+```bash
+cp config-examples/config.dev.notls.yaml config.yaml
+# Vor dem Start auth.jwt_secret in config.yaml setzen.
+./grom --config config.yaml
+```
+
+**Windows PowerShell**
+
+```powershell
+Copy-Item config-examples/config.dev.notls.yaml config.yaml
+# Vor dem Start auth.jwt_secret in config.yaml setzen.
+.\grom.exe --config config.yaml
+```
+
+Öffnen Sie `http://localhost:8080/` im Browser. Registrieren Sie ein Konto und melden Sie sich an. Das Beispiel verwendet HTTP für einen lokalen Test. Richten Sie [TLS](configuration.md#tls-profiles) ein, bevor Sie den Server öffentlich erreichbar machen.
+
+Ohne `--config` (oder `-c`) sucht Grom nach `config.yaml` im aktuellen Arbeitsverzeichnis. Relative Speicherpfade beziehen sich auf das Verzeichnis der Binärdatei.
+
+Der Android-Client kann sich mit derselben Instanz verbinden, wenn der Server vom Gerät aus erreichbar ist. Geben Sie die aus Sicht des Geräts erreichbare Adresse ein. Die Wahl der Serveradresse und die Anmeldung beschreibt der [Benutzerüberblick](../user/overview.md). Die Swagger-Oberfläche finden Sie auf dem laufenden Server unter `/api/docs/`.
+
+## Nächste Schritte
+
+- TLS-Profil und Speicher-Treiber wählen (`bbolt` für normale Installationen; `file` vor allem für Tests / winzige Instanzen) — [Konfiguration](configuration.md)
+- Sichern Sie die Serverdaten und testen Sie die Wiederherstellung — [Sicherung und Wiederherstellung](backup-restore.md)
+- Optional Passwort-Reset per E-Mail aktivieren (`mailer` + `auth.reset.public_base_url`) — [Konfiguration — Mailer und Passwort-Reset](configuration.md#mailer-und-passwort-reset)
+- Optional ALTCHA-Captcha bei Registrierung/Login/„vergessen“ aktivieren (`auth.captcha.enabled`) — [Konfiguration — Auth-Captcha](configuration.md#auth-captcha-altcha)
+- Selbstsignierte Zertifikate für lokales HTTPS erzeugen — `grom gencerts` (siehe TLS-Abschnitt in der Konfiguration)
+- Produkt-Tour für den Client — [Benutzerüberblick](../user/overview.md)
+- API-Referenz im Browser — `/api/docs/` auf dem laufenden Server
+
+<a id="aus-dem-quellcode-bauen"></a>
+
+## Aus dem Quellcode bauen {#build-from-source}
 
 ### Voraussetzungen
 
@@ -38,51 +81,4 @@ make web     # Flutter web → internal/web/dist
 
 Weitere nützliche Targets: `make apidoc` (OpenAPI neu erzeugen), `make catalog` (Server-Katalog-Dart), `make android-apk`, `make clean`.
 
-## Start
-
-Beispielkonfigurationen liegen in den Release-Archiven und unter `cmd/grom/config-examples/` im Repo. Der Server sucht `config.yaml` im aktuellen Arbeitsverzeichnis, sofern Sie nicht `--config` / `-c` übergeben.
-
-**Aus einem Release-Paket** (nur-HTTP-Beispiel):
-
-```bash
-cp config-examples/config.dev.notls.yaml config.yaml
-# config.yaml bearbeiten — auth.jwt_secret setzen
-./grom --config config.yaml
-```
-
-**Aus dem Quellcode, nur HTTP** (kein TLS, Föderation aus):
-
-```bash
-cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
-```
-
-**Nach `make grom`**, mit Config neben der Binary:
-
-```bash
-cd cmd/grom
-./grom --config config.yaml
-# oder Standard-config.yaml im Arbeitsverzeichnis:
-./grom
-```
-
-Öffnen Sie die **Web-UI** im Browser unter der Basis-URL des Servers (derselbe Flutter-Client wie Android — z. B. `http://localhost:8080/` mit `config.dev.notls.yaml`). Registrieren Sie einen Nutzer und melden Sie sich an. Siehe [Benutzerüberblick](../user/overview.md).
-
-Die **Android**-App (später iOS) kann sich mit derselben Instanz verbinden: Host auf dem Login-Bildschirm eingeben (Schema optional) oder einen [freigegebenen öffentlichen Server](../user/approved-servers.md) aus der Liste wählen. Klartext-**HTTP ist für lokale/LAN**-Installationen ohne TLS erlaubt; nutzen Sie HTTPS, wenn der Server über das lokale Netz hinaus erreichbar ist. Wie der Client `http` vs `https` auflöst: [Benutzerüberblick](../user/overview.md).
-
-**API-Dokumentation (Swagger UI):** `http://<host>:<port>/api/docs/` (z. B. `http://localhost:8080/api/docs/`). Generierte OpenAPI-Quellen liegen auch unter [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) im Repository.
-
-CLI-Hilfe:
-
-```bash
-grom --help
-grom --version
-```
-
-## Nächste Schritte
-
-- TLS-Profil und Speicher-Treiber wählen (`bbolt` für normale Installationen; `file` vor allem für Tests / winzige Instanzen) — [Konfiguration](configuration.md)
-- Optional Passwort-Reset per E-Mail aktivieren (`mailer` + `auth.reset.public_base_url`) — [Konfiguration — Mailer und Passwort-Reset](configuration.md#mailer-und-passwort-reset)
-- Optional ALTCHA-Captcha bei Registrierung/Login/„vergessen“ aktivieren (`auth.captcha.enabled`) — [Konfiguration — Auth-Captcha](configuration.md#auth-captcha-altcha)
-- Selbstsignierte Zertifikate für lokales HTTPS erzeugen — `grom gencerts` (siehe TLS-Abschnitt in der Konfiguration)
-- Produkt-Tour für den Client — [Benutzerüberblick](../user/overview.md)
-- API-Referenz im Browser — `/api/docs/` auf dem laufenden Server
+Wechseln Sie nach dem Build nach `cmd/grom` und folgen Sie der [Startanleitung](#run) mit der Binärdatei und den Konfigurationsbeispielen aus diesem Verzeichnis.

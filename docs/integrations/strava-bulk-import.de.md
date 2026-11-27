@@ -4,11 +4,12 @@ Dieses Dokument beschreibt, wie Grom Workouts aus einem ZIP des [Strava-Massenda
 
 ## Überblick
 
-1. Der Nutzer lädt ein Strava-Export-ZIP auf der Seite **Integration → Strava** hoch.
-2. Das Archiv wird unter `{storage.temp_dir}/{nickname}/` gespeichert.
-3. Der Server öffnet das ZIP mit Gos `archive/zip` und liest Dateien direkt (keine volle Extraktion).
-4. Pro Aktivität erzeugt Grom ein Workout-YAML und hängt optional Track (`AttachTrack`), Fotos und Ausrüstung an.
-5. Nach Abschluss wird das temporäre Importverzeichnis des Nutzers entfernt.
+1. Laden Sie das Strava-Exportarchiv unter **Integration → Strava** hoch.
+2. Der Server speichert das Archiv in `{storage.temp_dir}/{nickname}/strava-{job_id}/` und liest die Dateien direkt daraus.
+3. Grom bereitet den verfügbaren Track und die Fotos vor, ordnet die Ausrüstung zu und speichert jedes Training über den konfigurierten Speichertreiber.
+4. Nach Abschluss räumt Grom das Verzeichnis dieses Auftrags auf.
+
+Startet der Server während des Imports neu, wird der Auftrag als unterbrochen gemeldet. Laden Sie dieselbe ZIP-Datei erneut hoch. Grom überspringt Aktivitäten, die bereits in Ihrem Konto gespeichert sind.
 
 ## Konfiguration
 
@@ -60,18 +61,18 @@ Spaltennummern sind **1-basiert**. Strava lokalisiert CSV-Header; Grom nutzt imm
 | 102 | Общее количество повторений | `reps_total` | |
 | 103 | Медиафайл | `media_files` | Fotos aus `media/`, Videos werden ignoriert |
 
-Alle neuen YAML-Felder werden **nach `distance`** und vor `track` geschrieben.
-
 Ignorierte Spalten umfassen Col 7 (lokalisierte Distanz in km) — stattdessen Col 18 (Meter) nutzen.
 
-## Track-Handling: `AttachTrack` vs `CreateWithTrack`
+<a id="track-handling-attachtrack-vs-createwithtrack"></a>
+
+## Track-Verarbeitung {#track-handling}
 
 | Methode | Anwendungsfall | Überschreibt Client-Metriken |
 |---------|----------------|------------------------------|
 | `CreateWithTrack` | Manueller / Multipart-Create mit Track (inkl. Strava-API-Sync) | **Nein** — gesetzte Client-Werte für `start_date`, Dauern, `distance`, Geschwindigkeiten und Elevation bleiben erhalten; der Track füllt nur leere Felder |
-| `AttachTrack` | Strava-ZIP-Import | **Nein** — CSV-Werte bleiben erhalten |
+| `ImportWithAttachments` | Strava-ZIP-Import | Nein. Werte aus der CSV bleiben erhalten |
 
-Beide Pfade schreiben die Track-Datei, setzen `device` aus FIT wenn verfügbar und erzeugen `map-preview.webp`, wenn GPS-Daten vorhanden sind.
+In beiden Fällen kann Grom den Gerätenamen aus der FIT-Datei übernehmen und bei vorhandenen GPS-Daten eine Kartenvorschau erstellen.
 
 ## Ausrüstung
 

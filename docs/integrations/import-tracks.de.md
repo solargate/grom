@@ -11,6 +11,12 @@ Grom kann eine oder mehrere GPX- oder FIT-Trackdateien über den **System-Dateid
 
 In der Home-App-Leiste gibt es dafür keinen Sync-Button.
 
+## Track aus einer anderen App öffnen (Android) {#open-track-android}
+
+1. Wählen Sie in einem Dateimanager oder einer anderen App eine GPX- oder FIT-Datei und dann **Öffnen mit → Grom**. Der Track darf bis zu 20 MiB groß sein.
+2. Melden Sie sich an, wenn Grom Sie dazu auffordert. Das Formular für ein neues Training öffnet sich mit der angehängten Datei.
+3. Prüfen Sie die Trainingsdaten und speichern Sie das Training. Verwenden Sie für mehrere Tracks die oben beschriebene Dateiauswahl.
+
 ## Was importiert wird
 
 Pro ausgewählter Datei:

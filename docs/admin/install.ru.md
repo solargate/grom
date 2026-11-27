@@ -1,6 +1,6 @@
 # Установка и запуск
 
-Установите Grom из GitHub Release или соберите из исходников. Подробности конфигурации (TLS, хранилище, федерация, mailer / сброс пароля, captcha) — в [Конфигурация](configuration.md).
+Для быстрого запуска установите Grom из релиза GitHub. Веб-интерфейс встроен в бинарник сервера. Настройки для публичного сервера описаны в разделе [«Конфигурация»](configuration.md).
 
 ## Скачать с GitHub Releases {#download-from-github-releases}
 
@@ -12,9 +12,46 @@
 | `grom-<version>-darwin-arm64.zip` | Бинарник сервера + `config-examples/` (Apple Silicon) |
 | `grom-<version>-darwin-amd64.zip` | Бинарник сервера + `config-examples/` (Intel Mac) |
 | `grom-<version>-windows-amd64.zip` | Бинарник сервера + `config-examples/` |
-| `grom-<version>.apk` | Android-клиент |
 
-Распакуйте архив для вашей ОС, скопируйте конфиг из `config-examples/` (задайте `auth.jwt_secret`), затем запустите бинарник `grom` — см. [Запуск](#run) ниже.
+В том же релизе доступен Android-клиент `grom-<version>.apk`.
+
+## Запуск {#run}
+
+1. Скачайте и распакуйте серверный архив для вашей ОС и архитектуры. Откройте терминал в распакованном каталоге, где находятся бинарник и `config-examples/`.
+2. Скопируйте пример для локального HTTP в `config.yaml` и задайте в `auth.jwt_secret` длинный случайный секрет.
+3. Запустите сервер с этим файлом.
+
+**Linux и macOS**
+
+```bash
+cp config-examples/config.dev.notls.yaml config.yaml
+# Перед запуском задайте auth.jwt_secret в config.yaml.
+./grom --config config.yaml
+```
+
+**Windows PowerShell**
+
+```powershell
+Copy-Item config-examples/config.dev.notls.yaml config.yaml
+# Перед запуском задайте auth.jwt_secret в config.yaml.
+.\grom.exe --config config.yaml
+```
+
+Откройте `http://localhost:8080/` в браузере. Зарегистрируйтесь и войдите. Пример использует HTTP и предназначен для локальной проверки. Настройте [TLS](configuration.md#tls-profiles), прежде чем открывать доступ к серверу из интернета.
+
+Без `--config` (или `-c`) Grom ищет `config.yaml` в текущем рабочем каталоге. Относительные пути хранилища отсчитываются от каталога бинарника.
+
+Android-клиент может подключиться к тому же серверу, если устройство имеет к нему доступ. Укажите адрес сервера, доступный с этого устройства. Выбор адреса и вход описаны в [обзоре для пользователя](../user/overview.md). Swagger UI доступен по пути `/api/docs/` на работающем сервере.
+
+## Дальше {#next-steps}
+
+- Выберите профиль TLS и драйвер хранилища (`bbolt` для обычных установок; `file` в основном для тестов / крошечных инстансов) — [Конфигурация](configuration.md)
+- Создайте резервную копию данных сервера и проверьте восстановление — [Резервное копирование и восстановление](backup-restore.md)
+- При желании включите email для сброса пароля (`mailer` + `auth.reset.public_base_url`) — [Конфигурация — Mailer и сброс пароля](configuration.md#mailer-and-password-reset)
+- При желании включите ALTCHA captcha на регистрацию/вход/«забыли пароль» (`auth.captcha.enabled`) — [Конфигурация — Auth captcha](configuration.md#auth-captcha-altcha)
+- Сгенерируйте самоподписанные сертификаты для локального HTTPS — `grom gencerts` (см. раздел TLS в конфигурации)
+- Обзор продукта для клиента — [Обзор для пользователя](../user/overview.md)
+- Справка API в браузере — `/api/docs/` на работающем сервере
 
 ## Сборка из исходников {#build-from-source}
 
@@ -38,51 +75,4 @@ make web     # Flutter web → internal/web/dist
 
 Другие полезные цели: `make apidoc` (перегенерация OpenAPI), `make catalog` (Dart-каталог серверов), `make android-apk`, `make clean`.
 
-## Запуск {#run}
-
-Примеры конфигов есть в релизных архивах и в `cmd/grom/config-examples/` в репозитории. Сервер ищет `config.yaml` в текущем рабочем каталоге, если не передан `--config` / `-c`.
-
-**Из релизного пакета** (пример только HTTP):
-
-```bash
-cp config-examples/config.dev.notls.yaml config.yaml
-# отредактируйте config.yaml — задайте auth.jwt_secret
-./grom --config config.yaml
-```
-
-**Из исходников, только HTTP** (без TLS, федерация выключена):
-
-```bash
-cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
-```
-
-**После `make grom`**, с конфигом рядом с бинарником:
-
-```bash
-cd cmd/grom
-./grom --config config.yaml
-# или полагаться на config.yaml в рабочей директории по умолчанию:
-./grom
-```
-
-Откройте **веб-UI** в браузере по базовому URL сервера (тот же Flutter-клиент, что на Android — например `http://localhost:8080/` с `config.dev.notls.yaml`). Зарегистрируйте пользователя и войдите. См. [Обзор для пользователя](../user/overview.md).
-
-Приложение **Android** (и позже iOS) может подключиться к тому же инстансу: на экране входа укажите хост (схема необязательна) или выберите [одобренный публичный сервер](../user/approved-servers.md) из списка. Открытый **HTTP разрешён для локальных/LAN**-установок без TLS; используйте HTTPS, если сервер доступен за пределами локальной сети. Как клиент выбирает `http` vs `https` — в [Обзор для пользователя](../user/overview.md).
-
-**Документация API (Swagger UI):** `http://<host>:<port>/api/docs/` (например `http://localhost:8080/api/docs/`). Сгенерированные исходники OpenAPI также лежат в [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) в репозитории.
-
-Справка CLI:
-
-```bash
-grom --help
-grom --version
-```
-
-## Дальше {#next-steps}
-
-- Выберите профиль TLS и драйвер хранилища (`bbolt` для обычных установок; `file` в основном для тестов / крошечных инстансов) — [Конфигурация](configuration.md)
-- При желании включите email для сброса пароля (`mailer` + `auth.reset.public_base_url`) — [Конфигурация — Mailer и сброс пароля](configuration.md#mailer-and-password-reset)
-- При желании включите ALTCHA captcha на регистрацию/вход/«забыли пароль» (`auth.captcha.enabled`) — [Конфигурация — Auth captcha](configuration.md#auth-captcha-altcha)
-- Сгенерируйте самоподписанные сертификаты для локального HTTPS — `grom gencerts` (см. раздел TLS в конфигурации)
-- Обзор продукта для клиента — [Обзор для пользователя](../user/overview.md)
-- Справка API в браузере — `/api/docs/` на работающем сервере
+После сборки перейдите в `cmd/grom` и выполните [шаги запуска](#run), используя бинарник и примеры конфигурации из этого каталога.

@@ -21,9 +21,11 @@ Default lifetime is **90 days**. You can choose another duration or explicitly c
 | Scope | Allows |
 |-------|--------|
 | `workouts:read` | List and read your own local workouts, tracks, charts, map previews, and media |
-| `workouts:write` | Create, update, delete workouts; upload tracks and media |
+| `workouts:write` | Create, update, and delete individual workouts, and upload tracks and media |
 | `equipment:read` | List equipment |
 | `equipment:write` | Create, update, delete equipment |
+
+Deleting all workouts at once requires a normal session (JWT) and your current password.
 
 Likes, comments, social features, Strava import, and profile endpoints require a normal UI login (JWT), not a PAT.
 

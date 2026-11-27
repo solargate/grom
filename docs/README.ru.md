@@ -28,7 +28,7 @@ Grom — self-hosted трекер тренировок с опциональны
 ![Снаряжение](screenshots/equipment.jpg){ width="250" }
 {: align="center" }
 
-Обзор экранов: [Обзор для пользователя](user/overview.md). Сборка и запуск: [Установка и запуск](admin/install.md). Исходники и быстрый старт: [README репозитория](https://github.com/solargate/grom#readme).
+Обзор экранов: [Обзор для пользователя](user/overview.md). Установка и запуск: [Установка и запуск](admin/install.md). Исходники и быстрый старт: [README репозитория](https://github.com/solargate/grom#readme).
 
 ## Я хочу… {#i-want-to}
 
@@ -57,8 +57,9 @@ Grom — self-hosted трекер тренировок с опциональны
 
 | Цель | Страница |
 |------|----------|
-| Собрать и запустить сервер | [Установка и запуск](admin/install.md) |
+| Установить и запустить сервер | [Установка и запуск](admin/install.md) |
 | Настроить TLS, хранилище, федерацию, логирование, mailer / сброс пароля, captcha | [Конфигурация](admin/configuration.md) |
+| Создать резервную копию и восстановить данные сервера | [Резервное копирование и восстановление](admin/backup-restore.md) |
 
 ### Справка {#reference}
 

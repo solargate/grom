@@ -28,7 +28,7 @@ Der Server ist eine einzelne Go-Binary; der Flutter-Client erscheint als eingebe
 ![Ausrüstung](screenshots/equipment.jpg){ width="250" }
 {: align="center" }
 
-Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und starten: [Installation und Start](admin/install.md). Quellcode und Quick Start: [Repository-README](https://github.com/solargate/grom#readme).
+Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Installieren und starten: [Installation und Start](admin/install.md). Quellcode und Quick Start: [Repository-README](https://github.com/solargate/grom#readme).
 
 ## Ich möchte…
 
@@ -57,8 +57,9 @@ Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Bauen und st
 
 | Ziel | Seite |
 |------|-------|
-| Server bauen und starten | [Installation und Start](admin/install.md) |
+| Server installieren und starten | [Installation und Start](admin/install.md) |
 | TLS, Speicher, Föderation, Logging, Mailer / Passwort-Reset, Captcha konfigurieren | [Konfiguration](admin/configuration.md) |
+| Serverdaten sichern und wiederherstellen | [Sicherung und Wiederherstellung](admin/backup-restore.md) |
 
 ### Referenz
 

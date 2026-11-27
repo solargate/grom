@@ -72,24 +72,24 @@ The current mode is exposed via `GET /api/v1/server-info` in the `registration` 
 
 `file` is fine for tests and very small instances (YAML metadata on disk is easy to inspect). For a normal or production install, prefer `bbolt` — metadata lives in a Bolt DB while tracks, photos, and other blobs stay on the filesystem.
 
-| Driver | Metadata | Charts (speed / heart rate) | Workout likes / comments | Blobs (tracks, photos, avatars, keys) |
+| Driver | Metadata | Charts (speed / heart rate / cadence) | Workout likes / comments | Blobs (tracks, photos, avatars, keys) |
 |--------|----------|-----------------------------|--------------------------|----------------------------------------|
-| `file` (default) | YAML under `storage.location` (`users.yaml`, per-user `equipment.yaml`, `profile.yaml`, workout YAML, …) | `speed-chart.json` and `heartrate-chart.json` in each workout dir | `likes.yaml` and `comments.yaml` next to each local workout; federated like/comment cache and outbox activity IDs under the viewer’s `federation/` tree | Same tree |
-| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`); includes `user_profiles` bucket for UI preferences | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts` and `heart_rate_charts` / `fed_heart_rate_charts` (federated inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments`, and `comment_activities` | Same filesystem layout under `storage.location` |
+| `file` (default) | YAML under `storage.location` (`users.yaml`, per-user `equipment.yaml`, `profile.yaml`, workout YAML, …) | `speed-chart.json`, `heartrate-chart.json`, and `cadence-chart.json` in each workout dir | `likes.yaml` and `comments.yaml` next to each local workout; federated like/comment cache and outbox activity IDs under the viewer’s `federation/` tree | Same tree |
+| `bbolt` | JSON in `{location}/grom.db` (or `storage.bbolt.path`); includes `user_profiles` bucket for UI preferences | Packed binary values in bbolt buckets `speed_charts` / `fed_speed_charts`, `heart_rate_charts` / `fed_heart_rate_charts`, and `cadence_charts` / `fed_cadence_charts` (federated inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments`, and `comment_activities` | Same filesystem layout under `storage.location` |
 
 `postgres` is reserved in config but not implemented.
 
 The private profile stores the workout count and a `workouts` section grouped by UTC start date. Each entry records the sport, duration in seconds, and distance in meters when available. Grom updates these statistics when a workout is saved, edited, or deleted. A missing section is rebuilt from saved workout metadata on the next profile read or workout change. Storage migration rebuilds these statistics for the destination, and `--verify` checks the stored result.
 
-Migrate metadata between drivers (stop the server first; track/media/avatar blobs are shared and not copied). Speed and heart-rate charts are converted between file JSON blobs and bbolt binary buckets. Workout likes and comments (local, federated cache, and outbound activity ids) and personal access tokens are copied so they remain readable after switching drivers:
+[Back up the server](backup-restore.md) before switching drivers, then keep it stopped during migration. Both drivers use the same on-disk tracks, photos, avatars, and keys.
 
 | Copied by `migrate-storage` | Not copied |
 |-----------------------------|------------|
 | Users, profiles, equipment, workouts | Password-reset tokens (short-lived; in-flight reset links become invalid) |
 | Follows, federation followers, federated inbox authors/workouts | Blob files (tracks, photos, avatars, keys) — shared on disk |
 | Local/federated likes and comments + outbound activity ids | Temp Strava jobs / in-memory captcha state |
-| Speed/HR charts (format conversion) | |
-| Personal access tokens (PAT) | |
+| Speed, heart-rate, and cadence charts (format conversion) | |
+| Personal access tokens (PAT) and push subscriptions | |
 
 ```bash
 grom migrate-storage --config config.yaml --from file --to bbolt --verify
@@ -97,7 +97,7 @@ grom migrate-storage --config config.yaml --from file --to bbolt --verify
 grom migrate-storage --config config.yaml --from bbolt --to file --verify
 ```
 
-`--verify` checks record keys and content, including chart data at the precision of the bbolt format. A migration to bbolt builds the database beside the destination and replaces it after copying and any requested verification succeed.
+`--verify` checks record keys and content, including chart data at the precision of the bbolt format. A migration to bbolt builds the database beside the destination and replaces it after copying and any requested verification succeed. When targeting `file`, migration writes directly to the target tree and a failure can leave partial changes. Change `storage.driver` and restart only after migration succeeds.
 
 Use `--dry-run` to count records without writing, and `--force` to overwrite an existing bbolt database.
 

@@ -24,7 +24,9 @@ Grom wird über eine YAML-Datei konfiguriert. Standardmäßig sucht er `config.y
 
 Relative Pfade in `storage.*`, `server.tls.cert_file` / `key_file`, `server.tls.autocert.cache_dir` und `federation.ca_cert_file` werden relativ zum Verzeichnis der `grom`-Binary aufgelöst (absolute Pfade bleiben unverändert).
 
-## TLS-Profile
+<a id="tls-profile"></a>
+
+## TLS-Profile {#tls-profiles}
 
 | Profil | Config-Datei | `tls.mode` | Föderation |
 |--------|--------------|------------|------------|
@@ -68,28 +70,30 @@ Die Einstellung `server.registration` steuert, ob neue Benutzer sich anmelden k�
 
 Der aktuelle Modus wird über `GET /api/v1/server-info` im Feld `registration` bereitgestellt, damit Clients die Oberfläche anpassen können, bevor der Benutzer eine Registrierung versucht.
 
-## Speicher-Treiber
+<a id="speicher-treiber"></a>
+
+## Speicher-Treiber {#storage-drivers}
 
 `file` eignet sich für Tests und sehr kleine Instanzen (YAML-Metadaten auf der Platte sind leicht einsehbar). Für normale oder Production-Installationen bevorzugen Sie `bbolt` — Metadaten in einer Bolt-DB, Tracks, Fotos und andere Blobs bleiben auf dem Dateisystem.
 
-| Treiber | Metadaten | Diagramme (Geschwindigkeit / Herzfrequenz) | Workout-Likes / -Kommentare | Blobs (Tracks, Fotos, Avatare, Schlüssel) |
+| Treiber | Metadaten | Diagramme (Geschwindigkeit / Herzfrequenz / Trittfrequenz) | Workout-Likes / -Kommentare | Blobs (Tracks, Fotos, Avatare, Schlüssel) |
 |---------|-----------|--------------------------------------------|-----------------------------|-------------------------------------------|
-| `file` (Standard) | YAML unter `storage.location` (`users.yaml`, pro Nutzer `equipment.yaml`, `profile.yaml`, Workout-YAML, …) | `speed-chart.json` und `heartrate-chart.json` im jeweiligen Workout-Verzeichnis | `likes.yaml` und `comments.yaml` neben jedem lokalen Workout; föderierter Like-/Kommentar-Cache und Outbox-Activity-IDs unter dem `federation/`-Baum des Betrachters | Dieselbe Baumstruktur |
-| `bbolt` | JSON in `{location}/grom.db` (oder `storage.bbolt.path`); inkl. Bucket `user_profiles` für UI-Präferenzen | Gepackte Binärwerte in bbolt-Buckets `speed_charts` / `fed_speed_charts` und `heart_rate_charts` / `fed_heart_rate_charts` (föderierte Inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments` und `comment_activities` | Dasselbe Dateisystem-Layout unter `storage.location` |
+| `file` (Standard) | YAML unter `storage.location` (`users.yaml`, pro Nutzer `equipment.yaml`, `profile.yaml`, Workout-YAML, …) | `speed-chart.json`, `heartrate-chart.json` und `cadence-chart.json` im jeweiligen Workout-Verzeichnis | `likes.yaml` und `comments.yaml` neben jedem lokalen Workout; föderierter Like-/Kommentar-Cache und Outbox-Activity-IDs unter dem `federation/`-Baum des Betrachters | Dieselbe Baumstruktur |
+| `bbolt` | JSON in `{location}/grom.db` (oder `storage.bbolt.path`); inkl. Bucket `user_profiles` für UI-Präferenzen | Gepackte Binärwerte in bbolt-Buckets `speed_charts` / `fed_speed_charts`, `heart_rate_charts` / `fed_heart_rate_charts` und `cadence_charts` / `fed_cadence_charts` (föderierte Inbox) | Buckets `workout_likes`, `fed_workout_likes`, `like_activities`, `workout_comments`, `fed_workout_comments` und `comment_activities` | Dasselbe Dateisystem-Layout unter `storage.location` |
 
 `postgres` ist in der Config reserviert, aber nicht implementiert.
 
 Das private Profil speichert die Anzahl der Workouts und einen Abschnitt `workouts`, gruppiert nach dem UTC-Startdatum. Jeder Eintrag enthält die Sportart, die Dauer in Sekunden und, sofern vorhanden, die Distanz in Metern. Grom aktualisiert die Statistik beim Speichern, Bearbeiten oder Löschen eines Workouts. Fehlt der Abschnitt, baut Grom ihn beim nächsten Lesen des Profils oder bei der nächsten Workout-Änderung aus den gespeicherten Metadaten neu auf. Bei der Migration berechnet Grom die Statistik für den Zielspeicher neu. `--verify` prüft das gespeicherte Ergebnis.
 
-Metadaten zwischen Treibern migrieren (Server zuerst stoppen; Track-/Medien-/Avatar-Blobs sind gemeinsam und werden nicht kopiert). Geschwindigkeits- und Herzfrequenz-Diagramme werden zwischen Datei-JSON-Blobs und bbolt-Binärbuckets konvertiert. Workout-Likes und -Kommentare (lokal, föderierter Cache und ausgehende Activity-IDs) sowie persönliche Zugriffstoken werden kopiert, damit sie nach dem Treiberwechsel lesbar bleiben:
+[Sichern Sie den Server](backup-restore.md) vor dem Treiberwechsel und lassen Sie ihn während der Migration gestoppt. Beide Treiber verwenden dieselben Dateien für Tracks, Fotos, Avatare und Schlüssel.
 
 | Kopiert von `migrate-storage` | Nicht kopiert |
 |-------------------------------|---------------|
 | Nutzer, Profile, Ausrüstung, Workouts | Passwort-Reset-Token (kurzlebig; laufende Reset-Links werden ungültig) |
 | Follows, Föderations-Follower, föderierte Inbox-Autoren/Workouts | Blob-Dateien (Tracks, Fotos, Avatare, Schlüssel) — gemeinsam auf der Platte |
 | Lokale/föderierte Likes und Kommentare + ausgehende Activity-IDs | Temporäre Strava-Jobs / Captcha-Zustand im Speicher |
-| Speed-/HR-Diagramme (Formatkonvertierung) | |
-| Persönliche Zugriffstoken (PAT) | |
+| Geschwindigkeits-, Herzfrequenz- und Trittfrequenzdiagramme (Formatkonvertierung) | |
+| Persönliche Zugriffstoken (PAT) und Push-Abonnements | |
 
 ```bash
 grom migrate-storage --config config.yaml --from file --to bbolt --verify
@@ -97,7 +101,7 @@ grom migrate-storage --config config.yaml --from file --to bbolt --verify
 grom migrate-storage --config config.yaml --from bbolt --to file --verify
 ```
 
-`--verify` prüft Schlüssel und Inhalte der Datensätze, einschließlich Diagrammdaten mit der Genauigkeit des bbolt-Formats. Bei der Migration zu bbolt wird die Datenbank neben dem Ziel erstellt und ersetzt dieses nach erfolgreichem Kopieren und gegebenenfalls nach der Prüfung.
+`--verify` prüft Schlüssel und Inhalte der Datensätze, einschließlich Diagrammdaten mit der Genauigkeit des bbolt-Formats. Bei der Migration zu bbolt wird die Datenbank neben dem Ziel erstellt und ersetzt dieses nach erfolgreichem Kopieren und gegebenenfalls nach der Prüfung. Beim Wechsel zu `file` schreibt die Migration direkt in das Zielverzeichnis. Bei einem Fehler können Teiländerungen bestehen bleiben. Ändern Sie `storage.driver` erst nach erfolgreicher Migration und starten Sie Grom dann neu.
 
 `--dry-run` zählt Datensätze ohne Schreiben; `--force` überschreibt eine vorhandene bbolt-Datenbank.
 

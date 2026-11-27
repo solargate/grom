@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI:** Use **Delete workouts** in your profile to clear your saved workouts after confirming your password. Your account and equipment stay available.
 - **Server:** Store private daily workout history with sport, duration, and distance in both storage drivers.
 
+### Changed
+
+- **Docs:** Lead with ready-to-run server releases, document backup and restore, and update migration, import, and workout deletion guides.
+
 ## [0.18.2] - 2026-11-27
 
 ### Google Play

@@ -4,11 +4,12 @@ This document describes how Grom imports workouts from a [Strava bulk data expor
 
 ## Overview
 
-1. User uploads a Strava export ZIP on the **Integration → Strava** page.
-2. The archive is saved to `{storage.temp_dir}/{nickname}/`.
-3. The server opens the ZIP with Go's `archive/zip` and reads files directly (no full extraction).
-4. For each activity Grom creates a workout YAML, optionally attaches a track (`AttachTrack`), photos, and equipment.
-5. After completion the user's temporary import directory is removed.
+1. Upload a Strava export ZIP under **Integration → Strava**.
+2. The server saves the archive in `{storage.temp_dir}/{nickname}/strava-{job_id}/` and reads it in place.
+3. Grom prepares the available track and photos, resolves equipment, and saves each workout through the configured storage driver.
+4. When the job finishes, Grom cleans up that job's directory.
+
+If the server restarts mid-import, the job is reported as interrupted. Upload the same ZIP again. Grom skips activities already saved for your account.
 
 ## Configuration
 
@@ -60,18 +61,18 @@ Column numbers are **1-based**. Strava localizes CSV headers; Grom always uses i
 | 102 | Общее количество повторений | `reps_total` | |
 | 103 | Медиафайл | `media_files` | Photos from `media/`, videos ignored |
 
-All new YAML fields are written **after `distance`** and before `track`.
-
 Ignored columns include col 7 (localized distance in km) — use col 18 (meters) instead.
 
-## Track handling: `AttachTrack` vs `CreateWithTrack`
+<a id="track-handling-attachtrack-vs-createwithtrack"></a>
+
+## Track handling {#track-handling}
 
 | Method | Use case | Overwrites client metrics |
 |--------|----------|---------------------------|
 | `CreateWithTrack` | Manual / multipart create with a track (including Strava API sync) | **No** — non-empty client `start_date`, durations, `distance`, speeds, and elevation fields are preserved; the track fills only empty metrics |
-| `AttachTrack` | Strava ZIP import | **No** — CSV values are preserved |
+| `ImportWithAttachments` | Strava ZIP import | No — CSV values are preserved |
 
-Both paths still write the track file, set `device` from FIT when available, and generate `map-preview.webp` when GPS data exists.
+Both paths can set the device name from FIT and generate a map preview when GPS data is available.
 
 ## Equipment
 

@@ -11,6 +11,12 @@ Grom can import one or more GPX or FIT track files through the **system file pic
 
 The Home app bar does not include a sync button for this flow.
 
+## Open a track from another app (Android) {#open-track-android}
+
+1. In a file manager or another app, select a GPX or FIT file and choose **Open with → Grom**. The track can be up to 20 MiB.
+2. Sign in if prompted. Grom opens the add-workout form with the file attached.
+3. Review the workout details and save. For several tracks at once, use the system picker described above.
+
 ## What gets imported
 
 For each selected file:

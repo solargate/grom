@@ -1,6 +1,6 @@
 # Install and run
 
-Install Grom from a GitHub release or build from source. For configuration details (TLS, storage, federation, mailer / password reset, captcha), see [Configuration](configuration.md).
+Install Grom from a GitHub release for the quickest setup. The server binary includes the web UI. For public deployments, see [Configuration](configuration.md).
 
 ## Download from GitHub Releases
 
@@ -12,9 +12,46 @@ Pre-built packages are published with each [GitHub release](https://github.com/s
 | `grom-<version>-darwin-arm64.zip` | Server binary + `config-examples/` (Apple Silicon) |
 | `grom-<version>-darwin-amd64.zip` | Server binary + `config-examples/` (Intel Mac) |
 | `grom-<version>-windows-amd64.zip` | Server binary + `config-examples/` |
-| `grom-<version>.apk` | Android client |
 
-Unpack the archive for your OS, copy a config from `config-examples/` (set `auth.jwt_secret`), then run the `grom` binary — see [Run](#run) below.
+The same release also provides the Android client as `grom-<version>.apk`.
+
+## Run
+
+1. Download and extract the server archive for your operating system and CPU. Open a terminal in the extracted directory, where the binary and `config-examples/` are located.
+2. Copy the local HTTP example to `config.yaml` and replace `auth.jwt_secret` with a long random secret.
+3. Start the server with that file.
+
+**Linux and macOS**
+
+```bash
+cp config-examples/config.dev.notls.yaml config.yaml
+# Edit config.yaml and set auth.jwt_secret before starting.
+./grom --config config.yaml
+```
+
+**Windows PowerShell**
+
+```powershell
+Copy-Item config-examples/config.dev.notls.yaml config.yaml
+# Edit config.yaml and set auth.jwt_secret before starting.
+.\grom.exe --config config.yaml
+```
+
+Open `http://localhost:8080/` in a browser. Register an account and sign in. The example uses HTTP and is intended for a local trial. Configure [TLS](configuration.md#tls-profiles) before exposing the server publicly.
+
+Without `--config` (or `-c`), Grom looks for `config.yaml` in the current working directory. Relative storage paths are resolved from the binary directory.
+
+An Android client can connect to the same instance from a device that can reach the server. Enter the server’s address as seen from that device. See [User overview](../user/overview.md) for server URL selection and sign-in. Swagger UI is available at `/api/docs/` on the running server.
+
+## Next steps
+
+- Choose a TLS profile and storage driver (`bbolt` for normal installs; `file` is mainly for tests / tiny instances) — [Configuration](configuration.md)
+- Back up your server data and test recovery — [Backup and restore](backup-restore.md)
+- Optionally enable password reset email (`mailer` + `auth.reset.public_base_url`) — [Configuration — Mailer and password reset](configuration.md#mailer-and-password-reset)
+- Optionally enable ALTCHA captcha on register/login/forgot (`auth.captcha.enabled`) — [Configuration — Auth captcha](configuration.md#auth-captcha-altcha)
+- Generate self-signed certs for local HTTPS — `grom gencerts` (see TLS section in configuration)
+- Product tour for the client — [User overview](../user/overview.md)
+- API reference in the browser — `/api/docs/` on the running server
 
 ## Build from source
 
@@ -38,51 +75,4 @@ make web     # Flutter web → internal/web/dist
 
 Other useful targets: `make apidoc` (regenerate OpenAPI), `make catalog` (server catalog Dart), `make android-apk`, `make clean`.
 
-## Run
-
-Example configs ship in release archives and in `cmd/grom/config-examples/` in the repo. The server looks for `config.yaml` in the current working directory unless you pass `--config` / `-c`.
-
-**From a release package** (HTTP-only example):
-
-```bash
-cp config-examples/config.dev.notls.yaml config.yaml
-# edit config.yaml — set auth.jwt_secret
-./grom --config config.yaml
-```
-
-**From source, HTTP only** (no TLS, federation off):
-
-```bash
-cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
-```
-
-**After `make grom`**, with a config next to the binary:
-
-```bash
-cd cmd/grom
-./grom --config config.yaml
-# or rely on default config.yaml in the working directory:
-./grom
-```
-
-Open the **web UI** in a browser at the server’s base URL (same Flutter client as Android — for example `http://localhost:8080/` with `config.dev.notls.yaml`). Register a user, then sign in. See [User overview](../user/overview.md).
-
-The **Android** app (and later iOS) can connect to that same instance: enter the host on the login screen (scheme optional), or pick an [approved public server](../user/approved-servers.md) from the dropdown. Cleartext **HTTP is allowed for local/LAN** installs without TLS; use HTTPS when exposing the server beyond the local network. See [User overview](../user/overview.md) for how the client resolves `http` vs `https`.
-
-**API docs (Swagger UI):** `http://<host>:<port>/api/docs/` (for example `http://localhost:8080/api/docs/`). Generated OpenAPI sources also live under [`api/docs/`](https://github.com/solargate/grom/tree/master/api/docs) in the repository.
-
-CLI help:
-
-```bash
-grom --help
-grom --version
-```
-
-## Next steps
-
-- Choose a TLS profile and storage driver (`bbolt` for normal installs; `file` is mainly for tests / tiny instances) — [Configuration](configuration.md)
-- Optionally enable password reset email (`mailer` + `auth.reset.public_base_url`) — [Configuration — Mailer and password reset](configuration.md#mailer-and-password-reset)
-- Optionally enable ALTCHA captcha on register/login/forgot (`auth.captcha.enabled`) — [Configuration — Auth captcha](configuration.md#auth-captcha-altcha)
-- Generate self-signed certs for local HTTPS — `grom gencerts` (see TLS section in configuration)
-- Product tour for the client — [User overview](../user/overview.md)
-- API reference in the browser — `/api/docs/` on the running server
+After the build, enter `cmd/grom` and follow the [run steps](#run) using the binary and configuration examples in that directory.

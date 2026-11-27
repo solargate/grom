@@ -37,14 +37,11 @@ The server is a single Go binary; the Flutter client ships as an embedded web UI
 
 ## Quick start
 
-```bash
-make grom    # swagger + Flutter web + Go binary → cmd/grom/grom
-cd cmd/grom && go run . --config config-examples/config.dev.notls.yaml
-```
+Download the server archive for your platform from [GitHub Releases](https://github.com/solargate/grom/releases) and unpack it. The binary includes the web UI.
 
-Set `auth.jwt_secret` in your config (required). Example profiles: `cmd/grom/config-examples/`.
+From the extracted directory, copy `config-examples/config.dev.notls.yaml` to `config.yaml` and replace `auth.jwt_secret` with a long random secret. Run `./grom --config config.yaml` on Linux or macOS, or `.\grom.exe --config config.yaml` in Windows PowerShell. Open `http://localhost:8080/` to register and sign in.
 
-Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api/docs/` for Swagger API docs (default dev port).
+See [Install and run](docs/admin/install.md) for platform-specific steps, public deployment settings, and building from source.
 
 ## Documentation
 
@@ -60,7 +57,7 @@ Then open `http://localhost:8080/` for the web UI, or `http://localhost:8080/api
 - [Grom API tokens](docs/user/grom-api-tokens.md) — personal access tokens for scripts and external apps
 - [Import tracks](docs/integrations/import-tracks.md) — GPX/FIT via system file picker
 - [Strava API import](docs/integrations/strava-api-import.md) — Android BYO Strava OAuth sync
-- [Install and run](docs/admin/install.md) — build and start the server
+- [Install and run](docs/admin/install.md) — install a release or build from source
 - [Configuration](docs/admin/configuration.md) — TLS, storage, federation, logging, mailer / password reset, captcha
 - [Privacy policy](docs/privacy.md)
 - API docs — `/api/docs/` on a running server (OpenAPI sources in [`api/docs/`](api/docs/))

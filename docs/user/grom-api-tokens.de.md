@@ -21,9 +21,11 @@ Die Standardlebensdauer beträgt **90 Tage**. Sie können eine andere Dauer wäh
 | Scope | Erlaubt |
 |-------|---------|
 | `workouts:read` | Eigene lokale Workouts, Tracks, Diagramme, Kartenvorschauen und Medien auflisten und lesen |
-| `workouts:write` | Workouts erstellen, aktualisieren, löschen; Tracks und Medien hochladen |
+| `workouts:write` | Einzelne Trainings erstellen, aktualisieren und löschen sowie Tracks und Medien hochladen |
 | `equipment:read` | Ausrüstung auflisten |
 | `equipment:write` | Ausrüstung erstellen, aktualisieren, löschen |
+
+Um alle Trainings auf einmal zu löschen, benötigen Sie eine normale Sitzung (JWT) und Ihr aktuelles Passwort.
 
 Likes, Kommentare, Social-Features, Strava-Import und Profil-Endpunkte erfordern einen normalen UI-Login (JWT), kein PAT.
 
