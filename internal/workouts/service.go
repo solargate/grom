@@ -3,6 +3,7 @@ package workouts
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/solargate/grom/internal/equipment"
 	"github.com/solargate/grom/internal/storage/blob"
@@ -18,6 +19,7 @@ type Service struct {
 	heartRateCharts HeartRateChartStore
 	cadenceCharts   CadenceChartStore
 	equipment       EquipmentCatalog
+	mutationLocks   sync.Map
 }
 
 func NewService(repo Repository, blobs blob.Store, speedCharts SpeedChartStore, heartRateCharts HeartRateChartStore, cadenceCharts CadenceChartStore) *Service {
@@ -136,7 +138,24 @@ func (s *Service) loadEquipmentByID(nickname string, items []Workout) map[string
 }
 
 func (s *Service) Delete(nickname, workoutID string) error {
+	unlock := s.lockExistingWorkoutMutations(nickname)
+	defer unlock()
 	return s.repo.Delete(nickname, workoutID)
+}
+
+func (s *Service) DeleteAll(nickname string) ([]string, error) {
+	unlock := s.lockExistingWorkoutMutations(nickname)
+	defer unlock()
+	return s.repo.DeleteAll(nickname)
+}
+
+// Attachment writes span blob and metadata stores. Serialize them with deletion
+// so an in-flight write cannot recreate a deleted workout's directory.
+func (s *Service) lockExistingWorkoutMutations(nickname string) func() {
+	value, _ := s.mutationLocks.LoadOrStore(nickname, &sync.Mutex{})
+	mu := value.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
 }
 
 func (s *Service) RemoveEquipmentFromAll(nickname, equipmentID string) error {
@@ -179,6 +198,9 @@ func (s *Service) ensureExternalIDAvailable(nickname string, workout *Workout) e
 // Update applies editable metadata fields onto an existing workout.
 // Track, media, device, external_id, and track-derived stats not present on patch are preserved.
 func (s *Service) Update(nickname string, workoutID string, patch *Workout) (*Workout, error) {
+	unlock := s.lockExistingWorkoutMutations(nickname)
+	defer unlock()
+
 	if patch == nil {
 		return nil, ErrInvalidWorkout
 	}

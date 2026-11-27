@@ -2,6 +2,7 @@ package federation
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -1027,11 +1028,15 @@ func optionalPositiveInt(m map[string]any, key string) (int, bool) {
 }
 
 func (d *Delivery) postActivity(inbox string, activity map[string]any) error {
+	return d.postActivityWithContext(context.Background(), inbox, activity)
+}
+
+func (d *Delivery) postActivityWithContext(ctx context.Context, inbox string, activity map[string]any) error {
 	body, err := json.Marshal(activity)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, inbox, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, inbox, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

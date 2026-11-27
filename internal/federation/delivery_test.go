@@ -195,6 +195,30 @@ func TestPostActivityNon2xxReturnsError(t *testing.T) {
 	}
 }
 
+func TestDeliverWorkoutDeleteContinuesAfterInboxFailure(t *testing.T) {
+	unavailable := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer unavailable.Close()
+
+	delivered := make(chan struct{}, 1)
+	available := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		delivered <- struct{}{}
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer available.Close()
+
+	delivery := &Delivery{client: available.Client()}
+	if err := delivery.DeliverWorkoutDelete("bob", "38472901", []string{unavailable.URL, available.URL}); err == nil {
+		t.Fatal("expected an error for the unavailable inbox")
+	}
+	select {
+	case <-delivered:
+	default:
+		t.Fatal("the available inbox did not receive the deletion")
+	}
+}
+
 func TestDeliverWorkoutStopsOnFirstInboxFailure(t *testing.T) {
 	var successCalls int
 	okServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

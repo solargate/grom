@@ -65,6 +65,7 @@ class _GromShellState extends State<GromShell> {
   String? _nickname;
   GromDestination _selectedDestination = GromDestination.home;
   int _workoutRefreshToken = 0;
+  bool _deletingWorkoutData = false;
   Workout? _viewingWorkout;
   bool _isWorkoutMapExpanded = false;
   int? _workoutPhotoViewerIndex;
@@ -887,6 +888,7 @@ class _GromShellState extends State<GromShell> {
   Widget _buildProfileMenu() {
     return ProfileMenu(
       onSelected: _handleProfileMenuAction,
+      deletingWorkoutData: _deletingWorkoutData,
     );
   }
 
@@ -894,45 +896,50 @@ class _GromShellState extends State<GromShell> {
     switch (action) {
       case ProfileMenuAction.edit:
         unawaited(_profilePageKey.currentState?.openEditProfile());
+      case ProfileMenuAction.deleteWorkoutData:
+        unawaited(_confirmDeleteWorkoutData());
       case ProfileMenuAction.deleteAccount:
         unawaited(_confirmDeleteAccount());
     }
   }
 
-  Future<void> _confirmDeleteAccount() async {
+  Future<String?> _confirmDeletionWithPassword({
+    required String title,
+    required String warning,
+  }) {
     final l10n = AppLocalizations.of(context)!;
-    final passwordController = TextEditingController();
+    var password = '';
 
-    final confirmed = await showDialog<bool>(
+    return showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(l10n.deleteAccount),
+          title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.deleteAccountWarning),
+              Text(warning),
               const SizedBox(height: 16),
               TextField(
-                controller: passwordController,
                 obscureText: true,
                 autofillHints: const [AutofillHints.password],
                 decoration: InputDecoration(
                   labelText: l10n.deleteAccountPasswordLabel,
                 ),
-                onSubmitted: (_) => Navigator.pop(dialogContext, true),
+                onChanged: (value) => password = value,
+                onSubmitted: (value) => Navigator.pop(dialogContext, value),
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(l10n.cancel),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
+              onPressed: () => Navigator.pop(dialogContext, password),
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(dialogContext).colorScheme.error,
                 foregroundColor: Theme.of(dialogContext).colorScheme.onError,
@@ -943,10 +950,76 @@ class _GromShellState extends State<GromShell> {
         );
       },
     );
+  }
 
-    final password = passwordController.text;
-    passwordController.dispose();
-    if (confirmed != true || !mounted) {
+  Future<void> _confirmDeleteWorkoutData() async {
+    if (_deletingWorkoutData) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final password = await _confirmDeletionWithPassword(
+      title: l10n.deleteWorkoutData,
+      warning: l10n.deleteWorkoutDataWarning,
+    );
+    if (password == null || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (password.trim().isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.deleteAccountInvalidPassword)),
+      );
+      return;
+    }
+
+    setState(() => _deletingWorkoutData = true);
+    var refresh = false;
+    try {
+      final token = await AuthStorage.getToken();
+      if (!mounted) return;
+      if (token == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.deleteWorkoutDataFailed)),
+        );
+        return;
+      }
+      await _api.deleteWorkoutData(token: token, password: password);
+      refresh = true;
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.deleteWorkoutDataSuccess)),
+      );
+    } on SessionExpiredException {
+      return;
+    } on ApiException catch (e) {
+      refresh = (e.statusCode ?? 0) >= 500;
+      if (!mounted) return;
+      final message = e.statusCode == 403
+          ? l10n.deleteAccountInvalidPassword
+          : l10n.deleteWorkoutDataFailed;
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      // A lost response can leave part or all of the deletion committed.
+      refresh = true;
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.deleteWorkoutDataFailed)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingWorkoutData = false;
+          if (refresh) _workoutRefreshToken++;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    final password = await _confirmDeletionWithPassword(
+      title: l10n.deleteAccount,
+      warning: l10n.deleteAccountWarning,
+    );
+    if (password == null || !mounted) {
       return;
     }
     if (password.isEmpty) {

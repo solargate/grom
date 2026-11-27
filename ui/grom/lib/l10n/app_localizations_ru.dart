@@ -962,6 +962,20 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileActions => 'Действия с профилем';
 
   @override
+  String get deleteWorkoutData => 'Удалить данные о тренировках';
+
+  @override
+  String get deleteWorkoutDataWarning =>
+      'Все ваши сохранённые тренировки вместе с треками, фотографиями, лайками и комментариями будут безвозвратно удалены с этого сервера. Вы сможете продолжить пользоваться аккаунтом и снаряжением.';
+
+  @override
+  String get deleteWorkoutDataSuccess => 'Данные о тренировках удалены';
+
+  @override
+  String get deleteWorkoutDataFailed =>
+      'Не удалось удалить все данные о тренировках';
+
+  @override
   String get deleteAccount => 'Удалить аккаунт';
 
   @override

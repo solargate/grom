@@ -14,6 +14,9 @@ type Repository interface {
 	// sportTypes nil means no sport filter; when non-nil, only matching SportType values are returned.
 	ListPage(nickname string, cursor *Cursor, limit int, sportTypes map[string]struct{}) (items []Workout, hasMore bool, err error)
 	Delete(nickname, workoutID string) error
+	// DeleteAll removes the owner's committed workouts and returns the IDs removed,
+	// including any successfully deleted before an error.
+	DeleteAll(nickname string) ([]string, error)
 	RemoveEquipmentFromAll(nickname, equipmentID string) error
 	HasExternalID(nickname, name, id string) (bool, error)
 	WorkoutDirName(nickname, workoutID string) (string, error)

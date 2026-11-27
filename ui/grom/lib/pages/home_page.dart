@@ -164,8 +164,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _filterExpanded = false;
       });
       _syncTabController(showFeedTab: false, preferredTab: HomeFeedTab.myWorkouts);
-      _notifySportFilterChrome();
-      _notifyMyWorkoutsLayoutChrome();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || widget.nickname != null) return;
+        _notifySportFilterChrome();
+        _notifyMyWorkoutsLayoutChrome();
+      });
       return;
     }
 

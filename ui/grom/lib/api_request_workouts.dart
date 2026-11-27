@@ -1,6 +1,22 @@
 part of 'api_request.dart';
 
 mixin _WorkoutsApi on _ApiTransport {
+  Future<void> deleteWorkoutData({
+    required String token,
+    required String password,
+  }) async {
+    final response = await _request(
+      'DELETE',
+      _uri('/api/v1/workouts'),
+      headers: _bearerHeaders(token, contentType: 'application/json'),
+      body: jsonEncode({'password': password}),
+      timeout: const Duration(minutes: 2),
+    );
+    if (response.statusCode != 204) {
+      throw _parseError(response, authenticated: true);
+    }
+  }
+
   Future<Workout> createWorkout({
     required String token,
     required Map<String, dynamic> body,

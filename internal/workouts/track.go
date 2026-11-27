@@ -120,6 +120,9 @@ func (svc *Service) deleteStagedCharts(nickname, dirName string) {
 // AttachTrack saves a track file and map preview for an existing workout without
 // overwriting client-provided start_date, durations, distance, speeds, or elevation.
 func (svc *Service) AttachTrack(nickname string, workout *Workout, track *TrackInput) (*Workout, error) {
+	unlock := svc.lockExistingWorkoutMutations(nickname)
+	defer unlock()
+
 	if workout == nil || workout.ID == "" {
 		return nil, ErrInvalidWorkout
 	}

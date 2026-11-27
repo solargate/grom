@@ -2069,6 +2069,44 @@ paths:
       tags:
       - users
   /workouts:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete the authenticated user's saved workouts and
+        their attachments after password confirmation. JWT only (PAT rejected).
+      parameters:
+      - description: Current password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v1.deleteAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "403":
+          description: Invalid password
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal server error; some workouts may have been deleted
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete all of the current user's workouts
+      tags:
+      - workouts
     get:
       description: Return a cursor page of workouts for the authenticated user sorted
         by start date descending (id descending tie-breaker). Use scope=feed for the

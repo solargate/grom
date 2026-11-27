@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Google Play
 
 - Your profile now shows your total number of workouts.
+- You can delete all your workout data from your profile and keep your account.
 
 ### Added
 
 - **UI:** Show the total number of saved workouts in your profile on web and Android.
+- **UI:** Delete all saved workouts from your profile after confirming your password. Your account and equipment stay available.
 
 ## [0.18.2] - 2026-11-27
 

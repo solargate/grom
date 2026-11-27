@@ -61,6 +61,14 @@ func (s *Service) RecalculateForIDs(nickname string, ids []string) error {
 
 // RecalculateAll updates cached mileage for every equipment item owned by nickname.
 func (s *Service) RecalculateAll(nickname string) error {
+	mu := s.lockFor(nickname)
+	mu.Lock()
+	defer mu.Unlock()
+
+	return s.recalculateAll(nickname)
+}
+
+func (s *Service) recalculateAll(nickname string) error {
 	items, err := s.equipment.List(nickname)
 	if err != nil {
 		return err
@@ -94,7 +102,7 @@ func (s *Service) ScheduleRecalculateAll(nickname string) {
 	go func() {
 		defer s.wg.Done()
 		s.runLocked(nickname, func() error {
-			return s.RecalculateAll(nickname)
+			return s.recalculateAll(nickname)
 		}, "all")
 	}()
 }

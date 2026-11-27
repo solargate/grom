@@ -56,7 +56,9 @@ type App struct {
 	stravaOnce sync.Once
 	stravaJobs *strava.JobManager
 
-	profileRefreshWG sync.WaitGroup
+	profileRefreshWG        sync.WaitGroup
+	workoutDeleteDeliveryWG sync.WaitGroup
+	userDeletionLocks       sync.Map
 	// profileSportsMu serializes TouchUsedSportType with RefreshLastSportType so an
 	// async prune cannot drop a sport type that was touched after a stale List.
 	profileSportsMu sync.Mutex
@@ -173,6 +175,7 @@ func NewApp() (*App, error) {
 
 func (a *App) Close() error {
 	a.profileRefreshWG.Wait()
+	a.workoutDeleteDeliveryWG.Wait()
 	if a.EquipmentDistance != nil {
 		a.EquipmentDistance.Wait()
 	}
@@ -304,6 +307,7 @@ func (a *App) RegisterRoutes(router *gin.Engine) {
 		workoutGroup.GET("/:id", workoutRead, a.getWorkout)
 		workoutGroup.PUT("/:id", workoutWrite, a.updateWorkout)
 		workoutGroup.DELETE("/:id", workoutWrite, a.deleteWorkout)
+		workoutGroup.DELETE("", auth.AuthRequired(), a.deleteAllWorkouts)
 		workoutGroup.GET("", workoutRead, a.listWorkouts)
 
 		equipmentRead := auth.AuthAPI(a.PAT, pat.ScopeEquipmentRead)
