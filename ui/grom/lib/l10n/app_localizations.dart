@@ -1816,6 +1816,30 @@ abstract class AppLocalizations {
   /// **'Profile actions'**
   String get profileActions;
 
+  /// No description provided for @deleteWorkoutData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete workout data'**
+  String get deleteWorkoutData;
+
+  /// No description provided for @deleteWorkoutDataWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'All your saved workouts, including their tracks, photos, likes, and comments, will be permanently deleted from this server. You can continue using your account and equipment.'**
+  String get deleteWorkoutDataWarning;
+
+  /// No description provided for @deleteWorkoutDataSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout data deleted'**
+  String get deleteWorkoutDataSuccess;
+
+  /// No description provided for @deleteWorkoutDataFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete all workout data'**
+  String get deleteWorkoutDataFailed;
+
   /// No description provided for @deleteAccount.
   ///
   /// In en, this message translates to:

@@ -1846,9 +1846,6 @@ func (a *App) deleteWorkout(ctx *gin.Context) {
 		respondInternal(ctx, "failed to delete workout", err)
 		return
 	}
-	_ = a.Likes.DeleteLocal(nickname, workoutID)
-	_ = a.Comments.DeleteLocal(nickname, workoutID)
-
 	a.publishDeletedWorkout(nickname, workoutID)
 	a.scheduleEquipmentDistanceRecalc(nickname, workout.Equipment)
 	if userID, err := a.currentUserID(ctx); err == nil {

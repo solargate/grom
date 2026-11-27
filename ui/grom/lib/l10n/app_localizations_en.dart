@@ -956,6 +956,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileActions => 'Profile actions';
 
   @override
+  String get deleteWorkoutData => 'Delete workout data';
+
+  @override
+  String get deleteWorkoutDataWarning =>
+      'All your saved workouts, including their tracks, photos, likes, and comments, will be permanently deleted from this server. You can continue using your account and equipment.';
+
+  @override
+  String get deleteWorkoutDataSuccess => 'Workout data deleted';
+
+  @override
+  String get deleteWorkoutDataFailed => 'Could not delete all workout data';
+
+  @override
   String get deleteAccount => 'Delete account';
 
   @override

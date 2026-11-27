@@ -186,13 +186,18 @@ abstract class _ApiTransport {
     Uri uri, {
     Map<String, String>? headers,
     String? body,
+    Duration? timeout,
   }) {
     final abort = Completer<void>();
     final request =
         http.AbortableRequest(method, uri, abortTrigger: abort.future);
     if (headers != null) request.headers.addAll(headers);
     if (body != null) request.body = body;
-    return _send(request, timeout: _requestTimeout, onTimeout: abort.complete);
+    return _send(
+      request,
+      timeout: timeout ?? _requestTimeout,
+      onTimeout: abort.complete,
+    );
   }
 
   Future<http.Response> _send(

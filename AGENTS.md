@@ -166,6 +166,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 - Match existing style: short, imperative commit subjects focused on why.
 - Do not commit generated noise, local data, TLS material, or `.cursor/`.
 - `internal/web/dist/*` is produced by the build; prefer regenerating via Makefile rather than hand-editing.
+- Update `AGENTS.md` in the same change whenever you add or materially change significant functionality. Document the entry points and behavior that future agents need to preserve, such as API and auth contracts, storage rules, or cross-client behavior. Revise existing guidance when the feature changes it.
 - User-visible changes: add a bullet under `CHANGELOG.md` → `[Unreleased]` (Added / Changed / Fixed / Security; call out **Breaking** for config, API, or storage). Prefix the bullet with **UI:** (Flutter, all clients), **Android:** (Android-only), **Server:**, **Docs:**, or **CI:**. If the release includes **UI:** or **Android:**, keep a short English `### Google Play` block (plain text, ≤500 characters) for the Play Store listing; omit that block when the release is Server/Docs/CI only (CI then uses a maintenance stub). Skip pure refactors, tests, and CI noise.
 
 ## Domain notes agents should respect
@@ -191,6 +192,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 19. **Sport and equipment type catalogs** must stay in sync: Go `internal/workouts/sport_types.go` ↔ Flutter `lib/models/sport_types.dart` (plus ARB keys and `sport_type_localizations.dart`); equipment types `internal/equipment` ↔ `lib/models/equipment_types.dart` (plus `equipment_type_localizations.dart`).
 20. **Approved servers:** `server-catalog.yaml` at the repo root is the source of truth; `scripts/server_catalog.py` validates it (https only, no ports, path allowed) and writes `ui/grom/lib/generated/server_catalog.g.dart`. Commit the generated file; `make catalog` / `make web` / `make android-*` regenerate it. CI diffs the Dart file. Do not parse the YAML in Flutter at runtime. Manual server URLs stay allowed; successful login/register remembers custom URLs locally. Docs: `docs/user/approved-servers.md`.
 21. **Push notifications:** always on. VAPID keys auto-created at `{storage.location}/notifications/vapid.json`; public key on `/server-info`. Device Web Push subscriptions via `POST/DELETE /api/v1/notifications/push` (JWT only; multi-device by `installation_id`). Notify workout **owner** on local like/comment (including federated inbox); never notify for own actions. Android client: UnifiedPush + `flutter_local_notifications`, client-side collapse per workout/type, l10n bodies. Subscriptions copied by `grom migrate-storage` and removed by `PurgeUser`.
+22. **Workout history deletion:** `DELETE /api/v1/workouts` requires a session JWT and the current password in the JSON body. The profile menu places **Delete workout data** before **Delete account** and keeps the user signed in after success. Both storage drivers delete the authenticated owner's committed workouts and their tracks, media, previews, charts, likes, and comments. An import can still commit new workouts after the deletion snapshot. Repeating the request after a partial failure processes the remaining workouts. Recalculate workout totals, sport history, and equipment mileage while preserving equipment, last equipment selections, follows, and reactions on other users' workouts. Federation sends a best-effort ActivityPub `Delete` for each deleted workout object.
 
 ## Agent do / don't
 
@@ -238,6 +240,7 @@ Storage driver switch: stop the server, run `grom migrate-storage --from file --
 | Password reset / mailer | `internal/auth/reset/`, `internal/mailer/`, `api/v1/auth_password.go`; docs in `docs/admin/configuration.md` |
 | Auth captcha (ALTCHA) | `internal/auth/captcha/`, `api/v1/captcha.go`; Flutter `widgets/altcha_field.dart` |
 | Personal access tokens | `internal/auth/pat/`, `api/v1/pat.go`, `internal/auth/middleware.go`; Flutter `pages/grom_api_tab.dart`; docs in `docs/user/grom-api-tokens.md` |
+| Workout history deletion | `api/v1/workouts_delete_all.go`, `internal/workouts/service.go` and both storage drivers; Flutter `widgets/profile_menu.dart` and `navigation/grom_shell.dart` |
 | Push notifications | `internal/notifications/`, `api/v1/notifications_*.go`; Flutter `services/notifications/`; docs in `docs/admin/configuration.md` and `docs/user/overview.md` |
 | Logging | `internal/logging/`, `logging:` in `cmd/grom/config-examples/` |
 | Human docs | `docs/README.md` (index + Pages homepage), `docs/about.md`, `*.ru.md` / `*.de.md`, `docs/user/`, `docs/admin/`, `docs/integrations/`, `docs/privacy.md` (EN only); `mkdocs.yml` + `mkdocs-static-i18n`; keep root `README.md` short |

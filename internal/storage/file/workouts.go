@@ -391,6 +391,9 @@ func (s *WorkoutsStore) ListPage(nickname string, cursor *workouts.Cursor, limit
 }
 
 func (s *WorkoutsStore) RemoveEquipmentFromAll(nickname, equipmentID string) error {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
+
 	wd := workoutsDir(s.userDir(nickname))
 	entries, err := os.ReadDir(wd)
 	if err != nil {
@@ -459,6 +462,69 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 		}
 		return nil
 	})
+}
+
+func (s *WorkoutsStore) DeleteAll(nickname string) ([]string, error) {
+	workoutCommitMu.Lock()
+	defer workoutCommitMu.Unlock()
+
+	root := workoutsDir(s.userDir(nickname))
+	entries, err := os.ReadDir(root)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read workouts dir: %w", err)
+	}
+	type savedWorkout struct {
+		dir string
+		id  string
+	}
+	var saved []savedWorkout
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		dir := filepath.Join(root, entry.Name())
+		workout, err := readWorkoutFromDir(dir)
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			// Imports can stage attachments before committing workout metadata.
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("read workout %q: %w", entry.Name(), err)
+		}
+		saved = append(saved, savedWorkout{dir: dir, id: workout.ID})
+	}
+
+	deleted := make([]string, 0, len(saved))
+	err = s.withWorkoutTotal(nickname, -len(saved), func() error {
+		for _, workout := range saved {
+			metadata := filepath.Base(workout.dir) + ".yaml"
+			files, err := os.ReadDir(workout.dir)
+			if err != nil {
+				return fmt.Errorf("read workout directory: %w", err)
+			}
+			for _, file := range files {
+				if file.Name() == metadata {
+					continue
+				}
+				if err := os.RemoveAll(filepath.Join(workout.dir, file.Name())); err != nil {
+					return fmt.Errorf("delete workout attachment: %w", err)
+				}
+			}
+			// Keep the metadata available for a retry until attachment cleanup succeeds.
+			if err := os.Remove(filepath.Join(workout.dir, metadata)); err != nil {
+				return fmt.Errorf("delete workout metadata: %w", err)
+			}
+			deleted = append(deleted, workout.id)
+			if err := os.Remove(workout.dir); err != nil {
+				return fmt.Errorf("delete empty workout directory: %w", err)
+			}
+		}
+		return nil
+	})
+	return deleted, err
 }
 
 func (s *WorkoutsStore) findWorkoutDir(nickname, workoutID string) (string, error) {

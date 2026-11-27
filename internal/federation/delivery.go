@@ -1,8 +1,10 @@
 package federation
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -558,16 +560,23 @@ func (d *Delivery) DeliverWorkoutDelete(authorNickname, workoutID string, follow
 		"object":   workoutObjectURL(authorNickname, workoutID),
 		"to":       []string{"https://www.w3.org/ns/activitystreams#Public"},
 	}
+	var deliveryErr error
 	for _, inbox := range DeduplicateInboxURLs(followerInboxes) {
-		if err := d.postActivity(inbox, activity); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		err := d.postActivityWithContext(ctx, inbox, activity)
+		cancel()
+		if err != nil {
 			slog.Error("federation workout delete delivery failed",
 				"author", authorNickname,
 				"workout_id", workoutID,
 				"inbox", inbox,
 				"err", err,
 			)
-			return err
+			deliveryErr = errors.Join(deliveryErr, err)
 		}
+	}
+	if deliveryErr != nil {
+		return deliveryErr
 	}
 	slog.Info("federation workout delete delivered",
 		"author", authorNickname,

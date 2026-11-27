@@ -3,6 +3,7 @@ package bbolt
 import (
 	"bytes"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -152,10 +153,14 @@ func (s *WorkoutsStore) deleteWorkoutMeta(tx *bolt.Tx, nickname string, w *worko
 	if err := DeleteLocalCadenceChartInTx(tx, nickname, dirName); err != nil {
 		return err
 	}
-	_ = tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey))
-	_ = tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID))
+	if err := tx.Bucket(bucketWorkouts).Delete([]byte(primaryKey)); err != nil {
+		return err
+	}
+	if err := tx.Bucket(bucketIdxWorkoutsID).Delete([]byte(w.ID)); err != nil {
+		return err
+	}
 	if key, ok := externalIDIndexKey(nickname, w.ExternalID); ok {
-		_ = tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(key + w.ID))
+		return tx.Bucket(bucketIdxWorkoutsExternal).Delete([]byte(key + w.ID))
 	}
 	return nil
 }
@@ -560,8 +565,7 @@ func (s *WorkoutsStore) RemoveEquipmentFromAll(nickname, equipmentID string) err
 }
 
 func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
-	var dir string
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
 		owner, key, err := s.lookupPrimaryKey(tx, workoutID)
 		if err != nil {
 			return err
@@ -573,19 +577,45 @@ func (s *WorkoutsStore) Delete(nickname, workoutID string) error {
 		if err != nil {
 			return err
 		}
-		dir = workoutDirPath(s.dataDir, nickname, w.StartDate, w.ID)
+		dirName := keys.WorkoutDirName(w.StartDate, w.ID)
+		if err := tx.Bucket(bucketWorkoutLikes).Delete(workoutLikesKey(nickname, dirName)); err != nil {
+			return err
+		}
+		if err := tx.Bucket(bucketWorkoutComments).Delete(workoutCommentsKey(nickname, dirName)); err != nil {
+			return err
+		}
 		if err := s.deleteWorkoutMeta(tx, nickname, w); err != nil {
 			return err
 		}
-		return s.updateWorkoutTotal(tx, nickname, -1)
+		if err := s.updateWorkoutTotal(tx, nickname, -1); err != nil {
+			return err
+		}
+		// Roll back the metadata transaction on a blob error, leaving the
+		// workout discoverable so a retry can finish the deletion.
+		if err := os.RemoveAll(workoutDirPath(s.dataDir, nickname, w.StartDate, w.ID)); err != nil {
+			return fmt.Errorf("delete workout dir: %w", err)
+		}
+		return nil
 	})
+}
+
+func (s *WorkoutsStore) DeleteAll(nickname string) ([]string, error) {
+	items, err := s.List(nickname)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := os.RemoveAll(dir); err != nil {
-		return fmt.Errorf("delete workout dir: %w", err)
+	deleted := make([]string, 0, len(items))
+	for _, item := range items {
+		err := s.Delete(nickname, item.ID)
+		if errors.Is(err, workouts.ErrWorkoutNotFound) {
+			continue
+		}
+		if err != nil {
+			return deleted, fmt.Errorf("delete workout %q: %w", item.ID, err)
+		}
+		deleted = append(deleted, item.ID)
 	}
-	return nil
+	return deleted, nil
 }
 
 func (s *WorkoutsStore) HasExternalID(nickname, name, id string) (bool, error) {

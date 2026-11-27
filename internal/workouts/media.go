@@ -180,6 +180,9 @@ func (svc *Service) saveWorkoutMedia(nickname, dirName string, files []MediaFile
 }
 
 func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFileInput) (*Workout, error) {
+	unlock := svc.lockExistingWorkoutMutations(nickname)
+	defer unlock()
+
 	if workout == nil || workout.ID == "" {
 		return nil, ErrInvalidWorkout
 	}
@@ -219,6 +222,9 @@ func (svc *Service) AddMedia(nickname string, workout *Workout, files []MediaFil
 
 // RemoveMedia deletes one photo (original + preview) from a workout and updates metadata.
 func (svc *Service) RemoveMedia(nickname, workoutID, filename string) (*Workout, error) {
+	unlock := svc.lockExistingWorkoutMutations(nickname)
+	defer unlock()
+
 	workout, err := svc.repo.Get(nickname, workoutID)
 	if err != nil {
 		return nil, err

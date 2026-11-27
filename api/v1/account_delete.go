@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/solargate/grom/internal/auth"
@@ -12,6 +13,15 @@ import (
 
 type deleteAccountRequest struct {
 	Password string `json:"password" binding:"required" example:"secret123"`
+}
+
+// Serialize account deletion with workout history deletion so a request for a
+// removed account cannot act on a new account that reuses the nickname.
+func (a *App) lockUserDeletion(userID string) func() {
+	value, _ := a.userDeletionLocks.LoadOrStore(userID, &sync.Mutex{})
+	mu := value.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
 }
 
 // deleteMe godoc
@@ -46,6 +56,8 @@ func (a *App) deleteMe(ctx *gin.Context) {
 		return
 	}
 
+	unlock := a.lockUserDeletion(id)
+	defer unlock()
 	user, err := a.Users.FindByID(id)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not found"})
