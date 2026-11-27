@@ -187,13 +187,6 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 		if err != nil {
 			return result, fmt.Errorf("get profile %s: %w", u.Nickname, err)
 		}
-		if profile != nil && profileNonEmpty(profile) {
-			if err := dst.Users().PutProfile(u.ID, *profile); err != nil {
-				return result, fmt.Errorf("import profile %s: %w", u.Nickname, err)
-			}
-			result.Profiles++
-		}
-
 		eq, err := src.Equipment().List(u.Nickname)
 		if err != nil {
 			return result, fmt.Errorf("list equipment %s: %w", u.Nickname, err)
@@ -242,6 +235,18 @@ func copyAll(src, dst storage.Backend, location, federationDomain string) (*Resu
 				result.LocalComments++
 			}
 			result.Workouts++
+		}
+
+		if profile == nil {
+			profile = &users.Profile{}
+		}
+		total := len(ws)
+		profile.TotalWorkouts = &total
+		if err := dst.Users().PutProfile(u.ID, *profile); err != nil {
+			return result, fmt.Errorf("import profile %s: %w", u.Nickname, err)
+		}
+		if profileNonEmpty(profile, total) {
+			result.Profiles++
 		}
 
 		followers, err := src.Federation().Followers().List(u.Nickname)
@@ -349,9 +354,6 @@ func countAll(backend storage.Backend, location, federationDomain string) (*Resu
 		if err != nil {
 			return nil, err
 		}
-		if profile != nil && profileNonEmpty(profile) {
-			result.Profiles++
-		}
 		eq, err := backend.Equipment().List(u.Nickname)
 		if err != nil {
 			return nil, err
@@ -362,6 +364,9 @@ func countAll(backend storage.Backend, location, federationDomain string) (*Resu
 			return nil, err
 		}
 		result.Workouts += len(ws)
+		if profileNonEmpty(profile, len(ws)) {
+			result.Profiles++
+		}
 		followers, err := backend.Federation().Followers().List(u.Nickname)
 		if err != nil {
 			return nil, err
@@ -431,8 +436,8 @@ func countAll(backend storage.Backend, location, federationDomain string) (*Resu
 	return result, nil
 }
 
-func profileNonEmpty(profile *users.Profile) bool {
-	return profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0 || len(profile.UsedSportTypes) > 0)
+func profileNonEmpty(profile *users.Profile, total int) bool {
+	return total > 0 || profile != nil && (profile.LastSportType != "" || len(profile.LastEquipmentBySport) > 0 || len(profile.UsedSportTypes) > 0)
 }
 
 func listFollows(backend storage.Backend) ([]social.Follow, error) {

@@ -148,7 +148,7 @@ func (svc *Service) AttachTrack(nickname string, workout *Workout, track *TrackI
 
 	MergeTrackStats(workout, parsed, MergeModeTrackAttach)
 
-	if err := svc.repo.WriteMetadata(nickname, workout); err != nil {
+	if err := svc.repo.UpdateMetadata(nickname, workout); err != nil {
 		return nil, err
 	}
 

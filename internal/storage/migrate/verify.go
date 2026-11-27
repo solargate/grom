@@ -9,6 +9,7 @@ import (
 
 	"github.com/solargate/grom/internal/storage"
 	"github.com/solargate/grom/internal/storage/keys"
+	"github.com/solargate/grom/internal/users"
 	"github.com/solargate/grom/internal/workouts"
 	"gopkg.in/yaml.v3"
 )
@@ -25,11 +26,11 @@ func (records migrationRecords) add(key [4]string, value any) error {
 }
 
 func verifyContent(src, dst storage.Backend, location, domain string) error {
-	expected, err := collectRecords(src, location, domain)
+	expected, err := collectRecords(src, location, domain, false)
 	if err != nil {
 		return fmt.Errorf("verify source records: %w", err)
 	}
-	actual, err := collectRecords(dst, location, domain)
+	actual, err := collectRecords(dst, location, domain, true)
 	if err != nil {
 		return fmt.Errorf("verify target records: %w", err)
 	}
@@ -45,9 +46,9 @@ func verifyContent(src, dst storage.Backend, location, domain string) error {
 	return nil
 }
 
-func collectRecords(backend storage.Backend, location, domain string) (migrationRecords, error) {
+func collectRecords(backend storage.Backend, location, domain string, verifyStoredTotal bool) (migrationRecords, error) {
 	records := make(migrationRecords)
-	users, err := backend.Users().ListAll()
+	usersList, err := backend.Users().ListAll()
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func collectRecords(backend storage.Backend, location, domain string) (migration
 	if err != nil {
 		return nil, err
 	}
-	for _, user := range users {
+	for _, user := range usersList {
 		user.CreatedAt = user.CreatedAt.UTC()
 		if err := records.add([4]string{"user", user.ID}, user); err != nil {
 			return nil, err
@@ -63,11 +64,6 @@ func collectRecords(backend storage.Backend, location, domain string) (migration
 		profile, err := backend.Users().GetProfile(user.ID)
 		if err != nil {
 			return nil, err
-		}
-		if profileNonEmpty(profile) {
-			if err := records.add([4]string{"profile", user.ID}, profile); err != nil {
-				return nil, err
-			}
 		}
 		equipment, err := backend.Equipment().List(user.Nickname)
 		if err != nil {
@@ -89,6 +85,17 @@ func collectRecords(backend storage.Backend, location, domain string) (migration
 		}
 		items, err := backend.Workouts().List(user.Nickname)
 		if err != nil {
+			return nil, err
+		}
+		total := len(items)
+		if verifyStoredTotal && (profile == nil || profile.TotalWorkouts == nil || *profile.TotalWorkouts != total) {
+			return nil, fmt.Errorf("workout total differs from saved workouts for user %q", user.Nickname)
+		}
+		if profile == nil {
+			profile = &users.Profile{}
+		}
+		profile.TotalWorkouts = &total
+		if err := records.add([4]string{"profile", user.ID}, profile); err != nil {
 			return nil, err
 		}
 		for _, item := range items {

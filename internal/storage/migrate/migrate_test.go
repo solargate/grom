@@ -605,6 +605,9 @@ func TestMigrateDryRun(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "grom.db")); err == nil {
 		t.Fatal("dry-run should not create bbolt db")
 	}
+	if _, err := os.Stat(filepath.Join(dir, "users", "alice", "profile.yaml")); !os.IsNotExist(err) {
+		t.Fatalf("dry-run should not initialize the profile: %v", err)
+	}
 }
 
 func TestMigratePreservesUserProfile(t *testing.T) {
@@ -621,6 +624,11 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	user, err := fileBackend.Users().Create("alice", "Alice", "alice@example.com", "password123")
 	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileBackend.Workouts().Create(user.Nickname, &workouts.Workout{
+		Name: "Ride", SportType: "Ride", StartDate: time.Now().UTC(),
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := fileBackend.Users().PutProfile(user.ID, users.Profile{
@@ -661,6 +669,9 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	if profile.LastSportType != "Ride" {
 		t.Fatalf("sport = %q", profile.LastSportType)
+	}
+	if profile.TotalWorkouts == nil || *profile.TotalWorkouts != 1 {
+		t.Fatalf("bbolt workout total = %v, want 1", profile.TotalWorkouts)
 	}
 	if got := profile.LastEquipmentBySport["Ride"]; len(got) != 2 || got[0] != "bike-1" {
 		t.Fatalf("equipment: %#v", profile.LastEquipmentBySport)
@@ -707,6 +718,9 @@ func TestMigratePreservesUserProfile(t *testing.T) {
 	}
 	if roundTrip.LastSportType != "Ride" {
 		t.Fatalf("round-trip sport = %q", roundTrip.LastSportType)
+	}
+	if roundTrip.TotalWorkouts == nil || *roundTrip.TotalWorkouts != 1 {
+		t.Fatalf("round-trip workout total = %v, want 1", roundTrip.TotalWorkouts)
 	}
 	if got := roundTrip.LastEquipmentBySport["Run"]; len(got) != 1 || got[0] != "eq-1" {
 		t.Fatalf("round-trip equipment: %#v", roundTrip.LastEquipmentBySport)
@@ -996,4 +1010,3 @@ func TestMigrateLegacyLocalLikeActivity(t *testing.T) {
 		t.Fatalf("migrated local legacy activity id: %q err=%v", got, err)
 	}
 }
-

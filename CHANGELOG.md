@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Google Play
+
+- Your profile now shows your total number of workouts.
+
+### Added
+
+- **UI:** Show the total number of saved workouts in your profile on web and Android.
+
 ## [0.18.2] - 2026-11-27
 
 ### Google Play

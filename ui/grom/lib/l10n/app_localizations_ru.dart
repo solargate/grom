@@ -905,6 +905,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String totalWorkouts(int count) {
+    return 'Всего тренировок: $count';
+  }
+
+  @override
   String followingCount(int count) {
     return 'Подписки: $count';
   }

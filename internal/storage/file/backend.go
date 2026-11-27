@@ -18,7 +18,7 @@ import (
 
 type Backend struct {
 	location          string
-	users             users.Repository
+	users             *UsersStore
 	workoutRepo       *WorkoutsStore
 	workouts          *workouts.Service
 	likes             workouts.LikesRepository
@@ -56,6 +56,7 @@ func Open(location string) (*Backend, error) {
 	inboxStore := federation.NewWorkoutInboxStore(location, blobStore, speedCharts, heartRateCharts, cadenceCharts)
 
 	workoutRepo := NewWorkoutsStore(location)
+	workoutRepo.users = userStore
 	likesStore := NewWorkoutLikesStore(location)
 	commentsStore := NewWorkoutCommentsStore(location)
 	equipmentStore := NewEquipmentStore(location)

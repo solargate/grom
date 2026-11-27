@@ -125,11 +125,11 @@ class ProfileCountCard extends StatelessWidget {
   const ProfileCountCard({
     super.key,
     required this.label,
-    required this.onTap,
+    this.onTap,
   });
 
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

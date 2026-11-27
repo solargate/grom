@@ -919,6 +919,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String totalWorkouts(int count) {
+    return 'Trainingseinheiten insgesamt: $count';
+  }
+
+  @override
   String followingCount(int count) {
     return 'Abonniert: $count';
   }

@@ -64,6 +64,7 @@ Map<String, dynamic> followingJson({
 MockClient profileClient({
   List<Map<String, dynamic>> followers = const [],
   List<Map<String, dynamic>> following = const [],
+  int? Function()? totalWorkouts,
 }) {
   return MockClient((request) async {
     if (request.url.path == '/api/v1/auth/me') {
@@ -87,6 +88,14 @@ MockClient profileClient({
         headers: {'content-type': 'application/json'},
       );
     }
+    if (request.url.path == '/api/v1/profile') {
+      final total = totalWorkouts?.call();
+      return http.Response(
+        jsonEncode({if (total != null) 'total_workouts': total}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
     return http.Response('not found', 404);
   });
 }
@@ -101,6 +110,45 @@ void main() {
   tearDown(() async {
     await AuthStorage.clear();
     await ServerStorage.clear();
+  });
+
+  for (final width in [320.0, 1280.0]) {
+    testWidgets('shows the saved workout total at width $width',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      var total = 0;
+      final api = ApiRequest(client: profileClient(totalWorkouts: () => total));
+      Widget page(int refreshToken) => wrap(ProfilePage(
+            nickname: 'alice',
+            api: api,
+            workoutRefreshToken: refreshToken,
+          ));
+
+      await tester.pumpWidget(page(0));
+      await tester.pumpAndSettle();
+      expect(find.text('Total workouts: 0'), findsOneWidget);
+
+      total = 12;
+      await tester.pumpWidget(page(1));
+      await tester.pumpAndSettle();
+      expect(find.text('Total workouts: 12'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('hides the workout total when the server omits it',
+      (tester) async {
+    await tester.pumpWidget(wrap(ProfilePage(
+      nickname: 'alice',
+      api: ApiRequest(client: profileClient()),
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('alice'), findsOneWidget);
+    expect(find.textContaining('Total workouts'), findsNothing);
   });
 
   testWidgets('shows follower and following count cards', (tester) async {

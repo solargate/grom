@@ -1720,6 +1720,12 @@ abstract class AppLocalizations {
   /// **'Followers: {count}'**
   String followersCount(int count);
 
+  /// No description provided for @totalWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Total workouts: {count}'**
+  String totalWorkouts(int count);
+
   /// No description provided for @followingCount.
   ///
   /// In en, this message translates to:
