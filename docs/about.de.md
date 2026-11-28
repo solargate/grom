@@ -8,15 +8,15 @@ Sie können Grom für sich selbst oder für einen Club, ein Team oder eine Stadt
 
 Der Projektcode ist Open Source ([GPL-3.0](https://github.com/solargate/grom/blob/master/LICENSE)): Jede und jeder kann ihn betreiben, studieren, verbessern und an der Entwicklung mitwirken — damit das Ökosystem mit den Menschen wächst, die es nutzen.
 
-## Säulen
+## Grundsätze von Grom {#saulen}
 
-| Säule | Bedeutung |
-|-------|-----------|
-| **Freiheit** | Ein vollständig freies Ökosystem für Sportlerinnen, Sportler und Ambitionierte — ohne verpflichtenden zentralen Dienst. |
-| **Eigentum** | Ein Server für Sie selbst oder jede Community; die Daten bleiben beim Betreiber der Instanz. |
-| **Community** | Austausch von Workouts und sozialen Signalen zwischen Instanzen (ActivityPub). |
-| **Vernetzung** | Integrationen mit verfügbaren Sport-Diensten, Track-Formaten und der API. |
-| **Mitgestaltung** | Open Source: Jede und jeder kann nutzen, forken und das Projekt mitgestalten. |
+| Grundsatz | Was das bedeutet |
+|-----------|------------------|
+| **Unabhängigkeit** | Grom funktioniert ohne einen verpflichtenden zentralen Dienst. |
+| **Kontrolle über die eigenen Daten** | Sie können einen Server für sich selbst oder Ihre Community betreiben. Ihre Daten werden auf diesem Server gespeichert. |
+| **Austausch zwischen Communitys** | Mit ActivityPub können sich Nutzerinnen und Nutzer verschiedener Server folgen, Trainings teilen, Likes vergeben und Kommentare schreiben. |
+| **Kompatibilität** | Grom unterstützt GPX und FIT, importiert Trainings aus Sportdiensten und bietet eine API für Skripte und Apps. |
+| **Offener Quellcode** | Alle können den Quellcode einsehen, eine eigene Version von Grom erstellen und am Projekt mitarbeiten. |
 
 ## Mehr erfahren
 

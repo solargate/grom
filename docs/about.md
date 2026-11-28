@@ -8,15 +8,15 @@ You can install Grom for yourself or for a club, team, or city: each community g
 
 The project is open source ([GPL-3.0](https://github.com/solargate/grom/blob/master/LICENSE)): anyone can run, study, improve, and help develop it — so the ecosystem grows with the people who use it.
 
-## Pillars
+## Grom’s principles {#pillars}
 
-| Pillar | What it means |
-|--------|----------------|
-| **Freedom** | A fully free ecosystem for athletes and enthusiasts — no mandatory central service. |
-| **Ownership** | A server for yourself or any community; data stays with the instance operator. |
-| **Community** | Sharing workouts and social signals across instances (ActivityPub). |
-| **Connectivity** | Integrations with available sports services, track formats, and the API. |
-| **Participation** | Open source: anyone can use, fork, and help shape the project. |
+| Principle | What it means |
+|-----------|---------------|
+| **Independence** | Grom runs without a mandatory central service. |
+| **Control over your data** | You can run a server for yourself or your community. Your data is stored on that server. |
+| **Interaction across communities** | With ActivityPub, people on different servers can follow each other, share workouts, leave likes, and comment. |
+| **Compatibility** | Grom supports GPX and FIT, imports workouts from sports services, and provides an API for scripts and apps. |
+| **Open source** | Anyone can study the code, create their own version of Grom, and contribute to the project. |
 
 ## Learn more
 

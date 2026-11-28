@@ -67,7 +67,7 @@ internal/web/dist → Embedded Flutter web build (copied by `make web`)
 
 - **Languages:** English is the canonical source under `docs/` (unsuffixed files). Russian and German are full translations via MkDocs Material + `mkdocs-static-i18n` (`docs_structure: suffix`: `page.ru.md`, `page.de.md`). EN is served at `/`; RU at `/ru/`; DE at `/de/`. Root `README.md` / `AGENTS.md` stay English-only.
 - **Layout:** Root `README.md` is a short front door (what/why, hero screenshots, quick start, links). Details live under `docs/`:
-  - `docs/about.md` — project mission and pillars (EN + RU/DE)
+  - `docs/about.md` — project mission and principles (EN + RU/DE)
   - `docs/user/` — end-user / client tour (web + Android)
   - `docs/admin/` — install, configuration (TLS, storage, federation, logging)
   - `docs/integrations/` — third-party import guides (Strava ZIP, Strava API sync, Import tracks via system picker)

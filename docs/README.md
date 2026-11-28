@@ -36,7 +36,7 @@ Screen-by-screen tour: [User overview](user/overview.md). Install and run: [Inst
 
 | Goal | Page |
 |------|------|
-| Read the project mission and pillars | [About the project](about.md) |
+| Learn why Grom exists and what guides it | [About the project](about.md) |
 
 ### User
 

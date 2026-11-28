@@ -50,7 +50,7 @@ See [Install and run](docs/admin/install.md) for platform-specific steps, public
 **In the repository** (for contributors):
 
 - **[Docs index](docs/README.md)** — user and admin guides
-- [About the project](docs/about.md) — mission, pillars, and why Grom exists
+- [About the project](docs/about.md) — why Grom exists and what guides it
 - [User overview](docs/user/overview.md) — client screens (workouts, likes, comments, password reset, captcha, recording, equipment, track import)
 - [Approved Grom servers](docs/user/approved-servers.md) — Android server picker and how to list a public instance
 - [Delete your Grom account](docs/user/delete-account.md) — how to permanently delete an account (web or Android)

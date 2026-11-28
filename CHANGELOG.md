@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Docs:** Lead with ready-to-run server releases, document backup and restore, and update migration, import, and workout deletion guides.
+- **Docs:** Describe Grom’s principles in clearer language across the English, Russian, and German documentation.
 
 ## [0.18.2] - 2026-11-27
 

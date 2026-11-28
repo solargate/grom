@@ -36,7 +36,7 @@ Tour durch die Bildschirme: [Benutzerüberblick](user/overview.md). Installieren
 
 | Ziel | Seite |
 |------|-------|
-| Mission und Säulen des Projekts lesen | [Über das Projekt](about.md) |
+| Erfahren, warum es Grom gibt und welche Grundsätze das Projekt leiten | [Über das Projekt](about.md) |
 
 ### Benutzer
 
